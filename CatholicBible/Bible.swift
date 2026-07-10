@@ -64,7 +64,7 @@ enum BookCategory: String, CaseIterable, Identifiable, Hashable, Sendable {
 // MARK: - Book
 
 struct BibleBook: Identifiable, Hashable, Sendable {
-    /// 저장/조회에 쓰는 안정적 식별자 (BibleText.json의 키와 일치)
+    /// 저장/조회에 쓰는 안정적 식별자 (BibleText_<판본>.json의 키와 일치)
     let id: String
     /// 정식 명칭 (예: "코린토 신자들에게 보낸 첫째 서간")
     let name: String

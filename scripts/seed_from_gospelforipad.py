@@ -1,18 +1,18 @@
 #!/usr/bin/env python3
 """GospelForIpad의 GospelText.json(주교회의 「성경」 4복음서)을
-CatholicBible의 BibleText.json 형식으로 변환해 시드 데이터를 만든다.
+CatholicBible의 BibleText_knb.json 형식으로 변환해 시드 데이터를 만든다.
 
 사용법:
     python3 scripts/seed_from_gospelforipad.py [GospelText.json 경로]
 
-기존 BibleText.json이 있으면 4복음서 항목만 갱신하고 나머지 책은 보존한다.
+기존 BibleText_knb.json이 있으면 4복음서 항목만 갱신하고 나머지 책은 보존한다.
 """
 import json
 import sys
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
-OUT_PATH = REPO_ROOT / "CatholicBible" / "Resources" / "BibleText.json"
+OUT_PATH = REPO_ROOT / "CatholicBible" / "Resources" / "BibleText_knb.json"
 
 BOOK_KEY_MAP = {"matthew": "mt", "mark": "mk", "luke": "lk", "john": "jn"}
 
@@ -30,8 +30,9 @@ def main() -> None:
         data = json.loads(OUT_PATH.read_text(encoding="utf-8"))
     else:
         data = {
-            "translation": "한국 천주교 주교회의 「성경」",
-            "source": "https://bible.cbck.or.kr",
+            "translation": "성경 (한국 천주교 주교회의)",
+            "source": "https://bible.cbck.or.kr/Knb",
+            "bookNames": {},
             "books": {},
         }
 

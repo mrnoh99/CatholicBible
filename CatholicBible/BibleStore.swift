@@ -2,18 +2,20 @@
 //  BibleStore.swift
 //  CatholicBible
 //
-//  번들된 BibleText.json(주교회의 「성경」 본문)을 로드해 절 단위로 제공한다.
-//  본문이 아직 수집되지 않은 책은 빈 상태로 노출되어, 리더 화면이
-//  안내 문구를 대신 보여 준다 (scripts/fetch_cbck_bible.py 참고).
+//  번들된 판본별 본문 파일(Resources/BibleText_<판본id>.json)을 로드해
+//  절 단위로 제공한다. 아직 수집되지 않은 판본/책은 빈 상태로 노출되어
+//  서재·리더가 안내 문구를 대신 보여 준다 (scripts/fetch_cbck_bible.py 참고).
 //
 
 import Foundation
 import Observation
 
-/// BibleText.json 파일 구조 (백그라운드에서 디코딩하므로 nonisolated)
+/// BibleText_<판본>.json 파일 구조
 private nonisolated struct BibleTextFile: Decodable, Sendable {
     let translation: String
     let source: String
+    /// 판본 고유의 책 표시 이름 (예: 공동번역 "출애굽기", NAB "Genesis")
+    let bookNames: [String: String]?
     /// 책 id → 장 번호(문자열) → 절 번호(문자열) → 본문
     let books: [String: [String: [String: String]]]
 }
@@ -26,88 +28,110 @@ nonisolated struct Verse: Identifiable, Hashable, Sendable {
 }
 
 nonisolated struct SearchHit: Identifiable, Hashable, Sendable {
+    let editionID: String
     let bookID: String
     let chapter: Int
     let verse: Int
     let text: String
 
-    var id: String { "\(bookID)-\(chapter)-\(verse)" }
+    var id: String { "\(editionID)-\(bookID)-\(chapter)-\(verse)" }
+}
+
+/// 로드된 한 판본의 본문
+nonisolated struct EditionText: Sendable {
+    var translation: String
+    var source: String
+    var bookNames: [String: String]
+    /// 책 id → 장 → 절 목록 (절 번호 순 정렬 완료)
+    var books: [String: [Int: [Verse]]]
+    /// 검색용 원본
+    var rawBooks: [String: [String: [String: String]]]
 }
 
 @Observable
 final class BibleStore {
-    private(set) var translation = "한국 천주교 주교회의 「성경」"
-    private(set) var source = "https://bible.cbck.or.kr"
     private(set) var isLoaded = false
-    private(set) var loadError: String?
-
-    /// 책 id → 장 → 절 목록 (절 번호 순 정렬 완료)
-    private(set) var books: [String: [Int: [Verse]]] = [:]
-
-    /// 검색용 원본 (immutable snapshot)
-    private var rawBooks: [String: [String: [String: String]]] = [:]
+    /// 판본 id → 본문 (파일이 없는 판본은 항목 자체가 없음)
+    private(set) var editions: [String: EditionText] = [:]
 
     func load() async {
         guard !isLoaded else { return }
-        guard let url = Bundle.main.url(forResource: "BibleText", withExtension: "json") else {
-            loadError = "BibleText.json이 앱 번들에 없습니다."
-            isLoaded = true
-            return
-        }
-        do {
-            let file = try await Task.detached(priority: .userInitiated) {
-                let data = try Data(contentsOf: url)
-                return try JSONDecoder().decode(BibleTextFile.self, from: data)
-            }.value
 
-            var indexed: [String: [Int: [Verse]]] = [:]
-            for (bookID, chapters) in file.books {
-                var chapterMap: [Int: [Verse]] = [:]
-                for (chapterKey, verses) in chapters {
-                    guard let chapterNumber = Int(chapterKey) else { continue }
-                    chapterMap[chapterNumber] = verses
-                        .compactMap { key, text in Int(key).map { Verse(number: $0, text: text) } }
-                        .sorted { $0.number < $1.number }
-                }
-                indexed[bookID] = chapterMap
-            }
-            translation = file.translation
-            source = file.source
-            rawBooks = file.books
-            books = indexed
-        } catch {
-            loadError = "본문을 읽지 못했습니다: \(error.localizedDescription)"
+        // 각 판본 파일을 백그라운드에서 한꺼번에 디코딩한다.
+        let candidates: [(String, URL)] = Editions.all.compactMap { edition in
+            Bundle.main.url(forResource: "BibleText_\(edition.id)", withExtension: "json")
+                .map { (edition.id, $0) }
         }
+
+        let loaded: [String: EditionText] = await Task.detached(priority: .userInitiated) {
+            var result: [String: EditionText] = [:]
+            for (editionID, url) in candidates {
+                guard let data = try? Data(contentsOf: url),
+                      let file = try? JSONDecoder().decode(BibleTextFile.self, from: data)
+                else { continue }
+
+                var indexed: [String: [Int: [Verse]]] = [:]
+                for (bookID, chapters) in file.books {
+                    var chapterMap: [Int: [Verse]] = [:]
+                    for (chapterKey, verses) in chapters {
+                        guard let chapterNumber = Int(chapterKey) else { continue }
+                        chapterMap[chapterNumber] = verses
+                            .compactMap { key, text in Int(key).map { Verse(number: $0, text: text) } }
+                            .sorted { $0.number < $1.number }
+                    }
+                    if !chapterMap.isEmpty { indexed[bookID] = chapterMap }
+                }
+                result[editionID] = EditionText(translation: file.translation,
+                                                source: file.source,
+                                                bookNames: file.bookNames ?? [:],
+                                                books: indexed,
+                                                rawBooks: file.books)
+            }
+            return result
+        }.value
+
+        editions = loaded
         isLoaded = true
     }
 
     // MARK: - 조회
 
-    func hasText(_ book: BibleBook) -> Bool {
-        !(books[book.id]?.isEmpty ?? true)
+    func hasText(edition: Edition) -> Bool {
+        !(editions[edition.id]?.books.isEmpty ?? true)
     }
 
-    /// 본문이 있는 장 수 (미수집 책은 0)
-    func availableChapterCount(_ book: BibleBook) -> Int {
-        books[book.id]?.count ?? 0
+    func hasText(edition: Edition, book: BibleBook) -> Bool {
+        !(editions[edition.id]?.books[book.id]?.isEmpty ?? true)
     }
 
-    func verses(book: BibleBook, chapter: Int) -> [Verse] {
-        books[book.id]?[chapter] ?? []
+    /// 판본에 실제 담긴 책 수 / 목차상 책 수
+    func availability(edition: Edition) -> (loaded: Int, total: Int) {
+        let scoped = edition.scope.books
+        let loaded = scoped.filter { hasText(edition: edition, book: $0) }.count
+        return (loaded, scoped.count)
     }
 
-    var availableBookCount: Int {
-        Bible.books.filter { hasText($0) }.count
+    func verses(edition: Edition, book: BibleBook, chapter: Int) -> [Verse] {
+        editions[edition.id]?.books[book.id]?[chapter] ?? []
     }
 
-    // MARK: - 검색
+    /// 판본 고유의 책 표시 이름 (없으면 기본 한국어 이름)
+    func bookName(edition: Edition, book: BibleBook) -> String {
+        editions[edition.id]?.bookNames[book.id] ?? book.name
+    }
 
-    /// 로드된 모든 책에서 구절을 검색한다. 결과는 성경 목차 순서.
-    func search(_ query: String, limit: Int = 200) async -> [SearchHit] {
+    func bookShortName(edition: Edition, book: BibleBook) -> String {
+        editions[edition.id]?.bookNames[book.id] ?? book.shortName
+    }
+
+    // MARK: - 검색 (현재 판본 안에서)
+
+    func search(_ query: String, edition: Edition, limit: Int = 200) async -> [SearchHit] {
         let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard trimmed.count >= 2 else { return [] }
-        let snapshot = rawBooks
-        let order = Bible.books.map(\.id)
+        guard trimmed.count >= 2, let text = editions[edition.id] else { return [] }
+        let snapshot = text.rawBooks
+        let order = edition.scope.books.map(\.id)
+        let editionID = edition.id
 
         return await Task.detached(priority: .userInitiated) {
             var hits: [SearchHit] = []
@@ -118,10 +142,11 @@ final class BibleStore {
                     guard let verses = chapters[String(chapterNumber)] else { continue }
                     let verseNumbers = verses.keys.compactMap { Int($0) }.sorted()
                     for verseNumber in verseNumbers {
-                        guard let text = verses[String(verseNumber)] else { continue }
-                        if text.localizedStandardContains(trimmed) {
-                            hits.append(SearchHit(bookID: bookID, chapter: chapterNumber,
-                                                  verse: verseNumber, text: text))
+                        guard let verseText = verses[String(verseNumber)] else { continue }
+                        if verseText.localizedStandardContains(trimmed) {
+                            hits.append(SearchHit(editionID: editionID, bookID: bookID,
+                                                  chapter: chapterNumber, verse: verseNumber,
+                                                  text: verseText))
                             if hits.count >= limit { break outer }
                         }
                     }

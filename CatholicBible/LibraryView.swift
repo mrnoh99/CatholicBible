@@ -2,7 +2,7 @@
 //  LibraryView.swift
 //  CatholicBible
 //
-//  서가: 구약·신약을 분류(오경/역사서/…)별로 나눠 73권을 보여 준다.
+//  사이드바: 판본(8가지 책) 선택 + 선택된 판본의 목차.
 //  본문이 아직 수집되지 않은 책은 흐리게 표시된다.
 //
 
@@ -15,51 +15,96 @@ struct LibraryView: View {
 
     var body: some View {
         @Bindable var navigation = navigation
+        @Bindable var readingState = readingState
+        let edition = readingState.selectedEdition
+
         List(selection: $navigation.selectedBookID) {
-            ForEach(Testament.allCases) { testament in
+            Section {
+                Picker("판본", selection: $readingState.selectedEditionID) {
+                    ForEach(Editions.all) { edition in
+                        Text(edition.name).tag(edition.id)
+                    }
+                }
+                .pickerStyle(.menu)
+            } header: {
+                Text("책 (판본)")
+            }
+
+            switch edition.scope {
+            case .full:
+                ForEach(Testament.allCases) { testament in
+                    Section {
+                        ForEach(BookCategory.allCases.filter { $0.testament == testament }) { category in
+                            categorySection(category, edition: edition)
+                        }
+                    } header: {
+                        Text(testament.title)
+                            .font(.headline)
+                    }
+                }
+            case .newTestament:
                 Section {
-                    ForEach(BookCategory.allCases.filter { $0.testament == testament }) { category in
-                        categorySection(category)
+                    ForEach(BookCategory.allCases.filter { $0.testament == .new }) { category in
+                        categorySection(category, edition: edition)
                     }
                 } header: {
-                    Text(testament.title)
+                    Text(Testament.new.title)
                         .font(.headline)
+                }
+            case .psalter:
+                Section("목차") {
+                    ForEach(edition.scope.books) { book in
+                        bookRow(book, edition: edition)
+                    }
                 }
             }
         }
         .listStyle(.sidebar)
+        .onChange(of: readingState.selectedEditionID) { _, newID in
+            // 판본을 바꾸면 새 판본 범위에 없는 책 선택은 해제한다.
+            if let bookID = navigation.selectedBookID,
+               let book = Bible.book(bookID),
+               let edition = Editions.edition(newID),
+               !edition.scope.contains(book) {
+                navigation.selectedBookID = nil
+            }
+        }
     }
 
     @ViewBuilder
-    private func categorySection(_ category: BookCategory) -> some View {
+    private func categorySection(_ category: BookCategory, edition: Edition) -> some View {
         // 사도행전·묵시록처럼 한 권뿐인 분류는 소제목 없이 바로 나열
         let books = Bible.books(in: category)
         if books.count > 1 {
             DisclosureGroup {
-                ForEach(books) { book in bookRow(book) }
+                ForEach(books) { book in bookRow(book, edition: edition) }
             } label: {
                 Text(category.title)
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(.secondary)
             }
         } else {
-            ForEach(books) { book in bookRow(book) }
+            ForEach(books) { book in bookRow(book, edition: edition) }
         }
     }
 
-    private func bookRow(_ book: BibleBook) -> some View {
-        HStack {
+    private func bookRow(_ book: BibleBook, edition: Edition) -> some View {
+        let displayName = store.bookShortName(edition: edition, book: book)
+        let fullName = store.bookName(edition: edition, book: book)
+        let available = store.hasText(edition: edition, book: book)
+
+        return HStack {
             VStack(alignment: .leading, spacing: 2) {
-                Text(book.shortName)
-                if book.name != book.shortName {
-                    Text(book.name)
+                Text(displayName)
+                if fullName != displayName {
+                    Text(fullName)
                         .font(.caption2)
                         .foregroundStyle(.tertiary)
                         .lineLimit(1)
                 }
             }
             Spacer()
-            if store.hasText(book) {
+            if available {
                 Text(book.id == "ps" ? "\(book.chapterCount)편" : "\(book.chapterCount)장")
                     .font(.caption)
                     .foregroundStyle(.secondary)
@@ -69,8 +114,8 @@ struct LibraryView: View {
                     .foregroundStyle(.tertiary)
             }
         }
-        .opacity(store.hasText(book) ? 1 : 0.45)
+        .opacity(available ? 1 : 0.45)
         .tag(book.id)
-        .accessibilityLabel(store.hasText(book) ? book.name : "\(book.name), 본문 준비 중")
+        .accessibilityLabel(available ? fullName : "\(fullName), 본문 준비 중")
     }
 }

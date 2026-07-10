@@ -2,13 +2,14 @@
 //  SearchView.swift
 //  CatholicBible
 //
-//  수록된 모든 책에서 구절 검색. 결과를 누르면 해당 장·절로 이동한다.
+//  현재 판본에서 구절 검색. 결과를 누르면 해당 장·절로 이동한다.
 //
 
 import SwiftUI
 
 struct SearchView: View {
     @Environment(BibleStore.self) private var store
+    @Environment(ReadingState.self) private var readingState
     @Environment(ReaderNavigation.self) private var navigation
     @Environment(\.dismiss) private var dismiss
 
@@ -19,6 +20,8 @@ struct SearchView: View {
     @State private var searchTask: Task<Void, Never>?
 
     var body: some View {
+        let edition = readingState.selectedEdition
+
         NavigationStack {
             Group {
                 if isSearching {
@@ -29,8 +32,8 @@ struct SearchView: View {
                         hasSearched ? "결과 없음" : "구절 검색",
                         systemImage: "magnifyingglass",
                         description: Text(hasSearched
-                                          ? "‘\(query)’이(가) 들어간 구절을 찾지 못했습니다."
-                                          : "두 글자 이상 입력하면 수록된 모든 책에서 찾습니다.")
+                                          ? "‘\(query)’이(가) 들어간 구절을 「\(edition.shortName)」에서 찾지 못했습니다."
+                                          : "두 글자 이상 입력하면 「\(edition.shortName)」의 수록 본문 전체에서 찾습니다.")
                     )
                 } else {
                     List(results) { hit in
@@ -53,12 +56,12 @@ struct SearchView: View {
                     .listStyle(.plain)
                 }
             }
-            .navigationTitle("검색")
+            .navigationTitle("검색 — \(edition.shortName)")
             .navigationBarTitleDisplayMode(.inline)
             .searchable(text: $query, placement: .navigationBarDrawer(displayMode: .always),
                         prompt: "말씀 검색 (예: 사랑, 빛)")
-            .onSubmit(of: .search) { runSearch() }
-            .onChange(of: query) { runSearch() }
+            .onSubmit(of: .search) { runSearch(edition: edition) }
+            .onChange(of: query) { runSearch(edition: edition) }
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("닫기") { dismiss() }
@@ -72,7 +75,7 @@ struct SearchView: View {
         return "\(book.abbrev) \(hit.chapter),\(hit.verse)"
     }
 
-    private func runSearch() {
+    private func runSearch(edition: Edition) {
         searchTask?.cancel()
         let text = query.trimmingCharacters(in: .whitespacesAndNewlines)
         guard text.count >= 2 else {
@@ -86,7 +89,7 @@ struct SearchView: View {
             try? await Task.sleep(for: .milliseconds(300))
             guard !Task.isCancelled else { return }
             isSearching = true
-            let hits = await store.search(text)
+            let hits = await store.search(text, edition: edition)
             guard !Task.isCancelled else { return }
             results = hits
             hasSearched = true

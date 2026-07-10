@@ -10,6 +10,7 @@ import SwiftUI
 import UIKit
 
 struct ReaderView: View {
+    let edition: Edition
     let book: BibleBook
 
     @Environment(BibleStore.self) private var store
@@ -30,7 +31,8 @@ struct ReaderView: View {
             if chapter > 0 {
                 TabView(selection: $chapter) {
                     ForEach(1...book.chapterCount, id: \.self) { number in
-                        ChapterPageView(book: book,
+                        ChapterPageView(edition: edition,
+                                        book: book,
                                         chapter: number,
                                         highlightVerse: number == chapter ? $highlightVerse : .constant(nil))
                             .tag(number)
@@ -41,7 +43,7 @@ struct ReaderView: View {
             }
         }
         .safeAreaInset(edge: .bottom) { chapterSlider }
-        .navigationTitle("\(book.shortName) \(book.chapterLabel(max(chapter, 1)))")
+        .navigationTitle("\(edition.shortName) · \(store.bookShortName(edition: edition, book: book)) \(book.chapterLabel(max(chapter, 1)))")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar { readerToolbar }
         .preferredColorScheme(settings.theme.colorScheme)
@@ -49,7 +51,7 @@ struct ReaderView: View {
         .onChange(of: navigation.pendingChapter) { applyStartPosition() }
         .onChange(of: chapter) { _, newValue in
             guard newValue > 0 else { return }
-            readingState.savePosition(book: book, chapter: newValue)
+            readingState.savePosition(edition: edition, book: book, chapter: newValue)
         }
         .sheet(isPresented: $showChapterPicker) {
             ChapterPickerView(book: book, current: max(chapter, 1)) { picked in
@@ -66,7 +68,7 @@ struct ReaderView: View {
             navigation.pendingChapter = nil
             navigation.pendingVerse = nil
         } else if chapter == 0 {
-            chapter = readingState.lastChapter(for: book)
+            chapter = readingState.lastChapter(edition: edition, book: book)
         }
     }
 
@@ -78,10 +80,10 @@ struct ReaderView: View {
             Button("장 선택", systemImage: "list.number") { showChapterPicker = true }
 
             Button {
-                readingState.toggleBookmark(bookID: book.id, chapter: max(chapter, 1))
+                readingState.toggleBookmark(editionID: edition.id, bookID: book.id, chapter: max(chapter, 1))
             } label: {
                 Label("책갈피",
-                      systemImage: readingState.isBookmarked(bookID: book.id, chapter: max(chapter, 1))
+                      systemImage: readingState.isBookmarked(editionID: edition.id, bookID: book.id, chapter: max(chapter, 1))
                           ? "bookmark.fill" : "bookmark")
             }
 
@@ -126,6 +128,7 @@ struct ReaderView: View {
 // MARK: - 한 장(챕터) 페이지
 
 struct ChapterPageView: View {
+    let edition: Edition
     let book: BibleBook
     let chapter: Int
     @Binding var highlightVerse: Int?
@@ -138,14 +141,14 @@ struct ChapterPageView: View {
     @State private var scrolledVerse: Int?
 
     var body: some View {
-        let verses = store.verses(book: book, chapter: chapter)
+        let verses = store.verses(edition: edition, book: book, chapter: chapter)
 
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
                 header
 
                 if verses.isEmpty {
-                    MissingTextView(book: book)
+                    MissingTextView(edition: edition, book: book)
                         .padding(.top, 48)
                 } else {
                     LazyVStack(alignment: .leading, spacing: settings.lineSpacing * 0.9) {
@@ -189,7 +192,7 @@ struct ChapterPageView: View {
 
     private var header: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text(book.name)
+            Text(store.bookName(edition: edition, book: book))
                 .font(settings.fontChoice.font(size: settings.fontSize * 0.8, relativeTo: .subheadline))
                 .foregroundStyle(settings.theme.secondary)
                 .kerning(1)
@@ -202,14 +205,14 @@ struct ChapterPageView: View {
         }
         .padding(.top, 36)
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(book.name) \(book.chapterLabel(chapter))")
+        .accessibilityLabel("\(store.bookName(edition: edition, book: book)) \(book.chapterLabel(chapter))")
     }
 
     // MARK: 절
 
     private func verseView(_ verse: Verse) -> some View {
         let highlighted = highlightVerse == verse.number
-        let bookmarked = readingState.isBookmarked(bookID: book.id, chapter: chapter, verse: verse.number)
+        let bookmarked = readingState.isBookmarked(editionID: edition.id, bookID: book.id, chapter: chapter, verse: verse.number)
 
         return verseText(verse)
             .lineSpacing(settings.lineSpacing)
@@ -232,7 +235,7 @@ struct ChapterPageView: View {
             .contextMenu {
                 Button(bookmarked ? "절 책갈피 지우기" : "이 절 책갈피",
                        systemImage: bookmarked ? "bookmark.slash" : "bookmark") {
-                    readingState.toggleBookmark(bookID: book.id, chapter: chapter, verse: verse.number)
+                    readingState.toggleBookmark(editionID: edition.id, bookID: book.id, chapter: chapter, verse: verse.number)
                 }
                 Button("복사", systemImage: "doc.on.doc") {
                     UIPasteboard.general.string = "\(verse.text) (\(book.abbrev) \(chapter),\(verse.number))"
@@ -257,7 +260,7 @@ struct ChapterPageView: View {
     // MARK: 저작권 꼬리글
 
     private var copyrightFooter: some View {
-        Text("「성경」 ⓒ 한국천주교주교회의")
+        Text(edition.copyright)
             .font(.caption2)
             .foregroundStyle(settings.theme.secondary.opacity(0.8))
             .frame(maxWidth: .infinity, alignment: .center)
@@ -268,6 +271,7 @@ struct ChapterPageView: View {
 // MARK: - 본문 미수집 안내
 
 struct MissingTextView: View {
+    let edition: Edition
     let book: BibleBook
     @Environment(ReaderSettings.self) private var settings
 
@@ -276,9 +280,9 @@ struct MissingTextView: View {
             Label("본문 준비 중", systemImage: "tray")
                 .font(.headline)
                 .foregroundStyle(settings.theme.text)
-            Text("\(book.name)의 본문이 아직 이 앱에 담기지 않았습니다.")
+            Text("\(edition.name)의 \(book.name) 본문이 아직 이 앱에 담기지 않았습니다.")
                 .foregroundStyle(settings.theme.text)
-            Text("개발용 안내: 저장소의 scripts/fetch_cbck_bible.py 를 실행해 bible.cbck.or.kr에서 본문을 내려받은 뒤 다시 빌드하면 이 책을 읽을 수 있습니다. 「성경」 본문은 한국천주교주교회의에 저작권이 있으므로 배포 전에 이용 허가가 필요합니다.")
+            Text("개발용 안내: 저장소의 scripts/fetch_cbck_bible.py --edition \(edition.id) 를 실행해 bible.cbck.or.kr에서 본문을 내려받은 뒤 다시 빌드하면 이 책을 읽을 수 있습니다. 본문 저작권은 각 판본의 저작권자에게 있으므로 배포 전에 이용 허가가 필요합니다.")
                 .font(.footnote)
                 .foregroundStyle(settings.theme.secondary)
         }

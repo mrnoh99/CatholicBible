@@ -1,20 +1,37 @@
 #!/usr/bin/env python3
-"""bible.cbck.or.kr(한국 천주교 주교회의 「성경」)에서 성경 본문을 내려받아
-CatholicBible 앱의 BibleText.json을 생성/갱신한다.
+"""bible.cbck.or.kr(한국천주교주교회의 성경 사이트)의 8가지 책을 내려받아
+CatholicBible 앱의 판본별 본문 파일(BibleText_<판본id>.json)을 생성/갱신한다.
 
-⚠️ 저작권: 「성경」 본문의 저작권은 한국천주교주교회의·한국천주교중앙협의회에
-있다. 내려받은 본문을 앱에 담아 배포하려면 저작권자의 허가가 필요하다.
+⚠️ 저작권: 각 판본 본문의 저작권은 해당 저작권자(한국천주교주교회의,
+대한성서공회, 분도출판사, USCCB/CCD, Libreria Editrice Vaticana 등)에 있다.
+내려받은 본문을 앱에 담아 배포하려면 저작권자의 허가가 필요하다.
 이 스크립트는 개인적 이용과 연구 목적을 전제로 한다.
 
+판본(--edition):
+    knb       성경 (새 번역)          /Knb            73권   [기본값]
+    knbnotes  주석 성경               /Knbnotes/Bible 73권
+    ncb       공동번역 성서           /Ncb            73권
+    b200      200주년 신약성서        /200            신약 27권
+    nab       NAB (영어)             /Nab            73권
+    pscms     최민순 역 시편          /Pscms          시편 150편
+    vulgata   Nova Vulgata (라틴어)   /Vulgata        73권
+    pslitur   전례 시편               /Pslitur        시편 150편
+    all       위 8가지 전부
+
 사용법:
-    python3 scripts/fetch_cbck_bible.py                # 전체 73권
-    python3 scripts/fetch_cbck_bible.py --books gn ps  # 일부 책만
-    python3 scripts/fetch_cbck_bible.py --delay 1.0    # 요청 간격(초)
+    python3 scripts/fetch_cbck_bible.py                       # knb 전체
+    python3 scripts/fetch_cbck_bible.py --edition ncb
+    python3 scripts/fetch_cbck_bible.py --edition all
+    python3 scripts/fetch_cbck_bible.py --edition knb --books gn ps
+    python3 scripts/fetch_cbck_bible.py --delay 1.0
 
 동작 방식:
-  1. 목차 페이지에서 책 링크를 찾는다(링크 텍스트를 한국어 책 이름과 대조).
-  2. 각 책의 1장~마지막 장 페이지를 내려받아 절 번호+본문을 추출한다.
-  3. 결과를 CatholicBible/Resources/BibleText.json에 병합 저장한다
+  1. 판본 목차 페이지에서 책 링크(/<판본경로>/<책코드>)를 찾아 표시 이름을
+     수집한다(공동번역 "출애굽기", NAB "Genesis" 같은 판본 고유 이름).
+  2. 각 책의 1장~마지막 장 페이지(/<판본경로>/<책코드>/<장>)를 내려받아
+     절 번호+본문을 추출한다. 링크를 못 찾은 책은 책 id로 URL을 직접 만들어
+     시도한다(id의 첫 글자를 대문자로: gn→Gn, 1sm→1Sm).
+  3. 결과를 CatholicBible/Resources/BibleText_<판본id>.json에 병합 저장한다
      (이미 받은 책은 --force 없이는 건너뛰므로 중단 후 재실행이 안전하다).
 
 사이트 개편으로 추출이 실패하면 --dump-html 로 원본 HTML을 저장해
@@ -36,7 +53,7 @@ from pathlib import Path
 
 BASE_URL = "https://bible.cbck.or.kr"
 REPO_ROOT = Path(__file__).resolve().parent.parent
-OUT_PATH = REPO_ROOT / "CatholicBible" / "Resources" / "BibleText.json"
+RESOURCES_DIR = REPO_ROOT / "CatholicBible" / "Resources"
 USER_AGENT = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) CatholicBibleFetcher/1.0"
 
 # (id, 정식 이름, 장수) — CatholicBible/Bible.swift 와 반드시 일치해야 한다.
@@ -83,25 +100,37 @@ BOOKS: list[tuple[str, str, int]] = [
     ("rv", "요한 묵시록", 22),
 ]
 BOOKS_BY_ID = {b[0]: b for b in BOOKS}
+NT_IDS = {"mt", "mk", "lk", "jn", "acts", "rom", "1cor", "2cor", "gal", "eph",
+          "phil", "col", "1thes", "2thes", "1tm", "2tm", "ti", "phlm", "heb",
+          "jas", "1pt", "2pt", "1jn", "2jn", "3jn", "jude", "rv"}
 
-# 목차 링크 텍스트가 정식 이름과 조금 다를 때를 위한 보조 표기
-NAME_ALIASES: dict[str, list[str]] = {
-    "1sm": ["사무엘 상", "사무엘상"], "2sm": ["사무엘 하", "사무엘하"],
-    "1kgs": ["열왕기상"], "2kgs": ["열왕기하"],
-    "1chr": ["역대기상"], "2chr": ["역대기하"],
-    "1mc": ["마카베오 상", "마카베오상"], "2mc": ["마카베오 하", "마카베오하"],
-    "rom": ["로마서"], "1cor": ["코린토1서", "코린토 1서"],
-    "2cor": ["코린토2서", "코린토 2서"], "gal": ["갈라티아서"],
-    "eph": ["에페소서"], "phil": ["필리피서"], "col": ["콜로새서"],
-    "1thes": ["테살로니카1서", "테살로니카 1서"],
-    "2thes": ["테살로니카2서", "테살로니카 2서"],
-    "1tm": ["티모테오1서", "티모테오 1서"], "2tm": ["티모테오2서", "티모테오 2서"],
-    "ti": ["티토서"], "phlm": ["필레몬서"], "heb": ["히브리서"],
-    "jas": ["야고보서"], "1pt": ["베드로1서", "베드로 1서"],
-    "2pt": ["베드로2서", "베드로 2서"], "1jn": ["요한1서", "요한 1서"],
-    "2jn": ["요한2서", "요한 2서"], "3jn": ["요한3서", "요한 3서"],
-    "jude": ["유다서"], "rv": ["묵시록"],
+# 판본 정의: id → (URL 경로, 이름, 범위) — CatholicBible/Edition.swift 와 일치
+EDITIONS: dict[str, tuple[str, str, str]] = {
+    "knb":      ("Knb",            "성경 (한국 천주교 주교회의)", "full"),
+    "knbnotes": ("Knbnotes/Bible", "주석 성경",                  "full"),
+    "ncb":      ("Ncb",            "공동번역 성서",               "full"),
+    "b200":     ("200",            "200주년 신약성서",            "nt"),
+    "nab":      ("Nab",            "New American Bible",         "full"),
+    "pscms":    ("Pscms",          "최민순 역 시편",              "psalter"),
+    "vulgata":  ("Vulgata",        "Nova Vulgata",               "full"),
+    "pslitur":  ("Pslitur",        "전례 시편",                   "psalter"),
 }
+
+
+def scope_book_ids(scope: str) -> list[str]:
+    if scope == "nt":
+        return [b[0] for b in BOOKS if b[0] in NT_IDS]
+    if scope == "psalter":
+        return ["ps"]
+    return [b[0] for b in BOOKS]
+
+
+def url_code(book_id: str) -> str:
+    """책 id → cbck URL 코드 (gn→Gn, 1sm→1Sm, eccl→Eccl)."""
+    for i, ch in enumerate(book_id):
+        if ch.isalpha():
+            return book_id[:i] + ch.upper() + book_id[i + 1:]
+    return book_id
 
 
 def fetch(url: str, *, retries: int = 3, delay: float = 2.0) -> str:
@@ -142,53 +171,39 @@ class LinkCollector(HTMLParser):
             self._href = None
 
 
-def normalize_name(text: str) -> str:
-    return re.sub(r"\s+", "", text)
+def discover_books(edition_path: str) -> dict[str, tuple[str, str]]:
+    """판본 목차 페이지에서 {책 id: (첫 장 URL, 표시 이름)}을 만든다.
 
+    링크 경로 /<판본경로>/<책코드>[/<장>] 의 책코드를 소문자로 바꿔
+    우리 책 id와 대조한다.
+    """
+    index_url = f"{BASE_URL}/{edition_path}"
+    found: dict[str, tuple[str, str]] = {}
+    try:
+        html = fetch(index_url)
+    except RuntimeError as err:
+        print(f"  목차 페이지 실패: {err}", file=sys.stderr)
+        return found
 
-def discover_book_urls(index_urls: list[str], delay: float) -> dict[str, str]:
-    """목차 페이지들에서 책 이름과 일치하는 링크를 찾아 {book_id: 절대 URL}을 만든다."""
-    found: dict[str, str] = {}
-    wanted: dict[str, str] = {}
-    for book_id, name, _ in BOOKS:
-        wanted[normalize_name(name)] = book_id
-        for alias in NAME_ALIASES.get(book_id, []):
-            wanted[normalize_name(alias)] = book_id
-
-    for index_url in index_urls:
-        try:
-            html = fetch(index_url)
-        except RuntimeError as err:
-            print(f"  목차 페이지 실패: {err}", file=sys.stderr)
+    parser = LinkCollector()
+    parser.feed(html)
+    prefix = "/" + edition_path.strip("/") + "/"
+    for href, text in parser.links:
+        path = urllib.parse.urlsplit(urllib.parse.urljoin(index_url, href)).path
+        if not path.startswith(prefix):
             continue
-        parser = LinkCollector()
-        parser.feed(html)
-        for href, text in parser.links:
-            book_id = wanted.get(normalize_name(text))
-            if book_id and book_id not in found and href:
-                found[book_id] = urllib.parse.urljoin(index_url, href)
-        if len(found) == len(BOOKS):
-            break
-        time.sleep(delay)
+        rest = path[len(prefix):].strip("/").split("/")
+        if not rest or not rest[0]:
+            continue
+        book_id = rest[0].lower()
+        if book_id in BOOKS_BY_ID and book_id not in found:
+            full_url = urllib.parse.urljoin(index_url, href)
+            found[book_id] = (full_url, text)
     return found
 
 
-def chapter_url(book_url: str, chapter: int) -> str:
-    """책 첫 페이지 URL에서 장 번호만 바꾼 URL을 만든다.
-
-    cbck 사이트는 /경로/책/장 형태를 쓴다. 책 URL이 이미 장 번호로 끝나면
-    그 자리를 치환하고, 아니면 뒤에 장 번호를 붙인다.
-    """
-    parsed = urllib.parse.urlsplit(book_url)
-    path = parsed.path.rstrip("/")
-    parts = path.split("/")
-    if parts and parts[-1].isdigit():
-        parts[-1] = str(chapter)
-    else:
-        parts.append(str(chapter))
-    return urllib.parse.urlunsplit(
-        (parsed.scheme, parsed.netloc, "/".join(parts), parsed.query, "")
-    )
+def chapter_url(edition_path: str, book_id: str, chapter: int) -> str:
+    return f"{BASE_URL}/{edition_path}/{url_code(book_id)}/{chapter}"
 
 
 # 절 추출 -----------------------------------------------------------------
@@ -250,94 +265,134 @@ def extract_verses(html: str) -> dict[str, str]:
     return verses
 
 
-# 메인 --------------------------------------------------------------------
+# 저장 --------------------------------------------------------------------
 
-def load_output() -> dict:
-    if OUT_PATH.exists():
-        return json.loads(OUT_PATH.read_text(encoding="utf-8"))
+def output_path(edition_id: str) -> Path:
+    return RESOURCES_DIR / f"BibleText_{edition_id}.json"
+
+
+def load_output(edition_id: str) -> dict:
+    path = output_path(edition_id)
+    if path.exists():
+        return json.loads(path.read_text(encoding="utf-8"))
+    _, name, _ = EDITIONS[edition_id]
     return {
-        "translation": "한국 천주교 주교회의 「성경」",
-        "source": BASE_URL,
+        "translation": name,
+        "source": f"{BASE_URL}/{EDITIONS[edition_id][0]}",
+        "bookNames": {},
         "books": {},
     }
 
 
-def save_output(data: dict) -> None:
-    OUT_PATH.parent.mkdir(parents=True, exist_ok=True)
-    OUT_PATH.write_text(
+def save_output(edition_id: str, data: dict) -> None:
+    path = output_path(edition_id)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
         json.dumps(data, ensure_ascii=False, separators=(",", ":"), sort_keys=True),
         encoding="utf-8",
     )
 
 
-def main() -> None:
-    ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("--books", nargs="*", help="받을 책 id 목록(기본: 전체 73권)")
-    ap.add_argument("--delay", type=float, default=0.7, help="요청 간격(초), 기본 0.7")
-    ap.add_argument("--force", action="store_true", help="이미 받은 책도 다시 받기")
-    ap.add_argument("--index-url", action="append", default=None,
-                    help="목차 페이지 URL(여러 번 지정 가능). 기본: /Knb, /")
-    ap.add_argument("--dump-html", metavar="DIR",
-                    help="파서 디버깅용: 내려받은 장 HTML을 이 디렉터리에 저장")
-    args = ap.parse_args()
+# 메인 --------------------------------------------------------------------
 
-    target_ids = args.books or [b[0] for b in BOOKS]
-    unknown = [t for t in target_ids if t not in BOOKS_BY_ID]
-    if unknown:
-        sys.exit(f"알 수 없는 책 id: {unknown}\n사용 가능: {[b[0] for b in BOOKS]}")
+def fetch_edition(edition_id: str, args: argparse.Namespace) -> None:
+    edition_path, edition_name, scope = EDITIONS[edition_id]
+    target_ids = args.books or scope_book_ids(scope)
+    bad = [t for t in target_ids if t not in scope_book_ids(scope)]
+    if bad:
+        print(f"⚠️ {edition_name} 범위에 없는 책 id 무시: {bad}", file=sys.stderr)
+        target_ids = [t for t in target_ids if t not in bad]
 
-    index_urls = args.index_url or [f"{BASE_URL}/Knb", BASE_URL]
+    print(f"\n=== {edition_name} ({BASE_URL}/{edition_path}) ===")
     print("목차에서 책 링크를 찾는 중 …")
-    book_urls = discover_book_urls(index_urls, args.delay)
-    missing = [t for t in target_ids if t not in book_urls]
-    if missing:
-        print(f"⚠️ 목차에서 링크를 찾지 못한 책: {missing}", file=sys.stderr)
-        print("   --index-url 로 실제 목차 페이지를 지정해 보세요.", file=sys.stderr)
-    print(f"책 링크 {len(book_urls)}/{len(BOOKS)}개 발견")
+    discovered = discover_books(edition_path)
+    print(f"책 링크 {len(discovered)}개 발견 (못 찾은 책은 URL을 직접 만들어 시도)")
 
-    data = load_output()
+    data = load_output(edition_id)
+    data.setdefault("bookNames", {})
     dump_dir = Path(args.dump_html) if args.dump_html else None
     if dump_dir:
         dump_dir.mkdir(parents=True, exist_ok=True)
 
     for book_id in target_ids:
-        if book_id not in book_urls:
-            continue
         _, name, chapter_count = BOOKS_BY_ID[book_id]
+        if book_id in discovered and discovered[book_id][1]:
+            data["bookNames"][book_id] = discovered[book_id][1]
+            name = discovered[book_id][1]
+
         existing = data["books"].get(book_id, {})
         if not args.force and len(existing) >= chapter_count:
             print(f"= {name}: 이미 {len(existing)}장 보유, 건너뜀")
             continue
 
         chapters: dict[str, dict[str, str]] = dict(existing)
+        failures = 0
         for ch in range(1, chapter_count + 1):
             if not args.force and str(ch) in chapters:
                 continue
-            url = chapter_url(book_urls[book_id], ch)
+            url = chapter_url(edition_path, book_id, ch)
             try:
                 html = fetch(url)
             except RuntimeError as err:
                 print(f"  ✗ {name} {ch}장: {err}", file=sys.stderr)
+                failures += 1
+                if failures >= 3 and not chapters:
+                    print(f"  → {name}: 연속 실패, 이 책을 건너뜀", file=sys.stderr)
+                    break
                 continue
             if dump_dir:
-                (dump_dir / f"{book_id}_{ch}.html").write_text(html, encoding="utf-8")
-            verses = extract_verses(html)
+                (dump_dir / f"{edition_id}_{book_id}_{ch}.html").write_text(html, encoding="utf-8")
+            verses = {
+                num: text.strip()
+                for num, text in extract_verses(html).items()
+                if text and text.strip()
+            }
             if verses:
                 chapters[str(ch)] = verses
             else:
                 print(f"  ✗ {name} {ch}장: 절을 추출하지 못함 ({url})", file=sys.stderr)
             time.sleep(args.delay)
 
-        data["books"][book_id] = chapters
-        save_output(data)  # 책 단위로 저장해 중단해도 안전
+        if chapters:
+            data["books"][book_id] = chapters
+        save_output(edition_id, data)  # 책 단위로 저장해 중단해도 안전
         total = sum(len(v) for v in chapters.values())
         print(f"✓ {name}: {len(chapters)}/{chapter_count}장, {total}절")
 
     done = sum(
-        1 for b in BOOKS if len(data["books"].get(b[0], {})) >= b[2]
+        1 for bid in scope_book_ids(scope)
+        if len(data["books"].get(bid, {})) >= BOOKS_BY_ID[bid][2]
     )
-    print(f"\n저장 완료: {OUT_PATH}")
-    print(f"완료된 책: {done}/{len(BOOKS)}권 — 검증: python3 scripts/validate_bible_text.py")
+    print(f"저장: {output_path(edition_id)}")
+    print(f"완료된 책: {done}/{len(scope_book_ids(scope))}권")
+
+
+def main() -> None:
+    ap = argparse.ArgumentParser(
+        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument("--edition", nargs="*", default=["knb"],
+                    help="판본 id 목록 또는 all (기본: knb)")
+    ap.add_argument("--books", nargs="*", help="받을 책 id 목록(기본: 판본 범위 전체)")
+    ap.add_argument("--delay", type=float, default=0.7, help="요청 간격(초), 기본 0.7")
+    ap.add_argument("--force", action="store_true", help="이미 받은 책도 다시 받기")
+    ap.add_argument("--dump-html", metavar="DIR",
+                    help="파서 디버깅용: 내려받은 장 HTML을 이 디렉터리에 저장")
+    args = ap.parse_args()
+
+    edition_ids = list(EDITIONS) if "all" in args.edition else args.edition
+    unknown = [e for e in edition_ids if e not in EDITIONS]
+    if unknown:
+        sys.exit(f"알 수 없는 판본 id: {unknown}\n사용 가능: {list(EDITIONS)} 또는 all")
+
+    if args.books:
+        bad = [t for t in args.books if t not in BOOKS_BY_ID]
+        if bad:
+            sys.exit(f"알 수 없는 책 id: {bad}\n사용 가능: {[b[0] for b in BOOKS]}")
+
+    for edition_id in edition_ids:
+        fetch_edition(edition_id, args)
+
+    print("\n검증: python3 scripts/validate_bible_text.py")
 
 
 if __name__ == "__main__":
