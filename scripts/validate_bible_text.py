@@ -98,6 +98,13 @@ def validate_edition(edition_id: str) -> tuple[list[str], list[str]]:
 
 
 def main() -> None:
+    # Windows 콘솔에서 한글·기호 출력이 죽지 않도록 UTF-8로 재설정
+    for stream in (sys.stdout, sys.stderr):
+        try:
+            stream.reconfigure(encoding="utf-8", errors="replace")  # type: ignore[attr-defined]
+        except (AttributeError, ValueError, OSError):
+            pass
+
     requested = sys.argv[1:]
     unknown = [e for e in requested if e not in EDITIONS]
     if unknown:

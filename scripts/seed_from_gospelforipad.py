@@ -18,6 +18,12 @@ BOOK_KEY_MAP = {"matthew": "mt", "mark": "mk", "luke": "lk", "john": "jn"}
 
 
 def main() -> None:
+    for stream in (sys.stdout, sys.stderr):
+        try:
+            stream.reconfigure(encoding="utf-8", errors="replace")  # type: ignore[attr-defined]
+        except (AttributeError, ValueError, OSError):
+            pass
+
     src = Path(sys.argv[1]) if len(sys.argv) > 1 else (
         REPO_ROOT.parent / "GospelForIpad" / "GospelForIpad" / "GospelText.json"
     )

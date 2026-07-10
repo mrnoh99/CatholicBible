@@ -310,6 +310,7 @@ def fetch_edition(edition_id: str, args: argparse.Namespace) -> None:
 
     data = load_output(edition_id)
     data.setdefault("bookNames", {})
+    save_output(edition_id, data)  # 골격을 먼저 만들어 둔다(중간에 죽어도 파일은 남도록)
     dump_dir = Path(args.dump_html) if args.dump_html else None
     if dump_dir:
         dump_dir.mkdir(parents=True, exist_ok=True)
@@ -363,11 +364,37 @@ def fetch_edition(edition_id: str, args: argparse.Namespace) -> None:
         1 for bid in scope_book_ids(scope)
         if len(data["books"].get(bid, {})) >= BOOKS_BY_ID[bid][2]
     )
+    grand_total = sum(
+        len(v) for book in data["books"].values() for v in book.values()
+    )
     print(f"저장: {output_path(edition_id)}")
-    print(f"완료된 책: {done}/{len(scope_book_ids(scope))}권")
+    print(f"완료된 책: {done}/{len(scope_book_ids(scope))}권, 총 {grand_total}절")
+    if grand_total == 0:
+        print(
+            "  ⚠️ 받은 절이 0개입니다. 파일은 만들어졌지만 본문이 비어 있습니다.\n"
+            "     원인 진단:\n"
+            f"       1) 네트워크에서 사이트가 열리는지 확인: {BASE_URL}/{edition_path}\n"
+            "          (회사/학교 방화벽·프록시가 막을 수 있음)\n"
+            "       2) 사이트 구조가 바뀌었으면 HTML을 받아 파서를 조정:\n"
+            f"          python fetch_cbck_bible.py --edition {edition_id} --books gn --dump-html out\n"
+            "          → out\\ 폴더의 HTML을 열어 절이 어떤 태그에 있는지 확인",
+            file=sys.stderr,
+        )
+
+
+def _make_console_utf8() -> None:
+    """Windows 콘솔(cp949 등)에서 ✓·✗·⚠️ 같은 문자를 찍다 죽지 않도록
+    표준 출력/오류를 UTF-8로 재설정한다. 재설정이 불가능한 오래된 파이썬은
+    조용히 넘어간다."""
+    for stream in (sys.stdout, sys.stderr):
+        try:
+            stream.reconfigure(encoding="utf-8", errors="replace")  # type: ignore[attr-defined]
+        except (AttributeError, ValueError, OSError):
+            pass
 
 
 def main() -> None:
+    _make_console_utf8()
     ap = argparse.ArgumentParser(
         description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--edition", nargs="*", default=["knb"],
