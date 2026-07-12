@@ -63,8 +63,15 @@ def validate_edition(edition_id: str) -> tuple[list[str], list[str]]:
             continue
 
         nums = sorted(int(c) for c in chapters)
-        if nums != list(range(1, len(nums) + 1)):
-            errors.append(f"{name}: 장 번호가 1부터 연속이 아님 ({nums[:5]}…)")
+        # 장 누락(연속 아님)은 스크래핑 실패로 흔하며, 앱이 '본문 준비 중'으로
+        # 처리하므로 경고로만 다룬다. 재수집: fetch_cbck_bible.py --books <id>
+        expected = set(range(1, chapter_count + 1))
+        gaps = sorted(expected - set(nums))
+        if gaps:
+            warnings.append(f"{name}: 빠진 장 {gaps[:12]}")
+        over = [n for n in nums if n > chapter_count]
+        if over:
+            errors.append(f"{name}: 목차보다 큰 장 번호 {over[:5]}")
         if len(chapters) < chapter_count:
             warnings.append(f"{name}: {len(chapters)}/{chapter_count}장만 있음")
         elif len(chapters) > chapter_count:

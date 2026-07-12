@@ -60,10 +60,38 @@ ebook처럼 읽는 iPad용 SwiftUI 앱입니다. 서재에서 책(판본)을 고
 - 책 id·이름·장수 목차는 `CatholicBible/Bible.swift`(앱)와
   `scripts/fetch_cbck_bible.py`(수집)에 동일하게 정의되어 있습니다.
   판본 목록은 `CatholicBible/Edition.swift`와 스크립트의 `EDITIONS`가 정본.
-- 현재 저장소에는 시드 데이터로 **성경(knb) 판본의 4복음서(3,775절)**가
-  들어 있습니다(자매 저장소 GospelForIpad의 주교회의 「성경」 본문에서 변환,
-  `scripts/seed_from_gospelforipad.py`).
-- 본문이 없는 판본/책은 서재·목차에서 흐리게 표시되고, 리더에 안내가 나옵니다.
+- 현재 저장소에는 **8개 판본 전체 본문**이 들어 있습니다(사이트에서 수집 후
+  `scripts/normalize_bible_text.py`로 정리). 수록 절 수:
+
+  | 판본 | 절 수 | 비고 |
+  |------|------:|------|
+  | knb 성경 | 35,771 | 아가 미수록 |
+  | knbnotes 주석 성경 | 38,301 | 아가·1티모 미수록, 토빗 7·8장·2티모 1장 누락 |
+  | ncb 공동번역 | 34,712 | 아가 미수록 |
+  | b200 200주년 신약 | 7,765 | 일부 장 1절이 소제목으로 표시 |
+  | nab NAB(영어) | 36,005 | 아가 미수록, 역대상 20–23장 누락 |
+  | pscms 최민순 시편 | 2,668 | (칠십인역 번호) |
+  | vulgata Nova Vulgata(라틴어) | 36,211 | 아가 미수록 |
+  | pslitur 전례 시편 | 2,532 | |
+
+- 본문이 없는 판본/책/장은 서재·목차에서 흐리게 표시되고, 리더에 안내가 나옵니다.
+
+### 데이터 정리 (normalize)
+
+사이트 스크래핑 본문에는 각주 번호(`4)`)·편 목록 네비게이션·러닝 헤더가
+절에 섞여 들어옵니다. `scripts/normalize_bible_text.py`가 이를 교정합니다
+(각주 마커 제거, 헤더 절 제거 후 절 번호 재부여, 잘못된 bookNames 제거,
+공백 정리). 원본은 `scripts/_raw/`(git 제외)에 두고 실행합니다:
+
+```bash
+python3 scripts/normalize_bible_text.py      # _raw → Resources
+python3 scripts/validate_bible_text.py       # 검증
+```
+
+> 정리 후에도 스크래핑 한계로 일부 장에서 절 수가 실제와 ±1 다르거나(각주로
+> 인한 미세 분할) 위 표의 누락이 남습니다. 해당 책·장만
+> `fetch_cbck_bible.py --edition <id> --books <책id> --force` 로 다시 받은 뒤
+> normalize를 재실행하면 개선됩니다.
 
 ### 사이트에서 본문 내려받기
 

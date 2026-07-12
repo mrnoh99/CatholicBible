@@ -5,3 +5,5 @@ build/
 DerivedData/
 __pycache__/
 *.pyc
+scripts/_raw/
+scripts/__pycache__/

@@ -64,12 +64,18 @@ bible.cbck.or.kr가 제공하는 8가지 책이 각각 하나의 판본 파일�
      본문 텍스트의 "숫자+본문" 나열 파싱. 사이트 마크업이 바뀌면
      `--dump-html`로 HTML을 받아 `extract_verses()`를 조정한다.
    - 예의상 기본 0.7초 간격으로 요청한다(`--delay`).
-2. `scripts/validate_bible_text.py` — 책/장/절 연속성, 빈 절, HTML 잔재,
-   장수 초과를 검사한다. 오류면 종료 코드 1.
-3. `scripts/seed_from_gospelforipad.py` — (일회성) 자매 저장소
-   GospelForIpad의 `GospelText.json`(주교회의 「성경」 4복음서)을
-   `BibleText_knb.json`으로 변환해 시드를 만들었다. 전체 수집 후에도
-   다시 실행하면 4복음서만 갱신된다.
+2. `scripts/normalize_bible_text.py` — 스크래핑 아티팩트를 교정한다:
+   각주 참조 번호(`4)`, 앞이 `(`가 아닌 것) 제거, 절로 잘못 들어간 러닝
+   헤더·편 목록 네비게이션(`편`, `N장`, `시편 제N편`) 제거 후 남은 절을
+   1번부터 재부여, 꼬리 breadcrumb(판본 이름 반복) 제거, 숫자뿐인
+   bookNames 제거, 공백 정리. 원본은 `scripts/_raw/`(git 제외)에서 읽어
+   `CatholicBible/Resources/`에 쓴다.
+3. `scripts/validate_bible_text.py` — 책/장/절, 빈 절, HTML 잔재, 장수
+   초과를 검사한다. 장 누락은 경고(앱이 '본문 준비 중'으로 처리), 목차보다
+   큰 장 번호 등은 오류(종료 코드 1).
+4. `scripts/seed_from_gospelforipad.py` — (초기 일회성) 자매 저장소
+   GospelForIpad의 4복음서로 knb 시드를 만들 때 썼다. 현재는 사이트에서
+   수집한 전체 본문으로 대체되었다.
 
 ## 저작권
 
