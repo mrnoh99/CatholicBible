@@ -7,10 +7,30 @@
 //
 
 import SwiftUI
+import UIKit
 import PhotosUI
 import AVKit
 import PencilKit
 import UniformTypeIdentifiers
+
+/// 전체 화면으로 띄우는 대상(하나의 fullScreenCover로 통합)
+private enum NoteCover: Identifiable {
+    case cameraPhoto
+    case cameraVideo
+    case drawNew
+    case drawEdit(Attachment)
+    case zoom(ZoomPhoto)
+
+    var id: String {
+        switch self {
+        case .cameraPhoto: return "camPhoto"
+        case .cameraVideo: return "camVideo"
+        case .drawNew:     return "drawNew"
+        case .drawEdit(let a): return "edit-\(a.id)"
+        case .zoom(let z):     return "zoom-\(z.id)"
+        }
+    }
+}
 
 struct NoteEditorView: View {
     let verse: VerseRef
@@ -23,9 +43,8 @@ struct NoteEditorView: View {
     @State private var note: Note
     @State private var photoItems: [PhotosPickerItem] = []
     @State private var videoItem: PhotosPickerItem?
-    @State private var showCameraPhoto = false
-    @State private var showCameraVideo = false
-    @State private var showDrawing = false
+    @State private var cover: NoteCover?
+    @State private var drawingRefresh = 0
     @State private var recorder = AudioRecorder()
     @State private var showDeleteConfirm = false
 
@@ -73,9 +92,14 @@ struct NoteEditorView: View {
                 let images = note.attachments.filter { $0.kind == .photo || $0.kind == .drawing }
                 if !images.isEmpty {
                     Section("사진 · 손글씨") {
-                        ImageAttachmentGrid(attachments: images,
-                                            url: { annotations.url(for: $0) },
-                                            onDelete: removeAttachment)
+                        ImageAttachmentGrid(
+                            attachments: images,
+                            image: displayImage,
+                            onDelete: removeAttachment,
+                            onTapPhoto: { _, img in cover = .zoom(ZoomPhoto(image: img)) },
+                            onEditDrawing: { cover = .drawEdit($0) },
+                            refresh: drawingRefresh
+                        )
                     }
                 }
 
@@ -93,19 +117,19 @@ struct NoteEditorView: View {
                 // 추가 도구
                 Section("추가") {
                     recordButton
-                    Button { showDrawing = true } label: {
+                    Button { cover = .drawNew } label: {
                         Label("손글씨", systemImage: "pencil.tip.crop.circle")
                     }
                     PhotosPicker(selection: $photoItems, maxSelectionCount: 6, matching: .images) {
                         Label("사진 보관함", systemImage: "photo.on.rectangle")
                     }
-                    Button { showCameraPhoto = true } label: {
+                    Button { cover = .cameraPhoto } label: {
                         Label("사진 촬영", systemImage: "camera")
                     }
                     PhotosPicker(selection: $videoItem, matching: .videos) {
                         Label("비디오 보관함", systemImage: "film")
                     }
-                    Button { showCameraVideo = true } label: {
+                    Button { cover = .cameraVideo } label: {
                         Label("비디오 촬영", systemImage: "video.badge.plus")
                     }
                 }
@@ -137,19 +161,29 @@ struct NoteEditorView: View {
                 guard let item else { return }
                 Task { await importVideo(item); videoItem = nil }
             }
-            .fullScreenCover(isPresented: $showCameraPhoto) {
-                CameraPicker(mode: .photo) { url in add(kind: .photo, from: url) }
-                    .ignoresSafeArea()
-            }
-            .fullScreenCover(isPresented: $showCameraVideo) {
-                CameraPicker(mode: .video) { url in add(kind: .video, from: url) }
-                    .ignoresSafeArea()
-            }
-            .sheet(isPresented: $showDrawing) {
-                DrawingEditor { data in
-                    let att = annotations.addAttachment(kind: .drawing, data: data, ext: "png")
-                    note.attachments.append(att)
-                    save()
+            // 카메라·손글씨·사진 확대를 하나의 전체 화면 커버로 통합
+            .fullScreenCover(item: $cover) { which in
+                switch which {
+                case .cameraPhoto:
+                    CameraPicker(mode: .photo) { url in add(kind: .photo, from: url) }
+                        .ignoresSafeArea()
+                case .cameraVideo:
+                    CameraPicker(mode: .video) { url in add(kind: .video, from: url) }
+                        .ignoresSafeArea()
+                case .drawNew:
+                    DrawingEditor { data in
+                        let att = annotations.addAttachment(kind: .drawing, data: data, ext: "drawing")
+                        note.attachments.append(att)
+                        save()
+                    }
+                case .drawEdit(let att):
+                    DrawingEditor(existingData: annotations.data(for: att)) { data in
+                        annotations.overwrite(att, with: data)
+                        drawingRefresh += 1   // 갱신된 손글씨 다시 그리기
+                        save()
+                    }
+                case .zoom(let z):
+                    ZoomImageView(image: z.image)
                 }
             }
             .confirmationDialog("이 노트를 삭제할까요?", isPresented: $showDeleteConfirm, titleVisibility: .visible) {
@@ -206,6 +240,17 @@ struct NoteEditorView: View {
     private func removeAttachment(_ att: Attachment) {
         note = annotations.removingAttachment(att, from: note)
         save()
+    }
+
+    /// 첨부를 표시용 이미지로: 사진은 파일에서, 손글씨는 벡터에서 렌더링.
+    private func displayImage(_ att: Attachment) -> UIImage? {
+        switch att.kind {
+        case .drawing:
+            guard let data = annotations.data(for: att) else { return nil }
+            return drawingUIImage(from: data)
+        default:
+            return UIImage(contentsOfFile: annotations.url(for: att).path)
+        }
     }
 
     private func save() {
@@ -276,65 +321,115 @@ struct VideoAttachmentRow: View {
 
 struct ImageAttachmentGrid: View {
     let attachments: [Attachment]
-    let url: (Attachment) -> URL
+    /// 첨부를 표시용 이미지로 변환(사진은 파일, 손글씨는 렌더링)
+    let image: (Attachment) -> UIImage?
     let onDelete: (Attachment) -> Void
+    let onTapPhoto: (Attachment, UIImage) -> Void
+    let onEditDrawing: (Attachment) -> Void
+    /// 손글씨를 덮어써 갱신됐을 때 다시 그리도록 하는 값
+    var refresh: Int = 0
 
-    @State private var zoomed: Attachment?
-    private let columns = [GridItem(.adaptive(minimum: 96), spacing: 8)]
+    private let columns = [GridItem(.adaptive(minimum: 104), spacing: 10)]
 
     var body: some View {
-        LazyVGrid(columns: columns, spacing: 8) {
+        LazyVGrid(columns: columns, spacing: 10) {
             ForEach(attachments) { att in
-                if let img = UIImage(contentsOfFile: url(att).path) {
-                    Image(uiImage: img)
-                        .resizable()
-                        .scaledToFill()
-                        .frame(height: 96)
-                        .clipShape(RoundedRectangle(cornerRadius: 8))
-                        .overlay(alignment: .topLeading) {
+                let img = image(att)
+                ZStack(alignment: .topTrailing) {
+                    Group {
+                        if let img {
+                            Image(uiImage: img)
+                                .resizable()
+                                .scaledToFill()
+                        } else {
                             Image(systemName: att.kind.systemImage)
-                                .font(.caption2)
-                                .padding(4)
-                                .background(.ultraThinMaterial, in: Circle())
-                                .padding(3)
+                                .font(.title)
+                                .foregroundStyle(.secondary)
+                                .frame(maxWidth: .infinity, maxHeight: .infinity)
                         }
-                        .onTapGesture { zoomed = att }
-                        .contextMenu {
-                            Button("삭제", systemImage: "trash", role: .destructive) { onDelete(att) }
-                        }
+                    }
+                    .frame(height: 104)
+                    .frame(maxWidth: .infinity)
+                    .clipShape(RoundedRectangle(cornerRadius: 10))
+                    .overlay(alignment: .bottomLeading) {
+                        Label(att.kind.label, systemImage: att.kind.systemImage)
+                            .labelStyle(.iconOnly)
+                            .font(.caption2)
+                            .padding(4)
+                            .background(.ultraThinMaterial, in: Circle())
+                            .padding(4)
+                    }
+                    .contentShape(RoundedRectangle(cornerRadius: 10))
+                    .onTapGesture {
+                        if att.kind == .drawing { onEditDrawing(att) }
+                        else if let img { onTapPhoto(att, img) }
+                    }
+
+                    // 삭제 버튼 (노트 화면에서 바로 삭제)
+                    Button { onDelete(att) } label: {
+                        Image(systemName: "xmark.circle.fill")
+                            .font(.title3)
+                            .symbolRenderingMode(.palette)
+                            .foregroundStyle(.white, .black.opacity(0.55))
+                    }
+                    .padding(4)
+                    .accessibilityLabel("\(att.kind.label) 삭제")
                 }
             }
         }
-        .listRowInsets(EdgeInsets(top: 8, leading: 8, bottom: 8, trailing: 8))
-        .sheet(item: $zoomed) { att in
-            ZoomImageView(url: url(att))
-        }
+        .id(refresh)
+        .listRowInsets(EdgeInsets(top: 8, leading: 12, bottom: 8, trailing: 12))
     }
+}
+
+// 사진 확대 보기용 (창 크기에 맞춰 표시 + 핀치 확대)
+struct ZoomPhoto: Identifiable {
+    let id = UUID()
+    let image: UIImage
 }
 
 struct ZoomImageView: View {
-    let url: URL
+    let image: UIImage
     @Environment(\.dismiss) private var dismiss
+    @State private var scale: CGFloat = 1
+    @State private var lastScale: CGFloat = 1
+
     var body: some View {
         NavigationStack {
-            Group {
-                if let img = UIImage(contentsOfFile: url.path) {
-                    ScrollView([.horizontal, .vertical]) {
-                        Image(uiImage: img).resizable().scaledToFit()
+            GeometryReader { geo in
+                Image(uiImage: image)
+                    .resizable()
+                    .scaledToFit()                     // 열린 창 크기에 맞춤
+                    .frame(width: geo.size.width, height: geo.size.height)
+                    .scaleEffect(scale)
+                    .gesture(
+                        MagnificationGesture()
+                            .onChanged { v in scale = min(max(lastScale * v, 1), 5) }
+                            .onEnded { _ in lastScale = scale }
+                    )
+                    .onTapGesture(count: 2) {
+                        withAnimation { scale = scale > 1 ? 1 : 2.5; lastScale = scale }
                     }
-                } else {
-                    ContentUnavailableView("이미지를 열 수 없음", systemImage: "photo")
+            }
+            .background(Color.black.opacity(0.92).ignoresSafeArea())
+            .toolbarBackground(.hidden, for: .navigationBar)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("닫기") { dismiss() }.tint(.white)
                 }
             }
-            .toolbar { ToolbarItem(placement: .cancellationAction) { Button("닫기") { dismiss() } } }
         }
     }
 }
 
-// MARK: - 손글씨 편집기
+// MARK: - 손글씨 편집기 (새로 쓰거나 기존 손글씨 이어 쓰기)
 
 struct DrawingEditor: View {
+    /// 편집할 기존 손글씨(PKDrawing) 데이터. nil이면 새로 그린다.
+    var existingData: Data? = nil
+    /// 저장 시 PKDrawing(벡터) 데이터를 돌려준다.
     let onSave: (Data) -> Void
+
     @Environment(\.dismiss) private var dismiss
     @State private var canvas = PKCanvasView()
 
@@ -343,7 +438,7 @@ struct DrawingEditor: View {
             DrawingCanvas(canvasView: $canvas)
                 .background(Color.white)
                 .ignoresSafeArea(edges: .bottom)
-                .navigationTitle("손글씨")
+                .navigationTitle(existingData == nil ? "손글씨" : "손글씨 이어 쓰기")
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
                     ToolbarItem(placement: .cancellationAction) {
@@ -351,9 +446,14 @@ struct DrawingEditor: View {
                     }
                     ToolbarItem(placement: .confirmationAction) {
                         Button("저장") {
-                            if let data = canvas.exportPNG() { onSave(data) }
+                            onSave(canvas.drawing.dataRepresentation())
                             dismiss()
                         }.fontWeight(.semibold)
+                    }
+                }
+                .onAppear {
+                    if let existingData, let drawing = try? PKDrawing(data: existingData) {
+                        canvas.drawing = drawing
                     }
                 }
         }

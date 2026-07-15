@@ -191,19 +191,17 @@ struct DrawingCanvas: UIViewRepresentable {
     }
 }
 
-extension PKCanvasView {
-    /// 현재 손글씨를 흰 배경 PNG 데이터로 렌더링한다.
-    func exportPNG(scale: CGFloat = 3.0) -> Data? {
-        let bounds = drawing.bounds.isEmpty
-            ? CGRect(x: 0, y: 0, width: 600, height: 400)
-            : drawing.bounds.insetBy(dx: -16, dy: -16)
-        let image = drawing.image(from: bounds, scale: scale)
-        let renderer = UIGraphicsImageRenderer(size: image.size)
-        let composed = renderer.image { ctx in
-            UIColor.white.setFill()
-            ctx.fill(CGRect(origin: .zero, size: image.size))
-            image.draw(at: .zero)
-        }
-        return composed.pngData()
+/// PKDrawing(벡터) 데이터를 흰 배경 이미지로 렌더링한다(표시용).
+func drawingUIImage(from data: Data, scale: CGFloat = 2.0) -> UIImage? {
+    guard let drawing = try? PKDrawing(data: data) else { return nil }
+    let bounds = drawing.bounds.isEmpty
+        ? CGRect(x: 0, y: 0, width: 400, height: 300)
+        : drawing.bounds.insetBy(dx: -16, dy: -16)
+    let image = drawing.image(from: bounds, scale: scale)
+    let renderer = UIGraphicsImageRenderer(size: image.size)
+    return renderer.image { ctx in
+        UIColor.white.setFill()
+        ctx.fill(CGRect(origin: .zero, size: image.size))
+        image.draw(at: .zero)
     }
 }

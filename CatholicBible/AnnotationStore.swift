@@ -138,6 +138,16 @@ final class AnnotationStore {
         return Attachment(kind: kind, filename: filename)
     }
 
+    /// 기존 첨부 파일을 새 데이터로 덮어쓴다(손글씨 이어 그리기 등).
+    func overwrite(_ attachment: Attachment, with data: Data) {
+        try? data.write(to: mediaURL(attachment.filename), options: .atomic)
+    }
+
+    /// 첨부 파일의 원본 데이터를 읽는다.
+    func data(for attachment: Attachment) -> Data? {
+        try? Data(contentsOf: mediaURL(attachment.filename))
+    }
+
     /// 외부 URL(카메라/피커 결과)을 미디어 폴더로 복사하고 첨부를 만든다.
     func addAttachment(kind: AttachmentKind, copyingFrom source: URL) -> Attachment? {
         let ext = source.pathExtension.isEmpty ? defaultExt(for: kind) : source.pathExtension
