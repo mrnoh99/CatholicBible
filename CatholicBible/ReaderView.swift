@@ -32,25 +32,35 @@ struct ReaderView: View {
     @State private var noteTarget: NoteTarget?
 
     private var canDual: Bool { hSize == .regular }
-    private var showsDual: Bool { canDual && readingState.dualPaneEnabled }
+    /// 좁은 화면(iPhone)에서는 항상 한 페이지
+    private var layout: ReaderLayout { canDual ? readingState.readerLayout : .single }
 
     var body: some View {
         @Bindable var rs = readingState
 
         ZStack {
             settings.theme.background.ignoresSafeArea()
-            HStack(spacing: 0) {
+            switch layout {
+            case .single:
                 ReaderPane(role: .primary,
                            editionID: $rs.selectedEditionID,
                            bookID: primaryBookBinding,
                            onOpenNote: openNote)
-
-                if showsDual {
+            case .spread:
+                SpreadReader(editionID: $rs.selectedEditionID,
+                             bookID: primaryBookBinding,
+                             onOpenNote: openNote)
+            case .compare:
+                HStack(spacing: 0) {
+                    ReaderPane(role: .primary,
+                               editionID: $rs.selectedEditionID,
+                               bookID: primaryBookBinding,
+                               onOpenNote: openNote)
                     Divider()
                     ReaderPane(role: .secondary,
                                editionID: $rs.secondaryEditionID,
                                bookID: secondaryBookBinding,
-                               onClose: { readingState.dualPaneEnabled = false },
+                               onClose: { readingState.readerLayout = .single },
                                onOpenNote: openNote)
                 }
             }
@@ -90,12 +100,16 @@ struct ReaderView: View {
     private var readerToolbar: some ToolbarContent {
         ToolbarItemGroup(placement: .primaryAction) {
             if canDual {
-                Button {
-                    readingState.dualPaneEnabled.toggle()
+                Menu {
+                    Picker("페이지", selection: Binding(
+                        get: { readingState.readerLayout },
+                        set: { readingState.readerLayout = $0 })) {
+                        ForEach(ReaderLayout.allCases) { l in
+                            Label(l.label, systemImage: l.systemImage).tag(l)
+                        }
+                    }
                 } label: {
-                    Label("2단 보기",
-                          systemImage: readingState.dualPaneEnabled
-                              ? "rectangle.split.2x1.fill" : "rectangle.split.2x1")
+                    Label("페이지", systemImage: layout.systemImage)
                 }
             }
             Button("보기 설정", systemImage: "textformat.size") { showAppearance = true }
@@ -333,6 +347,272 @@ private struct PendingChapterModifier: ViewModifier {
         } else {
             content
         }
+    }
+}
+
+// MARK: - 책 펼침면 (같은 성경을 좌→우 두 페이지로)
+
+struct SpreadReader: View {
+    @Binding var editionID: String
+    @Binding var bookID: String
+    let onOpenNote: (VerseRef, String) -> Void
+
+    @Environment(BibleStore.self) private var store
+    @Environment(ReaderSettings.self) private var settings
+    @Environment(ReadingState.self) private var readingState
+    @Environment(ReaderNavigation.self) private var navigation
+
+    @State private var chapter = 0
+    @State private var spreadIndex = 0
+    @State private var wantLastSpread = false
+    @State private var highlight: Int?
+    @State private var contentSize: CGSize = .zero
+    @State private var showBookPicker = false
+    @State private var showChapterPicker = false
+
+    private var edition: Edition { Editions.edition(editionID) ?? Editions.all[0] }
+    private var book: BibleBook { Bible.book(bookID) ?? Bible.books[0] }
+    private var verses: [Verse] {
+        chapter > 0 ? store.verses(edition: edition, book: book, chapter: chapter) : []
+    }
+    private var pages: [[Verse]] { paginate(verses, size: contentSize) }
+    private var spreadCount: Int { max(1, Int(ceil(Double(pages.count) / 2.0))) }
+
+    var body: some View {
+        VStack(spacing: 0) {
+            header
+            spreadContent
+            bottomBar
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .onAppear { initChapterIfNeeded() }
+        .onChange(of: bookID) { _, _ in
+            chapter = readingState.lastChapter(edition: edition, book: book)
+            highlight = nil; spreadIndex = 0
+        }
+        .onChange(of: editionID) { _, _ in
+            chapter = min(max(chapter, 1), book.chapterCount); spreadIndex = 0
+        }
+        .onChange(of: chapter) { _, new in
+            guard new > 0 else { return }
+            readingState.savePosition(edition: edition, book: book, chapter: new)
+        }
+        .onChange(of: navigation.pendingChapter) { _, _ in applyPending() }
+        .onChange(of: pages.count) { _, _ in reconcileSpreadIndex() }
+        .sheet(isPresented: $showBookPicker) {
+            BookPickerView(edition: edition, current: bookID) { picked in
+                bookID = picked; showBookPicker = false
+            }
+        }
+        .sheet(isPresented: $showChapterPicker) {
+            ChapterPickerView(book: book, current: max(chapter, 1)) { picked in
+                chapter = picked; spreadIndex = 0; showChapterPicker = false
+            }
+        }
+    }
+
+    // MARK: 위치
+
+    private func initChapterIfNeeded() {
+        guard chapter == 0 else { return }
+        if let p = navigation.pendingChapter {
+            chapter = clampChapter(p); highlight = navigation.pendingVerse
+            navigation.pendingChapter = nil; navigation.pendingVerse = nil
+        } else {
+            chapter = readingState.lastChapter(edition: edition, book: book)
+        }
+    }
+
+    private func applyPending() {
+        if let p = navigation.pendingChapter {
+            chapter = clampChapter(p); highlight = navigation.pendingVerse
+            navigation.pendingChapter = nil; navigation.pendingVerse = nil
+            spreadIndex = 0
+        }
+    }
+
+    private func clampChapter(_ c: Int) -> Int { min(max(c, 1), book.chapterCount) }
+
+    /// 페이지 수가 바뀌면 목표 스프레드(마지막/강조 절)로 맞춘다.
+    private func reconcileSpreadIndex() {
+        if wantLastSpread {
+            spreadIndex = max(0, spreadCount - 1); wantLastSpread = false
+        } else if let h = highlight,
+                  let pageIdx = pages.firstIndex(where: { $0.contains { $0.number == h } }) {
+            spreadIndex = pageIdx / 2
+        } else {
+            spreadIndex = min(spreadIndex, max(0, spreadCount - 1))
+        }
+    }
+
+    private func nextSpread() {
+        highlight = nil
+        if spreadIndex + 1 < spreadCount { spreadIndex += 1 }
+        else { stepChapter(1) }
+    }
+
+    private func prevSpread() {
+        highlight = nil
+        if spreadIndex > 0 { spreadIndex -= 1 }
+        else { wantLastSpread = true; stepChapter(-1) }
+    }
+
+    private func stepChapter(_ delta: Int) {
+        let n = chapter + delta
+        guard (1...book.chapterCount).contains(n) else { wantLastSpread = false; return }
+        spreadIndex = 0
+        chapter = n
+    }
+
+    private var atFirst: Bool { spreadIndex == 0 && chapter <= 1 }
+    private var atLast: Bool { spreadIndex >= spreadCount - 1 && chapter >= book.chapterCount }
+
+    // MARK: 헤더
+
+    private var header: some View {
+        HStack(spacing: 10) {
+            Menu {
+                Picker("판본", selection: $editionID) {
+                    ForEach(Editions.all) { ed in Text(ed.name).tag(ed.id) }
+                }
+            } label: { chip(edition.shortName) }
+            Button { showBookPicker = true } label: {
+                chip(store.bookShortName(edition: edition, book: book))
+            }
+            Spacer(minLength: 0)
+        }
+        .font(.subheadline)
+        .padding(.horizontal, 16).padding(.vertical, 8)
+        .background(settings.theme.background)
+        .overlay(alignment: .bottom) {
+            Rectangle().fill(settings.theme.secondary.opacity(0.2)).frame(height: 0.5)
+        }
+    }
+
+    private func chip(_ text: String) -> some View {
+        HStack(spacing: 4) {
+            Text(text).fontWeight(.semibold)
+            Image(systemName: "chevron.down").font(.caption2)
+        }
+        .foregroundStyle(Color.accentColor)
+    }
+
+    // MARK: 펼침 본문 (좌·우 두 페이지)
+
+    private var spreadContent: some View {
+        GeometryReader { geo in
+            let ps = pages
+            let leftIdx = spreadIndex * 2
+            HStack(spacing: 0) {
+                page(ps.indices.contains(leftIdx) ? ps[leftIdx] : nil, isFirst: leftIdx == 0)
+                Divider()
+                page(ps.indices.contains(leftIdx + 1) ? ps[leftIdx + 1] : nil, isFirst: false)
+            }
+            .frame(width: geo.size.width, height: geo.size.height)
+            .contentShape(Rectangle())
+            .gesture(
+                DragGesture(minimumDistance: 24)
+                    .onEnded { g in
+                        if g.translation.width < -40 { withAnimation(.easeInOut(duration: 0.2)) { nextSpread() } }
+                        else if g.translation.width > 40 { withAnimation(.easeInOut(duration: 0.2)) { prevSpread() } }
+                    }
+            )
+            .onAppear { if contentSize != geo.size { contentSize = geo.size } }
+            .onChange(of: geo.size) { _, s in contentSize = s }
+        }
+    }
+
+    @ViewBuilder
+    private func page(_ verses: [Verse]?, isFirst: Bool) -> some View {
+        VStack(alignment: .leading, spacing: settings.lineSpacing * 0.9) {
+            if isFirst { chapterHeader }
+            if let verses {
+                ForEach(verses) { verse in
+                    VerseRowView(edition: edition, book: book, chapter: chapter,
+                                 verse: verse, highlighted: highlight == verse.number,
+                                 onOpenNote: onOpenNote)
+                }
+            } else if isFirst && pages.isEmpty {
+                MissingTextView(edition: edition, book: book).padding(.top, 24)
+            }
+            Spacer(minLength: 0)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .padding(.horizontal, 30)
+        .padding(.vertical, 22)
+        .clipped()
+    }
+
+    private var chapterHeader: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text(store.bookName(edition: edition, book: book))
+                .font(settings.fontChoice.font(size: settings.fontSize * 0.8, relativeTo: .subheadline))
+                .foregroundStyle(settings.theme.secondary)
+            Text(book.chapterLabel(max(chapter, 1)))
+                .font(settings.fontChoice.font(size: settings.fontSize * 1.7, relativeTo: .largeTitle, bold: true))
+                .foregroundStyle(settings.theme.text)
+            Rectangle().fill(settings.theme.secondary.opacity(0.35)).frame(width: 40, height: 1)
+        }
+        .padding(.bottom, 6)
+    }
+
+    // MARK: 하단 (펼침·장 이동)
+
+    private var bottomBar: some View {
+        HStack(spacing: 12) {
+            Button { withAnimation(.easeInOut(duration: 0.2)) { prevSpread() } } label: {
+                Image(systemName: "chevron.left")
+            }
+            .disabled(atFirst)
+            Spacer()
+            Button { showChapterPicker = true } label: {
+                Text("\(book.chapterLabel(chapter)) · 펼침 \(spreadIndex + 1)/\(spreadCount)")
+                    .font(.caption.monospacedDigit())
+            }
+            .foregroundStyle(settings.theme.secondary)
+            Spacer()
+            Button { withAnimation(.easeInOut(duration: 0.2)) { nextSpread() } } label: {
+                Image(systemName: "chevron.right")
+            }
+            .disabled(atLast)
+        }
+        .padding(.horizontal, 20).padding(.vertical, 7)
+        .background(settings.theme.background.opacity(0.94))
+        .overlay(alignment: .top) {
+            Rectangle().fill(settings.theme.secondary.opacity(0.2)).frame(height: 0.5)
+        }
+    }
+
+    // MARK: 페이지 나누기 (추정 기반)
+
+    private func paginate(_ verses: [Verse], size: CGSize) -> [[Verse]] {
+        guard !verses.isEmpty else { return [] }
+        // 각 페이지는 전체 폭의 절반(좌·우). 좌우 여백 제외.
+        let usableW = max(120, size.width / 2 - 72)
+        let usableH = (size.height - 40) * 0.96
+        guard usableH > 60 else { return [verses] }
+
+        let fs = settings.fontSize
+        let charsPerLine = max(6, Int(usableW / (fs * 0.98)))   // 한글 한 글자 ≈ 1em
+        let lineH = fs + settings.lineSpacing
+        let gap = settings.lineSpacing * 0.9
+        let headerH = fs * 3.4    // 첫 페이지의 장 머리글 높이
+
+        var pages: [[Verse]] = []
+        var cur: [Verse] = []
+        var curH: CGFloat = 0
+        for v in verses {
+            let chars = v.text.count + 4
+            let lines = max(1, Int(ceil(Double(chars) / Double(charsPerLine))))
+            let h = CGFloat(lines) * lineH + gap
+            let budget = usableH - (pages.isEmpty ? headerH : 0)
+            if !cur.isEmpty && curH + h > budget {
+                pages.append(cur); cur = []; curH = 0
+            }
+            cur.append(v); curH += h
+        }
+        if !cur.isEmpty { pages.append(cur) }
+        return pages
     }
 }
 

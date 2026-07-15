@@ -9,13 +9,38 @@
 import Foundation
 import Observation
 
+/// iPad 리더 레이아웃
+enum ReaderLayout: String, CaseIterable, Identifiable, Sendable {
+    case single   // 한 페이지 (한 판본, 스크롤)
+    case spread   // 두 페이지 (같은 성경을 책 펼침면처럼 좌→우 이어서)
+    case compare  // 두 판본 나란히 비교 (각 열 독립)
+
+    var id: String { rawValue }
+
+    var label: String {
+        switch self {
+        case .single:  return "한 페이지"
+        case .spread:  return "두 페이지 (펼침)"
+        case .compare: return "두 판본 비교"
+        }
+    }
+
+    var systemImage: String {
+        switch self {
+        case .single:  return "rectangle.portrait"
+        case .spread:  return "book.pages"
+        case .compare: return "rectangle.split.2x1"
+        }
+    }
+}
+
 @Observable
 final class ReadingState {
     private static let defaults = UserDefaults.standard
     private static let editionKey = "reading.editionID"
     private static let secondaryKey = "reading.secondaryEditionID"
     private static let secondaryBookKey = "reading.secondaryBookID"
-    private static let dualKey = "reading.dualPane"
+    private static let layoutKey = "reading.layout"
     private static let lastBookKey = "reading.lastBookID"
     private static let chapterPrefix = "reading.chapter."
 
@@ -34,9 +59,9 @@ final class ReadingState {
         didSet { Self.defaults.set(secondaryBookID, forKey: Self.secondaryBookKey) }
     }
 
-    /// iPad에서 2단(나란히 두 판본) 보기 사용 여부
-    var dualPaneEnabled: Bool {
-        didSet { Self.defaults.set(dualPaneEnabled, forKey: Self.dualKey) }
+    /// iPad 리더 레이아웃(한 페이지 / 펼침 / 비교)
+    var readerLayout: ReaderLayout {
+        didSet { Self.defaults.set(readerLayout.rawValue, forKey: Self.layoutKey) }
     }
 
     /// 마지막으로 읽던 책 (판본별)
@@ -48,7 +73,7 @@ final class ReadingState {
         selectedEditionID = Self.defaults.string(forKey: Self.editionKey) ?? Editions.defaultEditionID
         secondaryEditionID = Self.defaults.string(forKey: Self.secondaryKey) ?? "ncb"
         secondaryBookID = Self.defaults.string(forKey: Self.secondaryBookKey) ?? ""
-        dualPaneEnabled = Self.defaults.object(forKey: Self.dualKey) as? Bool ?? true
+        readerLayout = ReaderLayout(rawValue: Self.defaults.string(forKey: Self.layoutKey) ?? "") ?? .single
         lastBookIDs = Self.defaults.dictionary(forKey: Self.lastBookKey) as? [String: String] ?? [:]
     }
 
