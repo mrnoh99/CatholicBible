@@ -334,51 +334,79 @@ struct ImageAttachmentGrid: View {
     var body: some View {
         LazyVGrid(columns: columns, spacing: 10) {
             ForEach(attachments) { att in
-                let img = image(att)
-                ZStack(alignment: .topTrailing) {
-                    Group {
-                        if let img {
-                            Image(uiImage: img)
-                                .resizable()
-                                .scaledToFill()
-                        } else {
-                            Image(systemName: att.kind.systemImage)
-                                .font(.title)
-                                .foregroundStyle(.secondary)
-                                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        }
-                    }
-                    .frame(height: 104)
-                    .frame(maxWidth: .infinity)
-                    .clipShape(RoundedRectangle(cornerRadius: 10))
-                    .overlay(alignment: .bottomLeading) {
-                        Label(att.kind.label, systemImage: att.kind.systemImage)
-                            .labelStyle(.iconOnly)
-                            .font(.caption2)
-                            .padding(4)
-                            .background(.ultraThinMaterial, in: Circle())
-                            .padding(4)
-                    }
-                    .contentShape(RoundedRectangle(cornerRadius: 10))
-                    .onTapGesture {
-                        if att.kind == .drawing { onEditDrawing(att) }
-                        else if let img { onTapPhoto(att, img) }
-                    }
-
-                    // 삭제 버튼 (노트 화면에서 바로 삭제)
-                    Button { onDelete(att) } label: {
-                        Image(systemName: "xmark.circle.fill")
-                            .font(.title3)
-                            .symbolRenderingMode(.palette)
-                            .foregroundStyle(.white, .black.opacity(0.55))
-                    }
-                    .padding(4)
-                    .accessibilityLabel("\(att.kind.label) 삭제")
-                }
+                AttachmentCell(attachment: att,
+                               image: image(att),
+                               onOpen: open,
+                               onDelete: { onDelete(att) })
             }
         }
         .id(refresh)
         .listRowInsets(EdgeInsets(top: 8, leading: 12, bottom: 8, trailing: 12))
+    }
+
+    private func open(_ att: Attachment, _ img: UIImage?) {
+        if att.kind == .drawing { onEditDrawing(att) }
+        else if let img { onTapPhoto(att, img) }
+    }
+}
+
+/// 사진/손글씨 한 칸: 탭하면 열고, ✕ 또는 길게 눌러 삭제.
+private struct AttachmentCell: View {
+    let attachment: Attachment
+    let image: UIImage?
+    let onOpen: (Attachment, UIImage?) -> Void
+    let onDelete: () -> Void
+
+    var body: some View {
+        thumbnail
+            .frame(height: 104)
+            .frame(maxWidth: .infinity)
+            .clipShape(RoundedRectangle(cornerRadius: 10))
+            .overlay(alignment: .bottomLeading) {
+                Image(systemName: attachment.kind.systemImage)
+                    .font(.caption2)
+                    .padding(4)
+                    .background(.ultraThinMaterial, in: Circle())
+                    .padding(4)
+            }
+            .overlay(alignment: .topTrailing) { deleteButton }
+            .contentShape(RoundedRectangle(cornerRadius: 10))
+            // 탭: 열기 (버튼으로 감싸지 않고 제스처로 — ✕ 버튼과 겹치지 않도록)
+            .onTapGesture { onOpen(attachment, image) }
+            // 길게 누르기: 열기/삭제 선택
+            .contextMenu {
+                Button(attachment.kind == .drawing ? "이어 쓰기" : "크게 보기",
+                       systemImage: attachment.kind == .drawing ? "pencil" : "arrow.up.left.and.arrow.down.right") {
+                    onOpen(attachment, image)
+                }
+                Button("삭제", systemImage: "trash", role: .destructive, action: onDelete)
+            }
+    }
+
+    @ViewBuilder
+    private var thumbnail: some View {
+        if let image {
+            Image(uiImage: image).resizable().scaledToFill()
+        } else {
+            ZStack {
+                Color.secondary.opacity(0.12)
+                Image(systemName: attachment.kind.systemImage)
+                    .font(.title).foregroundStyle(.secondary)
+            }
+        }
+    }
+
+    private var deleteButton: some View {
+        Button(role: .destructive, action: onDelete) {
+            Image(systemName: "xmark.circle.fill")
+                .font(.title2)
+                .symbolRenderingMode(.palette)
+                .foregroundStyle(.white, .black.opacity(0.6))
+                .padding(6)                      // 넉넉한 탭 영역
+                .contentShape(Circle())
+        }
+        .buttonStyle(.borderless)               // List/Form 안에서도 독립 탭
+        .accessibilityLabel("\(attachment.kind.label) 삭제")
     }
 }
 
