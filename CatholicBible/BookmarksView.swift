@@ -2,12 +2,14 @@
 //  BookmarksView.swift
 //  CatholicBible
 //
-//  저장한 책갈피 목록. 누르면 해당 판본·장·절로 이동한다.
+//  판본 공통 절 책갈피 목록. 누르면 현재 판본에서 그 절로 이동한다.
+//  책갈피는 판본과 무관하므로 어느 판본에서 달았든 여기 함께 모인다.
 //
 
 import SwiftUI
 
 struct BookmarksView: View {
+    @Environment(AnnotationStore.self) private var annotations
     @Environment(BibleStore.self) private var store
     @Environment(ReadingState.self) private var readingState
     @Environment(ReaderNavigation.self) private var navigation
@@ -16,23 +18,19 @@ struct BookmarksView: View {
     var body: some View {
         NavigationStack {
             Group {
-                if readingState.bookmarks.isEmpty {
+                if annotations.bookmarks.isEmpty {
                     ContentUnavailableView(
                         "책갈피 없음",
                         systemImage: "bookmark",
-                        description: Text("리더 상단의 책갈피 단추로 장을, 절을 길게 눌러 절을 저장할 수 있습니다.")
+                        description: Text("리더에서 절을 길게 눌러 ‘책갈피’를 선택하세요. 책갈피는 판본과 상관없이 같은 절에 표시됩니다.")
                     )
                 } else {
                     List {
-                        ForEach(readingState.bookmarks) { bookmark in
-                            Button {
-                                open(bookmark)
-                            } label: {
-                                bookmarkRow(bookmark)
-                            }
-                            .buttonStyle(.plain)
+                        ForEach(annotations.sortedBookmarks) { ref in
+                            Button { open(ref) } label: { row(ref) }
+                                .buttonStyle(.plain)
                         }
-                        .onDelete { readingState.removeBookmarks(at: $0) }
+                        .onDelete(perform: delete)
                     }
                     .listStyle(.plain)
                 }
@@ -40,66 +38,52 @@ struct BookmarksView: View {
             .navigationTitle("책갈피")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("닫기") { dismiss() }
-                }
-                if !readingState.bookmarks.isEmpty {
+                ToolbarItem(placement: .cancellationAction) { Button("닫기") { dismiss() } }
+                if !annotations.bookmarks.isEmpty {
                     ToolbarItem(placement: .primaryAction) { EditButton() }
                 }
             }
         }
     }
 
-    private func open(_ bookmark: Bookmark) {
-        // 책갈피의 판본으로 전환한 뒤 이동
-        if Editions.edition(bookmark.editionID) != nil {
-            readingState.selectedEditionID = bookmark.editionID
-        }
-        navigation.open(bookID: bookmark.bookID,
-                        chapter: bookmark.chapter,
-                        verse: bookmark.verse)
-        dismiss()
-    }
-
-    private func bookmarkRow(_ bookmark: Bookmark) -> some View {
+    private func row(_ ref: VerseRef) -> some View {
         VStack(alignment: .leading, spacing: 4) {
             HStack {
-                Image(systemName: bookmark.verse == nil ? "bookmark" : "bookmark.fill")
-                    .font(.caption)
-                    .foregroundStyle(Color.accentColor)
-                Text(bookmark.reference)
+                Image(systemName: "bookmark.fill")
+                    .font(.caption).foregroundStyle(Color.accentColor)
+                Text(ref.reference)
                     .font(.subheadline.weight(.semibold))
-                if let edition = Editions.edition(bookmark.editionID) {
-                    Text(edition.shortName)
-                        .font(.caption2.weight(.semibold))
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 2)
-                        .background(Capsule().fill(Color.accentColor.opacity(0.12)))
-                        .foregroundStyle(Color.accentColor)
+                if annotations.hasNote(ref) {
+                    Image(systemName: "note.text").font(.caption2).foregroundStyle(.secondary)
                 }
                 Spacer()
-                Text(bookmark.created, style: .date)
-                    .font(.caption2)
-                    .foregroundStyle(.tertiary)
             }
-            if let preview = previewText(bookmark) {
-                Text(preview)
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(2)
+            if let preview = previewText(ref) {
+                Text(preview).font(.footnote).foregroundStyle(.secondary).lineLimit(2)
             }
         }
         .padding(.vertical, 2)
     }
 
-    private func previewText(_ bookmark: Bookmark) -> String? {
-        guard let book = Bible.book(bookmark.bookID),
-              let edition = Editions.edition(bookmark.editionID) else { return nil }
-        let verses = store.verses(edition: edition, book: book, chapter: bookmark.chapter)
-        guard !verses.isEmpty else { return nil }
-        if let verseNumber = bookmark.verse {
-            return verses.first { $0.number == verseNumber }?.text
+    private func previewText(_ ref: VerseRef) -> String? {
+        guard let book = Bible.book(ref.bookID) else { return nil }
+        let edition = readingState.selectedEdition
+        if let v = store.verses(edition: edition, book: book, chapter: ref.chapter)
+            .first(where: { $0.number == ref.verse }) { return v.text }
+        if let knb = Editions.edition("knb") {
+            return store.verses(edition: knb, book: book, chapter: ref.chapter)
+                .first { $0.number == ref.verse }?.text
         }
-        return verses.first?.text
+        return nil
+    }
+
+    private func open(_ ref: VerseRef) {
+        navigation.open(bookID: ref.bookID, chapter: ref.chapter, verse: ref.verse)
+        dismiss()
+    }
+
+    private func delete(at offsets: IndexSet) {
+        let list = annotations.sortedBookmarks
+        for i in offsets { annotations.removeBookmark(list[i]) }
     }
 }

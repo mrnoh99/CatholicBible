@@ -35,6 +35,7 @@ struct ContentView: View {
     @State private var navigation = ReaderNavigation()
     @State private var showSearch = false
     @State private var showBookmarks = false
+    @State private var showNotes = false
 
     var body: some View {
         NavigationSplitView {
@@ -44,24 +45,26 @@ struct ContentView: View {
                     ToolbarItemGroup(placement: .primaryAction) {
                         Button("검색", systemImage: "magnifyingglass") { showSearch = true }
                         Button("책갈피", systemImage: "bookmark") { showBookmarks = true }
+                        Button("노트", systemImage: "note.text") { showNotes = true }
                     }
                 }
         } detail: {
             if let bookID = navigation.selectedBookID, let book = Bible.book(bookID) {
-                ReaderView(edition: readingState.selectedEdition, book: book)
-                    .id("\(readingState.selectedEditionID)-\(book.id)") // 판본/책이 바뀌면 리더를 새로 만든다
+                ReaderView(book: book)
+                    .id(book.id) // 책이 바뀌면 리더를 새로 만든다 (판본 전환은 열 안에서)
             } else {
                 ShelfView()
             }
         }
         .environment(navigation)
         .sheet(isPresented: $showSearch) {
-            SearchView()
-                .environment(navigation)
+            SearchView().environment(navigation)
         }
         .sheet(isPresented: $showBookmarks) {
-            BookmarksView()
-                .environment(navigation)
+            BookmarksView().environment(navigation)
+        }
+        .sheet(isPresented: $showNotes) {
+            NotesListView().environment(navigation)
         }
     }
 }
