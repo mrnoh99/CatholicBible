@@ -84,11 +84,15 @@ def validate_edition(edition_id: str) -> tuple[list[str], list[str]]:
                 errors.append(f"{name} {ch}장: 절이 없음")
                 continue
             vnums = sorted(int(v) for v in verses)
-            if vnums[0] != 1:
-                warnings.append(f"{name} {ch}장: 1절부터 시작하지 않음")
-            gaps = [n for a, b in zip(vnums, vnums[1:]) for n in range(a + 1, b)]
-            if gaps:
-                warnings.append(f"{name} {ch}장: 빠진 절 {gaps[:8]}")
+            # 주석 성경은 본문 절 사이에 주석이 절로 들어가 번호가 이어지지
+            # 않는 것이 정상이므로 절 번호 간격 경고만 생략한다(의도된 구성).
+            # 빈 절·HTML 잔재·절 수 집계는 그대로 검사한다.
+            if edition_id != "knbnotes":
+                if vnums[0] != 1:
+                    warnings.append(f"{name} {ch}장: 1절부터 시작하지 않음")
+                gaps = [n for a, b in zip(vnums, vnums[1:]) for n in range(a + 1, b)]
+                if gaps:
+                    warnings.append(f"{name} {ch}장: 빠진 절 {gaps[:8]}")
             for v, text in verses.items():
                 total_verses += 1
                 if not text or not text.strip():
