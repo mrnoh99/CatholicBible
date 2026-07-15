@@ -14,6 +14,7 @@ final class ReadingState {
     private static let defaults = UserDefaults.standard
     private static let editionKey = "reading.editionID"
     private static let secondaryKey = "reading.secondaryEditionID"
+    private static let secondaryBookKey = "reading.secondaryBookID"
     private static let dualKey = "reading.dualPane"
     private static let lastBookKey = "reading.lastBookID"
     private static let chapterPrefix = "reading.chapter."
@@ -26,6 +27,11 @@ final class ReadingState {
     /// 둘째 열(iPad 2단에서 나란히 볼 판본)
     var secondaryEditionID: String {
         didSet { Self.defaults.set(secondaryEditionID, forKey: Self.secondaryKey) }
+    }
+
+    /// 둘째 열이 펼친 책 (빈 값이면 첫째 열과 같은 책으로 시작)
+    var secondaryBookID: String {
+        didSet { Self.defaults.set(secondaryBookID, forKey: Self.secondaryBookKey) }
     }
 
     /// iPad에서 2단(나란히 두 판본) 보기 사용 여부
@@ -41,6 +47,7 @@ final class ReadingState {
     init() {
         selectedEditionID = Self.defaults.string(forKey: Self.editionKey) ?? Editions.defaultEditionID
         secondaryEditionID = Self.defaults.string(forKey: Self.secondaryKey) ?? "ncb"
+        secondaryBookID = Self.defaults.string(forKey: Self.secondaryBookKey) ?? ""
         dualPaneEnabled = Self.defaults.object(forKey: Self.dualKey) as? Bool ?? true
         lastBookIDs = Self.defaults.dictionary(forKey: Self.lastBookKey) as? [String: String] ?? [:]
     }
