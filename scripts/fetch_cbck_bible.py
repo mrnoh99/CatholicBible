@@ -125,8 +125,18 @@ def scope_book_ids(scope: str) -> list[str]:
     return [b[0] for b in BOOKS]
 
 
+# 첫 글자 대문자 규칙과 다른 사이트 책 코드 (실제 확인된 것)
+URL_CODE_OVERRIDES: dict[str, str] = {
+    "sg": "Sng",   # 아가서 — 사이트는 Sng (예: /Knb/Sng/1)
+}
+# 목차 링크의 사이트 코드 → 우리 책 id (역매핑)
+SITE_CODE_TO_ID: dict[str, str] = {v.lower(): k for k, v in URL_CODE_OVERRIDES.items()}
+
+
 def url_code(book_id: str) -> str:
-    """책 id → cbck URL 코드 (gn→Gn, 1sm→1Sm, eccl→Eccl)."""
+    """책 id → cbck URL 코드 (gn→Gn, 1sm→1Sm, eccl→Eccl, sg→Sng)."""
+    if book_id in URL_CODE_OVERRIDES:
+        return URL_CODE_OVERRIDES[book_id]
     for i, ch in enumerate(book_id):
         if ch.isalpha():
             return book_id[:i] + ch.upper() + book_id[i + 1:]
@@ -195,7 +205,9 @@ def discover_books(edition_path: str) -> dict[str, tuple[str, str]]:
         rest = path[len(prefix):].strip("/").split("/")
         if not rest or not rest[0]:
             continue
-        book_id = rest[0].lower()
+        code = rest[0].lower()
+        # 사이트 코드가 우리 id와 다른 경우(예: sng→sg) 되돌린다
+        book_id = SITE_CODE_TO_ID.get(code, code)
         if book_id in BOOKS_BY_ID and book_id not in found:
             full_url = urllib.parse.urljoin(index_url, href)
             found[book_id] = (full_url, text)
