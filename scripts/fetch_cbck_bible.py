@@ -221,6 +221,11 @@ def chapter_url(edition_path: str, book_id: str, chapter: int) -> str:
 # 절 추출 -----------------------------------------------------------------
 
 TAG_RE = re.compile(r"<[^>]+>")
+# 각주 참조 번호: 사이트는 이를 <sup class="annotation">…</sup>로 넣고,
+# 리더 JS도 $("sup").remove(".annotation")로 지운다. 추출 전에 제거해
+# 본문에 각주 번호("4)" 등)가 섞이지 않게 한다.
+SUP_ANNO_RE = re.compile(
+    r"<sup\b[^>]*class=\"[^\"]*annotation[^\"]*\"[^>]*>.*?</sup>", re.S | re.I)
 # 절 컨테이너로 흔히 쓰이는 마크업: <p|li|div|span class="...verse..."> 또는
 # 절 번호가 별도 요소(<sup>, <b>, <span class="num">)로 붙는 형태
 VERSE_BLOCK_RE = re.compile(
@@ -243,10 +248,16 @@ def extract_verses(html: str) -> dict[str, str]:
     """
     verses: dict[str, str] = {}
 
+    # 각주 번호(<sup class="annotation">)를 먼저 제거 — 모든 추출 경로에 적용
+    html = SUP_ANNO_RE.sub("", html)
+
     try:
         from bs4 import BeautifulSoup  # type: ignore
 
         soup = BeautifulSoup(html, "html.parser")
+        # bs4가 있으면 혹시 남은 sup 각주도 확실히 제거
+        for sup in soup.find_all("sup", class_=re.compile(r"annotation", re.I)):
+            sup.decompose()
         for node in soup.find_all(class_=re.compile(r"verse|vers|bible_?read", re.I)):
             text = re.sub(r"\s+", " ", node.get_text(" ", strip=True))
             m = re.match(r"^(\d{1,3})\s*(.+)$", text)
