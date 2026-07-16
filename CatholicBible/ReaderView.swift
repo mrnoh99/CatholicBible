@@ -636,37 +636,67 @@ struct VerseRowView: View {
         let bookmarked = annotations.isBookmarked(ref)
         let hasNote = annotations.hasNote(ref)
 
-        verseText
-            .lineSpacing(settings.lineSpacing)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.horizontal, 6)
-            .padding(.vertical, 2)
-            .background(
-                RoundedRectangle(cornerRadius: 6)
-                    .fill(highlighted ? Color.accentColor.opacity(0.18) : .clear)
-            )
-            .overlay(alignment: .topTrailing) { indicators(bookmarked: bookmarked, hasNote: hasNote) }
-            .contentShape(Rectangle())
-            .onTapGesture { if hasNote { onOpenNote(ref, verse.text) } }
-            .contextMenu {
-                Button(bookmarked ? "책갈피 지우기" : "책갈피",
-                       systemImage: bookmarked ? "bookmark.slash" : "bookmark") {
-                    annotations.toggleBookmark(ref)
-                }
-                Button(hasNote ? "노트 보기·편집" : "노트 추가", systemImage: "note.text") {
-                    onOpenNote(ref, verse.text)
-                }
-                Button("사전", systemImage: "character.book.closed") {
-                    navigation.lookUp()
-                }
-                Button("복사", systemImage: "doc.on.doc") {
-                    UIPasteboard.general.string = "\(verse.text) (\(ref.reference))"
-                }
+        HStack(alignment: .firstTextBaseline, spacing: 6) {
+            // 앞의 번호(또는 점) = 동작 메뉴 손잡이. 본문 낱말 선택과 겹치지 않는다.
+            actionMenu(bookmarked: bookmarked, hasNote: hasNote)
+
+            // 본문: 낱말을 길게 눌러 선택 → iOS ‘찾아보기’로 사전 조회
+            Text(verse.text)
+                .font(settings.bodyFont())
+                .foregroundStyle(settings.theme.text)
+                .lineSpacing(settings.lineSpacing)
+                .textSelection(.enabled)
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .padding(.horizontal, 6)
+        .padding(.vertical, 2)
+        .background(
+            RoundedRectangle(cornerRadius: 6)
+                .fill(highlighted ? Color.accentColor.opacity(0.18) : .clear)
+        )
+        .overlay(alignment: .topTrailing) { indicators(bookmarked: bookmarked, hasNote: hasNote) }
+        .animation(.easeInOut(duration: 0.25), value: highlighted)
+        .animation(.easeInOut(duration: 0.25), value: bookmarked)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(verse.number)절, \(verse.text)")
+    }
+
+    /// 절 번호(또는 점)를 눌러 여는 동작 메뉴
+    private func actionMenu(bookmarked: Bool, hasNote: Bool) -> some View {
+        Menu {
+            Button(bookmarked ? "책갈피 지우기" : "책갈피",
+                   systemImage: bookmarked ? "bookmark.slash" : "bookmark") {
+                annotations.toggleBookmark(ref)
             }
-            .animation(.easeInOut(duration: 0.25), value: highlighted)
-            .animation(.easeInOut(duration: 0.25), value: bookmarked)
-            .accessibilityElement(children: .combine)
-            .accessibilityLabel("\(verse.number)절, \(verse.text)")
+            Button(hasNote ? "노트 보기·편집" : "노트 추가", systemImage: "note.text") {
+                onOpenNote(ref, verse.text)
+            }
+            Button("사전 열기", systemImage: "character.book.closed") {
+                navigation.lookUp()
+            }
+            Button("복사", systemImage: "doc.on.doc") {
+                UIPasteboard.general.string = "\(verse.text) (\(ref.reference))"
+            }
+        } label: {
+            handleLabel(bookmarked: bookmarked, hasNote: hasNote)
+        }
+        .menuStyle(.borderlessButton)
+        .accessibilityLabel("\(verse.number)절 동작")
+    }
+
+    @ViewBuilder
+    private func handleLabel(bookmarked: Bool, hasNote: Bool) -> some View {
+        if settings.showVerseNumbers {
+            Text("\(verse.number)")
+                .font(settings.fontChoice.font(size: settings.fontSize * 0.62))
+                .foregroundStyle(bookmarked || hasNote ? Color.accentColor : settings.theme.secondary)
+                .frame(minWidth: settings.fontSize * 1.1, alignment: .trailing)
+        } else {
+            Image(systemName: bookmarked || hasNote ? "circle.fill" : "circle")
+                .font(.system(size: max(6, settings.fontSize * 0.28)))
+                .foregroundStyle((bookmarked || hasNote ? Color.accentColor : settings.theme.secondary).opacity(0.5))
+                .frame(width: settings.fontSize * 0.9)
+        }
     }
 
     @ViewBuilder
@@ -683,18 +713,6 @@ struct VerseRowView: View {
         }
         .padding(.trailing, 2)
         .accessibilityHidden(true)
-    }
-
-    private var verseText: Text {
-        let body = Text(verse.text)
-            .font(settings.bodyFont())
-            .foregroundStyle(settings.theme.text)
-        guard settings.showVerseNumbers else { return body }
-        let number = Text("\(verse.number) ")
-            .font(settings.fontChoice.font(size: settings.fontSize * 0.62))
-            .foregroundStyle(settings.theme.secondary)
-            .baselineOffset(settings.fontSize * 0.28)
-        return number + body
     }
 }
 
