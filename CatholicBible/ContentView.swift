@@ -13,17 +13,29 @@ import SwiftUI
 
 // MARK: - 화면 이동 상태
 
+/// 사전 조회 요청 (초기 낱말을 담아 시트로 띄운다)
+struct DictionaryRequest: Identifiable {
+    let id = UUID()
+    var term: String = ""
+}
+
 @Observable
 final class ReaderNavigation {
     var selectedBookID: String?
     /// 리더가 열릴 때 이동할 장/절 (검색·책갈피에서 설정)
     var pendingChapter: Int?
     var pendingVerse: Int?
+    /// 사전 시트 요청 (nil이 아니면 사전이 열린다)
+    var dictionaryRequest: DictionaryRequest?
 
     func open(bookID: String, chapter: Int, verse: Int? = nil) {
         pendingChapter = chapter
         pendingVerse = verse
         selectedBookID = bookID
+    }
+
+    func lookUp(_ term: String = "") {
+        dictionaryRequest = DictionaryRequest(term: term)
     }
 }
 
@@ -38,12 +50,14 @@ struct ContentView: View {
     @State private var showNotes = false
 
     var body: some View {
+        @Bindable var nav = navigation
         NavigationSplitView {
             LibraryView()
                 .navigationTitle("서재")
                 .toolbar {
                     ToolbarItemGroup(placement: .primaryAction) {
                         Button("검색", systemImage: "magnifyingglass") { showSearch = true }
+                        Button("사전", systemImage: "character.book.closed") { navigation.lookUp() }
                         Button("책갈피", systemImage: "bookmark") { showBookmarks = true }
                         Button("노트", systemImage: "note.text") { showNotes = true }
                     }
@@ -65,6 +79,9 @@ struct ContentView: View {
         }
         .sheet(isPresented: $showNotes) {
             NotesListView().environment(navigation)
+        }
+        .sheet(item: $nav.dictionaryRequest) { req in
+            DictionaryView(initialTerm: req.term)
         }
     }
 }

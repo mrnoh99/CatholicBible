@@ -181,6 +181,62 @@ final class AnnotationStore {
         }
     }
 
+    // MARK: - 백업 / 복원 (외부 저장 — 버전 업·재설치에도 유지)
+
+    /// 책갈피·노트·미디어를 한 파일로 묶어 내보낼 데이터를 만든다.
+    /// 미디어 파일은 base64로 함께 담기므로 파일 하나만 보관하면 된다.
+    func exportBackup() -> Data? {
+        var mediaBlobs: [String: Data] = [:]
+        for note in notes {
+            for att in note.attachments where mediaBlobs[att.filename] == nil {
+                if let bytes = try? Data(contentsOf: mediaURL(att.filename)) {
+                    mediaBlobs[att.filename] = bytes
+                }
+            }
+        }
+        let backup = NoteBackup(exportedAt: Date(),
+                                bookmarks: Array(bookmarks),
+                                notes: notes,
+                                media: mediaBlobs)
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+        return try? encoder.encode(backup)
+    }
+
+    /// 백업 데이터를 불러와 현재 자료에 병합한다(같은 절의 기존 노트는 보존).
+    /// 돌려주는 값: (추가된 노트 수, 추가된 책갈피 수). 실패 시 nil.
+    @discardableResult
+    func importBackup(_ data: Data) -> (notes: Int, bookmarks: Int)? {
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        guard let backup = try? decoder.decode(NoteBackup.self, from: data) else { return nil }
+
+        // 미디어 파일 복원(없는 것만 씀)
+        for (filename, bytes) in backup.media {
+            let url = mediaURL(filename)
+            if !FileManager.default.fileExists(atPath: url.path) {
+                try? bytes.write(to: url, options: .atomic)
+            }
+        }
+        // 노트 병합: 같은 id 또는 같은 절에 이미 노트가 있으면 건너뜀
+        var addedNotes = 0
+        for note in backup.notes {
+            let exists = notes.contains { $0.id == note.id || $0.verse == note.verse }
+            if !exists && !note.isEmpty {
+                notes.append(note)
+                addedNotes += 1
+            }
+        }
+        // 책갈피 병합(합집합)
+        let before = bookmarks.count
+        bookmarks.formUnion(backup.bookmarks)
+        let addedBookmarks = bookmarks.count - before
+
+        persistNotes()
+        saveBookmarks()
+        return (addedNotes, addedBookmarks)
+    }
+
     /// 노트에서 첨부를 지우고(파일도 삭제) 갱신된 노트를 돌려준다.
     func removingAttachment(_ attachment: Attachment, from note: Note) -> Note {
         try? FileManager.default.removeItem(at: mediaURL(attachment.filename))

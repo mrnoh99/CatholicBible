@@ -90,3 +90,14 @@ struct Note: Codable, Identifiable, Hashable, Sendable {
         attachments.filter { $0.kind == kind }
     }
 }
+
+// MARK: - 백업 (책갈피 + 노트 + 미디어를 한 파일로)
+
+struct NoteBackup: Codable, Sendable {
+    var version = 1
+    var exportedAt: Date
+    var bookmarks: [VerseRef]
+    var notes: [Note]
+    /// 미디어 파일 이름 → 원본 바이트(JSON에는 base64로 저장)
+    var media: [String: Data]
+}

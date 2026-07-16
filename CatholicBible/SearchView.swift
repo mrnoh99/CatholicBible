@@ -2,10 +2,23 @@
 //  SearchView.swift
 //  CatholicBible
 //
-//  현재 판본에서 구절 검색. 결과를 누르면 해당 장·절로 이동한다.
+//  구절 검색. 범위를 '현재 판본' 또는 '모든 판본'으로 고를 수 있다.
+//  결과를 누르면 그 판본으로 전환하며 해당 절로 이동한다.
 //
 
 import SwiftUI
+
+enum SearchScope: String, CaseIterable, Identifiable {
+    case current
+    case all
+    var id: String { rawValue }
+    var label: String {
+        switch self {
+        case .current: return "현재 판본"
+        case .all:     return "모든 판본"
+        }
+    }
+}
 
 struct SearchView: View {
     @Environment(BibleStore.self) private var store
@@ -14,6 +27,7 @@ struct SearchView: View {
     @Environment(\.dismiss) private var dismiss
 
     @State private var query = ""
+    @State private var scope: SearchScope = .current
     @State private var results: [SearchHit] = []
     @State private var isSearching = false
     @State private var hasSearched = false
@@ -23,49 +37,63 @@ struct SearchView: View {
         let edition = readingState.selectedEdition
 
         NavigationStack {
-            Group {
-                if isSearching {
-                    ProgressView("찾는 중 …")
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                } else if results.isEmpty {
-                    ContentUnavailableView(
-                        hasSearched ? "결과 없음" : "구절 검색",
-                        systemImage: "magnifyingglass",
-                        description: Text(hasSearched
-                                          ? "‘\(query)’이(가) 들어간 구절을 「\(edition.shortName)」에서 찾지 못했습니다."
-                                          : "두 글자 이상 입력하면 「\(edition.shortName)」의 수록 본문 전체에서 찾습니다.")
-                    )
-                } else {
-                    List(results) { hit in
-                        Button {
-                            navigation.open(bookID: hit.bookID, chapter: hit.chapter, verse: hit.verse)
-                            dismiss()
-                        } label: {
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text(reference(for: hit))
-                                    .font(.caption.weight(.semibold))
-                                    .foregroundStyle(Color.accentColor)
-                                Text(hit.text)
-                                    .font(.subheadline)
-                                    .lineLimit(3)
+            VStack(spacing: 0) {
+                Picker("검색 범위", selection: $scope) {
+                    ForEach(SearchScope.allCases) { s in Text(s.label).tag(s) }
+                }
+                .pickerStyle(.segmented)
+                .padding(.horizontal).padding(.vertical, 8)
+
+                Group {
+                    if isSearching {
+                        ProgressView("찾는 중 …").frame(maxWidth: .infinity, maxHeight: .infinity)
+                    } else if results.isEmpty {
+                        ContentUnavailableView(
+                            hasSearched ? "결과 없음" : "구절 검색",
+                            systemImage: "magnifyingglass",
+                            description: Text(hasSearched
+                                ? "‘\(query)’이(가) 들어간 구절을 찾지 못했습니다."
+                                : (scope == .current
+                                   ? "두 글자 이상 입력하면 「\(edition.shortName)」에서 찾습니다."
+                                   : "두 글자 이상 입력하면 수록된 모든 판본에서 찾습니다."))
+                        )
+                    } else {
+                        List(results) { hit in
+                            Button {
+                                open(hit)
+                            } label: {
+                                VStack(alignment: .leading, spacing: 4) {
+                                    HStack(spacing: 6) {
+                                        Text(reference(for: hit))
+                                            .font(.caption.weight(.semibold))
+                                            .foregroundStyle(Color.accentColor)
+                                        if scope == .all, let ed = Editions.edition(hit.editionID) {
+                                            Text(ed.shortName)
+                                                .font(.caption2.weight(.semibold))
+                                                .padding(.horizontal, 6).padding(.vertical, 2)
+                                                .background(Capsule().fill(Color.accentColor.opacity(0.12)))
+                                                .foregroundStyle(Color.accentColor)
+                                        }
+                                    }
+                                    Text(hit.text).font(.subheadline).lineLimit(3)
+                                }
+                                .padding(.vertical, 2)
                             }
-                            .padding(.vertical, 2)
+                            .buttonStyle(.plain)
                         }
-                        .buttonStyle(.plain)
+                        .listStyle(.plain)
                     }
-                    .listStyle(.plain)
                 }
             }
-            .navigationTitle("검색 — \(edition.shortName)")
+            .navigationTitle("검색")
             .navigationBarTitleDisplayMode(.inline)
             .searchable(text: $query, placement: .navigationBarDrawer(displayMode: .always),
                         prompt: "말씀 검색 (예: 사랑, 빛)")
-            .onSubmit(of: .search) { runSearch(edition: edition) }
-            .onChange(of: query) { runSearch(edition: edition) }
+            .onSubmit(of: .search) { runSearch() }
+            .onChange(of: query) { runSearch() }
+            .onChange(of: scope) { runSearch() }
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("닫기") { dismiss() }
-                }
+                ToolbarItem(placement: .cancellationAction) { Button("닫기") { dismiss() } }
             }
         }
     }
@@ -75,21 +103,34 @@ struct SearchView: View {
         return "\(book.abbrev) \(hit.chapter),\(hit.verse)"
     }
 
-    private func runSearch(edition: Edition) {
+    private func open(_ hit: SearchHit) {
+        if scope == .all, Editions.edition(hit.editionID) != nil {
+            readingState.selectedEditionID = hit.editionID
+        }
+        navigation.open(bookID: hit.bookID, chapter: hit.chapter, verse: hit.verse)
+        dismiss()
+    }
+
+    private func runSearch() {
         searchTask?.cancel()
         let text = query.trimmingCharacters(in: .whitespacesAndNewlines)
         guard text.count >= 2 else {
-            results = []
-            hasSearched = false
-            isSearching = false
+            results = []; hasSearched = false; isSearching = false
             return
         }
+        let currentEdition = readingState.selectedEdition
+        let editionsToSearch = store.loadedEditions
+        let scope = scope
         searchTask = Task {
-            // 타이핑이 멈춘 뒤에만 검색 (디바운스)
             try? await Task.sleep(for: .milliseconds(300))
             guard !Task.isCancelled else { return }
             isSearching = true
-            let hits = await store.search(text, edition: edition)
+            let hits: [SearchHit]
+            if scope == .all {
+                hits = await store.searchAll(text, editions: editionsToSearch)
+            } else {
+                hits = await store.search(text, edition: currentEdition)
+            }
             guard !Task.isCancelled else { return }
             results = hits
             hasSearched = true

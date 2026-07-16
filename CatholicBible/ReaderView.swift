@@ -628,6 +628,7 @@ struct VerseRowView: View {
 
     @Environment(ReaderSettings.self) private var settings
     @Environment(AnnotationStore.self) private var annotations
+    @Environment(ReaderNavigation.self) private var navigation
 
     private var ref: VerseRef { VerseRef(bookID: book.id, chapter: chapter, verse: verse.number) }
 
@@ -654,6 +655,9 @@ struct VerseRowView: View {
                 }
                 Button(hasNote ? "노트 보기·편집" : "노트 추가", systemImage: "note.text") {
                     onOpenNote(ref, verse.text)
+                }
+                Button("사전", systemImage: "character.book.closed") {
+                    navigation.lookUp()
                 }
                 Button("복사", systemImage: "doc.on.doc") {
                     UIPasteboard.general.string = "\(verse.text) (\(ref.reference))"

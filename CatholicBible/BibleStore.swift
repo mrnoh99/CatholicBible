@@ -155,4 +155,25 @@ final class BibleStore {
             return hits
         }.value
     }
+
+    /// 여러 판본에서 한꺼번에 검색한다(판본 순서대로, 판본별 상한 적용).
+    func searchAll(_ query: String, editions searchEditions: [Edition],
+                   limit: Int = 400) async -> [SearchHit] {
+        let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard trimmed.count >= 2 else { return [] }
+        let perEdition = max(40, limit / max(1, searchEditions.count))
+        var all: [SearchHit] = []
+        for edition in searchEditions {
+            guard editions[edition.id] != nil else { continue }
+            let hits = await search(trimmed, edition: edition, limit: perEdition)
+            all.append(contentsOf: hits)
+            if all.count >= limit { break }
+        }
+        return Array(all.prefix(limit))
+    }
+
+    /// 본문이 로드된 판본만
+    var loadedEditions: [Edition] {
+        Editions.all.filter { editions[$0.id] != nil }
+    }
 }
