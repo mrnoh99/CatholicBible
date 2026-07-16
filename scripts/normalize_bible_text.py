@@ -45,9 +45,33 @@ BREADCRUMB_WORDS: dict[str, list[str]] = {
     "b200": ["200주년 신약성서", "200주년"],
     "nab": ["New American Bible", "NAB"],
     "pscms": ["최민순 역 시편", "시편"],
-    "vulgata": ["Nova Vulgata"],
+    "vulgata": ["Nova Vulgata", "Vulgata"],
     "pslitur": ["전례 시편", "시편"],
 }
+
+# 장 페이지 끝에 붙는 사이트 공통 푸터(내비게이션·저작권·인라인 JS)의 시작 표식.
+# 이 중 가장 앞에서 걸리는 지점부터 버린다.
+_FOOTER_MARKERS = [
+    r"구약\s*창세", r"구약\s*출애", r"구약\s*Gn\b", r"구약\s*Genesis",
+    r"신약\s*마태", r"신약\s*Mt\b", r"신약\s*Matthew",
+    r"어문\s*저작물", r"저작권\s*사용", r"분도출판사의\s*승인", r"대한성서공회와\s*약정",
+    r"All\s+Rights\s+Reserved", r"Catholic\s+Conference", r"©\s*Catholic",
+    r"var\s+orgBible", r"var\s+intBibleCount", r"var\s+bible\s*=",
+    r"\$\(document\)", r"var\s+url\s*=\s*\$\(this\)", r"proBibleChoose",
+]
+_FOOTER_RE = [re.compile(p) for p in _FOOTER_MARKERS]
+
+
+def strip_site_footer(text: str, edition_id: str) -> str:
+    """절 뒤에 딸려 들어간 사이트 푸터(책 목록·저작권·JS)를 잘라낸다."""
+    cut = len(text)
+    for rx in _FOOTER_RE:
+        m = rx.search(text)
+        if m:
+            cut = min(cut, m.start())
+    text = text[:cut]
+    text = strip_trailing_breadcrumb(text, edition_id)   # 남은 판본 이름 breadcrumb 제거
+    return WS_RE.sub(" ", text).strip()
 
 
 def strip_footnotes(text: str) -> str:
@@ -112,7 +136,7 @@ def normalize_books(edition_id: str, books: dict) -> tuple[dict, int]:
                 if is_header_verse(verses[k], breadcrumb_words):
                     dropped += 1
                     continue
-                t = clean_text(verses[k])
+                t = strip_site_footer(clean_text(verses[k]), edition_id)
                 if t:
                     kept.append(t)
             # 마지막 실제 절 끝의 breadcrumb 제거

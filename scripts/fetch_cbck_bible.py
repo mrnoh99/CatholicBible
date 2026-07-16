@@ -226,6 +226,8 @@ TAG_RE = re.compile(r"<[^>]+>")
 # 본문에 각주 번호("4)" 등)가 섞이지 않게 한다.
 SUP_ANNO_RE = re.compile(
     r"<sup\b[^>]*class=\"[^\"]*annotation[^\"]*\"[^>]*>.*?</sup>", re.S | re.I)
+# 인라인 스크립트/스타일 — 본문 텍스트로 새어 들어가지 않게 통째로 제거
+SCRIPT_STYLE_RE = re.compile(r"<(script|style)\b[^>]*>.*?</\1>", re.S | re.I)
 # 절 컨테이너로 흔히 쓰이는 마크업: <p|li|div|span class="...verse..."> 또는
 # 절 번호가 별도 요소(<sup>, <b>, <span class="num">)로 붙는 형태
 VERSE_BLOCK_RE = re.compile(
@@ -248,7 +250,8 @@ def extract_verses(html: str) -> dict[str, str]:
     """
     verses: dict[str, str] = {}
 
-    # 각주 번호(<sup class="annotation">)를 먼저 제거 — 모든 추출 경로에 적용
+    # 인라인 스크립트/스타일과 각주 번호(<sup class="annotation">)를 먼저 제거
+    html = SCRIPT_STYLE_RE.sub(" ", html)
     html = SUP_ANNO_RE.sub("", html)
 
     try:
