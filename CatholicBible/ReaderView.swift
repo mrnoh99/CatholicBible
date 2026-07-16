@@ -40,6 +40,12 @@ struct ReaderView: View {
 
         ZStack {
             settings.theme.background.ignoresSafeArea()
+            if readingState.selectedEditionID == "knbnotes" {
+                // 주석 성경: 왼쪽 본문 · 오른쪽 주석 (입문 접근 포함)
+                AnnotatedReader(editionID: $rs.selectedEditionID,
+                                bookID: primaryBookBinding,
+                                onOpenNote: openNote)
+            } else {
             switch layout {
             case .single:
                 ReaderPane(role: .primary,
@@ -63,6 +69,7 @@ struct ReaderView: View {
                                onClose: { readingState.readerLayout = .single },
                                onOpenNote: openNote)
                 }
+            }
             }
         }
         .navigationTitle("성경 읽기")
@@ -99,7 +106,8 @@ struct ReaderView: View {
     @ToolbarContentBuilder
     private var readerToolbar: some ToolbarContent {
         ToolbarItemGroup(placement: .primaryAction) {
-            if canDual {
+            // 주석 성경은 항상 본문|주석이므로 페이지 레이아웃 선택을 숨긴다
+            if canDual && readingState.selectedEditionID != "knbnotes" {
                 Menu {
                     Picker("페이지", selection: Binding(
                         get: { readingState.readerLayout },

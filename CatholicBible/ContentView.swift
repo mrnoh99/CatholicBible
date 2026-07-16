@@ -242,4 +242,6 @@ struct EditionCard: View {
         .environment(BibleStore())
         .environment(ReaderSettings())
         .environment(ReadingState())
+        .environment(AnnotationStore())
+        .environment(KnbNotesStore())
 }
