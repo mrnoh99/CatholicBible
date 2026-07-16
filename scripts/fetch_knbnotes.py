@@ -111,90 +111,88 @@ def discover_intros() -> list[dict]:
 
 # 책 입문 번호 → 우리 책 id 매핑(제목으로 대조). 목차 순서가 성경 순서와
 # 같으면 자동으로 붙지만, 제목 대조를 우선한다.
+# 입문 제목이 여러 책을 아우르거나 표기가 다른 경우의 보조 매핑
+_INTRO_TITLE_HINTS = {
+    "사무엘기": "1sm", "열왕기": "1kgs", "역대기": "1chr",
+    "에즈라기": "ezr", "느헤미야기": "neh", "마카베오기": "1mc",
+    "티모테오": "1tm", "요한 서간": "1jn", "요한서간": "1jn",
+    "테살로니카": "1thes", "코린토": "1cor", "베드로": "1pt",
+}
+
+
 def guess_book_id(title: str) -> str | None:
     name = WS_RE.sub("", title).replace("입문", "")
     for bid, bname, _ in fx.BOOKS:
-        if WS_RE.sub("", bname).startswith(name) or name.startswith(WS_RE.sub("", bname)):
+        bn = WS_RE.sub("", bname)
+        if bn.startswith(name) or name.startswith(bn):
             return bid
-    # 약칭/별칭 대조
-    for bid, aliases in fx.NAME_ALIASES.items():
-        for a in aliases:
-            if WS_RE.sub("", a) in name:
-                return bid
+    for hint, bid in _INTRO_TITLE_HINTS.items():
+        if WS_RE.sub("", hint) in name:
+            return bid
     return None
 
 
 # ─────────────────────────────────────────────────────────────
-# 페이지 추출 (⚠️ 실제 HTML을 보고 맞출 부분)
+# 페이지 추출 (실제 사이트 마크업 기준 — 정규식, bs4 불필요)
 # ─────────────────────────────────────────────────────────────
-# 사이트는 각주 번호를 <sup class="annotation">…</sup>로, 주석 본문을
-# 별도 영역에 둔다. 아래 선택자는 흔한 패턴을 시도하며, --dump-html 로
-# 실제 구조를 확인해 조정한다.
+# 본문 : <span class="highlight" id="jul-N">N</span>  +
+#        <div class="col-11 …"><div class="text-justify"><p>본문<sup class="annotation">2)</sup>…</p></div></div>
+# 주석 : <div class="card-header">주석</div> 안에
+#        <div class="text-justify" id="annotation-N" data-seq="N"><p>주석…</p></div>
+# 입문 : <h4>소제목</h4> + <div class="text-justify"><p>…</p></div> …
 
-ANNO_BLOCK_RE = re.compile(
-    r"<(?:ol|ul|div|dl)[^>]*class=\"[^\"]*(?:annotation|footnote|note|comment|juseok)[^\"]*\"[^>]*>(.*?)</(?:ol|ul|div|dl)>",
-    re.S | re.I)
+CARD_SPLIT_RE = re.compile(r'<div class="card-header">\s*주석', re.S)
+JUL_RE = re.compile(
+    r'id="jul-(\d+)".*?<div class="text-justify"[^>]*>(.*?)</div>', re.S)
 ANNO_ITEM_RE = re.compile(
-    r"<(?:li|dd|p|div)[^>]*>(.*?)</(?:li|dd|p|div)>", re.S | re.I)
+    r'id="annotation-(?:\d+-)?(\d+)"[^>]*>(.*?)</div>', re.S)
+BLOCK_RE = re.compile(r"<(h1|h2|h3|h4|p)\b[^>]*>(.*?)</\1>", re.S | re.I)
+MAIN_RE = re.compile(r'<div id="main">(.*?)<nav id="submenu"', re.S)
+
+
+def _before_notes(html: str) -> str:
+    """주석 카드(하단) 이전의 본문 영역만 돌려준다."""
+    return CARD_SPLIT_RE.split(html, maxsplit=1)[0]
+
+
+def extract_verses_with_markers(html: str) -> dict[str, str]:
+    """장 본문을 각주 번호(마커 'N)')를 유지한 채 {절: 본문}으로 추출한다."""
+    region = fx.SCRIPT_STYLE_RE.sub(" ", _before_notes(html))
+    verses: dict[str, str] = {}
+    for m in JUL_RE.finditer(region):
+        num = m.group(1)
+        text = strip_tags(m.group(2))   # <sup>2)</sup> → '2)' 는 텍스트로 남는다
+        if text:
+            verses.setdefault(num, text)
+    return verses
 
 
 def extract_notes(html: str) -> list[dict]:
-    """주석 목록 [{'n': '1', 'text': '...'}] 추출(가능하면 bs4 사용)."""
+    """주석 목록 [{'n':'1','text':'…'}] 추출 (id="annotation-N")."""
     notes: list[dict] = []
-    try:
-        from bs4 import BeautifulSoup  # type: ignore
-        soup = BeautifulSoup(html, "html.parser")
-        container = soup.find(class_=re.compile(
-            r"annotation|footnote|note|comment|juseok", re.I))
-        if container:
-            for item in container.find_all(["li", "dd", "p", "div"], recursive=True):
-                text = WS_RE.sub(" ", item.get_text(" ", strip=True))
-                m = re.match(r"^(\d{1,3})[).\s]\s*(.+)$", text)
-                if m and m.group(2):
-                    notes.append({"n": m.group(1), "text": m.group(2).strip()})
-            if notes:
-                return notes
-    except ImportError:
-        pass
-    m = ANNO_BLOCK_RE.search(html)
-    if m:
-        for item in ANNO_ITEM_RE.findall(m.group(1)):
-            text = strip_tags(item)
-            mm = re.match(r"^(\d{1,3})[).\s]\s*(.+)$", text)
-            if mm and mm.group(2):
-                notes.append({"n": mm.group(1), "text": mm.group(2).strip()})
+    for m in ANNO_ITEM_RE.finditer(html):
+        text = strip_tags(m.group(2))
+        if text:
+            notes.append({"n": m.group(1), "text": text})
     return notes
 
 
 def extract_intro_body(html: str) -> str:
-    """입문 본문(주석 마커 포함) 텍스트. 주석 영역·스크립트는 뺀다."""
+    """입문 본문을 소제목·문단 순서대로 이어 붙인다(문단은 빈 줄로 구분).
+    하단 주석 카드·네비게이션·스크립트는 제외한다."""
     html = fx.SCRIPT_STYLE_RE.sub(" ", html)
-    html = ANNO_BLOCK_RE.sub(" ", html)
-    try:
-        from bs4 import BeautifulSoup  # type: ignore
-        soup = BeautifulSoup(html, "html.parser")
-        node = soup.find(class_=re.compile(r"intro|content|read|body|inner", re.I))
-        if node:
-            return WS_RE.sub(" ", node.get_text(" ", strip=True)).strip()
-    except ImportError:
-        pass
-    body = re.search(r"<body[^>]*>(.*)</body>", html, re.S | re.I)
-    return strip_tags(body.group(1) if body else html)
-
-
-def extract_verses_with_markers(html: str) -> dict[str, str]:
-    """장 본문을 각주 번호(마커)를 유지한 채 {절: 본문}으로 추출한다.
-
-    fetch_cbck_bible.extract_verses는 sup.annotation을 지우지만, 여기서는
-    마커를 남기기 위해 <sup class="annotation">N)</sup> → 'N)' 로 바꾼다.
-    """
-    def sup_to_marker(m: re.Match) -> str:
-        inner = strip_tags(m.group(0))
-        return f" {inner} "
-    kept = fx.SUP_ANNO_RE.sub(sup_to_marker, html)
-    kept = fx.SCRIPT_STYLE_RE.sub(" ", kept)
-    kept = ANNO_BLOCK_RE.sub(" ", kept)   # 하단 주석 목록은 본문에서 제외
-    return fx.extract_verses(kept)
+    m = MAIN_RE.search(html)
+    region = m.group(1) if m else html
+    region = _before_notes(region)
+    blocks: list[str] = []
+    for mm in BLOCK_RE.finditer(region):
+        text = strip_tags(mm.group(2))
+        if not text or text == "입문":
+            continue
+        if text.startswith("주석 성경 >"):
+            continue
+        blocks.append(text)
+    return "\n\n".join(blocks)
 
 
 # ─────────────────────────────────────────────────────────────
