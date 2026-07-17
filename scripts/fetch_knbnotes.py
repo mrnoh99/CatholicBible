@@ -68,7 +68,9 @@ def console_utf8() -> None:
 
 
 def strip_tags(html: str) -> str:
-    return WS_RE.sub(" ", unescape(TAG_RE.sub(" ", html))).strip()
+    text = unescape(TAG_RE.sub(" ", html))
+    text = TAG_RE.sub(" ", text)   # unescape로 되살아난 태그(&lt;p&gt; 등)를 한 번 더 제거
+    return WS_RE.sub(" ", text).strip()
 
 
 # ─────────────────────────────────────────────────────────────
