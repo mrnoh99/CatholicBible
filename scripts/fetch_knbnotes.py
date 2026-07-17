@@ -150,6 +150,8 @@ ANNO_ITEM_RE = re.compile(
     r'id="annotation-(?:\d+-)?(\d+)"[^>]*>(.*?)</div>', re.S)
 BLOCK_RE = re.compile(r"<(h1|h2|h3|h4|p)\b[^>]*>(.*?)</\1>", re.S | re.I)
 MAIN_RE = re.compile(r'<div id="main">(.*?)<nav id="submenu"', re.S)
+# 소제목: <h4>…</h4> 다음에 나오는 첫 절(jul-N) 앞에 놓인다
+TITLE_RE = re.compile(r'<h4\b[^>]*>(.*?)</h4>(?:(?!</h4>).)*?id="jul-(\d+)"', re.S)
 
 
 def _before_notes(html: str) -> str:
@@ -177,6 +179,18 @@ def extract_notes(html: str) -> list[dict]:
         if text:
             notes.append({"n": m.group(1), "text": text})
     return notes
+
+
+def extract_titles(html: str) -> list[dict]:
+    """장 소제목 [{'v': 절번호, 'text': '소제목'}] 추출.
+    <h4>소제목</h4> 이 그 다음 절(jul-N) 앞에 놓인 것으로 본다."""
+    region = fx.SCRIPT_STYLE_RE.sub(" ", _before_notes(html))
+    titles: list[dict] = []
+    for m in TITLE_RE.finditer(region):
+        text = strip_tags(m.group(1))
+        if text:
+            titles.append({"v": int(m.group(2)), "text": text})
+    return titles
 
 
 def extract_intro_body(html: str) -> str:
@@ -273,6 +287,7 @@ def main() -> None:
               "bookNames": {}, "books": {}})
     bible.setdefault("books", {})
     out.setdefault("annotations", {})
+    out.setdefault("titles", {})
 
     targets = args.books or [b[0] for b in fx.BOOKS]
     if args.only_sample:
@@ -281,6 +296,7 @@ def main() -> None:
         _, name, chapter_count = fx.BOOKS_BY_ID[bid]
         chapters = dict(bible["books"].get(bid, {}))
         anno_book = dict(out["annotations"].get(bid, {}))
+        title_book = dict(out["titles"].get(bid, {}))
         last_ch = 1 if args.only_sample else chapter_count
         for ch in range(1, last_ch + 1):
             url = f"{BASE}/{BIBLE_PATH}/{fx.url_code(bid)}/{ch}"
@@ -294,19 +310,25 @@ def main() -> None:
             verses = {v: t.strip() for v, t in
                       extract_verses_with_markers(html).items() if t and t.strip()}
             notes = extract_notes(html)
+            titles = extract_titles(html)
             if verses:
                 chapters[str(ch)] = verses
             if notes:
                 anno_book[str(ch)] = notes
+            if titles:
+                title_book[str(ch)] = titles
             time.sleep(args.delay)
         if chapters:
             bible["books"][bid] = chapters
         if anno_book:
             out["annotations"][bid] = anno_book
+        if title_book:
+            out["titles"][bid] = title_book
         save_json(BIBLE_OUT, bible)
         save_json(NOTES_OUT, out)
         tot_n = sum(len(v) for v in anno_book.values())
-        print(f"✓ {name}: {len(chapters)}장, 주석 {tot_n}개")
+        tot_t = sum(len(v) for v in title_book.values())
+        print(f"✓ {name}: {len(chapters)}장, 주석 {tot_n}개, 소제목 {tot_t}개")
 
     print(f"\n저장:\n  {BIBLE_OUT}\n  {NOTES_OUT}")
     print("검증: python scripts\\validate_bible_text.py knbnotes")

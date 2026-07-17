@@ -26,21 +26,28 @@ struct ReaderView: View {
     @Environment(ReadingState.self) private var readingState
     @Environment(ReaderNavigation.self) private var navigation
     @Environment(AnnotationStore.self) private var annotations
+    @Environment(KnbNotesStore.self) private var knbNotes
     @Environment(\.horizontalSizeClass) private var hSize
 
     @State private var showAppearance = false
     @State private var noteTarget: NoteTarget?
+    @State private var markerNote: MarkerNoteTarget?
 
     private var canDual: Bool { hSize == .regular }
     /// 좁은 화면(iPhone)에서는 항상 한 페이지
     private var layout: ReaderLayout { canDual ? readingState.readerLayout : .single }
+    /// 주석 성경 전용 본문|주석 화면을 쓸지 (비교 모드가 아니면 사용)
+    private var showAnnotated: Bool {
+        readingState.selectedEditionID == "knbnotes"
+            && !(canDual && readingState.readerLayout == .compare)
+    }
 
     var body: some View {
         @Bindable var rs = readingState
 
         ZStack {
             settings.theme.background.ignoresSafeArea()
-            if readingState.selectedEditionID == "knbnotes" {
+            if showAnnotated {
                 // 주석 성경: 왼쪽 본문 · 오른쪽 주석 (입문 접근 포함)
                 AnnotatedReader(editionID: $rs.selectedEditionID,
                                 bookID: primaryBookBinding,
@@ -85,6 +92,20 @@ struct ReaderView: View {
                            verseText: target.text,
                            existing: annotations.noteOrNew(for: target.ref))
         }
+        // 각주 마커 'N)' 탭 → 해당 주석 팝업
+        .environment(\.openURL, OpenURLAction { url in
+            guard url.scheme == "catholicbible", url.host == "note" else { return .systemAction }
+            let items = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems ?? []
+            func q(_ k: String) -> String? { items.first { $0.name == k }?.value }
+            if let b = q("b"), let cs = q("c"), let c = Int(cs), let n = q("n") {
+                let note = knbNotes.notes(bookID: b, chapter: c).first { $0.n == n }
+                markerNote = MarkerNoteTarget(n: n, text: note?.text ?? "이 주석을 찾지 못했습니다.")
+            }
+            return .handled
+        })
+        .sheet(item: $markerNote) { mn in
+            MarkerNoteSheet(n: mn.n, text: mn.text)
+        }
     }
 
     /// 첫째 열의 책은 사이드바 선택(navigation)과 연동된다.
@@ -106,8 +127,20 @@ struct ReaderView: View {
     @ToolbarContentBuilder
     private var readerToolbar: some ToolbarContent {
         ToolbarItemGroup(placement: .primaryAction) {
-            // 주석 성경은 항상 본문|주석이므로 페이지 레이아웃 선택을 숨긴다
-            if canDual && readingState.selectedEditionID != "knbnotes" {
+            if canDual && readingState.selectedEditionID == "knbnotes" {
+                // 주석 성경: 본문·주석 vs 판본 비교
+                Menu {
+                    Button {
+                        readingState.readerLayout = .single
+                    } label: { Label("본문·주석", systemImage: "book.pages") }
+                    Button {
+                        readingState.readerLayout = .compare
+                    } label: { Label("판본 비교", systemImage: "rectangle.split.2x1") }
+                } label: {
+                    Label("보기", systemImage: readingState.readerLayout == .compare
+                          ? "rectangle.split.2x1" : "book.pages")
+                }
+            } else if canDual {
                 Menu {
                     Picker("페이지", selection: Binding(
                         get: { readingState.readerLayout },
@@ -640,6 +673,13 @@ struct VerseRowView: View {
 
     private var ref: VerseRef { VerseRef(bookID: book.id, chapter: chapter, verse: verse.number) }
 
+    /// 주석 성경이면 각주 마커 'N)'를 탭 가능한 링크로 표시한 본문.
+    private var bodyText: AttributedString {
+        AnnotationMarkup.attributed(verse.text,
+                                    linkable: edition.id == "knbnotes",
+                                    bookID: book.id, chapter: chapter)
+    }
+
     var body: some View {
         let bookmarked = annotations.isBookmarked(ref)
         let hasNote = annotations.hasNote(ref)
@@ -648,12 +688,14 @@ struct VerseRowView: View {
             // 앞의 번호(또는 점) = 동작 메뉴 손잡이. 본문 낱말 선택과 겹치지 않는다.
             actionMenu(bookmarked: bookmarked, hasNote: hasNote)
 
-            // 본문: 낱말을 길게 눌러 선택 → iOS ‘찾아보기’로 사전 조회
-            Text(verse.text)
+            // 본문: 낱말을 길게 눌러 선택 → iOS ‘찾아보기’로 사전 조회.
+            // 주석 성경이면 각주 마커 'N)'가 탭 가능한 링크가 된다.
+            Text(bodyText)
                 .font(settings.bodyFont())
                 .foregroundStyle(settings.theme.text)
                 .lineSpacing(settings.lineSpacing)
                 .textSelection(.enabled)
+                .tint(Color.accentColor)
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
         .padding(.horizontal, 6)

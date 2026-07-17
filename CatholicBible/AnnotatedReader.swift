@@ -179,12 +179,18 @@ struct AnnotatedReader: View {
         if verses.isEmpty {
             MissingTextView(edition: edition, book: book).padding(.top, 32)
         } else {
+            let titleMap = knb.titlesByVerse(bookID: book.id, chapter: max(chapter, 1))
             LazyVStack(alignment: .leading, spacing: settings.lineSpacing * 0.9) {
                 ForEach(verses) { verse in
-                    VerseRowView(edition: edition, book: book, chapter: chapter,
-                                 verse: verse, highlighted: highlight == verse.number,
-                                 onOpenNote: onOpenNote)
-                        .id(verse.number)
+                    VStack(alignment: .leading, spacing: settings.lineSpacing * 0.9) {
+                        if let title = titleMap[verse.number] {
+                            SectionTitleView(text: title, bookID: book.id, chapter: chapter)
+                        }
+                        VerseRowView(edition: edition, book: book, chapter: chapter,
+                                     verse: verse, highlighted: highlight == verse.number,
+                                     onOpenNote: onOpenNote)
+                    }
+                    .id(verse.number)
                 }
             }
             .scrollTargetLayout()
@@ -226,6 +232,54 @@ struct AnnotatedReader: View {
                 Rectangle().fill(settings.theme.secondary.opacity(0.2)).frame(height: 0.5)
             }
         }
+    }
+}
+
+// MARK: - 소제목
+
+struct SectionTitleView: View {
+    let text: String
+    let bookID: String
+    let chapter: Int
+    @Environment(ReaderSettings.self) private var settings
+
+    var body: some View {
+        Text(AnnotationMarkup.attributed(text, linkable: true, bookID: bookID, chapter: chapter))
+            .font(settings.fontChoice.font(size: settings.fontSize * 1.05, relativeTo: .headline, bold: true))
+            .foregroundStyle(settings.theme.text)
+            .tint(Color.accentColor)
+            .textSelection(.enabled)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.top, settings.lineSpacing)
+    }
+}
+
+// MARK: - 각주 마커 팝업
+
+struct MarkerNoteSheet: View {
+    let n: String
+    let text: String
+    @Environment(\.dismiss) private var dismiss
+    @Environment(ReaderSettings.self) private var settings
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                Text(text)
+                    .font(settings.bodyFont())
+                    .foregroundStyle(settings.theme.text)
+                    .lineSpacing(settings.lineSpacing)
+                    .textSelection(.enabled)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(20)
+            }
+            .background(settings.theme.background.ignoresSafeArea())
+            .navigationTitle("주석 \(n)")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar { ToolbarItem(placement: .cancellationAction) { Button("닫기") { dismiss() } } }
+            .preferredColorScheme(settings.theme.colorScheme)
+        }
+        .presentationDetents([.medium, .large])
     }
 }
 

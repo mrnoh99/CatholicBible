@@ -9,6 +9,7 @@
 
 import Foundation
 import Observation
+import SwiftUI
 
 // MARK: - 모델
 
@@ -17,6 +18,52 @@ struct ChapterNote: Codable, Identifiable, Hashable, Sendable {
     let n: String
     let text: String
     var id: String { n }
+}
+
+/// 장 소제목 (해당 절 앞에 놓인다)
+struct TitleItem: Codable, Hashable, Sendable {
+    let v: Int        // 이 소제목이 앞서는 절 번호
+    let text: String
+}
+
+// MARK: - 각주 마커 링크 마크업
+
+enum AnnotationMarkup {
+    /// 본문의 각주 마커 'N)'(앞이 숫자·'('가 아닌 것)를 탭 가능한 링크로 바꾼다.
+    /// 링크 URL: catholicbible://note?b=<책>&c=<장>&n=<번호>
+    static func attributed(_ text: String, linkable: Bool,
+                           bookID: String, chapter: Int) -> AttributedString {
+        guard linkable, let regex = markerRegex else { return AttributedString(text) }
+        let ns = text as NSString
+        var result = AttributedString()
+        var last = 0
+        for m in regex.matches(in: text, range: NSRange(location: 0, length: ns.length)) {
+            if m.range.location > last {
+                result += AttributedString(ns.substring(with:
+                    NSRange(location: last, length: m.range.location - last)))
+            }
+            var marker = AttributedString(ns.substring(with: m.range))
+            let n = ns.substring(with: m.range(at: 1))
+            marker.link = URL(string: "catholicbible://note?b=\(bookID)&c=\(chapter)&n=\(n)")
+            marker.foregroundColor = .accentColor
+            result += marker
+            last = m.range.location + m.range.length
+        }
+        if last < ns.length {
+            result += AttributedString(ns.substring(from: last))
+        }
+        return result
+    }
+
+    private static let markerRegex = try? NSRegularExpression(
+        pattern: "(?<![\\d(])(\\d{1,3})\\)")
+}
+
+/// 각주 마커를 눌렀을 때 보여 줄 대상
+struct MarkerNoteTarget: Identifiable {
+    let id = UUID()
+    let n: String
+    let text: String
 }
 
 enum IntroLevel: String, Codable, Sendable {
@@ -62,6 +109,8 @@ private struct KnbNotesFile: Decodable {
     let intros: [Introduction]?
     /// 책 id → 장(문자열) → 주석 목록
     let annotations: [String: [String: [ChapterNote]]]?
+    /// 책 id → 장(문자열) → 소제목 목록
+    let titles: [String: [String: [TitleItem]]]?
 }
 
 // MARK: - 저장소
@@ -72,6 +121,8 @@ final class KnbNotesStore {
     private(set) var intros: [Introduction] = []
     /// 책 id → 장 → 주석
     private(set) var annotations: [String: [Int: [ChapterNote]]] = [:]
+    /// 책 id → 장 → 소제목
+    private(set) var titles: [String: [Int: [TitleItem]]] = [:]
 
     var hasData: Bool { !intros.isEmpty || !annotations.isEmpty }
 
@@ -81,7 +132,9 @@ final class KnbNotesStore {
             isLoaded = true
             return
         }
-        let parsed: (intros: [Introduction], anno: [String: [Int: [ChapterNote]]])? =
+        let parsed: (intros: [Introduction],
+                     anno: [String: [Int: [ChapterNote]]],
+                     titles: [String: [Int: [TitleItem]]])? =
             await Task.detached(priority: .userInitiated) {
                 guard let data = try? Data(contentsOf: url),
                       let file = try? JSONDecoder().decode(KnbNotesFile.self, from: data)
@@ -89,16 +142,25 @@ final class KnbNotesStore {
                 var anno: [String: [Int: [ChapterNote]]] = [:]
                 for (bookID, chapters) in file.annotations ?? [:] {
                     var map: [Int: [ChapterNote]] = [:]
-                    for (chKey, notes) in chapters {
-                        if let ch = Int(chKey) { map[ch] = notes }
+                    for (chKey, notes) in chapters where Int(chKey) != nil {
+                        map[Int(chKey)!] = notes
                     }
                     anno[bookID] = map
                 }
-                return (file.intros ?? [], anno)
+                var titleMap: [String: [Int: [TitleItem]]] = [:]
+                for (bookID, chapters) in file.titles ?? [:] {
+                    var map: [Int: [TitleItem]] = [:]
+                    for (chKey, items) in chapters where Int(chKey) != nil {
+                        map[Int(chKey)!] = items
+                    }
+                    titleMap[bookID] = map
+                }
+                return (file.intros ?? [], anno, titleMap)
             }.value
         if let parsed {
             intros = parsed.intros
             annotations = parsed.anno
+            titles = parsed.titles
         }
         isLoaded = true
     }
@@ -107,6 +169,13 @@ final class KnbNotesStore {
 
     func notes(bookID: String, chapter: Int) -> [ChapterNote] {
         annotations[bookID]?[chapter] ?? []
+    }
+
+    /// 절 번호 → 그 절 앞에 놓일 소제목
+    func titlesByVerse(bookID: String, chapter: Int) -> [Int: String] {
+        var map: [Int: String] = [:]
+        for item in titles[bookID]?[chapter] ?? [] { map[item.v] = item.text }
+        return map
     }
 
     func intro(forBook bookID: String) -> Introduction? {
