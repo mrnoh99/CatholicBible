@@ -155,8 +155,22 @@ def parse_reference(book_alias, chapter, verse_tail):
     return cit
 
 
+# 수난기 등 장을 넘는 표기 "마태 26,14─27,66" / "요한 18,1─19,42"
+# (긴 가로줄 ─ U+2500·― U+2015·— U+2014, 끝 장·절은 ',' 또는 '.'로 이어짐)
+PASSION_RE = re.compile(r"(" + _ALIAS_ALT + r")\s*(\d+)\s*,\s*(\d+)\s*[─―—]\s*(\d+)\s*[.,]\s*(\d+)")
+
+
 def find_reference(text):
     """텍스트 조각에서 첫 성구 표기와 citation을 찾는다."""
+    mp = PASSION_RE.search(text)
+    if mp:
+        bid = BOOK_ALIASES.get(mp.group(1))
+        if bid:
+            ch1, v1, ch2, v2 = int(mp.group(2)), int(mp.group(3)), int(mp.group(4)), int(mp.group(5))
+            cit = {"bookID": bid, "chapter": ch1, "verseStart": v1, "verseEnd": v2}
+            if ch2 != ch1:
+                cit["endChapter"] = ch2
+            return mp.group(0).strip(), cit
     m = REF_RE.search(text)
     if not m:
         return None, None
@@ -195,7 +209,8 @@ def book_id_from_phrase(phrase, is_gospel):
 H4_RE = re.compile(r"<h4>(.*?)</h4>", re.S)
 FLOAT_RIGHT_RE = re.compile(r'<span class="float-right">(.*?)</span>', re.S)
 THEME_RE = re.compile(r"<span>\s*&lt;(.*?)&gt;\s*</span>", re.S)
-BOOK_LINE_RE = re.compile(r"[▥✠]\s*(.*?)<h5[^>]*>\s*<span>(.*?)</span>", re.S)
+# 독서 표지 기호: ▥(독서) ✠(복음) ○/╋(수난기 봉독) 등
+BOOK_LINE_RE = re.compile(r"[▥✠○╋＋]\s*(.*?)<h5[^>]*>\s*<span>(.*?)</span>", re.S)
 REFRAIN_RE = re.compile(r"◎\s*(.*?)</div>", re.S)
 MISSA_TITLE_RE = re.compile(r'<h3[^>]*id="missa_title"[^>]*>(.*?)</h3>', re.S)
 
