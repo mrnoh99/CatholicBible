@@ -92,16 +92,26 @@ struct ReaderView: View {
                            verseText: target.text,
                            existing: annotations.noteOrNew(for: target.ref))
         }
-        // 각주 마커 'N)' 탭 → 해당 주석 팝업
+        // 각주 마커 'N)' 탭 → 주석 팝업 / 낱말 탭 → 사전
         .environment(\.openURL, OpenURLAction { url in
-            guard url.scheme == "catholicbible", url.host == "note" else { return .systemAction }
+            guard url.scheme == "catholicbible" else { return .systemAction }
             let items = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems ?? []
             func q(_ k: String) -> String? { items.first { $0.name == k }?.value }
-            if let b = q("b"), let cs = q("c"), let c = Int(cs), let n = q("n") {
-                let note = knbNotes.notes(bookID: b, chapter: c).first { $0.n == n }
-                markerNote = MarkerNoteTarget(n: n, text: note?.text ?? "이 주석을 찾지 못했습니다.")
+            switch url.host {
+            case "note":
+                if let b = q("b"), let cs = q("c"), let c = Int(cs), let n = q("n") {
+                    let note = knbNotes.notes(bookID: b, chapter: c).first { $0.n == n }
+                    markerNote = MarkerNoteTarget(n: n, text: note?.text ?? "이 주석을 찾지 못했습니다.")
+                }
+                return .handled
+            case "define":
+                if let w = q("w")?.removingPercentEncoding, !w.isEmpty {
+                    navigation.lookUp(w)
+                }
+                return .handled
+            default:
+                return .systemAction
             }
-            return .handled
         })
         .sheet(item: $markerNote) { mn in
             MarkerNoteSheet(n: mn.n, text: mn.text)
@@ -153,6 +163,14 @@ struct ReaderView: View {
                     Label("페이지", systemImage: layout.systemImage)
                 }
             }
+            // 사전 찾기 모드: 켜면 본문 낱말을 눌러 사전으로 보낸다.
+            Button {
+                readingState.wordLookupMode.toggle()
+            } label: {
+                Label("사전 찾기", systemImage: "character.book.closed")
+            }
+            .tint(readingState.wordLookupMode ? Color.accentColor : nil)
+
             Button("보기 설정", systemImage: "textformat.size") { showAppearance = true }
         }
     }
@@ -670,14 +688,18 @@ struct VerseRowView: View {
     @Environment(ReaderSettings.self) private var settings
     @Environment(AnnotationStore.self) private var annotations
     @Environment(ReaderNavigation.self) private var navigation
+    @Environment(ReadingState.self) private var readingState
 
     private var ref: VerseRef { VerseRef(bookID: book.id, chapter: chapter, verse: verse.number) }
 
-    /// 주석 성경이면 각주 마커 'N)'를 탭 가능한 링크로 표시한 본문.
+    /// 사전 찾기 모드면 낱말을, 주석 성경이면 각주 마커 'N)'를 탭 가능한 링크로.
     private var bodyText: AttributedString {
-        AnnotationMarkup.attributed(verse.text,
-                                    linkable: edition.id == "knbnotes",
-                                    bookID: book.id, chapter: chapter)
+        if readingState.wordLookupMode {
+            return AnnotationMarkup.wordLookup(verse.text, textColor: settings.theme.text)
+        }
+        return AnnotationMarkup.attributed(verse.text,
+                                           linkable: edition.id == "knbnotes",
+                                           bookID: book.id, chapter: chapter)
     }
 
     var body: some View {

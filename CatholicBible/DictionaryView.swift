@@ -19,17 +19,18 @@ struct DictionaryView: View {
     @State private var lookup = ""     // 실제 조회할 확정 낱말
 
     var body: some View {
+        let effective = bestTerm(lookup)
         NavigationStack {
             VStack(spacing: 0) {
                 if lookup.isEmpty {
                     ContentUnavailableView {
                         Label("사전", systemImage: "character.book.closed")
                     } description: {
-                        Text("낱말을 입력해 뜻을 찾습니다.\n국어·영어·라틴어 사전은 iOS ‘사전’ 앱이나 설정에서 추가할 수 있습니다.")
+                        Text("낱말을 입력하거나 본문에서 낱말을 눌러 뜻을 찾습니다.\n국어·영어·라틴어 사전은 iOS ‘사전’ 앱이나 설정에서 추가할 수 있습니다.")
                     }
-                } else if UIReferenceLibraryViewController.dictionaryHasDefinition(forTerm: lookup) {
-                    DictionaryDefinition(term: lookup)
-                        .id(lookup)                 // 낱말이 바뀌면 새로 만든다
+                } else if UIReferenceLibraryViewController.dictionaryHasDefinition(forTerm: effective) {
+                    DictionaryDefinition(term: effective)
+                        .id(effective)              // 낱말이 바뀌면 새로 만든다
                         .ignoresSafeArea(edges: .bottom)
                 } else {
                     ContentUnavailableView {
@@ -59,6 +60,20 @@ struct DictionaryView: View {
 
     private func trimmed(_ s: String) -> String {
         s.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    /// 조회에 쓸 낱말. 그대로 뜻이 없으면 한글 조사 등 뒤 글자를 하나씩 줄여
+    /// 본말(예: "하늘에" → "하늘")을 찾는다. 최소 2글자까지.
+    private func bestTerm(_ term: String) -> String {
+        let t = trimmed(term)
+        guard !t.isEmpty else { return t }
+        if UIReferenceLibraryViewController.dictionaryHasDefinition(forTerm: t) { return t }
+        var s = t
+        while s.count > 1 {
+            s = String(s.dropLast())
+            if UIReferenceLibraryViewController.dictionaryHasDefinition(forTerm: s) { return s }
+        }
+        return t
     }
 }
 
