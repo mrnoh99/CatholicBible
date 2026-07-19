@@ -48,6 +48,7 @@ struct ContentView: View {
     @State private var showSearch = false
     @State private var showBookmarks = false
     @State private var showNotes = false
+    @State private var showMass = false
 
     var body: some View {
         @Bindable var nav = navigation
@@ -56,6 +57,7 @@ struct ContentView: View {
                 .navigationTitle("서재")
                 .toolbar {
                     ToolbarItemGroup(placement: .primaryAction) {
+                        Button("오늘의 미사", systemImage: "sun.max") { showMass = true }
                         Button("검색", systemImage: "magnifyingglass") { showSearch = true }
                         Button("사전", systemImage: "character.book.closed") { navigation.lookUp() }
                         Button("책갈피", systemImage: "bookmark") { showBookmarks = true }
@@ -80,6 +82,9 @@ struct ContentView: View {
         .sheet(isPresented: $showNotes) {
             NotesListView().environment(navigation)
         }
+        .sheet(isPresented: $showMass) {
+            DailyMassView().environment(navigation)
+        }
         .sheet(item: $nav.dictionaryRequest) { req in
             DictionaryView(initialTerm: req.term)
         }
@@ -93,6 +98,8 @@ struct ShelfView: View {
     @Environment(ReadingState.self) private var readingState
     @Environment(ReaderNavigation.self) private var navigation
     @Environment(ReaderSettings.self) private var settings
+
+    @State private var showMass = false
 
     private let columns = [GridItem(.adaptive(minimum: 280), spacing: 20)]
 
@@ -111,6 +118,7 @@ struct ShelfView: View {
                     }
                     .padding(.top, 40)
 
+                    massCard
                     continueReadingCard
 
                     LazyVGrid(columns: columns, spacing: 20) {
@@ -126,6 +134,36 @@ struct ShelfView: View {
             }
         }
         .preferredColorScheme(settings.theme.colorScheme)
+        .sheet(isPresented: $showMass) {
+            DailyMassView().environment(navigation)
+        }
+    }
+
+    /// 오늘의 미사·전례력으로 가는 카드
+    @ViewBuilder
+    private var massCard: some View {
+        Button { showMass = true } label: {
+            HStack(spacing: 12) {
+                Image(systemName: "sun.max.fill")
+                    .font(.title2)
+                    .foregroundStyle(LiturgicalCalendar.liturgicalColor().color)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("오늘의 미사 · 전례력")
+                        .font(.headline)
+                        .foregroundStyle(settings.theme.text)
+                    Text(LiturgicalCalendar.liturgicalDayName())
+                        .font(.subheadline)
+                        .foregroundStyle(settings.theme.secondary)
+                        .lineLimit(1)
+                }
+                Spacer(minLength: 0)
+                Image(systemName: "chevron.right").foregroundStyle(settings.theme.secondary)
+            }
+            .padding(.horizontal, 16).padding(.vertical, 12)
+            .background(RoundedRectangle(cornerRadius: 14).fill(settings.theme.text.opacity(0.05)))
+        }
+        .buttonStyle(.plain)
+        .padding(.horizontal, 32)
     }
 
     /// 판본을 고르면: 시편 판본은 곧장 리더로, 나머지는 사이드바에서 책을 고르게 한다.
@@ -244,4 +282,5 @@ struct EditionCard: View {
         .environment(ReadingState())
         .environment(AnnotationStore())
         .environment(KnbNotesStore())
+        .environment(LiturgyStore())
 }

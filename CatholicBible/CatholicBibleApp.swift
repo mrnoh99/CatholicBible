@@ -12,6 +12,7 @@ struct CatholicBibleApp: App {
     @State private var readingState = ReadingState()
     @State private var annotations = AnnotationStore()
     @State private var knbNotes = KnbNotesStore()
+    @State private var liturgy = LiturgyStore()
 
     var body: some Scene {
         WindowGroup {
@@ -21,9 +22,11 @@ struct CatholicBibleApp: App {
                 .environment(readingState)
                 .environment(annotations)
                 .environment(knbNotes)
+                .environment(liturgy)
                 .task {
                     await store.load()
                     await knbNotes.load()
+                    await liturgy.load()
                 }
         }
     }
