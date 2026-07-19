@@ -183,6 +183,9 @@ final class LiturgyStore {
     private(set) var isLoaded = false
     /// "yyyy-MM-dd" → 하루치 독서
     private(set) var days: [String: DailyReadings] = [:]
+    /// 전례일 정체성+주기 → 독서. 파일이 없는 해(예: 2027·2028)를 다른 해 같은
+    /// 전례일로 재구성하는 데 쓴다. 독서는 3년(A·B·C)·2년(Ⅰ·Ⅱ) 주기로 반복된다.
+    private(set) var cycleIndex: [String: [MassReading]] = [:]
 
     var hasData: Bool { !days.isEmpty }
 
@@ -204,14 +207,49 @@ final class LiturgyStore {
         }.value
 
         days = merged
+        // 주기 색인 구성: 각 날짜를 '전례일 정체성+주기' 키로 묶는다.
+        var index: [String: [MassReading]] = [:]
+        for (k, v) in merged where !v.readings.isEmpty {
+            guard let date = Self.parseKey(k) else { continue }
+            let pk = Self.cycleKey(date)
+            if index[pk] == nil { index[pk] = v.readings }
+        }
+        cycleIndex = index
         isLoaded = true
+    }
+
+    // MARK: 주기 색인 키
+
+    /// "yyyy-MM-dd" → Date
+    static func parseKey(_ s: String) -> Date? {
+        let p = s.split(separator: "-").compactMap { Int($0) }
+        guard p.count == 3 else { return nil }
+        return LDate.make(p[0], p[1], p[2])
+    }
+
+    /// 전례일 정체성 + 관련 독서 주기.
+    /// 평일 연중/사순/… '제N주간 요일'은 평일 주기(Ⅰ·Ⅱ), 그 밖(주일·대축일·축일)은
+    /// 주일 주기(가·나·다)로 구분한다. 원본·대상 모두 같은 함수로 키를 만들어
+    /// 서로 일치한다.
+    static func cycleKey(_ date: Date) -> String {
+        let name = LiturgicalCalendar.liturgicalDayName(date)
+        let pos = LiturgicalCalendar.liturgicalPosition(date)
+        if name.contains("주간") {
+            return "\(name)|W:\(pos.weekdayCycle.rawValue)"
+        }
+        return "\(name)|S:\(pos.sundayCycle.rawValue)"
     }
 
     // MARK: 조회
 
-    /// 그 날 저장된 독서(파일이 있을 때).
+    /// 그 날 저장된 독서(그 날짜 파일이 있을 때).
     func stored(_ date: Date) -> DailyReadings? {
         days[LDate.key(date)]
+    }
+
+    /// 다른 해 같은 전례일에서 가져온 독서 (그 날짜 파일이 없을 때).
+    func cycleReadings(_ date: Date) -> [MassReading]? {
+        cycleIndex[Self.cycleKey(date)]
     }
 
     /// 그 날 미사 명칭 (저장값 우선, 없으면 전례력 계산).
@@ -225,9 +263,10 @@ final class LiturgyStore {
         stored(date)?.color ?? LiturgicalCalendar.liturgicalColor(date)
     }
 
-    /// 그 날 독서 목록. 저장값이 있으면 그대로, 없으면 복음만 계산해 제공.
+    /// 그 날 독서 목록. ① 그 날짜 저장값 → ② 주기로 재구성 → ③ 복음만 계산.
     func readings(_ date: Date) -> [MassReading] {
         if let stored = stored(date), !stored.readings.isEmpty { return stored.readings }
+        if let byCycle = cycleReadings(date), !byCycle.isEmpty { return byCycle }
         if let gospel = Lectionary.todayGospelCitation(date) {
             let ref = Self.referenceLabel(gospel)
             return [MassReading(role: "복음", reference: ref, refrain: nil, citations: [gospel])]
@@ -235,9 +274,15 @@ final class LiturgyStore {
         return []
     }
 
-    /// 저장 독서가 있는지 (복음만 계산된 상태와 구분).
+    /// 전체 독서(제1독서·화답송·…)가 있는지 (그 날짜 또는 주기 재구성).
     func hasFullReadings(_ date: Date) -> Bool {
-        !(stored(date)?.readings.isEmpty ?? true)
+        if !(stored(date)?.readings.isEmpty ?? true) { return true }
+        return cycleReadings(date) != nil
+    }
+
+    /// 다른 해 같은 전례일의 독서로 재구성한 경우 (그 날짜 파일이 없을 때).
+    func isReconstructed(_ date: Date) -> Bool {
+        (stored(date)?.readings.isEmpty ?? true) && cycleReadings(date) != nil
     }
 
     /// 성구 → "루카 10,38-42" 식 표기 (계산된 복음 표시용).

@@ -131,6 +131,11 @@ struct DailyMassView: View {
                           systemImage: "info.circle")
                         .font(.caption).foregroundStyle(settings.theme.secondary)
                         .padding(.bottom, 2)
+                } else if liturgy.isReconstructed(viewedDate) {
+                    Label("같은 전례 주기의 다른 해 독서로 표시합니다.",
+                          systemImage: "arrow.triangle.2.circlepath")
+                        .font(.caption).foregroundStyle(settings.theme.secondary)
+                        .padding(.bottom, 2)
                 }
                 ForEach(readings) { reading in
                     ReadingCard(reading: reading, openCitation: open)
