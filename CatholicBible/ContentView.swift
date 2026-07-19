@@ -82,7 +82,7 @@ struct ContentView: View {
         .sheet(isPresented: $showNotes) {
             NotesListView().environment(navigation)
         }
-        .sheet(isPresented: $showMass) {
+        .fullScreenCover(isPresented: $showMass) {
             DailyMassView().environment(navigation)
         }
         .sheet(item: $nav.dictionaryRequest) { req in
@@ -134,7 +134,7 @@ struct ShelfView: View {
             }
         }
         .preferredColorScheme(settings.theme.colorScheme)
-        .sheet(isPresented: $showMass) {
+        .fullScreenCover(isPresented: $showMass) {
             DailyMassView().environment(navigation)
         }
     }
