@@ -43,7 +43,6 @@ final class ReadingState {
     private static let layoutKey = "reading.layout"
     private static let lastBookKey = "reading.lastBookID"
     private static let chapterPrefix = "reading.chapter."
-    private static let wordLookupKey = "reading.wordLookupMode"
 
     /// 첫째 열(주 판본)
     var selectedEditionID: String {
@@ -65,11 +64,6 @@ final class ReadingState {
         didSet { Self.defaults.set(readerLayout.rawValue, forKey: Self.layoutKey) }
     }
 
-    /// 사전 찾기 모드: 켜면 본문의 낱말을 눌러 사전으로 보낼 수 있다.
-    var wordLookupMode: Bool {
-        didSet { Self.defaults.set(wordLookupMode, forKey: Self.wordLookupKey) }
-    }
-
     /// 마지막으로 읽던 책 (판본별)
     private var lastBookIDs: [String: String] {
         didSet { Self.defaults.set(lastBookIDs, forKey: Self.lastBookKey) }
@@ -80,7 +74,6 @@ final class ReadingState {
         secondaryEditionID = Self.defaults.string(forKey: Self.secondaryKey) ?? "ncb"
         secondaryBookID = Self.defaults.string(forKey: Self.secondaryBookKey) ?? ""
         readerLayout = ReaderLayout(rawValue: Self.defaults.string(forKey: Self.layoutKey) ?? "") ?? .single
-        wordLookupMode = Self.defaults.bool(forKey: Self.wordLookupKey)
         lastBookIDs = Self.defaults.dictionary(forKey: Self.lastBookKey) as? [String: String] ?? [:]
     }
 

@@ -57,37 +57,6 @@ enum AnnotationMarkup {
 
     private static let markerRegex = try? NSRegularExpression(
         pattern: "(?<![\\d(])(\\d{1,3})\\)")
-
-    /// 사전 찾기 모드: 본문의 낱말(한글·라틴 문자 연속)을 각각 탭 가능한 링크로
-    /// 만든다. 링크 URL: catholicbible://define?w=<낱말>. 낱말은 본문색 그대로라
-    /// 읽기를 방해하지 않되, 누르면 사전으로 보낸다.
-    static func wordLookup(_ text: String, textColor: Color) -> AttributedString {
-        guard let regex = wordRegex else { return AttributedString(text) }
-        let ns = text as NSString
-        var result = AttributedString()
-        var last = 0
-        for m in regex.matches(in: text, range: NSRange(location: 0, length: ns.length)) {
-            if m.range.location > last {
-                result += AttributedString(ns.substring(with:
-                    NSRange(location: last, length: m.range.location - last)))
-            }
-            let word = ns.substring(with: m.range)
-            var seg = AttributedString(word)
-            let encoded = word.addingPercentEncoding(withAllowedCharacters: .alphanumerics) ?? word
-            seg.link = URL(string: "catholicbible://define?w=\(encoded)")
-            seg.foregroundColor = textColor          // 본문색 유지 (링크 색 무시)
-            result += seg
-            last = m.range.location + m.range.length
-        }
-        if last < ns.length {
-            result += AttributedString(ns.substring(from: last))
-        }
-        return result
-    }
-
-    /// 낱말 = 한글 음절/자모 또는 라틴 문자의 연속 (숫자·문장부호 제외)
-    private static let wordRegex = try? NSRegularExpression(
-        pattern: "[\\p{Hangul}A-Za-zÀ-ÿ]+")
 }
 
 /// 각주 마커를 눌렀을 때 보여 줄 대상
