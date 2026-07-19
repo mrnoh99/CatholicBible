@@ -153,6 +153,7 @@ struct ReaderView: View {
                     Label("페이지", systemImage: layout.systemImage)
                 }
             }
+            Button("사전", systemImage: "character.book.closed") { navigation.lookUp() }
             Button("보기 설정", systemImage: "textformat.size") { showAppearance = true }
         }
     }
@@ -657,6 +658,48 @@ struct SpreadReader: View {
     }
 }
 
+// MARK: - 선택 가능한 본문 (UIKit)
+
+/// 낱말을 선택하면 네이티브 하이라이트가 보이고, 선택 메뉴의 ‘찾아보기’로
+/// 시스템 사전이 열리는 본문 뷰. SwiftUI Text의 .textSelection보다 선택이
+/// 확실히 보이고 스크롤 안에서도 잘 동작한다.
+struct SelectableVerseText: UIViewRepresentable {
+    let text: String
+    let font: UIFont
+    let color: UIColor
+    let lineSpacing: CGFloat
+
+    func makeUIView(context: Context) -> UITextView {
+        let tv = UITextView()
+        tv.isEditable = false
+        tv.isSelectable = true
+        tv.isScrollEnabled = false
+        tv.backgroundColor = .clear
+        tv.textContainerInset = .zero
+        tv.textContainer.lineFragmentPadding = 0
+        tv.setContentCompressionResistancePriority(.required, for: .vertical)
+        tv.setContentHuggingPriority(.required, for: .vertical)
+        return tv
+    }
+
+    func updateUIView(_ tv: UITextView, context: Context) {
+        let para = NSMutableParagraphStyle()
+        para.lineSpacing = lineSpacing
+        tv.attributedText = NSAttributedString(string: text, attributes: [
+            .font: font,
+            .foregroundColor: color,
+            .paragraphStyle: para,
+        ])
+    }
+
+    func sizeThatFits(_ proposal: ProposedViewSize, uiView: UITextView, context: Context) -> CGSize? {
+        let width = proposal.width ?? uiView.bounds.width
+        guard width > 0, width.isFinite else { return nil }
+        let fit = uiView.sizeThatFits(CGSize(width: width, height: .greatestFiniteMagnitude))
+        return CGSize(width: width, height: ceil(fit.height))
+    }
+}
+
 // MARK: - 절 한 줄 (판본 공통 책갈피·노트)
 
 struct VerseRowView: View {
@@ -673,21 +716,21 @@ struct VerseRowView: View {
 
     private var ref: VerseRef { VerseRef(bookID: book.id, chapter: chapter, verse: verse.number) }
 
-    /// 본문 뷰. 낱말을 길게 눌러 선택 → iOS ‘찾아보기’로 사전 조회.
+    /// 본문 뷰: UIKit 선택 텍스트뷰. 낱말을 선택하면 네이티브 하이라이트가 보이고,
+    /// 선택 메뉴의 ‘찾아보기’로 시스템 사전이 열린다.
     private var verseTextView: some View {
-        Text(bodyText)
-            .font(settings.bodyFont())
-            .foregroundStyle(settings.theme.text)
-            .lineSpacing(settings.lineSpacing)
-            .textSelection(.enabled)
-            .tint(Color.accentColor)
+        SelectableVerseText(text: verse.text,
+                            font: uiBodyFont,
+                            color: UIColor(settings.theme.text),
+                            lineSpacing: settings.lineSpacing)
     }
 
-    /// 주석 성경이면 각주 마커 'N)'를 탭 가능한 링크로 표시한 본문.
-    private var bodyText: AttributedString {
-        AnnotationMarkup.attributed(verse.text,
-                                    linkable: edition.id == "knbnotes",
-                                    bookID: book.id, chapter: chapter)
+    private var uiBodyFont: UIFont {
+        let size = settings.fontSize
+        switch settings.fontChoice {
+        case .myeongjo: return UIFont(name: "NanumMyeongjo", size: size) ?? .systemFont(ofSize: size)
+        case .gothic:   return .systemFont(ofSize: size)
+        }
     }
 
     var body: some View {
