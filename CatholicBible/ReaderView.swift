@@ -692,10 +692,30 @@ struct VerseRowView: View {
 
     private var ref: VerseRef { VerseRef(bookID: book.id, chapter: chapter, verse: verse.number) }
 
-    /// 사전 찾기 모드면 낱말을, 주석 성경이면 각주 마커 'N)'를 탭 가능한 링크로.
+    /// 본문에 탭 링크(사전 낱말·주석 마커)가 있으면 텍스트 선택을 끈다.
+    /// (선택이 켜져 있으면 링크 탭이 선택 제스처에 가로채여 작동하지 않는다.)
+    private var hasTappableLinks: Bool {
+        readingState.wordLookupMode || edition.id == "knbnotes"
+    }
+
+    @ViewBuilder
+    private var verseTextView: some View {
+        let text = Text(bodyText)
+            .font(settings.bodyFont())
+            .foregroundStyle(settings.theme.text)
+            .lineSpacing(settings.lineSpacing)
+            .tint(Color.accentColor)
+        if hasTappableLinks {
+            text
+        } else {
+            text.textSelection(.enabled)
+        }
+    }
+
+    /// 사전 찾기 모드면 낱말을(강조색), 주석 성경이면 각주 마커 'N)'를 탭 가능한 링크로.
     private var bodyText: AttributedString {
         if readingState.wordLookupMode {
-            return AnnotationMarkup.wordLookup(verse.text, textColor: settings.theme.text)
+            return AnnotationMarkup.wordLookup(verse.text, textColor: .accentColor)
         }
         return AnnotationMarkup.attributed(verse.text,
                                            linkable: edition.id == "knbnotes",
@@ -710,14 +730,7 @@ struct VerseRowView: View {
             // 앞의 번호(또는 점) = 동작 메뉴 손잡이. 본문 낱말 선택과 겹치지 않는다.
             actionMenu(bookmarked: bookmarked, hasNote: hasNote)
 
-            // 본문: 낱말을 길게 눌러 선택 → iOS ‘찾아보기’로 사전 조회.
-            // 주석 성경이면 각주 마커 'N)'가 탭 가능한 링크가 된다.
-            Text(bodyText)
-                .font(settings.bodyFont())
-                .foregroundStyle(settings.theme.text)
-                .lineSpacing(settings.lineSpacing)
-                .textSelection(.enabled)
-                .tint(Color.accentColor)
+            verseTextView
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
         .padding(.horizontal, 6)
