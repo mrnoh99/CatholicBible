@@ -164,17 +164,24 @@ enum LiturgicalCalendar {
         return LDate.make(year, month, day)
     }
 
-    // 대림 제1주일 = 성탄(12/25) 전 넷째 주일
+    // 대림 제1주일 = 대림 제4주일(성탄 전 마지막 주일)의 3주 전.
+    // 성탄 당일이 주일이면 대림 제4주일은 그 전 주일이다.
     static func firstSundayOfAdvent(_ year: Int) -> Date {
-        let dec25 = LDate.make(year, 12, 25)
-        let sundayBeforeOrOnDec25 = LDate.previousOrSame(dec25, weekday: LDate.sunday)
-        return LDate.addWeeks(sundayBeforeOrOnDec25, -3)
+        let dec24 = LDate.make(year, 12, 24)
+        let advent4 = LDate.previousOrSame(dec24, weekday: LDate.sunday)
+        return LDate.addWeeks(advent4, -3)
     }
 
-    // 주님 세례 축일 = 1월 6일(주님 공현) 다음 주일 (한국 관습)
+    // 주님 공현 대축일: 1월 2–8일 사이 주일 (한국 관습)
+    static func epiphany(_ year: Int) -> Date {
+        LDate.next(LDate.make(year, 1, 1), weekday: LDate.sunday)
+    }
+
+    // 주님 세례 축일 = 주님 공현 다음 주일. 다만 공현이 1월 7·8일이면 그다음
+    // 월요일에 지내고 성탄 시기가 그 월요일로 끝난다(한국 전례 지침).
     private static func baptismOfLord(_ year: Int) -> Date {
-        let jan6 = LDate.make(year, 1, 6)
-        return LDate.next(jan6, weekday: LDate.sunday)
+        let epi = epiphany(year)
+        return LDate.day(epi) >= 7 ? LDate.addDays(epi, 1) : LDate.addWeeks(epi, 1)
     }
 
     private static func liturgicalYear(_ date: Date) -> Int {
@@ -242,19 +249,25 @@ enum LiturgicalCalendar {
             let days = LDate.epochDay(date) - LDate.epochDay(christmas)
             week = min(max(days / 7 + 1, 1), 3)
         case .ordinaryBeforeLent:
-            let mondayWeek2 = LDate.addDays(baptism, 1)
-            let days = LDate.epochDay(date) - LDate.epochDay(mondayWeek2)
-            week = min(max(days / 7 + 2, 2), 9)
+            // 주간 번호 = 세례 주간의 주일부터 지나온 주일 수. 세례가 월요일인 해도
+            // 그 주의 주일을 기준으로 삼아 평일·주일 번호가 어긋나지 않는다.
+            let anchor = LDate.previousOrSame(baptism, weekday: LDate.sunday)
+            let sunday = LDate.previousOrSame(date, weekday: LDate.sunday)
+            week = min(max((LDate.epochDay(sunday) - LDate.epochDay(anchor)) / 7 + 1, 1), 9)
         case .lent:
-            let days = LDate.epochDay(date) - LDate.epochDay(ashWednesday)
-            week = min(max(days / 7 + 1, 1), 6)
+            // 사순 제1주일(재의 수요일 다음 주일)을 기준으로 센다.
+            let lentFirstSunday = LDate.addDays(ashWednesday, 4)
+            let sunday = LDate.previousOrSame(date, weekday: LDate.sunday)
+            week = min(max((LDate.epochDay(sunday) - LDate.epochDay(lentFirstSunday)) / 7 + 1, 1), 6)
         case .easter:
             let days = LDate.epochDay(date) - LDate.epochDay(easter)
             week = min(max(days / 7 + 1, 1), 7)
         case .ordinaryAfterPentecost:
+            // 그리스도 왕 대축일(연중 제34주일)에서 거슬러 센다. 부활이 이른 해는
+            // 성령 강림 뒤 제8주간 등 낮은 번호로 재개될 수 있다.
             let sundayOfWeek = LDate.previousOrSame(date, weekday: LDate.sunday)
             let days = LDate.epochDay(christTheKing) - LDate.epochDay(sundayOfWeek)
-            week = min(max(34 - days / 7, 10), 34)
+            week = min(max(34 - days / 7, 7), 34)
         }
 
         return LiturgicalPosition(season: season, week: week, dayOfWeek: dow, sundayCycle: sc, weekdayCycle: wc)
@@ -271,39 +284,49 @@ enum LiturgicalCalendar {
     }
 
     static func liturgicalDayName(_ date: Date = LDate.today()) -> String {
-        let md = LDate.month(date) * 100 + LDate.day(date)
-        switch md {
-        case 101:  return "천주의 성모 마리아 대축일"
-        case 202:  return "주님 봉헌 축일"
-        case 319:  return "복되신 동정 마리아의 배필 성 요셉 대축일"
-        case 325:  return "주님 탄생 예고 대축일"
-        case 624:  return "성 요한 세례자 탄생 대축일"
-        case 629:  return "성 베드로와 성 바오로 사도 대축일"
-        case 806:  return "주님의 거룩한 변모 축일"
-        case 815:  return "성모 승천 대축일"
-        case 1101: return "모든 성인 대축일"
-        case 1102: return "죽은 모든 이를 기억하는 위령의 날"
-        case 1208: return "한국 교회의 수호자 원죄 없이 잉태되신 복되신 동정 마리아 대축일"
-        case 1225: return "주님 성탄 대축일"
-        case 1226: return "성 스테파노 첫 순교자 축일"
-        case 1228: return "죄 없는 아기 순교자들 축일"
-        default: break
-        }
+        let pos = liturgicalPosition(date)
+        let isSunday = pos.dayOfWeek == LDate.sunday
+        // 대림·사순·부활 주일은 모든 대축일·축일보다 앞선다(전례력 규범). 이 주일에
+        // 오는 고정 축일은 월요일로 옮겨 지내므로 여기서는 고정 축일을 건너뛴다.
+        let privilegedSunday = isSunday &&
+            (pos.season == .advent || pos.season == .lent || pos.season == .easter)
 
-        if LDate.month(date) == 12 && (17...24).contains(LDate.day(date)) {
-            return "12월 \(LDate.day(date))일 대림"
-        }
-
-        // 한국: 주님 공현은 1월 2–8일 사이 주일
-        if LDate.month(date) == 1 && (2...8).contains(LDate.day(date)) && LDate.dayOfWeek(date) == LDate.sunday {
-            return "주님 공현 대축일"
-        }
-
+        // 1) 이동 축일(파스카 삼일·부활·성령 강림 등 특전 주일 포함)이 가장 앞선다.
         for (d, name) in movableFeasts(LDate.year(date)) where d == date {
             return name
         }
 
-        let pos = liturgicalPosition(date)
+        // 2) 고정 대축일·축일 — 특전 주일에는 밀리므로 건너뛴다.
+        if !privilegedSunday {
+            let md = LDate.month(date) * 100 + LDate.day(date)
+            switch md {
+            case 101:  return "천주의 성모 마리아 대축일"
+            case 202:  return "주님 봉헌 축일"
+            case 319:  return "복되신 동정 마리아의 배필 성 요셉 대축일"
+            case 325:  return "주님 탄생 예고 대축일"
+            case 624:  return "성 요한 세례자 탄생 대축일"
+            case 629:  return "성 베드로와 성 바오로 사도 대축일"
+            case 806:  return "주님의 거룩한 변모 축일"
+            case 815:  return "성모 승천 대축일"
+            case 1101: return "모든 성인 대축일"
+            case 1102: return "죽은 모든 이를 기억하는 위령의 날"
+            case 1208: return "한국 교회의 수호자 원죄 없이 잉태되신 복되신 동정 마리아 대축일"
+            case 1225: return "주님 성탄 대축일"
+            case 1226: return "성 스테파노 첫 순교자 축일"
+            case 1228: return "죄 없는 아기 순교자들 축일"
+            default: break
+            }
+            // 대림 후기 평일 (12월 17–24일, 주일 제외)
+            if LDate.month(date) == 12 && (17...24).contains(LDate.day(date)) && !isSunday {
+                return "12월 \(LDate.day(date))일 대림"
+            }
+            // 주님 공현 (1월 2–8일 주일)
+            if LDate.month(date) == 1 && (2...8).contains(LDate.day(date)) && isSunday {
+                return "주님 공현 대축일"
+            }
+        }
+
+        // 3) 절기 평일·주일
         let s: String
         switch pos.season {
         case .advent:    s = "대림"

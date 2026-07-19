@@ -126,7 +126,10 @@ enum Lectionary {
         if LDate.month(date) == 1, (2...8).contains(LDate.day(date)), isSunday {
             return gc(M, 2, 1, 12)
         }
-        if date == LDate.next(LDate.make(year, 1, 6), weekday: sunday) {
+        // 주님 세례 축일: 공현(1월 2–8일 주일) 다음 주일. 공현이 1월 7·8일이면 다음 월요일.
+        let epiphany = LDate.next(LDate.make(year, 1, 1), weekday: sunday)
+        let baptism = LDate.day(epiphany) >= 7 ? LDate.addDays(epiphany, 1) : LDate.addWeeks(epiphany, 1)
+        if date == baptism {
             switch cycle { case .a: return gc(M, 3, 13, 17); case .b: return gc(Mk, 1, 7, 11); case .c: return gc(L, 3, 15, 22) }
         }
         let dec25 = LDate.make(year, 12, 25)
