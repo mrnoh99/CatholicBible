@@ -72,6 +72,13 @@ enum SystemDictionary {
         guard let window = scene?.windows.first(where: { $0.isKeyWindow }) ?? scene?.windows.first,
               var top = window.rootViewController else { return }
         while let presented = top.presentedViewController { top = presented }
-        top.present(UIReferenceLibraryViewController(term: word), animated: true)
+
+        let dict = UIReferenceLibraryViewController(term: word)
+        // iPad에서 사전 창을 넓게 띄운다(폼시트 + 큰 크기).
+        dict.modalPresentationStyle = .formSheet
+        let bounds = window.bounds
+        dict.preferredContentSize = CGSize(width: min(760, bounds.width - 80),
+                                           height: min(1000, bounds.height - 80))
+        top.present(dict, animated: true)
     }
 }
