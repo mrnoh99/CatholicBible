@@ -75,7 +75,58 @@ _ALIAS_ALT = "|".join(re.escape(a) for a, _ in _ALIAS_SORTED)
 # (ㄱㄴㄷ 등 한글 절세분 표기는 표시에서 빠질 수 있으나, 연결에 필요한 장·절은 온전하다.)
 REF_RE = re.compile(r"(" + _ALIAS_ALT + r")\s*(\d+)(?:\s*\((\d+)\))?\s*,\s*([\d.,\-–]+)")
 
-ROLES = ["제1독서", "제2독서", "화답송", "복음 환호송", "복음환호송", "복음"]
+# 미사에서 뽑을 독서(성경 전례) 역할
+READING_ROLES = ["제1독서", "화답송", "제2독서", "복음 환호송", "복음"]
+ROLE_ORDER = {"제1독서": 0, "화답송": 1, "제2독서": 2, "복음 환호송": 3, "복음": 4}
+
+# 전례색 표기 [녹][백][홍][자][장미][흑]
+COLOR_BRACKET = {"녹": "green", "백": "white", "홍": "red", "자": "violet", "장미": "rose", "흑": "violet"}
+
+# id → 표기 약칭 (독서 참조 표시용; Bible.swift 의 abbrev)
+ID_TO_ABBREV = {
+    "gn": "창세", "ex": "탈출", "lv": "레위", "nm": "민수", "dt": "신명",
+    "jos": "여호", "jgs": "판관", "ru": "룻", "1sm": "1사무", "2sm": "2사무",
+    "1kgs": "1열왕", "2kgs": "2열왕", "1chr": "1역대", "2chr": "2역대",
+    "ezr": "에즈", "neh": "느헤", "tb": "토빗", "jdt": "유딧", "est": "에스",
+    "1mc": "1마카", "2mc": "2마카", "jb": "욥", "ps": "시편", "prv": "잠언",
+    "eccl": "코헬", "sg": "아가", "wis": "지혜", "sir": "집회",
+    "is": "이사", "jer": "예레", "lam": "애가", "bar": "바룩", "ez": "에제",
+    "dn": "다니", "hos": "호세", "jl": "요엘", "am": "아모", "ob": "오바",
+    "jon": "요나", "mi": "미카", "na": "나훔", "hb": "하바", "zep": "스바",
+    "hg": "하까", "zec": "즈카", "mal": "말라",
+    "mt": "마태", "mk": "마르", "lk": "루카", "jn": "요한", "acts": "사도",
+    "rom": "로마", "1cor": "1코린", "2cor": "2코린", "gal": "갈라", "eph": "에페",
+    "phil": "필리", "col": "콜로", "1thes": "1테살", "2thes": "2테살",
+    "1tm": "1티모", "2tm": "2티모", "ti": "티토", "phlm": "필레", "heb": "히브",
+    "jas": "야고", "1pt": "1베드", "2pt": "2베드", "1jn": "1요한", "2jn": "2요한",
+    "3jn": "3요한", "jude": "유다", "rv": "묵시",
+}
+
+# 복음 저자("…가 전한 거룩한 복음입니다") → id
+GOSPEL_AUTHOR = {"마태오": "mt", "마르코": "mk", "루카": "lk", "요한": "jn"}
+
+# 독서 표지("▥ …의 말씀입니다")에 나오는 책 이름 토큰 → id (긴 것부터 매칭)
+READING_TOKENS = sorted([
+    ("창세", "gn"), ("탈출", "ex"), ("레위", "lv"), ("민수", "nm"), ("신명", "dt"),
+    ("여호수아", "jos"), ("판관기", "jgs"), ("룻기", "ru"),
+    ("사무엘기 상", "1sm"), ("사무엘기 하", "2sm"), ("열왕기 상", "1kgs"), ("열왕기 하", "2kgs"),
+    ("역대기 상", "1chr"), ("역대기 하", "2chr"), ("에즈라", "ezr"), ("느헤미야", "neh"),
+    ("토빗", "tb"), ("유딧", "jdt"), ("에스테르", "est"), ("마카베오기 상", "1mc"), ("마카베오기 하", "2mc"),
+    ("욥기", "jb"), ("시편", "ps"), ("잠언", "prv"), ("코헬렛", "eccl"), ("아가", "sg"),
+    ("지혜서", "wis"), ("집회서", "sir"),
+    ("이사야", "is"), ("예레미야 애가", "lam"), ("예레미야", "jer"), ("애가", "lam"),
+    ("바룩", "bar"), ("에제키엘", "ez"), ("다니엘", "dn"), ("호세아", "hos"), ("요엘", "jl"),
+    ("아모스", "am"), ("오바드야", "ob"), ("요나", "jon"), ("미카", "mi"), ("나훔", "na"),
+    ("하바쿡", "hb"), ("스바니야", "zep"), ("하까이", "hg"), ("즈카르야", "zec"), ("말라키", "mal"),
+    ("사도행전", "acts"),
+    ("로마서", "rom"), ("코린토 1서", "1cor"), ("코린토 2서", "2cor"), ("코린토 1", "1cor"), ("코린토 2", "2cor"),
+    ("갈라티아", "gal"), ("에페소", "eph"), ("필리피", "phil"), ("콜로새", "col"),
+    ("테살로니카 1", "1thes"), ("테살로니카 2", "2thes"), ("티모테오 1", "1tm"), ("티모테오 2", "2tm"),
+    ("티토", "ti"), ("필레몬", "phlm"), ("히브리", "heb"),
+    ("야고보", "jas"), ("베드로 1", "1pt"), ("베드로 2", "2pt"),
+    ("요한 1서", "1jn"), ("요한 2서", "2jn"), ("요한 3서", "3jn"),
+    ("요한 묵시록", "rv"), ("묵시록", "rv"), ("유다 서간", "jude"), ("유다서", "jude"),
+], key=lambda kv: -len(kv[0]))
 
 
 def parse_reference(book_alias, chapter, verse_tail):
@@ -84,19 +135,19 @@ def parse_reference(book_alias, chapter, verse_tail):
     if not bid:
         return None
     ch = int(chapter)
-    # verse_tail 예: "1-10ㄴ" / "31-13,13" / "2-3.3-4ㄱ.5"
-    nums = re.findall(r"\d+", verse_tail)
-    v_start = int(nums[0]) if nums else 1
-    v_end = v_start
+    # verse_tail 예: "1-10ㄴ" / "31-13,13"(장 넘김) / "13.16-19" / "5-6.9-10.15-16"
     end_chapter = None
-    # "-13,13" 형태(장 넘어가기): tail 안에 콤마가 있으면 두 번째 숫자 그룹이 끝장,끝절
     m = re.search(r"(\d+)\s*[-–]\s*(\d+)\s*,\s*(\d+)", verse_tail)
     if m:
+        # 장을 넘어가는 독서: "31-13,13" → 시작 31, 끝장 13, 끝절 13
         v_start = int(m.group(1)); end_chapter = int(m.group(2)); v_end = int(m.group(3))
     else:
-        m = re.search(r"(\d+)\s*[-–]\s*(\d+)", verse_tail)
-        if m:
-            v_start = int(m.group(1)); v_end = int(m.group(2))
+        # 그 밖에는 첫 절 ~ 마지막 절 범위로 (연결·미리보기용)
+        nums = [int(x) for x in re.findall(r"\d+", verse_tail)]
+        if not nums:
+            v_start = v_end = 1
+        else:
+            v_start = nums[0]; v_end = nums[-1]
     cit = {"bookID": bid, "chapter": ch, "verseStart": v_start, "verseEnd": max(v_end, v_start)}
     if end_chapter and end_chapter != ch:
         cit["endChapter"] = end_chapter
@@ -118,64 +169,114 @@ SCRIPT_STYLE_RE = re.compile(r"<(script|style)\b.*?</\1>", re.I | re.S)
 BLOCK_RE = re.compile(r"</(p|div|h[1-6]|li|tr|br)\s*/?>", re.I)
 
 
-def html_to_lines(html):
-    h = SCRIPT_STYLE_RE.sub(" ", html)
-    h = re.sub(r"<br\s*/?>", "\n", h, flags=re.I)
-    h = BLOCK_RE.sub("\n", h)
-    h = TAG_RE.sub("", h)
-    h = htmllib.unescape(h)
-    lines = [ln.strip() for ln in h.splitlines()]
-    return [ln for ln in lines if ln]
+def clean(fragment):
+    """HTML 조각 → 평문(태그 제거·엔티티 복원·&nbsp; 정리)."""
+    t = TAG_RE.sub("", fragment)
+    t = htmllib.unescape(t)
+    t = t.replace("\xa0", " ")
+    return re.sub(r"\s+", " ", t).strip()
+
+
+def book_id_from_phrase(phrase, is_gospel):
+    """독서 표지 문구에서 책 id를 찾는다."""
+    if is_gospel:
+        for author, bid in GOSPEL_AUTHOR.items():
+            if author in phrase:
+                return bid
+        return None
+    for token, bid in READING_TOKENS:
+        if token in phrase:
+            return bid
+    return None
+
+
+# 미사 각 항목: title-block 의 <h4> 를 기준으로 구획을 나눈다.
+H4_RE = re.compile(r"<h4>(.*?)</h4>", re.S)
+FLOAT_RIGHT_RE = re.compile(r'<span class="float-right">(.*?)</span>', re.S)
+THEME_RE = re.compile(r"<span>\s*&lt;(.*?)&gt;\s*</span>", re.S)
+BOOK_LINE_RE = re.compile(r"[▥✠]\s*(.*?)<h5[^>]*>\s*<span>(.*?)</span>", re.S)
+REFRAIN_RE = re.compile(r"◎\s*(.*?)</div>", re.S)
+MISSA_TITLE_RE = re.compile(r'<h3[^>]*id="missa_title"[^>]*>(.*?)</h3>', re.S)
 
 
 def parse_daily_missa(html):
     """
-    매일 미사 페이지(HTML) → {title, readings:[{role, reference, refrain?, citations}]}
+    매일 미사 페이지(HTML) → {title, color, readings:[{role, reference, refrain?, subtitle?, citations}]}
 
-    ⚠️ 사이트 실제 마크업 확인 전의 '텍스트 기반' 추정 파서다. DailyMissa 페이지
-    HTML 한 부를 업로드하면 정확한 선택자로 교정한다. 지금은 다음을 가정한다:
-      · 미사 명칭: 페이지에서 "…대축일/축일/기념일/주일/주간 …요일" 형태의 제목 줄
-      · 각 독서: "제1독서 / 화답송 / 제2독서 / 복음 환호송 / 복음" 표지 뒤에 성구 표기
-      · 화답송 후렴: "◎" 로 시작하는 줄
+    missa.cbck.or.kr/DailyMissa 실제 마크업 기준:
+      · 미사 명칭·전례색: <h3 id="missa_title"><span style="color:..">[녹]</span> 연중 제16주일 …</h3>
+      · 화답송·복음 환호송: <h4>역할<span class="float-right">시편 86(85),…</span></h4>, 후렴은 ◎ 줄
+      · 제1·제2독서·복음: "▥ 지혜서의 말씀입니다."/"✠ 마태오가 전한 …복음입니다."(책) +
+        <h5 class="float-right"><span>12,13.16-19</span></h5>(장·절), 소제목은 <span>&lt;…&gt;</span>
     """
-    lines = html_to_lines(html)
     title = None
-    for ln in lines[:60]:
-        if re.search(r"(대축일|축일|기념일|주일|주간\s*[월화수목금토]요일|평일)", ln) and len(ln) <= 40:
-            title = ln
-            break
+    color = None
+    mt = MISSA_TITLE_RE.search(html)
+    if mt:
+        inner = mt.group(1)
+        cb = re.search(r"\[([녹백홍자장미흑]+)\]", inner)
+        if cb:
+            color = COLOR_BRACKET.get(cb.group(1))
+        title = re.sub(r"\[[녹백홍자장미흑]+\]", "", clean(inner)).strip()
 
+    # <h4> 위치로 구획을 나눈다.
+    h4s = list(H4_RE.finditer(html))
     readings = []
-    seen_roles = set()
-    n = len(lines)
-    for i, ln in enumerate(lines):
-        role = next((r for r in ROLES if ln.startswith(r)), None)
-        if not role:
+    seen = set()
+    for idx, mh in enumerate(h4s):
+        inner = mh.group(1)
+        fr = FLOAT_RIGHT_RE.search(inner)
+        float_ref = clean(fr.group(1)) if fr else ""
+        role = clean(FLOAT_RIGHT_RE.sub("", inner))
+        if role not in READING_ROLES or role in seen:
             continue
-        canonical = "복음 환호송" if role in ("복음 환호송", "복음환호송") else role
-        if canonical in seen_roles:
-            continue
-        # 표지 줄 자체 또는 다음 몇 줄에서 성구를 찾는다.
-        window = " ".join(lines[i:i + 4])
-        ref, cit = find_reference(window)
-        if not ref and canonical not in ("화답송", "복음 환호송"):
-            continue
+        seen.add(role)
+        start = mh.end()
+        end = h4s[idx + 1].start() if idx + 1 < len(h4s) else len(html)
+        section = html[start:end]
+
+        subtitle = None
+        th = THEME_RE.search(section)
+        if th:
+            subtitle = clean(th.group(1))
+
+        reference = ""
+        citation = None
         refrain = None
-        if canonical == "화답송":
-            for j in range(i, min(i + 8, n)):
-                if lines[j].startswith("◎") or lines[j].startswith("후렴"):
-                    refrain = lines[j].lstrip("◎ ").lstrip("후렴").strip(": ").strip()
-                    break
-        entry = {"role": canonical, "reference": ref or "", "citations": [cit] if cit else []}
+
+        if role in ("화답송", "복음 환호송"):
+            reference = re.sub(r"\(◎.*?\)", "", float_ref).strip()
+            _, citation = find_reference(reference)
+            if role == "화답송":
+                mr = REFRAIN_RE.search(section)
+                if mr:
+                    refrain = clean(mr.group(1))
+        else:  # 제1독서 · 제2독서 · 복음
+            mb = BOOK_LINE_RE.search(section)
+            if mb:
+                phrase = clean(mb.group(1))
+                h5 = clean(mb.group(2))
+                is_gospel = (role == "복음") or ("복음입니다" in phrase)
+                bid = book_id_from_phrase(phrase, is_gospel)
+                abbrev = ID_TO_ABBREV.get(bid) if bid else None
+                reference = f"{abbrev} {h5}" if abbrev else h5
+                _, citation = find_reference(reference)
+
+        entry = {"role": role, "reference": reference,
+                 "citations": [citation] if citation else []}
         if refrain:
             entry["refrain"] = refrain
+        if subtitle:
+            entry["subtitle"] = subtitle
         readings.append(entry)
-        seen_roles.add(canonical)
 
-    # 미사 순서대로 정렬
-    order = {"제1독서": 0, "화답송": 1, "제2독서": 2, "복음 환호송": 3, "복음": 4}
-    readings.sort(key=lambda e: order.get(e["role"], 9))
-    return {"title": title, "readings": readings}
+    readings.sort(key=lambda e: ROLE_ORDER.get(e["role"], 9))
+    out = {"readings": readings}
+    if title:
+        out["title"] = title
+    if color:
+        out["color"] = color
+    return out
 
 
 def fetch(url):
@@ -249,6 +350,8 @@ def main():
         entry = {}
         if parsed.get("title"):
             entry["title"] = parsed["title"]
+        if parsed.get("color"):
+            entry["color"] = parsed["color"]
         if parsed.get("readings"):
             entry["readings"] = parsed["readings"]
         if entry.get("readings"):

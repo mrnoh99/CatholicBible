@@ -116,6 +116,8 @@ struct MassReading: Codable, Hashable, Identifiable, Sendable {
     let role: String
     /// 사람이 읽는 성구 표기 (예: "창세 18,1-10ㄴ")
     let reference: String
+    /// 독서 소제목 (예: "하느님께서는 지은 죄에 대하여 회개할 기회를 주십니다.")
+    var subtitle: String?
     /// 화답송 후렴 (있을 때)
     var refrain: String?
     /// 파싱된 성경 위치 (리더 연결용). 비어 있으면 reference를 즉석 파싱한다.
@@ -123,11 +125,13 @@ struct MassReading: Codable, Hashable, Identifiable, Sendable {
 
     var id: String { role + reference }
 
-    enum CodingKeys: String, CodingKey { case role, reference, refrain, citations }
+    enum CodingKeys: String, CodingKey { case role, reference, subtitle, refrain, citations }
 
-    init(role: String, reference: String, refrain: String? = nil, citations: [ScriptureCitation] = []) {
+    init(role: String, reference: String, subtitle: String? = nil,
+         refrain: String? = nil, citations: [ScriptureCitation] = []) {
         self.role = role
         self.reference = reference
+        self.subtitle = subtitle
         self.refrain = refrain
         self.citations = citations
     }
@@ -136,6 +140,7 @@ struct MassReading: Codable, Hashable, Identifiable, Sendable {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         role = try c.decode(String.self, forKey: .role)
         reference = (try? c.decode(String.self, forKey: .reference)) ?? ""
+        subtitle = try? c.decodeIfPresent(String.self, forKey: .subtitle)
         refrain = try? c.decodeIfPresent(String.self, forKey: .refrain)
         citations = (try? c.decode([ScriptureCitation].self, forKey: .citations)) ?? []
     }

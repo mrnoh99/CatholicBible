@@ -179,6 +179,13 @@ private struct ReadingCard: View {
                 }
             }
 
+            if let subtitle = reading.subtitle, !subtitle.isEmpty {
+                Text("〈\(subtitle)〉")
+                    .font(.footnote)
+                    .foregroundStyle(settings.theme.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
             Text(reading.reference)
                 .font(settings.fontChoice.font(size: 18, relativeTo: .headline, bold: true))
                 .foregroundStyle(settings.theme.text)
