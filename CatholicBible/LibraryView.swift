@@ -58,6 +58,8 @@ struct LibraryView: View {
                     }
                 }
             }
+
+            creditFooter
         }
         .listStyle(.sidebar)
         .onChange(of: readingState.selectedEditionID) { _, newID in
@@ -69,6 +71,28 @@ struct LibraryView: View {
                 navigation.selectedBookID = nil
             }
         }
+    }
+
+    /// 사이드바 맨 아래 개발자·버전·빌드 표기
+    private var creditFooter: some View {
+        VStack(spacing: 2) {
+            Text("Developed by JaiSung NOH MD., 2026")
+            Text(appVersionText)
+        }
+        .font(.caption2)
+        .foregroundStyle(.tertiary)
+        .frame(maxWidth: .infinity, alignment: .center)
+        .padding(.top, 8)
+        .listRowBackground(Color.clear)
+        .listRowSeparator(.hidden)
+    }
+
+    /// "v1.0 (build 2)" 형태의 버전·빌드 문자열 (Info.plist에서 읽음)
+    private var appVersionText: String {
+        let info = Bundle.main.infoDictionary
+        let version = info?["CFBundleShortVersionString"] as? String ?? "1.0"
+        let build = info?["CFBundleVersion"] as? String ?? "1"
+        return "v\(version) (build \(build))"
     }
 
     @ViewBuilder
