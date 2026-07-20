@@ -67,22 +67,31 @@ struct ReaderView: View {
                              onOpenNote: openNote)
             case .compare:
                 let linked = readingState.compareLinked
-                HStack(spacing: 0) {
-                    ReaderPane(role: .primary,
-                               editionID: $rs.selectedEditionID,
-                               bookID: primaryBookBinding,
-                               linkedChapter: $compareChapter,
-                               onOpenNote: openNote)
-                    Divider()
-                    ReaderPane(role: .secondary,
-                               editionID: $rs.secondaryEditionID,
-                               bookID: linked ? primaryBookBinding : secondaryBookBinding,
-                               onClose: { readingState.readerLayout = .single },
-                               linkedChapter: linked ? $compareChapter : nil,
-                               isFollower: linked,
-                               onOpenNote: openNote)
-                        // 연동 ↔ 분리를 바꾸면 둘째 열을 새로 만들어 위치를 다시 잡는다.
-                        .id(linked)
+                let compareBook = Bible.book(navigation.selectedBookID ?? book.id) ?? book
+                VStack(spacing: 0) {
+                    HStack(spacing: 0) {
+                        ReaderPane(role: .primary,
+                                   editionID: $rs.selectedEditionID,
+                                   bookID: primaryBookBinding,
+                                   linkedChapter: $compareChapter,
+                                   showChapterBar: !linked,
+                                   onOpenNote: openNote)
+                        Divider()
+                        ReaderPane(role: .secondary,
+                                   editionID: $rs.secondaryEditionID,
+                                   bookID: linked ? primaryBookBinding : secondaryBookBinding,
+                                   onClose: { readingState.readerLayout = .single },
+                                   linkedChapter: linked ? $compareChapter : nil,
+                                   isFollower: linked,
+                                   showChapterBar: !linked,
+                                   onOpenNote: openNote)
+                            // 연동 ↔ 분리를 바꾸면 둘째 열을 새로 만들어 위치를 다시 잡는다.
+                            .id(linked)
+                    }
+                    // 연동 시: 두 열을 함께 움직이는 공용 이동줄 하나만 아래에 둔다.
+                    if linked {
+                        ChapterNavBar(book: compareBook, chapter: $compareChapter)
+                    }
                 }
             }
             }
@@ -188,6 +197,8 @@ struct ReaderPane: View {
     var linkedChapter: Binding<Int>? = nil
     /// 연동된 둘째 열: 장을 스스로 정하지 않고 첫째 열을 따라가기만 한다.
     var isFollower: Bool = false
+    /// 하단 장 이동줄을 이 열 안에 표시할지 (연동 비교에서는 공용 줄 하나만 쓰므로 끈다).
+    var showChapterBar: Bool = true
     let onOpenNote: (VerseRef, String) -> Void
 
     @Environment(BibleStore.self) private var store
@@ -199,7 +210,6 @@ struct ReaderPane: View {
     @State private var highlight: VerseHighlight?
     @State private var scrolledVerse: Int?
     @State private var showBookPicker = false
-    @State private var showChapterPicker = false
 
     private var edition: Edition { Editions.edition(editionID) ?? Editions.all[0] }
     private var book: BibleBook { Bible.book(bookID) ?? Bible.books[0] }
@@ -234,12 +244,6 @@ struct ReaderPane: View {
             BookPickerView(edition: edition, current: bookID) { picked in
                 bookID = picked
                 showBookPicker = false
-            }
-        }
-        .sheet(isPresented: $showChapterPicker) {
-            ChapterPickerView(book: book, current: max(chapter, 1)) { picked in
-                setChapter(picked)
-                showChapterPicker = false
             }
         }
     }
@@ -378,18 +382,40 @@ struct ReaderPane: View {
 
     @ViewBuilder
     private var chapterBar: some View {
+        if showChapterBar {
+            ChapterNavBar(book: book,
+                          chapter: Binding(get: { chapter }, set: { setChapter($0) }),
+                          onChange: { highlight = nil })
+        }
+    }
+}
+
+// MARK: - 하단 장 이동줄 (한 열용 · 연동 비교 공용)
+
+/// 슬라이더·앞뒤 버튼·장 선택으로 장을 옮기는 하단 바.
+/// 연동 비교에서는 이 바 하나가 두 열의 공유 장을 함께 움직인다.
+struct ChapterNavBar: View {
+    let book: BibleBook
+    @Binding var chapter: Int
+    /// 사용자가 장을 옮길 때(예: 강조 해제) 부가 동작.
+    var onChange: () -> Void = {}
+
+    @Environment(ReaderSettings.self) private var settings
+    @State private var showPicker = false
+
+    var body: some View {
         if book.chapterCount > 1 && chapter > 0 {
             HStack(spacing: 10) {
                 Button { step(-1) } label: { Image(systemName: "chevron.left") }
                     .disabled(chapter <= 1)
                 Slider(value: Binding(get: { Double(chapter) },
-                                      set: { setChapter(Int($0.rounded())) }),
+                                      set: { move(to: Int($0.rounded())) }),
                        in: 1...Double(book.chapterCount), step: 1)
                     .accessibilityLabel("장 이동")
                     .accessibilityValue(book.chapterLabel(chapter))
                 Button { step(1) } label: { Image(systemName: "chevron.right") }
                     .disabled(chapter >= book.chapterCount)
-                Button { showChapterPicker = true } label: {
+                Button { showPicker = true } label: {
                     Text(book.chapterLabel(chapter))
                         .font(.caption.monospacedDigit())
                         .frame(minWidth: 40)
@@ -402,7 +428,24 @@ struct ReaderPane: View {
             .overlay(alignment: .top) {
                 Rectangle().fill(settings.theme.secondary.opacity(0.2)).frame(height: 0.5)
             }
+            .sheet(isPresented: $showPicker) {
+                ChapterPickerView(book: book, current: max(chapter, 1)) { picked in
+                    move(to: picked); showPicker = false
+                }
+            }
         }
+    }
+
+    private func step(_ delta: Int) {
+        let n = chapter + delta
+        guard (1...book.chapterCount).contains(n) else { return }
+        withAnimation(.easeInOut(duration: 0.2)) { move(to: n) }
+    }
+
+    private func move(to n: Int) {
+        guard n != chapter else { return }
+        onChange()
+        chapter = n
     }
 }
 
