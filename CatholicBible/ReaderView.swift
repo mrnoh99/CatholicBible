@@ -222,7 +222,8 @@ struct ReaderPane: View {
     @Environment(ReaderNavigation.self) private var navigation
 
     @State private var localChapter = 0
-    @State private var highlight: VerseHighlight?
+    /// 대기 이동 직후 한 번 스크롤할 절(강조 색은 navigation.activeHighlight가 담당).
+    @State private var scrollTarget: Int?
     @State private var showBookPicker = false
 
     private var edition: Edition { Editions.edition(editionID) ?? Editions.all[0] }
@@ -244,7 +245,6 @@ struct ReaderPane: View {
         .onAppear { initChapterIfNeeded() }
         .onChange(of: bookID) { _, _ in
             if !isFollower { setChapter(readingState.lastChapter(edition: edition, book: book)) }
-            highlight = nil
         }
         .onChange(of: editionID) { _, _ in
             if !isFollower { setChapter(min(max(chapter, 1), book.chapterCount)) }
@@ -273,7 +273,7 @@ struct ReaderPane: View {
             let c = clampChapter(pending)
             setChapter(c)
             navigation.pendingChapter = nil
-            highlight = navigation.takePendingHighlight()
+            scrollTarget = navigation.consumePending(forBook: ownerBookID)
         } else {
             setChapter(readingState.lastChapter(edition: edition, book: book))
         }
@@ -285,7 +285,7 @@ struct ReaderPane: View {
         let c = clampChapter(pending)
         setChapter(c)
         navigation.pendingChapter = nil
-        highlight = navigation.takePendingHighlight()
+        scrollTarget = navigation.consumePending(forBook: ownerBookID)
     }
 
     private func clampChapter(_ c: Int) -> Int { min(max(c, 1), book.chapterCount) }
@@ -293,7 +293,6 @@ struct ReaderPane: View {
     private func step(_ delta: Int) {
         let next = chapter + delta
         guard (1...book.chapterCount).contains(next) else { return }
-        highlight = nil
         withAnimation(.easeInOut(duration: 0.2)) { setChapter(next) }
     }
 
@@ -354,7 +353,7 @@ struct ReaderPane: View {
                             ForEach(verses) { verse in
                                 VerseRowView(edition: edition, book: book, chapter: chapter,
                                              verse: verse,
-                                             highlighted: highlight?.contains(chapter: chapter, verse: verse.number) ?? false,
+                                             highlighted: navigation.activeHighlight?.matches(bookID: book.id, chapter: chapter, verse: verse.number) ?? false,
                                              onOpenNote: onOpenNote)
                                     .id(verse.number)
                             }
@@ -368,18 +367,18 @@ struct ReaderPane: View {
                 .padding(.bottom, 40)
                 .frame(maxWidth: .infinity)
             }
-            .onChange(of: highlight) { _, _ in scrollToHighlight(proxy, verses: verses) }
-            .onChange(of: chapter) { _, _ in scrollToHighlight(proxy, verses: verses) }
-            .onAppear { scrollToHighlight(proxy, verses: verses) }
+            .onChange(of: scrollTarget) { _, _ in performScroll(proxy, verses: verses) }
+            .onChange(of: chapter) { _, _ in performScroll(proxy, verses: verses) }
+            .onAppear { performScroll(proxy, verses: verses) }
         }
     }
 
-    /// 강조된 독서의 시작 절이 화면에 보이도록 스크롤한다.
-    /// 레이아웃이 끝난 다음 실행되도록 한 번 미뤄, '갈 때도 있고 안 갈 때도 있는' 문제를 없앤다.
-    private func scrollToHighlight(_ proxy: ScrollViewProxy, verses: [Verse]) {
-        guard let n = highlight?.startVerse, verses.contains(where: { $0.number == n }) else { return }
+    /// 대기 이동 직후 강조 시작 절로 한 번 스크롤한다(레이아웃 뒤로 미룸). 한 번 하면 지운다.
+    private func performScroll(_ proxy: ScrollViewProxy, verses: [Verse]) {
+        guard let n = scrollTarget, verses.contains(where: { $0.number == n }) else { return }
         DispatchQueue.main.async {
             withAnimation(.easeInOut(duration: 0.25)) { proxy.scrollTo(n, anchor: .center) }
+            scrollTarget = nil
         }
     }
 
@@ -410,8 +409,7 @@ struct ReaderPane: View {
     private var chapterBar: some View {
         if showChapterBar {
             ChapterNavBar(book: book,
-                          chapter: Binding(get: { chapter }, set: { setChapter($0) }),
-                          onChange: { highlight = nil })
+                          chapter: Binding(get: { chapter }, set: { setChapter($0) }))
         }
     }
 }
@@ -507,7 +505,8 @@ struct SpreadReader: View {
     @State private var chapter = 0
     @State private var spreadIndex = 0
     @State private var wantLastSpread = false
-    @State private var highlight: VerseHighlight?
+    /// 대기 이동 직후 그 절이 있는 펼침면으로 한 번 이동하기 위한 목표 절.
+    @State private var scrollTarget: Int?
     @State private var contentSize: CGSize = .zero
     @State private var showBookPicker = false
     @State private var showChapterPicker = false
@@ -530,7 +529,7 @@ struct SpreadReader: View {
         .onAppear { initChapterIfNeeded() }
         .onChange(of: bookID) { _, _ in
             chapter = readingState.lastChapter(edition: edition, book: book)
-            highlight = nil; spreadIndex = 0
+            spreadIndex = 0
         }
         .onChange(of: editionID) { _, _ in
             chapter = min(max(chapter, 1), book.chapterCount); spreadIndex = 0
@@ -560,7 +559,7 @@ struct SpreadReader: View {
         guard chapter == 0 else { return }
         if navigation.hasPending(forBook: ownerBookID), let p = navigation.pendingChapter {
             chapter = clampChapter(p); navigation.pendingChapter = nil
-            highlight = navigation.takePendingHighlight()
+            scrollTarget = navigation.consumePending(forBook: ownerBookID)
         } else {
             chapter = readingState.lastChapter(edition: edition, book: book)
         }
@@ -569,7 +568,7 @@ struct SpreadReader: View {
     private func applyPending() {
         guard navigation.hasPending(forBook: ownerBookID), let p = navigation.pendingChapter else { return }
         chapter = clampChapter(p); navigation.pendingChapter = nil
-        highlight = navigation.takePendingHighlight()
+        scrollTarget = navigation.consumePending(forBook: ownerBookID)
         spreadIndex = 0
     }
 
@@ -579,22 +578,21 @@ struct SpreadReader: View {
     private func reconcileSpreadIndex() {
         if wantLastSpread {
             spreadIndex = max(0, spreadCount - 1); wantLastSpread = false
-        } else if let h = highlight?.startVerse,
+        } else if let h = scrollTarget,
                   let pageIdx = pages.firstIndex(where: { $0.contains { $0.number == h } }) {
             spreadIndex = pageIdx / 2
+            scrollTarget = nil
         } else {
             spreadIndex = min(spreadIndex, max(0, spreadCount - 1))
         }
     }
 
     private func nextSpread() {
-        highlight = nil
         if spreadIndex + 1 < spreadCount { spreadIndex += 1 }
         else { stepChapter(1) }
     }
 
     private func prevSpread() {
-        highlight = nil
         if spreadIndex > 0 { spreadIndex -= 1 }
         else { wantLastSpread = true; stepChapter(-1) }
     }
@@ -672,7 +670,7 @@ struct SpreadReader: View {
                 ForEach(verses) { verse in
                     VerseRowView(edition: edition, book: book, chapter: chapter,
                                  verse: verse,
-                                 highlighted: highlight?.contains(chapter: chapter, verse: verse.number) ?? false,
+                                 highlighted: navigation.activeHighlight?.matches(bookID: book.id, chapter: chapter, verse: verse.number) ?? false,
                                  onOpenNote: onOpenNote)
                 }
             } else if isFirst && pages.isEmpty {

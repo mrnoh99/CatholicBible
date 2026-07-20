@@ -25,7 +25,8 @@ struct AnnotatedReader: View {
     @Environment(\.horizontalSizeClass) private var hSize
 
     @State private var chapter = 0
-    @State private var highlight: VerseHighlight?
+    /// 대기 이동 직후 한 번 스크롤할 절(강조 색은 navigation.activeHighlight가 담당).
+    @State private var scrollTarget: Int?
     @State private var showBookPicker = false
     @State private var showChapterPicker = false
     @State private var showIntros = false
@@ -44,7 +45,6 @@ struct AnnotatedReader: View {
         .onAppear { initChapterIfNeeded() }
         .onChange(of: bookID) { _, _ in
             chapter = readingState.lastChapter(edition: edition, book: book)
-            highlight = nil
         }
         .onChange(of: chapter) { _, new in
             guard new > 0 else { return }
@@ -76,7 +76,7 @@ struct AnnotatedReader: View {
         if navigation.hasPending(forBook: ownerBookID), let p = navigation.pendingChapter {
             chapter = min(max(p, 1), book.chapterCount)
             navigation.pendingChapter = nil
-            highlight = navigation.takePendingHighlight()
+            scrollTarget = navigation.consumePending(forBook: ownerBookID)
         } else {
             chapter = readingState.lastChapter(edition: edition, book: book)
         }
@@ -86,13 +86,12 @@ struct AnnotatedReader: View {
         guard navigation.hasPending(forBook: ownerBookID), let p = navigation.pendingChapter else { return }
         chapter = min(max(p, 1), book.chapterCount)
         navigation.pendingChapter = nil
-        highlight = navigation.takePendingHighlight()
+        scrollTarget = navigation.consumePending(forBook: ownerBookID)
     }
 
     private func step(_ d: Int) {
         let n = chapter + d
         guard (1...book.chapterCount).contains(n) else { return }
-        highlight = nil
         withAnimation(.easeInOut(duration: 0.2)) { chapter = n }
     }
 
@@ -172,18 +171,19 @@ struct AnnotatedReader: View {
                 .padding(.horizontal, 28).padding(.bottom, 40)
                 .frame(maxWidth: .infinity)
             }
-            .onChange(of: highlight) { _, _ in scrollToHighlight(proxy, verses: verses) }
-            .onChange(of: chapter) { _, _ in scrollToHighlight(proxy, verses: verses) }
-            .onAppear { scrollToHighlight(proxy, verses: verses) }
+            .onChange(of: scrollTarget) { _, _ in performScroll(proxy, verses: verses) }
+            .onChange(of: chapter) { _, _ in performScroll(proxy, verses: verses) }
+            .onAppear { performScroll(proxy, verses: verses) }
         }
         .frame(maxWidth: .infinity)
     }
 
-    /// 강조된 독서의 시작 절이 보이도록 스크롤(레이아웃 뒤로 한 번 미룸).
-    private func scrollToHighlight(_ proxy: ScrollViewProxy, verses: [Verse]) {
-        guard let n = highlight?.startVerse, verses.contains(where: { $0.number == n }) else { return }
+    /// 대기 이동 직후 강조 시작 절로 한 번 스크롤(레이아웃 뒤로 미룸). 한 번 하면 지운다.
+    private func performScroll(_ proxy: ScrollViewProxy, verses: [Verse]) {
+        guard let n = scrollTarget, verses.contains(where: { $0.number == n }) else { return }
         DispatchQueue.main.async {
             withAnimation(.easeInOut(duration: 0.25)) { proxy.scrollTo(n, anchor: .center) }
+            scrollTarget = nil
         }
     }
 
@@ -202,7 +202,7 @@ struct AnnotatedReader: View {
                         }
                         VerseRowView(edition: edition, book: book, chapter: chapter,
                                      verse: verse,
-                                     highlighted: highlight?.contains(chapter: chapter, verse: verse.number) ?? false,
+                                     highlighted: navigation.activeHighlight?.matches(bookID: book.id, chapter: chapter, verse: verse.number) ?? false,
                                      onOpenNote: onOpenNote)
                     }
                     .id(verse.number)

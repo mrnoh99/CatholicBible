@@ -45,6 +45,8 @@ struct DailyMassView: View {
                 .frame(maxWidth: .infinity)
             }
             .background(settings.theme.background.ignoresSafeArea())
+            // 오늘의 미사를 다시 열면 이전 강조는 지운다(다음 독서를 고를 때까지 유지되던 것).
+            .onAppear { navigation.activeHighlight = nil }
             .navigationTitle("오늘의 미사")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
