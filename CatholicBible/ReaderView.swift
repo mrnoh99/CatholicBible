@@ -223,7 +223,6 @@ struct ReaderPane: View {
 
     @State private var localChapter = 0
     @State private var highlight: VerseHighlight?
-    @State private var scrolledVerse: Int?
     @State private var showBookPicker = false
 
     private var edition: Edition { Editions.edition(editionID) ?? Editions.all[0] }
@@ -344,34 +343,44 @@ struct ReaderPane: View {
 
     private var versesScroll: some View {
         let verses = chapter > 0 ? store.verses(edition: edition, book: book, chapter: chapter) : []
-        return ScrollView {
-            VStack(alignment: .leading, spacing: 0) {
-                chapterHeader
-                if verses.isEmpty {
-                    MissingTextView(edition: edition, book: book).padding(.top, 40)
-                } else {
-                    LazyVStack(alignment: .leading, spacing: settings.lineSpacing * 0.9) {
-                        ForEach(verses) { verse in
-                            VerseRowView(edition: edition, book: book, chapter: chapter,
-                                         verse: verse,
-                                         highlighted: highlight?.contains(chapter: chapter, verse: verse.number) ?? false,
-                                         onOpenNote: onOpenNote)
-                                .id(verse.number)
+        return ScrollViewReader { proxy in
+            ScrollView {
+                VStack(alignment: .leading, spacing: 0) {
+                    chapterHeader
+                    if verses.isEmpty {
+                        MissingTextView(edition: edition, book: book).padding(.top, 40)
+                    } else {
+                        LazyVStack(alignment: .leading, spacing: settings.lineSpacing * 0.9) {
+                            ForEach(verses) { verse in
+                                VerseRowView(edition: edition, book: book, chapter: chapter,
+                                             verse: verse,
+                                             highlighted: highlight?.contains(chapter: chapter, verse: verse.number) ?? false,
+                                             onOpenNote: onOpenNote)
+                                    .id(verse.number)
+                            }
                         }
+                        .padding(.top, 24)
+                        copyrightFooter
                     }
-                    .scrollTargetLayout()
-                    .padding(.top, 24)
-                    copyrightFooter
                 }
+                .frame(maxWidth: 720, alignment: .leading)
+                .padding(.horizontal, 28)
+                .padding(.bottom, 40)
+                .frame(maxWidth: .infinity)
             }
-            .frame(maxWidth: 720, alignment: .leading)
-            .padding(.horizontal, 28)
-            .padding(.bottom, 40)
-            .frame(maxWidth: .infinity)
+            .onChange(of: highlight) { _, _ in scrollToHighlight(proxy, verses: verses) }
+            .onChange(of: chapter) { _, _ in scrollToHighlight(proxy, verses: verses) }
+            .onAppear { scrollToHighlight(proxy, verses: verses) }
         }
-        .scrollPosition(id: $scrolledVerse, anchor: .center)
-        .onChange(of: highlight) { _, v in if let n = v?.startVerse { scrolledVerse = n } }
-        .onChange(of: chapter) { _, _ in scrolledVerse = nil }
+    }
+
+    /// 강조된 독서의 시작 절이 화면에 보이도록 스크롤한다.
+    /// 레이아웃이 끝난 다음 실행되도록 한 번 미뤄, '갈 때도 있고 안 갈 때도 있는' 문제를 없앤다.
+    private func scrollToHighlight(_ proxy: ScrollViewProxy, verses: [Verse]) {
+        guard let n = highlight?.startVerse, verses.contains(where: { $0.number == n }) else { return }
+        DispatchQueue.main.async {
+            withAnimation(.easeInOut(duration: 0.25)) { proxy.scrollTo(n, anchor: .center) }
+        }
     }
 
     private var chapterHeader: some View {

@@ -26,7 +26,6 @@ struct AnnotatedReader: View {
 
     @State private var chapter = 0
     @State private var highlight: VerseHighlight?
-    @State private var scrolledVerse: Int?
     @State private var showBookPicker = false
     @State private var showChapterPicker = false
     @State private var showIntros = false
@@ -164,17 +163,28 @@ struct AnnotatedReader: View {
     }
 
     private func textColumn(_ verses: [Verse]) -> some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 0) {
-                versesBlock(verses)
+        ScrollViewReader { proxy in
+            ScrollView {
+                VStack(alignment: .leading, spacing: 0) {
+                    versesBlock(verses)
+                }
+                .frame(maxWidth: 720, alignment: .leading)
+                .padding(.horizontal, 28).padding(.bottom, 40)
+                .frame(maxWidth: .infinity)
             }
-            .frame(maxWidth: 720, alignment: .leading)
-            .padding(.horizontal, 28).padding(.bottom, 40)
-            .frame(maxWidth: .infinity)
+            .onChange(of: highlight) { _, _ in scrollToHighlight(proxy, verses: verses) }
+            .onChange(of: chapter) { _, _ in scrollToHighlight(proxy, verses: verses) }
+            .onAppear { scrollToHighlight(proxy, verses: verses) }
         }
-        .scrollPosition(id: $scrolledVerse, anchor: .center)
-        .onChange(of: highlight) { _, v in if let n = v?.startVerse { scrolledVerse = n } }
         .frame(maxWidth: .infinity)
+    }
+
+    /// 강조된 독서의 시작 절이 보이도록 스크롤(레이아웃 뒤로 한 번 미룸).
+    private func scrollToHighlight(_ proxy: ScrollViewProxy, verses: [Verse]) {
+        guard let n = highlight?.startVerse, verses.contains(where: { $0.number == n }) else { return }
+        DispatchQueue.main.async {
+            withAnimation(.easeInOut(duration: 0.25)) { proxy.scrollTo(n, anchor: .center) }
+        }
     }
 
     @ViewBuilder
