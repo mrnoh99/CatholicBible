@@ -84,7 +84,12 @@ final class ReaderNavigation {
 // MARK: - 루트 화면
 
 struct ContentView: View {
+    @Environment(BibleStore.self) private var store
+    @Environment(ReaderSettings.self) private var settings
     @Environment(ReadingState.self) private var readingState
+    @Environment(AnnotationStore.self) private var annotations
+    @Environment(KnbNotesStore.self) private var knbNotes
+    @Environment(LiturgyStore.self) private var liturgy
 
     @State private var navigation = ReaderNavigation()
     @State private var showSearch = false
@@ -116,20 +121,25 @@ struct ContentView: View {
         }
         .environment(navigation)
         .sheet(isPresented: $showSearch) {
-            SearchView().environment(navigation)
+            injectShared(SearchView().environment(navigation))
         }
         .sheet(isPresented: $showBookmarks) {
-            BookmarksView().environment(navigation)
+            injectShared(BookmarksView().environment(navigation))
         }
         .sheet(isPresented: $showNotes) {
-            NotesListView().environment(navigation)
+            injectShared(NotesListView().environment(navigation))
         }
         .fullScreenCover(isPresented: $showMass) {
-            DailyMassView().environment(navigation)
+            injectShared(DailyMassView().environment(navigation))
         }
         .sheet(item: $nav.dictionaryRequest) { req in
-            DictionaryView(initialTerm: req.term)
+            injectShared(DictionaryView(initialTerm: req.term))
         }
+    }
+
+    /// 모달에 공유 저장소를 다시 주입(Mac Catalyst 환경 전파 끊김 대비).
+    private func injectShared<V: View>(_ view: V) -> some View {
+        view.injectSharedStores(store, settings, readingState, annotations, knbNotes, liturgy)
     }
 }
 
@@ -140,6 +150,9 @@ struct ShelfView: View {
     @Environment(ReadingState.self) private var readingState
     @Environment(ReaderNavigation.self) private var navigation
     @Environment(ReaderSettings.self) private var settings
+    @Environment(AnnotationStore.self) private var annotations
+    @Environment(KnbNotesStore.self) private var knbNotes
+    @Environment(LiturgyStore.self) private var liturgy
 
     @State private var showMass = false
 
@@ -178,6 +191,7 @@ struct ShelfView: View {
         .preferredColorScheme(settings.theme.colorScheme)
         .fullScreenCover(isPresented: $showMass) {
             DailyMassView().environment(navigation)
+                .injectSharedStores(store, settings, readingState, annotations, knbNotes, liturgy)
         }
     }
 

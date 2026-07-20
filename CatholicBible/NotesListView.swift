@@ -77,6 +77,7 @@ struct NotesListView: View {
                 NoteEditorView(verse: note.verse,
                                verseText: previewText(note.verse),
                                existing: note)
+                    .environment(annotations)   // Mac Catalyst: 모달 환경 전파 대비
             }
             .fileExporter(isPresented: $showExporter, document: backupDoc,
                           contentType: .json,

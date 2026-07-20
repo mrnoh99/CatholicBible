@@ -54,6 +54,7 @@ struct AnnotatedReader: View {
             BookPickerView(edition: edition, current: bookID) { picked in
                 bookID = picked; showBookPicker = false
             }
+            .environment(store)   // Mac Catalyst: 모달 환경 전파 대비
         }
         .sheet(isPresented: $showChapterPicker) {
             ChapterPickerView(book: book, current: max(chapter, 1)) { picked in
@@ -62,6 +63,8 @@ struct AnnotatedReader: View {
         }
         .sheet(isPresented: $showIntros) {
             IntroductionsView(currentBookID: bookID)
+                .environment(knb)
+                .environment(settings)
         }
     }
 
@@ -345,6 +348,7 @@ struct NotesList: View {
 struct IntroductionsView: View {
     let currentBookID: String
     @Environment(KnbNotesStore.self) private var knb
+    @Environment(ReaderSettings.self) private var settings
     @Environment(\.dismiss) private var dismiss
     @State private var selected: Introduction?
 
@@ -372,7 +376,9 @@ struct IntroductionsView: View {
             .navigationTitle("입문")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .cancellationAction) { Button("닫기") { dismiss() } } }
-            .fullScreenCover(item: $selected) { intro in IntroDetailView(intro: intro) }
+            .fullScreenCover(item: $selected) { intro in
+                IntroDetailView(intro: intro).environment(settings)
+            }
         }
     }
 

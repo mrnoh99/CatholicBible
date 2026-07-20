@@ -22,11 +22,13 @@ struct ReaderView: View {
     /// 사이드바에서 고른 책 — 첫째 열의 책이 된다.
     let book: BibleBook
 
+    @Environment(BibleStore.self) private var store
     @Environment(ReaderSettings.self) private var settings
     @Environment(ReadingState.self) private var readingState
     @Environment(ReaderNavigation.self) private var navigation
     @Environment(AnnotationStore.self) private var annotations
     @Environment(KnbNotesStore.self) private var knbNotes
+    @Environment(LiturgyStore.self) private var liturgy
     @Environment(\.horizontalSizeClass) private var hSize
 
     @State private var showAppearance = false
@@ -101,13 +103,13 @@ struct ReaderView: View {
         .toolbar { readerToolbar }
         .preferredColorScheme(settings.theme.colorScheme)
         .sheet(isPresented: $showAppearance) {
-            AppearanceControls()
+            injectShared(AppearanceControls())
                 .presentationDetents([.medium])
         }
         .sheet(item: $noteTarget) { target in
-            NoteEditorView(verse: target.ref,
-                           verseText: target.text,
-                           existing: annotations.noteOrNew(for: target.ref))
+            injectShared(NoteEditorView(verse: target.ref,
+                                        verseText: target.text,
+                                        existing: annotations.noteOrNew(for: target.ref)))
         }
         // 각주 마커 'N)' 탭 → 해당 주석 팝업
         .environment(\.openURL, OpenURLAction { url in
@@ -121,8 +123,14 @@ struct ReaderView: View {
             return .handled
         })
         .sheet(item: $markerNote) { mn in
-            MarkerNoteSheet(n: mn.n, text: mn.text)
+            injectShared(MarkerNoteSheet(n: mn.n, text: mn.text))
         }
+    }
+
+    /// 모달에 공유 저장소를 다시 주입(Mac Catalyst 환경 전파 끊김 대비).
+    private func injectShared<V: View>(_ view: V) -> some View {
+        view.injectSharedStores(store, settings, readingState, annotations, knbNotes, liturgy)
+            .environment(navigation)
     }
 
     /// 첫째 열의 책은 사이드바 선택(navigation)과 연동된다.
@@ -245,6 +253,7 @@ struct ReaderPane: View {
                 bookID = picked
                 showBookPicker = false
             }
+            .environment(store)   // Mac Catalyst: 모달로 환경이 전파되지 않아 다시 주입
         }
     }
 
@@ -517,6 +526,7 @@ struct SpreadReader: View {
             BookPickerView(edition: edition, current: bookID) { picked in
                 bookID = picked; showBookPicker = false
             }
+            .environment(store)   // Mac Catalyst: 모달 환경 전파 대비
         }
         .sheet(isPresented: $showChapterPicker) {
             ChapterPickerView(book: book, current: max(chapter, 1)) { picked in
