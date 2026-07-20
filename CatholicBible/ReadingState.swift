@@ -41,6 +41,7 @@ final class ReadingState {
     private static let secondaryKey = "reading.secondaryEditionID"
     private static let secondaryBookKey = "reading.secondaryBookID"
     private static let layoutKey = "reading.layout"
+    private static let compareLinkedKey = "reading.compareLinked"
     private static let lastBookKey = "reading.lastBookID"
     private static let chapterPrefix = "reading.chapter."
 
@@ -64,6 +65,11 @@ final class ReadingState {
         didSet { Self.defaults.set(readerLayout.rawValue, forKey: Self.layoutKey) }
     }
 
+    /// 두 판본 비교에서 두 열을 같은 책·장으로 연동할지 (기본: 연동).
+    var compareLinked: Bool {
+        didSet { Self.defaults.set(compareLinked, forKey: Self.compareLinkedKey) }
+    }
+
     /// 마지막으로 읽던 책 (판본별)
     private var lastBookIDs: [String: String] {
         didSet { Self.defaults.set(lastBookIDs, forKey: Self.lastBookKey) }
@@ -74,6 +80,7 @@ final class ReadingState {
         secondaryEditionID = Self.defaults.string(forKey: Self.secondaryKey) ?? "ncb"
         secondaryBookID = Self.defaults.string(forKey: Self.secondaryBookKey) ?? ""
         readerLayout = ReaderLayout(rawValue: Self.defaults.string(forKey: Self.layoutKey) ?? "") ?? .single
+        compareLinked = Self.defaults.object(forKey: Self.compareLinkedKey) as? Bool ?? true
         lastBookIDs = Self.defaults.dictionary(forKey: Self.lastBookKey) as? [String: String] ?? [:]
     }
 

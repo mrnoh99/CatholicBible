@@ -32,6 +32,8 @@ struct ReaderView: View {
     @State private var showAppearance = false
     @State private var noteTarget: NoteTarget?
     @State private var markerNote: MarkerNoteTarget?
+    /// 두 판본 비교에서 두 열이 공유하는 장(연동 시 양쪽이 같은 장을 본다).
+    @State private var compareChapter = 0
 
     private var canDual: Bool { hSize == .regular }
     /// 좁은 화면(iPhone)에서는 항상 한 페이지
@@ -64,17 +66,23 @@ struct ReaderView: View {
                              bookID: primaryBookBinding,
                              onOpenNote: openNote)
             case .compare:
+                let linked = readingState.compareLinked
                 HStack(spacing: 0) {
                     ReaderPane(role: .primary,
                                editionID: $rs.selectedEditionID,
                                bookID: primaryBookBinding,
+                               linkedChapter: $compareChapter,
                                onOpenNote: openNote)
                     Divider()
                     ReaderPane(role: .secondary,
                                editionID: $rs.secondaryEditionID,
-                               bookID: secondaryBookBinding,
+                               bookID: linked ? primaryBookBinding : secondaryBookBinding,
                                onClose: { readingState.readerLayout = .single },
+                               linkedChapter: linked ? $compareChapter : nil,
+                               isFollower: linked,
                                onOpenNote: openNote)
+                        // 연동 ↔ 분리를 바꾸면 둘째 열을 새로 만들어 위치를 다시 잡는다.
+                        .id(linked)
                 }
             }
             }
@@ -153,6 +161,15 @@ struct ReaderView: View {
                     Label("페이지", systemImage: layout.systemImage)
                 }
             }
+            if canDual && readingState.readerLayout == .compare {
+                // 두 판본 비교: 두 열을 같은 책·장으로 연동/분리
+                Button {
+                    readingState.compareLinked.toggle()
+                } label: {
+                    Label(readingState.compareLinked ? "두 열 연동됨" : "두 열 분리됨",
+                          systemImage: readingState.compareLinked ? "link.circle.fill" : "link.circle")
+                }
+            }
             Button("사전", systemImage: "character.book.closed") { navigation.lookUp() }
             Button("보기 설정", systemImage: "textformat.size") { showAppearance = true }
         }
@@ -167,6 +184,10 @@ struct ReaderPane: View {
     @Binding var editionID: String
     @Binding var bookID: String
     var onClose: (() -> Void)? = nil
+    /// 두 판본 비교에서 두 열을 같은 장으로 묶을 때 쓰는 공유 장(없으면 각 열 독립).
+    var linkedChapter: Binding<Int>? = nil
+    /// 연동된 둘째 열: 장을 스스로 정하지 않고 첫째 열을 따라가기만 한다.
+    var isFollower: Bool = false
     let onOpenNote: (VerseRef, String) -> Void
 
     @Environment(BibleStore.self) private var store
@@ -174,7 +195,7 @@ struct ReaderPane: View {
     @Environment(ReadingState.self) private var readingState
     @Environment(ReaderNavigation.self) private var navigation
 
-    @State private var chapter = 0
+    @State private var localChapter = 0
     @State private var highlight: VerseHighlight?
     @State private var scrolledVerse: Int?
     @State private var showBookPicker = false
@@ -182,6 +203,12 @@ struct ReaderPane: View {
 
     private var edition: Edition { Editions.edition(editionID) ?? Editions.all[0] }
     private var book: BibleBook { Bible.book(bookID) ?? Bible.books[0] }
+
+    /// 표시 중인 장. 연동 시 공유 장, 아니면 이 열의 자기 장.
+    private var chapter: Int { linkedChapter?.wrappedValue ?? localChapter }
+    private func setChapter(_ value: Int) {
+        if let linkedChapter { linkedChapter.wrappedValue = value } else { localChapter = value }
+    }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -192,14 +219,14 @@ struct ReaderPane: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .onAppear { initChapterIfNeeded() }
         .onChange(of: bookID) { _, _ in
-            chapter = readingState.lastChapter(edition: edition, book: book)
+            if !isFollower { setChapter(readingState.lastChapter(edition: edition, book: book)) }
             highlight = nil
         }
         .onChange(of: editionID) { _, _ in
-            chapter = min(max(chapter, 1), book.chapterCount)
+            if !isFollower { setChapter(min(max(chapter, 1), book.chapterCount)) }
         }
         .onChange(of: chapter) { _, new in
-            guard new > 0 else { return }
+            guard new > 0, !isFollower else { return }
             readingState.savePosition(edition: edition, book: book, chapter: new)
         }
         .modifier(PendingChapterModifier(active: role == .primary, apply: applyPending))
@@ -211,7 +238,7 @@ struct ReaderPane: View {
         }
         .sheet(isPresented: $showChapterPicker) {
             ChapterPickerView(book: book, current: max(chapter, 1)) { picked in
-                chapter = picked
+                setChapter(picked)
                 showChapterPicker = false
             }
         }
@@ -220,21 +247,24 @@ struct ReaderPane: View {
     // MARK: 시작/이동 위치
 
     private func initChapterIfNeeded() {
+        guard !isFollower else { return }   // 연동된 둘째 열은 첫째 열을 따라가므로 스스로 정하지 않는다
         guard chapter == 0 else { return }
         if role == .primary, let pending = navigation.pendingChapter {
-            chapter = clampChapter(pending)
+            let c = clampChapter(pending)
+            setChapter(c)
             navigation.pendingChapter = nil
-            highlight = navigation.takePendingHighlight(startChapter: chapter)
+            highlight = navigation.takePendingHighlight(startChapter: c)
         } else {
-            chapter = readingState.lastChapter(edition: edition, book: book)
+            setChapter(readingState.lastChapter(edition: edition, book: book))
         }
     }
 
     private func applyPending() {
         if let pending = navigation.pendingChapter {
-            chapter = clampChapter(pending)
+            let c = clampChapter(pending)
+            setChapter(c)
             navigation.pendingChapter = nil
-            highlight = navigation.takePendingHighlight(startChapter: chapter)
+            highlight = navigation.takePendingHighlight(startChapter: c)
         }
     }
 
@@ -244,7 +274,7 @@ struct ReaderPane: View {
         let next = chapter + delta
         guard (1...book.chapterCount).contains(next) else { return }
         highlight = nil
-        withAnimation(.easeInOut(duration: 0.2)) { chapter = next }
+        withAnimation(.easeInOut(duration: 0.2)) { setChapter(next) }
     }
 
     // MARK: 헤더 (판본 · 책 선택)
@@ -353,7 +383,7 @@ struct ReaderPane: View {
                 Button { step(-1) } label: { Image(systemName: "chevron.left") }
                     .disabled(chapter <= 1)
                 Slider(value: Binding(get: { Double(chapter) },
-                                      set: { chapter = Int($0.rounded()) }),
+                                      set: { setChapter(Int($0.rounded())) }),
                        in: 1...Double(book.chapterCount), step: 1)
                     .accessibilityLabel("장 이동")
                     .accessibilityValue(book.chapterLabel(chapter))
