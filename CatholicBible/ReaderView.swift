@@ -668,6 +668,14 @@ struct SelectableVerseText: UIViewRepresentable {
     let font: UIFont
     let color: UIColor
     let lineSpacing: CGFloat
+    /// 각주 마커('N)')를 강조·링크로 만들 때의 색(주석 성경일 때만 지정). nil이면 강조 안 함.
+    var markerColor: UIColor? = nil
+    var bookID: String = ""
+    var chapter: Int = 0
+    /// 마커를 눌렀을 때 열 URL 처리(주석 팝업). SwiftUI의 openURL 액션을 넘긴다.
+    var onOpenURL: ((URL) -> Void)? = nil
+
+    func makeCoordinator() -> Coordinator { Coordinator(onOpenURL: onOpenURL) }
 
     func makeUIView(context: Context) -> UITextView {
         let tv = UITextView()
@@ -677,19 +685,40 @@ struct SelectableVerseText: UIViewRepresentable {
         tv.backgroundColor = .clear
         tv.textContainerInset = .zero
         tv.textContainer.lineFragmentPadding = 0
+        tv.delegate = context.coordinator
         tv.setContentCompressionResistancePriority(.required, for: .vertical)
         tv.setContentHuggingPriority(.required, for: .vertical)
         return tv
     }
 
     func updateUIView(_ tv: UITextView, context: Context) {
+        context.coordinator.onOpenURL = onOpenURL
         let para = NSMutableParagraphStyle()
         para.lineSpacing = lineSpacing
-        tv.attributedText = NSAttributedString(string: text, attributes: [
+        let attr = NSMutableAttributedString(string: text, attributes: [
             .font: font,
             .foregroundColor: color,
             .paragraphStyle: para,
         ])
+        // 각주 마커 'N)'를 본문과 다른 색·작은 위첨자로 표시하고, 탭하면 주석이 열리게 한다.
+        if let markerColor, let regex = Self.markerRegex {
+            let ns = text as NSString
+            let markerFont = font.withSize(max(font.pointSize * 0.72, 9))
+            for m in regex.matches(in: text, range: NSRange(location: 0, length: ns.length)) {
+                let n = ns.substring(with: m.range(at: 1))
+                var attrs: [NSAttributedString.Key: Any] = [
+                    .foregroundColor: markerColor,
+                    .font: markerFont,
+                    .baselineOffset: font.pointSize * 0.28,
+                ]
+                if let url = URL(string: "catholicbible://note?b=\(bookID)&c=\(chapter)&n=\(n)") {
+                    attrs[.link] = url
+                }
+                attr.addAttributes(attrs, range: m.range)
+            }
+            tv.linkTextAttributes = [.foregroundColor: markerColor]
+        }
+        tv.attributedText = attr
     }
 
     func sizeThatFits(_ proposal: ProposedViewSize, uiView: UITextView, context: Context) -> CGSize? {
@@ -697,6 +726,22 @@ struct SelectableVerseText: UIViewRepresentable {
         guard width > 0, width.isFinite else { return nil }
         let fit = uiView.sizeThatFits(CGSize(width: width, height: .greatestFiniteMagnitude))
         return CGSize(width: width, height: ceil(fit.height))
+    }
+
+    private static let markerRegex = try? NSRegularExpression(pattern: "(?<![\\d(])(\\d{1,3})\\)")
+
+    final class Coordinator: NSObject, UITextViewDelegate {
+        var onOpenURL: ((URL) -> Void)?
+        init(onOpenURL: ((URL) -> Void)?) { self.onOpenURL = onOpenURL }
+
+        /// 마커 링크 탭 → 기본 동작(Safari 열기) 대신 앱 내 주석 팝업으로 보낸다.
+        func textView(_ textView: UITextView, primaryActionFor textItem: UITextItem,
+                      defaultAction: UIAction) -> UIAction? {
+            if case .link(let url) = textItem.content {
+                return UIAction { [onOpenURL] _ in onOpenURL?(url) }
+            }
+            return defaultAction
+        }
     }
 }
 
@@ -713,16 +758,25 @@ struct VerseRowView: View {
     @Environment(ReaderSettings.self) private var settings
     @Environment(AnnotationStore.self) private var annotations
     @Environment(ReaderNavigation.self) private var navigation
+    @Environment(\.openURL) private var openURL
 
     private var ref: VerseRef { VerseRef(bookID: book.id, chapter: chapter, verse: verse.number) }
 
+    /// 주석 성경일 때만 각주 마커('N)')를 강조·링크로 만든다.
+    private var isAnnotationEdition: Bool { edition.id == "knbnotes" }
+
     /// 본문 뷰: UIKit 선택 텍스트뷰. 낱말을 선택하면 네이티브 하이라이트가 보이고,
-    /// 선택 메뉴의 ‘찾아보기’로 시스템 사전이 열린다.
+    /// 선택 메뉴의 ‘찾아보기’로 시스템 사전이 열린다. 주석 성경에서는 각주 마커가
+    /// 본문과 다른 색·위첨자로 표시되고, 탭하면 해당 주석이 열린다.
     private var verseTextView: some View {
         SelectableVerseText(text: verse.text,
                             font: uiBodyFont,
                             color: UIColor(settings.theme.text),
-                            lineSpacing: settings.lineSpacing)
+                            lineSpacing: settings.lineSpacing,
+                            markerColor: isAnnotationEdition ? UIColor(Color.accentColor) : nil,
+                            bookID: book.id,
+                            chapter: chapter,
+                            onOpenURL: isAnnotationEdition ? { openURL($0) } : nil)
     }
 
     private var uiBodyFont: UIFont {

@@ -371,7 +371,7 @@ struct IntroductionsView: View {
             .navigationTitle("입문")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .cancellationAction) { Button("닫기") { dismiss() } } }
-            .sheet(item: $selected) { intro in IntroDetailView(intro: intro) }
+            .fullScreenCover(item: $selected) { intro in IntroDetailView(intro: intro) }
         }
     }
 
