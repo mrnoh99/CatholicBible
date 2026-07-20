@@ -36,6 +36,8 @@ struct ReaderView: View {
     @State private var markerNote: MarkerNoteTarget?
     /// 두 판본 비교에서 두 열이 공유하는 장(연동 시 양쪽이 같은 장을 본다).
     @State private var compareChapter = 0
+    /// 연동 비교에서 두 열이 공유하는 세로 스크롤 앵커(맨 위 절).
+    @State private var compareScrollAnchor: Int?
 
     private var canDual: Bool { hSize == .regular }
     /// 좁은 화면(iPhone)에서는 항상 한 페이지
@@ -81,6 +83,7 @@ struct ReaderView: View {
                                    linkedChapter: $compareChapter,
                                    showChapterBar: !linked,
                                    ownerBookID: book.id,
+                                   syncAnchor: linked ? $compareScrollAnchor : nil,
                                    onOpenNote: openNote)
                         Divider()
                         ReaderPane(role: .secondary,
@@ -90,13 +93,15 @@ struct ReaderView: View {
                                    linkedChapter: linked ? $compareChapter : nil,
                                    isFollower: linked,
                                    showChapterBar: !linked,
+                                   syncAnchor: linked ? $compareScrollAnchor : nil,
                                    onOpenNote: openNote)
                             // 연동 ↔ 분리를 바꾸면 둘째 열을 새로 만들어 위치를 다시 잡는다.
                             .id(linked)
                     }
                     // 연동 시: 두 열을 함께 움직이는 공용 이동줄 하나만 아래에 둔다.
                     if linked {
-                        ChapterNavBar(book: compareBook, chapter: $compareChapter)
+                        ChapterNavBar(book: compareBook, chapter: $compareChapter,
+                                      onChange: { compareScrollAnchor = 1 })  // 장 이동 시 맨 위로
                     }
                 }
             }
@@ -214,6 +219,9 @@ struct ReaderPane: View {
     /// 이 리더가 담당하는 책(리더가 다시 만들어질 때 고정). 책이 바뀌는 순간
     /// 사라지는 옛 리더가 대기 이동을 가로채지 않도록 목표 책과 대조한다.
     var ownerBookID: String = ""
+    /// 연동 비교에서 두 열의 세로 스크롤을 맞추는 공유 앵커(맨 위에 보이는 절).
+    /// nil이면 스크롤 연동 안 함(각 열 독립).
+    var syncAnchor: Binding<Int?>? = nil
     let onOpenNote: (VerseRef, String) -> Void
 
     @Environment(BibleStore.self) private var store
@@ -358,6 +366,7 @@ struct ReaderPane: View {
                                     .id(verse.number)
                             }
                         }
+                        .scrollTargetLayout()
                         .padding(.top, 24)
                         copyrightFooter
                     }
@@ -367,6 +376,7 @@ struct ReaderPane: View {
                 .padding(.bottom, 40)
                 .frame(maxWidth: .infinity)
             }
+            .modifier(SyncScrollModifier(anchor: syncAnchor))
             .onChange(of: scrollTarget) { _, _ in performScroll(proxy, verses: verses) }
             .onChange(of: chapter) { _, _ in performScroll(proxy, verses: verses) }
             .onAppear { performScroll(proxy, verses: verses) }
@@ -410,6 +420,19 @@ struct ReaderPane: View {
         if showChapterBar {
             ChapterNavBar(book: book,
                           chapter: Binding(get: { chapter }, set: { setChapter($0) }))
+        }
+    }
+}
+
+/// 연동 비교일 때만 두 열의 세로 스크롤을 공유 앵커로 맞춘다.
+/// anchor가 nil이면(분리·단일) 스크롤 위치를 건드리지 않는다.
+private struct SyncScrollModifier: ViewModifier {
+    let anchor: Binding<Int?>?
+    func body(content: Content) -> some View {
+        if let anchor {
+            content.scrollPosition(id: anchor, anchor: .top)
+        } else {
+            content
         }
     }
 }
