@@ -19,19 +19,61 @@ struct DictionaryRequest: Identifiable {
     var term: String = ""
 }
 
+/// 강조할 절 범위. 오늘의 말씀 '본문 읽기'처럼 여러 절에 걸친 독서는
+/// 시작 절만이 아니라 범위 전체를 칠한다.
+struct VerseHighlight: Equatable {
+    var startChapter: Int
+    var startVerse: Int
+    var endChapter: Int
+    var endVerse: Int
+
+    init(startChapter: Int, startVerse: Int, endChapter: Int? = nil, endVerse: Int? = nil) {
+        self.startChapter = startChapter
+        self.startVerse = startVerse
+        let ec = endChapter ?? startChapter
+        self.endChapter = ec
+        let ev = endVerse ?? startVerse
+        // 같은 장 안에서는 끝 절이 시작 절보다 앞설 수 없다(여러 장이면 그대로).
+        self.endVerse = (ec == startChapter) ? max(ev, startVerse) : ev
+    }
+
+    /// 지금 보고 있는 장의 이 절이 강조 범위에 드는가.
+    func contains(chapter: Int, verse: Int) -> Bool {
+        guard chapter >= startChapter, chapter <= endChapter else { return false }
+        let lo = (chapter == startChapter) ? startVerse : 1
+        let hi = (chapter == endChapter) ? endVerse : Int.max
+        return verse >= lo && verse <= hi
+    }
+}
+
 @Observable
 final class ReaderNavigation {
     var selectedBookID: String?
     /// 리더가 열릴 때 이동할 장/절 (검색·책갈피에서 설정)
     var pendingChapter: Int?
     var pendingVerse: Int?
+    /// 강조할 범위의 끝(오늘의 말씀 등 여러 절 독서). 없으면 시작 절만 강조.
+    var pendingVerseEnd: Int?
+    var pendingEndChapter: Int?
     /// 사전 시트 요청 (nil이 아니면 사전이 열린다)
     var dictionaryRequest: DictionaryRequest?
 
-    func open(bookID: String, chapter: Int, verse: Int? = nil) {
+    func open(bookID: String, chapter: Int, verse: Int? = nil,
+              verseEnd: Int? = nil, endChapter: Int? = nil) {
         pendingChapter = chapter
         pendingVerse = verse
+        pendingVerseEnd = verseEnd
+        pendingEndChapter = endChapter
         selectedBookID = bookID
+    }
+
+    /// 대기 중인 강조 범위를 만들어 반환하고 대기값을 비운다.
+    /// startChapter는 실제로 열리는(클램프된) 장을 넘겨준다.
+    func takePendingHighlight(startChapter: Int) -> VerseHighlight? {
+        defer { pendingVerse = nil; pendingVerseEnd = nil; pendingEndChapter = nil }
+        guard let v = pendingVerse else { return nil }
+        return VerseHighlight(startChapter: startChapter, startVerse: v,
+                              endChapter: pendingEndChapter, endVerse: pendingVerseEnd)
     }
 
     func lookUp(_ term: String = "") {

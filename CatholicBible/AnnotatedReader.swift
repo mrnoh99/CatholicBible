@@ -23,7 +23,7 @@ struct AnnotatedReader: View {
     @Environment(\.horizontalSizeClass) private var hSize
 
     @State private var chapter = 0
-    @State private var highlight: Int?
+    @State private var highlight: VerseHighlight?
     @State private var scrolledVerse: Int?
     @State private var showBookPicker = false
     @State private var showChapterPicker = false
@@ -71,8 +71,8 @@ struct AnnotatedReader: View {
         guard chapter == 0 else { return }
         if let p = navigation.pendingChapter {
             chapter = min(max(p, 1), book.chapterCount)
-            highlight = navigation.pendingVerse
-            navigation.pendingChapter = nil; navigation.pendingVerse = nil
+            navigation.pendingChapter = nil
+            highlight = navigation.takePendingHighlight(startChapter: chapter)
         } else {
             chapter = readingState.lastChapter(edition: edition, book: book)
         }
@@ -81,8 +81,8 @@ struct AnnotatedReader: View {
     private func applyPending() {
         if let p = navigation.pendingChapter {
             chapter = min(max(p, 1), book.chapterCount)
-            highlight = navigation.pendingVerse
-            navigation.pendingChapter = nil; navigation.pendingVerse = nil
+            navigation.pendingChapter = nil
+            highlight = navigation.takePendingHighlight(startChapter: chapter)
         }
     }
 
@@ -169,7 +169,7 @@ struct AnnotatedReader: View {
             .frame(maxWidth: .infinity)
         }
         .scrollPosition(id: $scrolledVerse, anchor: .center)
-        .onChange(of: highlight) { _, v in if let v { scrolledVerse = v } }
+        .onChange(of: highlight) { _, v in if let n = v?.startVerse { scrolledVerse = n } }
         .frame(maxWidth: .infinity)
     }
 
@@ -187,7 +187,8 @@ struct AnnotatedReader: View {
                             SectionTitleView(text: title, bookID: book.id, chapter: chapter)
                         }
                         VerseRowView(edition: edition, book: book, chapter: chapter,
-                                     verse: verse, highlighted: highlight == verse.number,
+                                     verse: verse,
+                                     highlighted: highlight?.contains(chapter: chapter, verse: verse.number) ?? false,
                                      onOpenNote: onOpenNote)
                     }
                     .id(verse.number)

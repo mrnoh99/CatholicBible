@@ -149,7 +149,9 @@ struct DailyMassView: View {
     /// 성구를 리더로 연다(시트를 닫고 사이드바 선택을 옮긴다).
     private func open(_ c: ScriptureCitation) {
         guard Bible.book(c.bookID) != nil else { return }
-        navigation.open(bookID: c.bookID, chapter: c.chapter, verse: c.verseStart)
+        let end = c.verseEnd > 0 ? c.verseEnd : c.verseStart
+        navigation.open(bookID: c.bookID, chapter: c.chapter, verse: c.verseStart,
+                        verseEnd: end, endChapter: c.endChapter)
         dismiss()
     }
 }

@@ -175,7 +175,7 @@ struct ReaderPane: View {
     @Environment(ReaderNavigation.self) private var navigation
 
     @State private var chapter = 0
-    @State private var highlight: Int?
+    @State private var highlight: VerseHighlight?
     @State private var scrolledVerse: Int?
     @State private var showBookPicker = false
     @State private var showChapterPicker = false
@@ -223,9 +223,8 @@ struct ReaderPane: View {
         guard chapter == 0 else { return }
         if role == .primary, let pending = navigation.pendingChapter {
             chapter = clampChapter(pending)
-            highlight = navigation.pendingVerse
             navigation.pendingChapter = nil
-            navigation.pendingVerse = nil
+            highlight = navigation.takePendingHighlight(startChapter: chapter)
         } else {
             chapter = readingState.lastChapter(edition: edition, book: book)
         }
@@ -234,9 +233,8 @@ struct ReaderPane: View {
     private func applyPending() {
         if let pending = navigation.pendingChapter {
             chapter = clampChapter(pending)
-            highlight = navigation.pendingVerse
             navigation.pendingChapter = nil
-            navigation.pendingVerse = nil
+            highlight = navigation.takePendingHighlight(startChapter: chapter)
         }
     }
 
@@ -304,7 +302,8 @@ struct ReaderPane: View {
                     LazyVStack(alignment: .leading, spacing: settings.lineSpacing * 0.9) {
                         ForEach(verses) { verse in
                             VerseRowView(edition: edition, book: book, chapter: chapter,
-                                         verse: verse, highlighted: highlight == verse.number,
+                                         verse: verse,
+                                         highlighted: highlight?.contains(chapter: chapter, verse: verse.number) ?? false,
                                          onOpenNote: onOpenNote)
                                 .id(verse.number)
                         }
@@ -320,7 +319,7 @@ struct ReaderPane: View {
             .frame(maxWidth: .infinity)
         }
         .scrollPosition(id: $scrolledVerse, anchor: .center)
-        .onChange(of: highlight) { _, v in if let v { scrolledVerse = v } }
+        .onChange(of: highlight) { _, v in if let n = v?.startVerse { scrolledVerse = n } }
         .onChange(of: chapter) { _, _ in scrolledVerse = nil }
     }
 
@@ -407,7 +406,7 @@ struct SpreadReader: View {
     @State private var chapter = 0
     @State private var spreadIndex = 0
     @State private var wantLastSpread = false
-    @State private var highlight: Int?
+    @State private var highlight: VerseHighlight?
     @State private var contentSize: CGSize = .zero
     @State private var showBookPicker = false
     @State private var showChapterPicker = false
@@ -458,8 +457,8 @@ struct SpreadReader: View {
     private func initChapterIfNeeded() {
         guard chapter == 0 else { return }
         if let p = navigation.pendingChapter {
-            chapter = clampChapter(p); highlight = navigation.pendingVerse
-            navigation.pendingChapter = nil; navigation.pendingVerse = nil
+            chapter = clampChapter(p); navigation.pendingChapter = nil
+            highlight = navigation.takePendingHighlight(startChapter: chapter)
         } else {
             chapter = readingState.lastChapter(edition: edition, book: book)
         }
@@ -467,8 +466,8 @@ struct SpreadReader: View {
 
     private func applyPending() {
         if let p = navigation.pendingChapter {
-            chapter = clampChapter(p); highlight = navigation.pendingVerse
-            navigation.pendingChapter = nil; navigation.pendingVerse = nil
+            chapter = clampChapter(p); navigation.pendingChapter = nil
+            highlight = navigation.takePendingHighlight(startChapter: chapter)
             spreadIndex = 0
         }
     }
@@ -479,7 +478,7 @@ struct SpreadReader: View {
     private func reconcileSpreadIndex() {
         if wantLastSpread {
             spreadIndex = max(0, spreadCount - 1); wantLastSpread = false
-        } else if let h = highlight,
+        } else if let h = highlight?.startVerse,
                   let pageIdx = pages.firstIndex(where: { $0.contains { $0.number == h } }) {
             spreadIndex = pageIdx / 2
         } else {
@@ -571,7 +570,8 @@ struct SpreadReader: View {
             if let verses {
                 ForEach(verses) { verse in
                     VerseRowView(edition: edition, book: book, chapter: chapter,
-                                 verse: verse, highlighted: highlight == verse.number,
+                                 verse: verse,
+                                 highlighted: highlight?.contains(chapter: chapter, verse: verse.number) ?? false,
                                  onOpenNote: onOpenNote)
                 }
             } else if isFirst && pages.isEmpty {
