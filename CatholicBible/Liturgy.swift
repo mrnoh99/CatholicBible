@@ -107,6 +107,87 @@ enum ScriptureReference {
         return ScriptureCitation(bookID: match.id, chapter: chapter,
                                  verseStart: vStart, verseEnd: vEnd, endChapter: endChapter)
     }
+
+    /// 참조 문자열을 강조용 구간(segment)까지 풀어 준다.
+    /// 불연속 독서(예: "마태 4,12-17.23-25")의 빠진 절을 칠하지 않도록,
+    /// 절 그룹을 각각 나눠 담는다. (칠하기 전용 — 리더 이동 위치는 parse가 담당)
+    static func highlight(_ reference: String) -> (bookID: String, highlight: VerseHighlight)? {
+        var s = reference.trimmingCharacters(in: .whitespaces)
+        guard let match = aliasToID.first(where: { s.hasPrefix($0.alias) }) else { return nil }
+        s = String(s.dropFirst(match.alias.count)).trimmingCharacters(in: .whitespaces)
+        // 히브리어 병기 "(66)" 등 괄호 제거
+        if let paren = try? NSRegularExpression(pattern: "\\([^)]*\\)") {
+            s = paren.stringByReplacingMatches(in: s, range: NSRange(location: 0, length: (s as NSString).length), withTemplate: "")
+        }
+        // 앞머리 장 번호
+        let ns = s as NSString
+        guard let chMatch = try? NSRegularExpression(pattern: "^\\s*(\\d+)"),
+              let m = chMatch.firstMatch(in: s, range: NSRange(location: 0, length: ns.length)),
+              let firstChapter = Int(ns.substring(with: m.range(at: 1))) else { return nil }
+
+        var cur = firstChapter
+        var rest = ns.substring(from: m.range.location + m.range.length)
+        rest = rest.trimmingCharacters(in: .whitespaces)
+
+        var segs: [VerseHighlight.Segment] = []
+        let bigEnd = Int.max
+
+        // ",절…"이 없으면 장 전체
+        guard rest.hasPrefix(",") else {
+            return (match.id, VerseHighlight(segments: [.init(chapter: cur, low: 1, high: bigEnd)],
+                                             startChapter: cur, startVerse: 1))
+        }
+        rest.removeFirst()
+        // '과'·'와'(그리고)와 '·'를 그룹 구분자 '.'로 통일, 공백 제거
+        rest = rest.replacingOccurrences(of: "과", with: ".")
+                   .replacingOccurrences(of: "와", with: ".")
+                   .replacingOccurrences(of: "·", with: ".")
+                   .replacingOccurrences(of: " ", with: "")
+        func leadingInt(_ t: Substring) -> Int? {
+            let digits = t.prefix { $0.isNumber }
+            return digits.isEmpty ? nil : Int(digits)
+        }
+        var firstVerse: Int?
+        for g in rest.split(separator: ".") where !g.isEmpty {
+            if let dash = g.firstIndex(where: { $0 == "-" || $0 == "–" }) {
+                let left = g[g.startIndex..<dash]
+                let right = g[g.index(after: dash)...]
+                guard let lo = leadingInt(left) else { continue }
+                if let comma = right.firstIndex(of: ",") {
+                    // 장을 넘는 범위 "31-13,13"
+                    let c2s = right[right.startIndex..<comma]
+                    let v2s = right[right.index(after: comma)...]
+                    guard let c2 = leadingInt(c2s), let v2 = leadingInt(v2s) else { continue }
+                    segs.append(.init(chapter: cur, low: lo, high: bigEnd))
+                    if c2 > cur + 1 { for c in (cur + 1)..<c2 { segs.append(.init(chapter: c, low: 1, high: bigEnd)) } }
+                    segs.append(.init(chapter: c2, low: 1, high: v2))
+                    cur = c2
+                    if firstVerse == nil { firstVerse = lo }
+                } else if let hi = leadingInt(right) {
+                    segs.append(.init(chapter: cur, low: lo, high: hi))
+                    if firstVerse == nil { firstVerse = lo }
+                }
+            } else if let comma = g.firstIndex(of: ",") {
+                // 새 장의 한 절 "13,13"
+                let c2s = g[g.startIndex..<comma]
+                let v2s = g[g.index(after: comma)...]
+                guard let c2 = leadingInt(c2s), let v2 = leadingInt(v2s) else { continue }
+                cur = c2
+                segs.append(.init(chapter: cur, low: v2, high: v2))
+                if firstVerse == nil { firstVerse = v2 }
+            } else if let v = leadingInt(g) {
+                segs.append(.init(chapter: cur, low: v, high: v))
+                if firstVerse == nil { firstVerse = v }
+            }
+        }
+        if segs.isEmpty {
+            segs = [.init(chapter: firstChapter, low: 1, high: bigEnd)]
+            firstVerse = 1
+        }
+        return (match.id, VerseHighlight(segments: segs,
+                                         startChapter: firstChapter,
+                                         startVerse: firstVerse ?? 1))
+    }
 }
 
 // MARK: - 독서 한 편

@@ -138,7 +138,7 @@ struct DailyMassView: View {
                         .padding(.bottom, 2)
                 }
                 ForEach(readings) { reading in
-                    ReadingCard(reading: reading, openCitation: open)
+                    ReadingCard(reading: reading, openReading: open)
                         .environment(store)
                         .environment(settings)
                 }
@@ -147,11 +147,17 @@ struct DailyMassView: View {
     }
 
     /// 성구를 리더로 연다(시트를 닫고 사이드바 선택을 옮긴다).
-    private func open(_ c: ScriptureCitation) {
-        guard Bible.book(c.bookID) != nil else { return }
-        let end = c.verseEnd > 0 ? c.verseEnd : c.verseStart
-        navigation.open(bookID: c.bookID, chapter: c.chapter, verse: c.verseStart,
-                        verseEnd: end, endChapter: c.endChapter)
+    private func open(_ reading: MassReading) {
+        guard let c = reading.primaryCitation, Bible.book(c.bookID) != nil else { return }
+        // 참조 문자열에서 불연속 구간까지 살린 강조를 만든다(빠진 절은 칠하지 않음).
+        if let parsed = ScriptureReference.highlight(reading.reference), parsed.bookID == c.bookID {
+            navigation.open(bookID: c.bookID, chapter: parsed.highlight.startChapter,
+                            highlight: parsed.highlight)
+        } else {
+            let end = c.verseEnd > 0 ? c.verseEnd : c.verseStart
+            navigation.open(bookID: c.bookID, chapter: c.chapter, verse: c.verseStart,
+                            verseEnd: end, endChapter: c.endChapter)
+        }
         dismiss()
     }
 }
@@ -160,7 +166,7 @@ struct DailyMassView: View {
 
 private struct ReadingCard: View {
     let reading: MassReading
-    let openCitation: (ScriptureCitation) -> Void
+    let openReading: (MassReading) -> Void
 
     @Environment(BibleStore.self) private var store
     @Environment(ReaderSettings.self) private var settings
@@ -177,7 +183,7 @@ private struct ReadingCard: View {
                 Spacer(minLength: 6)
                 if reading.primaryCitation != nil {
                     Button {
-                        if let c = reading.primaryCitation { openCitation(c) }
+                        openReading(reading)
                     } label: {
                         Label("본문 열기", systemImage: "book")
                             .font(.caption.weight(.semibold))

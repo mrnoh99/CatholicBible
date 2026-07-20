@@ -13,6 +13,8 @@ import UIKit
 struct AnnotatedReader: View {
     @Binding var editionID: String
     @Binding var bookID: String
+    /// 이 리더가 담당하는 책(대기 이동 가로채기 방지용).
+    var ownerBookID: String = ""
     let onOpenNote: (VerseRef, String) -> Void
 
     @Environment(BibleStore.self) private var store
@@ -72,21 +74,20 @@ struct AnnotatedReader: View {
 
     private func initChapterIfNeeded() {
         guard chapter == 0 else { return }
-        if let p = navigation.pendingChapter {
+        if navigation.hasPending(forBook: ownerBookID), let p = navigation.pendingChapter {
             chapter = min(max(p, 1), book.chapterCount)
             navigation.pendingChapter = nil
-            highlight = navigation.takePendingHighlight(startChapter: chapter)
+            highlight = navigation.takePendingHighlight()
         } else {
             chapter = readingState.lastChapter(edition: edition, book: book)
         }
     }
 
     private func applyPending() {
-        if let p = navigation.pendingChapter {
-            chapter = min(max(p, 1), book.chapterCount)
-            navigation.pendingChapter = nil
-            highlight = navigation.takePendingHighlight(startChapter: chapter)
-        }
+        guard navigation.hasPending(forBook: ownerBookID), let p = navigation.pendingChapter else { return }
+        chapter = min(max(p, 1), book.chapterCount)
+        navigation.pendingChapter = nil
+        highlight = navigation.takePendingHighlight()
     }
 
     private func step(_ d: Int) {

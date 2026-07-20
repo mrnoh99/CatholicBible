@@ -55,6 +55,7 @@ struct ReaderView: View {
                 // 주석 성경: 왼쪽 본문 · 오른쪽 주석 (입문 접근 포함)
                 AnnotatedReader(editionID: $rs.selectedEditionID,
                                 bookID: primaryBookBinding,
+                                ownerBookID: book.id,
                                 onOpenNote: openNote)
             } else {
             switch layout {
@@ -62,10 +63,12 @@ struct ReaderView: View {
                 ReaderPane(role: .primary,
                            editionID: $rs.selectedEditionID,
                            bookID: primaryBookBinding,
+                           ownerBookID: book.id,
                            onOpenNote: openNote)
             case .spread:
                 SpreadReader(editionID: $rs.selectedEditionID,
                              bookID: primaryBookBinding,
+                             ownerBookID: book.id,
                              onOpenNote: openNote)
             case .compare:
                 let linked = readingState.compareLinked
@@ -77,6 +80,7 @@ struct ReaderView: View {
                                    bookID: primaryBookBinding,
                                    linkedChapter: $compareChapter,
                                    showChapterBar: !linked,
+                                   ownerBookID: book.id,
                                    onOpenNote: openNote)
                         Divider()
                         ReaderPane(role: .secondary,
@@ -207,6 +211,9 @@ struct ReaderPane: View {
     var isFollower: Bool = false
     /// 하단 장 이동줄을 이 열 안에 표시할지 (연동 비교에서는 공용 줄 하나만 쓰므로 끈다).
     var showChapterBar: Bool = true
+    /// 이 리더가 담당하는 책(리더가 다시 만들어질 때 고정). 책이 바뀌는 순간
+    /// 사라지는 옛 리더가 대기 이동을 가로채지 않도록 목표 책과 대조한다.
+    var ownerBookID: String = ""
     let onOpenNote: (VerseRef, String) -> Void
 
     @Environment(BibleStore.self) private var store
@@ -262,23 +269,24 @@ struct ReaderPane: View {
     private func initChapterIfNeeded() {
         guard !isFollower else { return }   // 연동된 둘째 열은 첫째 열을 따라가므로 스스로 정하지 않는다
         guard chapter == 0 else { return }
-        if role == .primary, let pending = navigation.pendingChapter {
+        if role == .primary, navigation.hasPending(forBook: ownerBookID),
+           let pending = navigation.pendingChapter {
             let c = clampChapter(pending)
             setChapter(c)
             navigation.pendingChapter = nil
-            highlight = navigation.takePendingHighlight(startChapter: c)
+            highlight = navigation.takePendingHighlight()
         } else {
             setChapter(readingState.lastChapter(edition: edition, book: book))
         }
     }
 
     private func applyPending() {
-        if let pending = navigation.pendingChapter {
-            let c = clampChapter(pending)
-            setChapter(c)
-            navigation.pendingChapter = nil
-            highlight = navigation.takePendingHighlight(startChapter: c)
-        }
+        guard role == .primary, navigation.hasPending(forBook: ownerBookID),
+              let pending = navigation.pendingChapter else { return }
+        let c = clampChapter(pending)
+        setChapter(c)
+        navigation.pendingChapter = nil
+        highlight = navigation.takePendingHighlight()
     }
 
     private func clampChapter(_ c: Int) -> Int { min(max(c, 1), book.chapterCount) }
@@ -478,6 +486,8 @@ private struct PendingChapterModifier: ViewModifier {
 struct SpreadReader: View {
     @Binding var editionID: String
     @Binding var bookID: String
+    /// 이 리더가 담당하는 책(대기 이동 가로채기 방지용).
+    var ownerBookID: String = ""
     let onOpenNote: (VerseRef, String) -> Void
 
     @Environment(BibleStore.self) private var store
@@ -539,20 +549,19 @@ struct SpreadReader: View {
 
     private func initChapterIfNeeded() {
         guard chapter == 0 else { return }
-        if let p = navigation.pendingChapter {
+        if navigation.hasPending(forBook: ownerBookID), let p = navigation.pendingChapter {
             chapter = clampChapter(p); navigation.pendingChapter = nil
-            highlight = navigation.takePendingHighlight(startChapter: chapter)
+            highlight = navigation.takePendingHighlight()
         } else {
             chapter = readingState.lastChapter(edition: edition, book: book)
         }
     }
 
     private func applyPending() {
-        if let p = navigation.pendingChapter {
-            chapter = clampChapter(p); navigation.pendingChapter = nil
-            highlight = navigation.takePendingHighlight(startChapter: chapter)
-            spreadIndex = 0
-        }
+        guard navigation.hasPending(forBook: ownerBookID), let p = navigation.pendingChapter else { return }
+        chapter = clampChapter(p); navigation.pendingChapter = nil
+        highlight = navigation.takePendingHighlight()
+        spreadIndex = 0
     }
 
     private func clampChapter(_ c: Int) -> Int { min(max(c, 1), book.chapterCount) }

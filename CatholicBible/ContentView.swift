@@ -20,60 +20,90 @@ struct DictionaryRequest: Identifiable {
 }
 
 /// 강조할 절 범위. 오늘의 말씀 '본문 읽기'처럼 여러 절에 걸친 독서는
-/// 시작 절만이 아니라 범위 전체를 칠한다.
+/// 시작 절만이 아니라 범위 전체를 칠한다. 불연속 독서(예: "1-4.6-8")는
+/// 빠진 절(5절)을 칠하지 않도록 구간(segment) 목록으로 담는다.
 struct VerseHighlight: Equatable {
+    /// 한 강조 구간: 같은 장의 low~high 절.
+    struct Segment: Equatable { var chapter: Int; var low: Int; var high: Int }
+
+    var segments: [Segment]
+    /// 스크롤을 맞출 시작 위치.
     var startChapter: Int
     var startVerse: Int
-    var endChapter: Int
-    var endVerse: Int
 
+    /// 연속 범위(한 절 또는 시작~끝) 편의 생성자.
     init(startChapter: Int, startVerse: Int, endChapter: Int? = nil, endVerse: Int? = nil) {
+        let ec = endChapter ?? startChapter
+        let ev = endVerse ?? startVerse
+        var segs: [Segment] = []
+        if ec == startChapter {
+            segs.append(Segment(chapter: startChapter, low: startVerse, high: max(ev, startVerse)))
+        } else {
+            segs.append(Segment(chapter: startChapter, low: startVerse, high: Int.max))
+            var c = startChapter + 1
+            while c < ec { segs.append(Segment(chapter: c, low: 1, high: Int.max)); c += 1 }
+            segs.append(Segment(chapter: ec, low: 1, high: ev))
+        }
+        self.segments = segs
         self.startChapter = startChapter
         self.startVerse = startVerse
-        let ec = endChapter ?? startChapter
-        self.endChapter = ec
-        let ev = endVerse ?? startVerse
-        // 같은 장 안에서는 끝 절이 시작 절보다 앞설 수 없다(여러 장이면 그대로).
-        self.endVerse = (ec == startChapter) ? max(ev, startVerse) : ev
     }
 
-    /// 지금 보고 있는 장의 이 절이 강조 범위에 드는가.
+    /// 구간을 직접 준다(불연속 독서용).
+    init(segments: [Segment], startChapter: Int, startVerse: Int) {
+        self.segments = segments.isEmpty
+            ? [Segment(chapter: startChapter, low: startVerse, high: startVerse)]
+            : segments
+        self.startChapter = startChapter
+        self.startVerse = startVerse
+    }
+
+    /// 지금 보고 있는 장의 이 절이 강조 구간에 드는가.
     func contains(chapter: Int, verse: Int) -> Bool {
-        guard chapter >= startChapter, chapter <= endChapter else { return false }
-        let lo = (chapter == startChapter) ? startVerse : 1
-        let hi = (chapter == endChapter) ? endVerse : Int.max
-        return verse >= lo && verse <= hi
+        segments.contains { $0.chapter == chapter && verse >= $0.low && verse <= $0.high }
     }
 }
 
 @Observable
 final class ReaderNavigation {
     var selectedBookID: String?
-    /// 리더가 열릴 때 이동할 장/절 (검색·책갈피에서 설정)
+    /// 리더가 열릴 때 이동할 장 (검색·책갈피·오늘의 말씀에서 설정)
     var pendingChapter: Int?
-    var pendingVerse: Int?
-    /// 강조할 범위의 끝(오늘의 말씀 등 여러 절 독서). 없으면 시작 절만 강조.
-    var pendingVerseEnd: Int?
-    var pendingEndChapter: Int?
+    /// 강조할 절 범위(불연속 포함). 없으면 강조 없음.
+    var pendingHighlight: VerseHighlight?
+    /// 이 대기 이동이 향하는 책. 책이 바뀌는 순간 사라지는 옛 리더가 잘못
+    /// 대기값을 먹지 않도록, 목표 책과 일치하는 리더만 소비하게 한다.
+    var pendingBookID: String?
     /// 사전 시트 요청 (nil이 아니면 사전이 열린다)
     var dictionaryRequest: DictionaryRequest?
 
+    /// 한 절 또는 연속 범위로 연다(검색·책갈피 등).
     func open(bookID: String, chapter: Int, verse: Int? = nil,
               verseEnd: Int? = nil, endChapter: Int? = nil) {
+        let hl = verse.map {
+            VerseHighlight(startChapter: chapter, startVerse: $0,
+                           endChapter: endChapter, endVerse: verseEnd)
+        }
+        open(bookID: bookID, chapter: chapter, highlight: hl)
+    }
+
+    /// 불연속 구간까지 담은 강조로 연다(오늘의 말씀 '본문 읽기').
+    func open(bookID: String, chapter: Int, highlight: VerseHighlight?) {
+        pendingBookID = bookID
         pendingChapter = chapter
-        pendingVerse = verse
-        pendingVerseEnd = verseEnd
-        pendingEndChapter = endChapter
+        pendingHighlight = highlight
         selectedBookID = bookID
     }
 
-    /// 대기 중인 강조 범위를 만들어 반환하고 대기값을 비운다.
-    /// startChapter는 실제로 열리는(클램프된) 장을 넘겨준다.
-    func takePendingHighlight(startChapter: Int) -> VerseHighlight? {
-        defer { pendingVerse = nil; pendingVerseEnd = nil; pendingEndChapter = nil }
-        guard let v = pendingVerse else { return nil }
-        return VerseHighlight(startChapter: startChapter, startVerse: v,
-                              endChapter: pendingEndChapter, endVerse: pendingVerseEnd)
+    /// 이 책을 여는 리더가 지금 소비할 대기 이동이 있는가.
+    func hasPending(forBook bookID: String) -> Bool {
+        pendingChapter != nil && (pendingBookID == nil || pendingBookID == bookID)
+    }
+
+    /// 대기 중인 강조를 반환하고 강조 관련 대기값을 비운다.
+    func takePendingHighlight() -> VerseHighlight? {
+        defer { pendingHighlight = nil; pendingBookID = nil }
+        return pendingHighlight
     }
 
     func lookUp(_ term: String = "") {
