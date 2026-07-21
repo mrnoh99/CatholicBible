@@ -43,6 +43,9 @@ struct DailyMassView: View {
                 .padding(20)
                 .frame(maxWidth: 760)
                 .frame(maxWidth: .infinity)
+                // '본문 열기' 같은 버튼(링크)은 탭이 우선이라 선택되지 않고,
+                // 그 밖의 본문·제목·성구·화답송 등은 눌러서 복사할 수 있다.
+                .textSelection(.enabled)
             }
             .background(settings.theme.background.ignoresSafeArea())
             // 오늘의 미사를 다시 열면 이전 강조는 지운다(다음 독서를 고를 때까지 유지되던 것).
