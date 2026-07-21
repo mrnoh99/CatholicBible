@@ -36,8 +36,8 @@ struct ReaderView: View {
     @State private var markerNote: MarkerNoteTarget?
     /// 두 판본 비교에서 두 열이 공유하는 장(연동 시 양쪽이 같은 장을 본다).
     @State private var compareChapter = 0
-    /// 연동 비교에서 두 열이 공유하는 세로 스크롤 앵커(맨 위 절).
-    @State private var compareScrollAnchor: Int?
+    /// 연동 비교에서 두 열이 공유하는 세로 스크롤 오프셋.
+    @State private var compareScrollOffset: CGFloat = 0
 
     private var canDual: Bool { hSize == .regular }
     /// 좁은 화면(iPhone)에서는 항상 한 페이지
@@ -83,7 +83,7 @@ struct ReaderView: View {
                                    linkedChapter: $compareChapter,
                                    showChapterBar: !linked,
                                    ownerBookID: book.id,
-                                   syncAnchor: linked ? $compareScrollAnchor : nil,
+                                   syncOffset: linked ? $compareScrollOffset : nil,
                                    onOpenNote: openNote)
                         Divider()
                         ReaderPane(role: .secondary,
@@ -93,7 +93,7 @@ struct ReaderView: View {
                                    linkedChapter: linked ? $compareChapter : nil,
                                    isFollower: linked,
                                    showChapterBar: !linked,
-                                   syncAnchor: linked ? $compareScrollAnchor : nil,
+                                   syncOffset: linked ? $compareScrollOffset : nil,
                                    onOpenNote: openNote)
                             // 연동 ↔ 분리를 바꾸면 둘째 열을 새로 만들어 위치를 다시 잡는다.
                             .id(linked)
@@ -101,7 +101,7 @@ struct ReaderView: View {
                     // 연동 시: 두 열을 함께 움직이는 공용 이동줄 하나만 아래에 둔다.
                     if linked {
                         ChapterNavBar(book: compareBook, chapter: $compareChapter,
-                                      onChange: { compareScrollAnchor = 1 })  // 장 이동 시 맨 위로
+                                      onChange: { compareScrollOffset = 0 })  // 장 이동 시 맨 위로
                     }
                 }
             }
@@ -219,9 +219,9 @@ struct ReaderPane: View {
     /// 이 리더가 담당하는 책(리더가 다시 만들어질 때 고정). 책이 바뀌는 순간
     /// 사라지는 옛 리더가 대기 이동을 가로채지 않도록 목표 책과 대조한다.
     var ownerBookID: String = ""
-    /// 연동 비교에서 두 열의 세로 스크롤을 맞추는 공유 앵커(맨 위에 보이는 절).
+    /// 연동 비교에서 두 열의 세로 스크롤을 맞추는 공유 오프셋.
     /// nil이면 스크롤 연동 안 함(각 열 독립).
-    var syncAnchor: Binding<Int?>? = nil
+    var syncOffset: Binding<CGFloat>? = nil
     let onOpenNote: (VerseRef, String) -> Void
 
     @Environment(BibleStore.self) private var store
@@ -366,7 +366,6 @@ struct ReaderPane: View {
                                     .id(verse.number)
                             }
                         }
-                        .scrollTargetLayout()
                         .padding(.top, 24)
                         copyrightFooter
                     }
@@ -376,7 +375,7 @@ struct ReaderPane: View {
                 .padding(.bottom, 40)
                 .frame(maxWidth: .infinity)
             }
-            .modifier(SyncScrollModifier(anchor: syncAnchor))
+            .modifier(SyncScrollModifier(syncOffset: syncOffset))
             .onChange(of: scrollTarget) { _, _ in performScroll(proxy, verses: verses) }
             .onChange(of: chapter) { _, _ in performScroll(proxy, verses: verses) }
             .onAppear { performScroll(proxy, verses: verses) }
@@ -424,13 +423,27 @@ struct ReaderPane: View {
     }
 }
 
-/// 연동 비교일 때만 두 열의 세로 스크롤을 공유 앵커로 맞춘다.
-/// anchor가 nil이면(분리·단일) 스크롤 위치를 건드리지 않는다.
+/// 연동 비교일 때만 두 열의 세로 스크롤을 실시간으로 맞춘다(공유 오프셋).
+/// syncOffset이 nil이면(분리·단일) 스크롤 위치를 건드리지 않는다.
 private struct SyncScrollModifier: ViewModifier {
-    let anchor: Binding<Int?>?
+    let syncOffset: Binding<CGFloat>?
+    @State private var position = ScrollPosition()
+    @State private var lastOffset: CGFloat = 0
+
     func body(content: Content) -> some View {
-        if let anchor {
-            content.scrollPosition(id: anchor, anchor: .top)
+        if let syncOffset {
+            content
+                .scrollPosition($position)
+                // 내가 스크롤하면 공유 오프셋을 갱신한다.
+                .onScrollGeometryChange(for: CGFloat.self) { $0.contentOffset.y } action: { _, y in
+                    lastOffset = y
+                    if abs(y - syncOffset.wrappedValue) > 1 { syncOffset.wrappedValue = y }
+                }
+                // 상대 열이 스크롤해 공유 오프셋이 바뀌면 나도 따라간다.
+                // (내가 방금 그 값을 만든 경우엔 lastOffset과 같아 다시 스크롤하지 않음 → 내 드래그와 안 부딪힘)
+                .onChange(of: syncOffset.wrappedValue) { _, y in
+                    if abs(y - lastOffset) > 1 { position.scrollTo(y: y) }
+                }
         } else {
             content
         }

@@ -12,6 +12,7 @@
 //
 
 import SwiftUI
+import UIKit
 
 struct DailyMassView: View {
     @Environment(BibleStore.self) private var store
@@ -214,17 +215,11 @@ private struct ReadingCard: View {
                     .foregroundStyle(settings.theme.secondary)
             }
 
-            // 번들 「성경」에서 본문 미리보기
+            // 번들 「성경」에서 본문 미리보기 (아이패드 기본 방식으로 낱말 선택·복사 가능)
             if let c = reading.primaryCitation, !previewVerses(c).isEmpty {
                 DisclosureGroup(isExpanded: $expanded) {
-                    VStack(alignment: .leading, spacing: 4) {
-                        ForEach(previewVerses(c), id: \.number) { v in
-                            (Text("\(v.number) ").font(.caption2).foregroundStyle(settings.theme.secondary)
-                             + Text(v.text).font(settings.bodyFont()).foregroundStyle(settings.theme.text))
-                                .fixedSize(horizontal: false, vertical: true)
-                        }
-                    }
-                    .padding(.top, 6)
+                    SelectableAttributedText(attributed: passageAttributed(previewVerses(c)))
+                        .padding(.top, 6)
                 } label: {
                     Text(expanded ? "본문 접기" : "본문 보기")
                         .font(.caption.weight(.medium)).foregroundStyle(Color.accentColor)
@@ -235,6 +230,33 @@ private struct ReadingCard: View {
         .padding(14)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(RoundedRectangle(cornerRadius: 14).fill(settings.theme.text.opacity(0.04)))
+    }
+
+    /// 미리보기 본문을 '절번호 + 본문' 한 덩어리로 묶어 낱말 선택·복사가 되게 한다.
+    private func passageAttributed(_ verses: [Verse]) -> NSAttributedString {
+        let bodyFont = uiBodyFont(settings.fontSize)
+        let numFont = uiBodyFont(max(settings.fontSize * 0.7, 10))
+        let para = NSMutableParagraphStyle()
+        para.lineSpacing = settings.lineSpacing
+        para.paragraphSpacing = settings.lineSpacing
+        let result = NSMutableAttributedString()
+        for (i, v) in verses.enumerated() {
+            if i > 0 { result.append(NSAttributedString(string: "\n")) }
+            result.append(NSAttributedString(string: "\(v.number) ", attributes: [
+                .font: numFont, .foregroundColor: UIColor(settings.theme.secondary), .paragraphStyle: para,
+            ]))
+            result.append(NSAttributedString(string: v.text, attributes: [
+                .font: bodyFont, .foregroundColor: UIColor(settings.theme.text), .paragraphStyle: para,
+            ]))
+        }
+        return result
+    }
+
+    private func uiBodyFont(_ size: CGFloat) -> UIFont {
+        switch settings.fontChoice {
+        case .myeongjo: return UIFont(name: "NanumMyeongjo", size: size) ?? .systemFont(ofSize: size)
+        case .gothic:   return .systemFont(ofSize: size)
+        }
     }
 
     /// 「성경」(knb) 판본에서 인용 범위의 절을 가져온다(같은 장 안에서).
@@ -363,5 +385,37 @@ struct LiturgicalMonthView: View {
         for d in 1...range { cells.append(LDate.make(year, month, d)) }
         while cells.count % 7 != 0 { cells.append(nil) }
         return cells
+    }
+}
+
+// MARK: - 선택·복사 가능한 본문 (UIKit)
+
+/// 낱말을 눌러 선택하고 복사할 수 있는 본문 뷰(아이패드 기본 선택 방식).
+/// 스크롤은 바깥 ScrollView가 맡으므로 자체 스크롤은 끈다.
+struct SelectableAttributedText: UIViewRepresentable {
+    let attributed: NSAttributedString
+
+    func makeUIView(context: Context) -> UITextView {
+        let tv = UITextView()
+        tv.isEditable = false
+        tv.isSelectable = true
+        tv.isScrollEnabled = false
+        tv.backgroundColor = .clear
+        tv.textContainerInset = .zero
+        tv.textContainer.lineFragmentPadding = 0
+        tv.setContentCompressionResistancePriority(.required, for: .vertical)
+        tv.setContentHuggingPriority(.required, for: .vertical)
+        return tv
+    }
+
+    func updateUIView(_ tv: UITextView, context: Context) {
+        tv.attributedText = attributed
+    }
+
+    func sizeThatFits(_ proposal: ProposedViewSize, uiView: UITextView, context: Context) -> CGSize? {
+        let width = proposal.width ?? uiView.bounds.width
+        guard width > 0, width.isFinite else { return nil }
+        let fit = uiView.sizeThatFits(CGSize(width: width, height: .greatestFiniteMagnitude))
+        return CGSize(width: width, height: ceil(fit.height))
     }
 }
