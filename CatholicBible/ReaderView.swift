@@ -275,7 +275,12 @@ struct ReaderPane: View {
     // MARK: 시작/이동 위치
 
     private func initChapterIfNeeded() {
-        guard !isFollower else { return }   // 연동된 둘째 열은 첫째 열을 따라가므로 스스로 정하지 않는다
+        // 연동된 둘째 열: 장은 첫째 열을 따라가되, 강조 독서로의 첫 스크롤은 스스로 한다
+        // (교차 열 동기화는 처음엔 상대 열 절이 아직 안 그려져 실패하므로, 각자 확실히 이동).
+        if isFollower {
+            if let h = navigation.activeHighlight, h.bookID == book.id { scrollTarget = h.startVerse }
+            return
+        }
         guard chapter == 0 else { return }
         if role == .primary, navigation.hasPending(forBook: ownerBookID),
            let pending = navigation.pendingChapter {
