@@ -87,10 +87,8 @@ struct DailyMassView: View {
                 navButton("chevron.right", "다음 날") { viewedDate = LDate.addDays(viewedDate, 1) }
             }
 
-            Text(liturgy.title(viewedDate))
-                .font(settings.fontChoice.font(size: 24, relativeTo: .title2, bold: true))
-                .foregroundStyle(settings.theme.text)
-                .fixedSize(horizontal: false, vertical: true)
+            // 제목도 다른 본문과 같이 낱말 선택·복사가 되도록 UITextView로 렌더한다.
+            SelectableAttributedText(attributed: titleAttributed(liturgy.title(viewedDate)))
 
             HStack(spacing: 8) {
                 colorBadge(liturgy.color(viewedDate))
@@ -102,6 +100,21 @@ struct DailyMassView: View {
             }
         }
         .padding(.bottom, 4)
+    }
+
+    /// 전례일 제목을 선택·복사 가능한 굵은 큰 글씨로.
+    private func titleAttributed(_ title: String) -> NSAttributedString {
+        let size = max(settings.fontSize * 1.35, 22)
+        let font: UIFont
+        switch settings.fontChoice {
+        case .myeongjo: font = UIFont(name: "NanumMyeongjoBold", size: size) ?? .systemFont(ofSize: size, weight: .bold)
+        case .gothic:   font = .systemFont(ofSize: size, weight: .bold)
+        }
+        let para = NSMutableParagraphStyle()
+        para.lineSpacing = settings.lineSpacing * 0.5
+        return NSAttributedString(string: title, attributes: [
+            .font: font, .foregroundColor: UIColor(settings.theme.text), .paragraphStyle: para,
+        ])
     }
 
     private func colorBadge(_ c: LiturgicalColor) -> some View {
