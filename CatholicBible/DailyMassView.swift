@@ -198,33 +198,21 @@ private struct ReadingCard: View {
                 }
             }
 
-            if let subtitle = reading.subtitle, !subtitle.isEmpty {
-                Text("〈\(subtitle)〉")
-                    .font(.footnote)
-                    .foregroundStyle(settings.theme.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
+            // 소제목·성구·화답송·(펼치면) 본문을 한 덩어리로 묶어, 성구와 본문을
+            // 함께 낱말 단위로 선택·복사할 수 있게 한다(아이패드 기본 선택 방식).
+            let verses = reading.primaryCitation.map { previewVerses($0) } ?? []
+            SelectableAttributedText(attributed:
+                readingAttributed(reading, verses: verses, expanded: expanded))
 
-            Text(reading.reference)
-                .font(settings.fontChoice.font(size: 18, relativeTo: .headline, bold: true))
-                .foregroundStyle(settings.theme.text)
-
-            if let refrain = reading.refrain, !refrain.isEmpty {
-                Text("◎ \(refrain)")
-                    .font(.subheadline).italic()
-                    .foregroundStyle(settings.theme.secondary)
-            }
-
-            // 번들 「성경」에서 본문 미리보기 (아이패드 기본 방식으로 낱말 선택·복사 가능)
-            if let c = reading.primaryCitation, !previewVerses(c).isEmpty {
-                DisclosureGroup(isExpanded: $expanded) {
-                    SelectableAttributedText(attributed: passageAttributed(previewVerses(c)))
-                        .padding(.top, 6)
+            if !verses.isEmpty {
+                Button {
+                    withAnimation(.easeInOut(duration: 0.2)) { expanded.toggle() }
                 } label: {
-                    Text(expanded ? "본문 접기" : "본문 보기")
+                    Label(expanded ? "본문 접기" : "본문 보기",
+                          systemImage: expanded ? "chevron.up" : "chevron.down")
                         .font(.caption.weight(.medium)).foregroundStyle(Color.accentColor)
                 }
-                .tint(Color.accentColor)
+                .buttonStyle(.plain)
             }
         }
         .padding(14)
@@ -232,30 +220,50 @@ private struct ReadingCard: View {
         .background(RoundedRectangle(cornerRadius: 14).fill(settings.theme.text.opacity(0.04)))
     }
 
-    /// 미리보기 본문을 '절번호 + 본문' 한 덩어리로 묶어 낱말 선택·복사가 되게 한다.
-    private func passageAttributed(_ verses: [Verse]) -> NSAttributedString {
-        let bodyFont = uiBodyFont(settings.fontSize)
-        let numFont = uiBodyFont(max(settings.fontSize * 0.7, 10))
+    /// 소제목·성구·화답송·(펼치면) 본문을 한 덩어리로 묶는다. 성구와 본문을 함께 선택·복사 가능.
+    private func readingAttributed(_ reading: MassReading, verses: [Verse], expanded: Bool) -> NSAttributedString {
+        let textColor = UIColor(settings.theme.text)
+        let secondary = UIColor(settings.theme.secondary)
         let para = NSMutableParagraphStyle()
         para.lineSpacing = settings.lineSpacing
-        para.paragraphSpacing = settings.lineSpacing
+        para.paragraphSpacing = settings.lineSpacing * 0.6
         let result = NSMutableAttributedString()
-        for (i, v) in verses.enumerated() {
-            if i > 0 { result.append(NSAttributedString(string: "\n")) }
-            result.append(NSAttributedString(string: "\(v.number) ", attributes: [
-                .font: numFont, .foregroundColor: UIColor(settings.theme.secondary), .paragraphStyle: para,
+        func append(_ s: String, font: UIFont, color: UIColor) {
+            result.append(NSAttributedString(string: s, attributes: [
+                .font: font, .foregroundColor: color, .paragraphStyle: para,
             ]))
-            result.append(NSAttributedString(string: v.text, attributes: [
-                .font: bodyFont, .foregroundColor: UIColor(settings.theme.text), .paragraphStyle: para,
-            ]))
+        }
+        if let sub = reading.subtitle, !sub.isEmpty {
+            append("〈\(sub)〉\n", font: uiBodyFont(max(settings.fontSize * 0.82, 12)), color: secondary)
+        }
+        append(reading.reference, font: uiBodyFont(max(settings.fontSize, 17), bold: true), color: textColor)
+        if let refrain = reading.refrain, !refrain.isEmpty {
+            append("\n◎ \(refrain)", font: uiBodyFont(max(settings.fontSize * 0.92, 13)), color: secondary)
+        }
+        if expanded && !verses.isEmpty {
+            result.append(NSAttributedString(string: "\n\n"))
+            let numFont = uiBodyFont(max(settings.fontSize * 0.7, 10))
+            let bodyFont = uiBodyFont(settings.fontSize)
+            for (i, v) in verses.enumerated() {
+                if i > 0 { result.append(NSAttributedString(string: "\n")) }
+                result.append(NSAttributedString(string: "\(v.number) ", attributes: [
+                    .font: numFont, .foregroundColor: secondary, .paragraphStyle: para,
+                ]))
+                result.append(NSAttributedString(string: v.text, attributes: [
+                    .font: bodyFont, .foregroundColor: textColor, .paragraphStyle: para,
+                ]))
+            }
         }
         return result
     }
 
-    private func uiBodyFont(_ size: CGFloat) -> UIFont {
+    private func uiBodyFont(_ size: CGFloat, bold: Bool = false) -> UIFont {
         switch settings.fontChoice {
-        case .myeongjo: return UIFont(name: "NanumMyeongjo", size: size) ?? .systemFont(ofSize: size)
-        case .gothic:   return .systemFont(ofSize: size)
+        case .myeongjo:
+            let name = bold ? "NanumMyeongjoBold" : "NanumMyeongjo"
+            return UIFont(name: name, size: size) ?? .systemFont(ofSize: size, weight: bold ? .bold : .regular)
+        case .gothic:
+            return .systemFont(ofSize: size, weight: bold ? .bold : .regular)
         }
     }
 
