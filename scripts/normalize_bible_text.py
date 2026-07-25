@@ -80,17 +80,24 @@ def strip_footnotes(text: str) -> str:
 
 # 절로 잘못 들어간 러닝 헤더/네비게이션 판별
 HEADER_EXACT = {"편", "장", "시편"}
-HEADER_CHAP_RE = re.compile(r"^[가-힣A-Za-z ]{0,12}제?\d{1,3}\s*장$")
+# "<책이름> <장>장" 또는 "<책이름> <장>장 <소제목>"(제목이 뒤에 붙는 형태까지).
+# 그룹 1 = 장 번호(호출부에서 실제 장과 대조해 오탐을 막는다).
+HEADER_CHAP_RE = re.compile(r"^[가-힣A-Za-z ]{0,12}제?(\d{1,3})\s*장(?:\s+\S.*)?$")
 HEADER_PS_RE = re.compile(r"^시편\s*제?\d{1,3}(\(\d{1,3}\))?\s*편$")
+# NAB 등 영문 판본의 장/절 머리글 잔재: "Genesis, CHAPTER", "Acts, CHAPTER 3"
+HEADER_NAB_RE = re.compile(r",\s*CHAPTER\b", re.I)
 
 
-def is_header_verse(text: str, breadcrumb_words: list[str]) -> bool:
+def is_header_verse(text: str, breadcrumb_words: list[str], chapter: str | None = None) -> bool:
     t = WS_RE.sub(" ", text).strip()
     if not t:
         return True
     if t in HEADER_EXACT or t in breadcrumb_words:
         return True
-    if HEADER_CHAP_RE.match(t) or HEADER_PS_RE.match(t):
+    if HEADER_PS_RE.match(t) or HEADER_NAB_RE.search(t):
+        return True
+    m = HEADER_CHAP_RE.match(t)
+    if m and (chapter is None or m.group(1) == str(chapter)):
         return True
     if len(t) <= 8 and t.endswith("장") and re.search(r"\d", t):
         return True
@@ -133,7 +140,7 @@ def normalize_books(edition_id: str, books: dict) -> tuple[dict, int]:
             keys = sorted(verses, key=lambda k: int(k))
             kept: list[str] = []
             for k in keys:
-                if is_header_verse(verses[k], breadcrumb_words):
+                if is_header_verse(verses[k], breadcrumb_words, ch):
                     dropped += 1
                     continue
                 t = strip_site_footer(clean_text(verses[k]), edition_id)
