@@ -73,14 +73,19 @@ struct LibraryView: View {
         }
     }
 
-    /// 사이드바 맨 아래 개발자·버전·빌드 표기
+    /// 사이드바 맨 아래 개발자·버전·빌드 표기 (개발자 이름은 이메일 연결)
     private var creditFooter: some View {
         VStack(spacing: 2) {
-            Text("Developed by JaiSung NOH MD., 2026")
+            if let mail = URL(string: "mailto:joonho.noh@gmail.com") {
+                Link("Developed by JaiSung NOH MD., 2026", destination: mail)
+                    .tint(Color.accentColor)
+            } else {
+                Text("Developed by JaiSung NOH MD., 2026")
+            }
             Text(appVersionText)
+                .foregroundStyle(.tertiary)
         }
         .font(.caption2)
-        .foregroundStyle(.tertiary)
         .frame(maxWidth: .infinity, alignment: .center)
         .padding(.top, 8)
         .listRowBackground(Color.clear)
