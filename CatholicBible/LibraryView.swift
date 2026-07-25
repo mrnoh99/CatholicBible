@@ -77,11 +77,11 @@ struct LibraryView: View {
     private var creditFooter: some View {
         VStack(spacing: 2) {
             if let mail = URL(string: "mailto:joonho.noh@gmail.com") {
-                Link("Developed by JaiSung NOH MD.,\nfor Eunkyung (Teresa) Kim, 2026", destination: mail)
+                Link("Developed by JaiSung NOH MD.,\nas a birthday gift for Eunkyung (Teresa) Kim\n— July 30, 2026", destination: mail)
                     .tint(Color.accentColor)
                     .multilineTextAlignment(.center)
             } else {
-                Text("Developed by JaiSung NOH MD.,\nfor Eunkyung (Teresa) Kim, 2026")
+                Text("Developed by JaiSung NOH MD.,\nas a birthday gift for Eunkyung (Teresa) Kim\n— July 30, 2026")
                     .multilineTextAlignment(.center)
             }
             Text(appVersionText)
