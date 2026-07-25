@@ -57,6 +57,16 @@ enum AnnotationMarkup {
 
     private static let markerRegex = try? NSRegularExpression(
         pattern: "(?<![\\d(])(\\d{1,3})\\)")
+
+    /// 각주 마커('N)')를 지운 깨끗한 문자열(주석 없는 「성경」 소제목 표시용).
+    static func stripMarkers(_ text: String) -> String {
+        guard let regex = markerRegex else { return text }
+        let ns = text as NSString
+        let out = regex.stringByReplacingMatches(
+            in: text, range: NSRange(location: 0, length: ns.length), withTemplate: "")
+        return out.replacingOccurrences(of: "  ", with: " ")
+            .trimmingCharacters(in: .whitespaces)
+    }
 }
 
 /// 각주 마커를 눌렀을 때 보여 줄 대상

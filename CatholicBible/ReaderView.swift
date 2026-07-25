@@ -227,6 +227,7 @@ struct ReaderPane: View {
     @Environment(ReaderSettings.self) private var settings
     @Environment(ReadingState.self) private var readingState
     @Environment(ReaderNavigation.self) private var navigation
+    @Environment(KnbNotesStore.self) private var knbNotes
 
     @State private var localChapter = 0
     /// 대기 이동 직후 한 번 스크롤할 절(강조 색은 navigation.activeHighlight가 담당).
@@ -237,6 +238,15 @@ struct ReaderPane: View {
 
     private var edition: Edition { Editions.edition(editionID) ?? Editions.all[0] }
     private var book: BibleBook { Bible.book(bookID) ?? Bible.books[0] }
+
+    /// 「성경」·「주석 성경」(같은 주교회의 번역)은 절 앞에 소제목을 보여 준다.
+    private var showsTitles: Bool { edition.id == "knb" || edition.id == "knbnotes" }
+    /// 절 번호 → 그 절 앞에 놓일 소제목(각주 마커는 지운다).
+    private var titleMap: [Int: String] {
+        guard showsTitles, chapter > 0 else { return [:] }
+        return knbNotes.titlesByVerse(bookID: book.id, chapter: chapter)
+            .mapValues { AnnotationMarkup.stripMarkers($0) }
+    }
 
     /// 표시 중인 장. 연동 시 공유 장, 아니면 이 열의 자기 장.
     private var chapter: Int { linkedChapter?.wrappedValue ?? localChapter }
@@ -365,11 +375,16 @@ struct ReaderPane: View {
                     } else {
                         LazyVStack(alignment: .leading, spacing: settings.lineSpacing * 0.9) {
                             ForEach(verses) { verse in
-                                VerseRowView(edition: edition, book: book, chapter: chapter,
-                                             verse: verse,
-                                             highlighted: navigation.activeHighlight?.matches(bookID: book.id, chapter: chapter, verse: verse.number) ?? false,
-                                             onOpenNote: onOpenNote)
-                                    .id(verse.number)
+                                VStack(alignment: .leading, spacing: settings.lineSpacing * 0.9) {
+                                    if let title = titleMap[verse.number] {
+                                        SectionTitleView(text: title, bookID: book.id, chapter: chapter)
+                                    }
+                                    VerseRowView(edition: edition, book: book, chapter: chapter,
+                                                 verse: verse,
+                                                 highlighted: navigation.activeHighlight?.matches(bookID: book.id, chapter: chapter, verse: verse.number) ?? false,
+                                                 onOpenNote: onOpenNote)
+                                }
+                                .id(verse.number)
                             }
                         }
                         .scrollTargetLayout()
@@ -527,6 +542,7 @@ struct SpreadReader: View {
     @Environment(ReaderSettings.self) private var settings
     @Environment(ReadingState.self) private var readingState
     @Environment(ReaderNavigation.self) private var navigation
+    @Environment(KnbNotesStore.self) private var knbNotes
 
     @State private var chapter = 0
     @State private var spreadIndex = 0
@@ -544,6 +560,13 @@ struct SpreadReader: View {
     }
     private var pages: [[Verse]] { paginate(verses, size: contentSize) }
     private var spreadCount: Int { max(1, Int(ceil(Double(pages.count) / 2.0))) }
+
+    private var showsTitles: Bool { edition.id == "knb" || edition.id == "knbnotes" }
+    private var titleMap: [Int: String] {
+        guard showsTitles, chapter > 0 else { return [:] }
+        return knbNotes.titlesByVerse(bookID: book.id, chapter: chapter)
+            .mapValues { AnnotationMarkup.stripMarkers($0) }
+    }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -694,6 +717,9 @@ struct SpreadReader: View {
             if isFirst { chapterHeader }
             if let verses {
                 ForEach(verses) { verse in
+                    if let title = titleMap[verse.number] {
+                        SectionTitleView(text: title, bookID: book.id, chapter: chapter)
+                    }
                     VerseRowView(edition: edition, book: book, chapter: chapter,
                                  verse: verse,
                                  highlighted: navigation.activeHighlight?.matches(bookID: book.id, chapter: chapter, verse: verse.number) ?? false,
