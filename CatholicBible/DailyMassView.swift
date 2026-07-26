@@ -23,6 +23,8 @@ struct DailyMassView: View {
 
     @State private var viewedDate: Date = LDate.today()
     @State private var showCalendar = false
+    /// 모든 독서의 본문 미리보기를 한꺼번에 펼치거나 닫는다.
+    @State private var showAllText = false
 
     private var isToday: Bool { viewedDate == LDate.today() }
 
@@ -156,8 +158,20 @@ struct DailyMassView: View {
                         .font(.caption).foregroundStyle(settings.theme.secondary)
                         .padding(.bottom, 2)
                 }
+                // 모든 독서 본문을 한 번에 펼치기/닫기
+                Button {
+                    withAnimation(.easeInOut(duration: 0.2)) { showAllText.toggle() }
+                } label: {
+                    Label(showAllText ? "본문 모두 닫기" : "본문 모두 보기",
+                          systemImage: showAllText ? "chevron.up" : "chevron.down")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(Color.accentColor)
+                }
+                .buttonStyle(.plain)
+                .padding(.bottom, 2)
+
                 ForEach(readings) { reading in
-                    ReadingCard(reading: reading, openReading: open)
+                    ReadingCard(reading: reading, expanded: showAllText, openReading: open)
                         .environment(store)
                         .environment(settings)
                 }
@@ -185,11 +199,12 @@ struct DailyMassView: View {
 
 private struct ReadingCard: View {
     let reading: MassReading
+    /// 상위에서 내려주는 '본문 모두 보기' 상태
+    let expanded: Bool
     let openReading: (MassReading) -> Void
 
     @Environment(BibleStore.self) private var store
     @Environment(ReaderSettings.self) private var settings
-    @State private var expanded = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -213,20 +228,9 @@ private struct ReadingCard: View {
 
             // 소제목·성구·화답송·(펼치면) 본문을 한 덩어리로 묶어, 성구와 본문을
             // 함께 낱말 단위로 선택·복사할 수 있게 한다(아이패드 기본 선택 방식).
-            let items = previewItems(reading)
+            // 펼침 여부는 상위의 '본문 모두 보기'가 정한다.
             SelectableAttributedText(attributed:
-                readingAttributed(reading, items: items, expanded: expanded))
-
-            if !items.isEmpty {
-                Button {
-                    withAnimation(.easeInOut(duration: 0.2)) { expanded.toggle() }
-                } label: {
-                    Label(expanded ? "본문 접기" : "본문 보기",
-                          systemImage: expanded ? "chevron.up" : "chevron.down")
-                        .font(.caption.weight(.medium)).foregroundStyle(Color.accentColor)
-                }
-                .buttonStyle(.plain)
-            }
+                readingAttributed(reading, items: previewItems(reading), expanded: expanded))
         }
         .padding(14)
         .frame(maxWidth: .infinity, alignment: .leading)
