@@ -14,15 +14,24 @@
 import SwiftUI
 import UIKit
 
+/// 매일 미사 본문보기의 노트 편집 대상
+private struct MassNoteTarget: Identifiable {
+    let ref: VerseRef
+    let text: String
+    var id: String { ref.id }
+}
+
 struct DailyMassView: View {
     @Environment(BibleStore.self) private var store
     @Environment(LiturgyStore.self) private var liturgy
     @Environment(ReaderSettings.self) private var settings
     @Environment(ReaderNavigation.self) private var navigation
+    @Environment(AnnotationStore.self) private var annotations
     @Environment(\.dismiss) private var dismiss
 
     @State private var viewedDate: Date = LDate.today()
     @State private var showCalendar = false
+    @State private var noteTarget: MassNoteTarget?
     /// 모든 독서의 본문 미리보기를 한꺼번에 펼치거나 닫는다(날짜·재실행에도 유지).
     @AppStorage("mass.showAllText") private var showAllText = false
     /// 본문보기에 쓸 성경 판본(기본: 성경, 날짜·재실행에도 유지).
@@ -69,6 +78,11 @@ struct DailyMassView: View {
                 LiturgicalMonthView(selected: $viewedDate)
                     .environment(liturgy)
                     .environment(settings)
+            }
+            .sheet(item: $noteTarget) { target in
+                NoteEditorView(verse: target.ref, verseText: target.text,
+                               existing: annotations.noteOrNew(for: target.ref))
+                    .environment(annotations)   // Mac Catalyst: 모달 환경 재주입
             }
         }
     }
@@ -190,7 +204,8 @@ struct DailyMassView: View {
 
                 ForEach(readings) { reading in
                     ReadingCard(reading: reading, expanded: showAllText,
-                                editionID: previewEditionID, openReading: open)
+                                editionID: previewEditionID, openReading: open,
+                                onOpenNote: { ref, text in noteTarget = MassNoteTarget(ref: ref, text: text) })
                         .environment(store)
                         .environment(settings)
                 }
@@ -223,11 +238,18 @@ private struct ReadingCard: View {
     /// 본문보기에 쓸 성경 판본
     let editionID: String
     let openReading: (MassReading) -> Void
+    /// 절의 노트 추가·편집 요청
+    let onOpenNote: (VerseRef, String) -> Void
 
     @Environment(BibleStore.self) private var store
     @Environment(ReaderSettings.self) private var settings
 
+    private var edition: Edition { Editions.edition(editionID) ?? Editions.edition("knb") ?? Editions.all[0] }
+
     var body: some View {
+        let book = previewBook(reading)
+        let items = expanded ? previewItems(reading) : []
+        let multiChapter = Set(items.map { $0.chapter }).count > 1
         VStack(alignment: .leading, spacing: 8) {
             HStack(alignment: .firstTextBaseline) {
                 Text(reading.role)
@@ -247,22 +269,39 @@ private struct ReadingCard: View {
                 }
             }
 
-            // 소제목·성구·화답송·(펼치면) 본문을 한 덩어리로 묶어, 성구와 본문을
-            // 함께 낱말 단위로 선택·복사할 수 있게 한다(아이패드 기본 선택 방식).
-            // 펼침 여부는 상위의 '본문 모두 보기'가 정한다.
-            SelectableAttributedText(attributed:
-                readingAttributed(reading, items: previewItems(reading), expanded: expanded))
+            // 소제목·성구·화답송은 낱말 선택·복사 가능한 머리글로.
+            SelectableAttributedText(attributed: headerAttributed(reading))
+
+            // 본문: 절마다 번호를 눌러 책갈피·노트·복사할 수 있게 리더와 같은 절 행으로.
+            if expanded, let book {
+                VStack(alignment: .leading, spacing: settings.lineSpacing * 0.7) {
+                    ForEach(Array(items.enumerated()), id: \.offset) { idx, item in
+                        if multiChapter && (idx == 0 || items[idx - 1].chapter != item.chapter) {
+                            Text(book.chapterLabel(item.chapter))
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(settings.theme.secondary)
+                                .padding(.top, idx == 0 ? 2 : 8)
+                        }
+                        VerseRowView(edition: edition, book: book, chapter: item.chapter,
+                                     verse: item.verse, highlighted: false, onOpenNote: onOpenNote)
+                    }
+                }
+                .padding(.top, 4)
+            }
         }
         .padding(14)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(RoundedRectangle(cornerRadius: 14).fill(settings.theme.text.opacity(0.04)))
     }
 
-    /// 소제목·성구·화답송·(펼치면) 본문을 한 덩어리로 묶는다. 성구와 본문을 함께 선택·복사 가능.
-    /// 불연속·여러 장 독서는 해당 절만 골라 보여 준다(여러 장이면 '장,절'로 표기).
-    private func readingAttributed(_ reading: MassReading,
-                                   items: [(chapter: Int, verse: Verse)],
-                                   expanded: Bool) -> NSAttributedString {
+    /// 참조가 가리키는 책.
+    private func previewBook(_ reading: MassReading) -> BibleBook? {
+        if let p = ScriptureReference.segmentList(reading.reference) { return Bible.book(p.bookID) }
+        return reading.primaryCitation.flatMap { Bible.book($0.bookID) }
+    }
+
+    /// 소제목·성구·화답송을 낱말 선택·복사 가능한 머리글로 묶는다.
+    private func headerAttributed(_ reading: MassReading) -> NSAttributedString {
         let textColor = UIColor(settings.theme.text)
         let secondary = UIColor(settings.theme.secondary)
         let para = NSMutableParagraphStyle()
@@ -280,22 +319,6 @@ private struct ReadingCard: View {
         append(reading.reference, font: uiBodyFont(max(settings.fontSize, 17), bold: true), color: textColor)
         if let refrain = reading.refrain, !refrain.isEmpty {
             append("\n◎ \(refrain)", font: uiBodyFont(max(settings.fontSize * 0.92, 13)), color: secondary)
-        }
-        if expanded && !items.isEmpty {
-            result.append(NSAttributedString(string: "\n\n"))
-            let numFont = uiBodyFont(max(settings.fontSize * 0.7, 10))
-            let bodyFont = uiBodyFont(settings.fontSize)
-            let multiChapter = Set(items.map { $0.chapter }).count > 1
-            for (i, item) in items.enumerated() {
-                if i > 0 { result.append(NSAttributedString(string: "\n")) }
-                let label = multiChapter ? "\(item.chapter),\(item.verse.number) " : "\(item.verse.number) "
-                result.append(NSAttributedString(string: label, attributes: [
-                    .font: numFont, .foregroundColor: secondary, .paragraphStyle: para,
-                ]))
-                result.append(NSAttributedString(string: item.verse.text, attributes: [
-                    .font: bodyFont, .foregroundColor: textColor, .paragraphStyle: para,
-                ]))
-            }
         }
         return result
     }
