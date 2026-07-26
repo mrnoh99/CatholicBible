@@ -32,6 +32,7 @@ struct DailyMassView: View {
     @State private var viewedDate: Date = LDate.today()
     @State private var showCalendar = false
     @State private var noteTarget: MassNoteTarget?
+    @State private var dictRequest: DictionaryRequest?
     /// 모든 독서의 본문 미리보기를 한꺼번에 펼치거나 닫는다(날짜·재실행에도 유지).
     @AppStorage("mass.showAllText") private var showAllText = false
     /// 본문보기에 쓸 성경 판본(기본: 성경, 날짜·재실행에도 유지).
@@ -83,6 +84,9 @@ struct DailyMassView: View {
                 NoteEditorView(verse: target.ref, verseText: target.text,
                                existing: annotations.noteOrNew(for: target.ref))
                     .environment(annotations)   // Mac Catalyst: 모달 환경 재주입
+            }
+            .sheet(item: $dictRequest) { req in
+                DictionaryView(initialTerm: req.term)
             }
         }
     }
@@ -205,7 +209,8 @@ struct DailyMassView: View {
                 ForEach(readings) { reading in
                     ReadingCard(reading: reading, expanded: showAllText,
                                 editionID: previewEditionID, openReading: open,
-                                onOpenNote: { ref, text in noteTarget = MassNoteTarget(ref: ref, text: text) })
+                                onOpenNote: { ref, text in noteTarget = MassNoteTarget(ref: ref, text: text) },
+                                onLookUp: { dictRequest = DictionaryRequest() })
                         .environment(store)
                         .environment(settings)
                 }
@@ -240,6 +245,8 @@ private struct ReadingCard: View {
     let openReading: (MassReading) -> Void
     /// 절의 노트 추가·편집 요청
     let onOpenNote: (VerseRef, String) -> Void
+    /// 사전 열기 요청(오늘의 미사 화면이 직접 사전을 띄운다)
+    let onLookUp: () -> Void
 
     @Environment(BibleStore.self) private var store
     @Environment(ReaderSettings.self) private var settings
@@ -283,7 +290,8 @@ private struct ReadingCard: View {
                                 .padding(.top, idx == 0 ? 2 : 8)
                         }
                         VerseRowView(edition: edition, book: book, chapter: item.chapter,
-                                     verse: item.verse, highlighted: false, onOpenNote: onOpenNote)
+                                     verse: item.verse, highlighted: false,
+                                     onOpenNote: onOpenNote, onLookUp: onLookUp)
                     }
                 }
                 .padding(.top, 4)
