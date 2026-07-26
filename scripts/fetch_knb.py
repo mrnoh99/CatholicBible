@@ -1,0 +1,194 @@
+#!/usr/bin/env python3
+"""성경(새 번역, /Knb)을 '깨끗하게' 다시 수집한다.
+
+기존 fetch_cbck_bible.py 는 절을 class 이름(verse/bible_read 등) 추측으로
+긁어 와서, 소제목(<h4>)·페이지 머리글·바닥글이 절 본문에 섞여 들어가는
+문제가 있었다(성경 본문에 소제목 1,738개가 임베드된 원인).
+
+이 스크립트는 주석 성경 수집기(fetch_knbnotes.py)가 쓰는, 사이트 실제
+마크업에 기반한 파서를 재사용한다:
+
+    본문 : <span class="highlight" id="jul-N">N</span>
+           <div class="text-justify"><p>본문<sup class="annotation">2)</sup>…</p></div>
+    소제목: <h4>소제목</h4>  (다음 절 jul-N 앞)
+
+  → 절은 jul-N 뒤 text-justify 안에서만 뽑으므로 소제목·머리글·바닥글이
+    본문에 섞이지 않는다.
+  → 성경(knb)은 '평문'이므로 <sup class="annotation"> 각주 마커는 제거한다.
+  → 소제목은 별도(titles)로 뽑아 KnbNotes.json 의 titles 와 대조할 수 있게
+    knb_titles.json 으로 따로 저장한다(앱은 소제목을 KnbNotes.json 에서 읽음).
+
+⚠️ 저작권: 본문 저작권은 한국천주교주교회의에 있다. 개인적 이용·연구 전제.
+
+사용법(Windows):
+    REM 구조 확인용 HTML 덤프
+    python scripts\\fetch_knb.py --dump-html dump --only-sample
+
+    REM 전체 다시 수집 (기존 파일 대신 *_fresh.json 로 저장 → 대조 후 반영)
+    python scripts\\fetch_knb.py
+
+    REM 특정 책만
+    python scripts\\fetch_knb.py --books sir 1chr
+
+    REM 곧바로 현재 파일과 비교 리포트까지
+    python scripts\\fetch_knb.py --verify
+"""
+from __future__ import annotations
+
+import argparse
+import json
+import re
+import sys
+import time
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import fetch_cbck_bible as fx          # fetch, BOOKS, url_code, scope_book_ids, SUP_ANNO_RE …
+import fetch_knbnotes as kn            # JUL_RE, TITLE_RE, strip_tags, _before_notes
+
+BASE = "https://bible.cbck.or.kr"
+EDITION_PATH = "Knb"
+REPO_ROOT = Path(__file__).resolve().parent.parent
+RES = REPO_ROOT / "CatholicBible" / "Resources"
+
+
+def extract_verses_plain(html: str) -> dict[str, str]:
+    """장 본문에서 {절: 평문}을 뽑는다(각주 마커 제거)."""
+    region = kn._before_notes(html)                 # 하단 주석 카드(있으면) 제거
+    region = fx.SCRIPT_STYLE_RE.sub(" ", region)
+    region = fx.SUP_ANNO_RE.sub("", region)         # 각주 마커 '2)' 제거 → 평문
+    verses: dict[str, str] = {}
+    for m in kn.JUL_RE.finditer(region):
+        num = m.group(1)
+        text = kn.strip_tags(m.group(2)).strip()
+        if text:
+            verses.setdefault(num, text)
+    return verses
+
+
+def extract_titles(html: str) -> list[dict]:
+    """소제목 [{'v':절, 'text':소제목}] (본문과 분리)."""
+    region = fx.SCRIPT_STYLE_RE.sub(" ", kn._before_notes(html))
+    out: list[dict] = []
+    for m in kn.TITLE_RE.finditer(region):
+        text = kn.strip_tags(m.group(1)).strip()
+        if text and text != "입문":
+            out.append({"v": int(m.group(2)), "text": text})
+    return out
+
+
+def main() -> None:
+    ap = argparse.ArgumentParser(
+        description="성경(/Knb) 깨끗한 재수집 (소제목 분리)",
+        formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument("--books", nargs="*", help="책 id (기본: 전체 73권)")
+    ap.add_argument("--delay", type=float, default=0.8, help="요청 간 대기(초)")
+    ap.add_argument("--dump-html", metavar="DIR", help="장 HTML을 이 폴더에 저장")
+    ap.add_argument("--only-sample", action="store_true",
+                    help="--dump-html 과 함께: 샘플 1장만 받는다")
+    ap.add_argument("--out", default=str(RES / "BibleText_knb_fresh.json"),
+                    help="본문 저장 경로(기본: BibleText_knb_fresh.json)")
+    ap.add_argument("--titles-out", default=str(RES / "knb_titles.json"),
+                    help="소제목 저장 경로")
+    ap.add_argument("--verify", action="store_true",
+                    help="수집 후 현재 BibleText_knb.json 과 대조 리포트")
+    args = ap.parse_args()
+    fx._make_console_utf8()
+
+    book_ids = args.books or [b[0] for b in fx.BOOKS]
+    id2meta = {b[0]: b for b in fx.BOOKS}
+
+    books_out: dict[str, dict[str, dict[str, str]]] = {}
+    titles_out: dict[str, dict[str, list]] = {}
+    dump_dir = Path(args.dump_html) if args.dump_html else None
+    if dump_dir:
+        dump_dir.mkdir(parents=True, exist_ok=True)
+
+    grand = 0
+    for bid in book_ids:
+        if bid not in id2meta:
+            print(f"  ! 알 수 없는 책 id: {bid}", file=sys.stderr); continue
+        _, name, nchap = id2meta[bid]
+        chapters: dict[str, dict[str, str]] = {}
+        tchapters: dict[str, list] = {}
+        for ch in range(1, nchap + 1):
+            url = f"{BASE}/{EDITION_PATH}/{fx.url_code(bid)}/{ch}"
+            try:
+                html = fx.fetch(url, delay=args.delay)
+            except Exception as e:                      # noqa: BLE001
+                print(f"  ✗ {name} {ch}장 요청 실패: {e}", file=sys.stderr)
+                continue
+            if dump_dir:
+                (dump_dir / f"{bid}_{ch}.html").write_text(html, encoding="utf-8")
+            verses = extract_verses_plain(html)
+            titles = extract_titles(html)
+            if verses:
+                chapters[str(ch)] = verses
+                grand += len(verses)
+            else:
+                print(f"  ✗ {name} {ch}장: 절 추출 실패 ({url})", file=sys.stderr)
+            if titles:
+                tchapters[str(ch)] = titles
+            time.sleep(args.delay)
+            if dump_dir and args.only_sample:
+                break
+        if chapters:
+            books_out[bid] = chapters
+        if tchapters:
+            titles_out[bid] = tchapters
+        print(f"✓ {name}: {len(chapters)}/{nchap}장, "
+              f"{sum(len(v) for v in chapters.values())}절, 소제목 "
+              f"{sum(len(t) for t in tchapters.values())}개")
+        if dump_dir and args.only_sample:
+            break
+
+    out = {"translation": "성경", "source": f"{BASE}/{EDITION_PATH}",
+           "bookNames": {}, "books": books_out}
+    Path(args.out).write_text(
+        json.dumps(out, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+    Path(args.titles_out).write_text(
+        json.dumps({"source": f"{BASE}/{EDITION_PATH}", "titles": titles_out},
+                   ensure_ascii=False, indent=1), encoding="utf-8")
+    print(f"\n완료: {len(books_out)}권, 총 {grand}절 → {args.out}")
+    print(f"소제목 → {args.titles_out}")
+
+    if args.verify:
+        cur = RES / "BibleText_knb.json"
+        if cur.exists():
+            _report_diff(json.loads(cur.read_text(encoding="utf-8"))["books"], books_out)
+        else:
+            print("현재 BibleText_knb.json 이 없어 대조를 건너뜁니다.")
+
+
+def _kc(t: str) -> str:
+    return "".join(re.findall(r"[가-힣]", re.sub(r"(?<![\d(])\d{1,3}\)", "", t or "")))
+
+
+def _report_diff(cur: dict, fresh: dict) -> None:
+    """현재(수정본) vs 새 수집본 차이 요약 — 어느 쪽을 취할지 판단용."""
+    print("\n── 현재 파일 vs 새 수집본 대조 ──")
+    only_cur = only_fresh = textdiff = 0
+    samples = []
+    for bid in sorted(set(cur) | set(fresh)):
+        for cn in sorted(set(cur.get(bid, {})) | set(fresh.get(bid, {})), key=lambda x: int(x)):
+            a = cur.get(bid, {}).get(cn, {})
+            b = fresh.get(bid, {}).get(cn, {})
+            for v in set(a) - set(b):
+                only_cur += 1
+            for v in set(b) - set(a):
+                only_fresh += 1
+            for v in set(a) & set(b):
+                if _kc(a[v]) != _kc(b[v]):
+                    textdiff += 1
+                    if len(samples) < 25:
+                        samples.append(f"{bid} {cn},{v}")
+    print(f"  현재에만 있는 절: {only_cur}")
+    print(f"  새 수집본에만 있는 절: {only_fresh}")
+    print(f"  본문(한글)이 다른 절: {textdiff}")
+    if samples:
+        print("  본문 차이 예시:", ", ".join(samples))
+    print("  → 차이 나는 절을 눈으로 확인한 뒤 반영 여부를 결정하세요.")
+
+
+if __name__ == "__main__":
+    main()
