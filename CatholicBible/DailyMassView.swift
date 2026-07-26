@@ -25,6 +25,8 @@ struct DailyMassView: View {
     @State private var showCalendar = false
     /// 모든 독서의 본문 미리보기를 한꺼번에 펼치거나 닫는다.
     @State private var showAllText = false
+    /// 본문보기에 쓸 성경 판본(기본: 성경).
+    @State private var previewEditionID = "knb"
 
     private var isToday: Bool { viewedDate == LDate.today() }
 
@@ -158,20 +160,37 @@ struct DailyMassView: View {
                         .font(.caption).foregroundStyle(settings.theme.secondary)
                         .padding(.bottom, 2)
                 }
-                // 모든 독서 본문을 한 번에 펼치기/닫기
-                Button {
-                    withAnimation(.easeInOut(duration: 0.2)) { showAllText.toggle() }
-                } label: {
-                    Label(showAllText ? "본문 모두 닫기" : "본문 모두 보기",
-                          systemImage: showAllText ? "chevron.up" : "chevron.down")
+                // 본문 모두 펼치기/닫기 + 본문보기 판본 선택
+                HStack(spacing: 12) {
+                    Button {
+                        withAnimation(.easeInOut(duration: 0.2)) { showAllText.toggle() }
+                    } label: {
+                        Label(showAllText ? "본문 모두 닫기" : "본문 모두 보기",
+                              systemImage: showAllText ? "chevron.up" : "chevron.down")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(Color.accentColor)
+                    }
+                    .buttonStyle(.plain)
+                    Spacer(minLength: 0)
+                    Menu {
+                        Picker("본문 판본", selection: $previewEditionID) {
+                            ForEach(Editions.all) { ed in Text(ed.name).tag(ed.id) }
+                        }
+                    } label: {
+                        HStack(spacing: 4) {
+                            Image(systemName: "book.closed")
+                            Text(Editions.edition(previewEditionID)?.shortName ?? "성경")
+                            Image(systemName: "chevron.down").font(.caption2)
+                        }
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(Color.accentColor)
+                    }
                 }
-                .buttonStyle(.plain)
                 .padding(.bottom, 2)
 
                 ForEach(readings) { reading in
-                    ReadingCard(reading: reading, expanded: showAllText, openReading: open)
+                    ReadingCard(reading: reading, expanded: showAllText,
+                                editionID: previewEditionID, openReading: open)
                         .environment(store)
                         .environment(settings)
                 }
@@ -201,6 +220,8 @@ private struct ReadingCard: View {
     let reading: MassReading
     /// 상위에서 내려주는 '본문 모두 보기' 상태
     let expanded: Bool
+    /// 본문보기에 쓸 성경 판본
+    let editionID: String
     let openReading: (MassReading) -> Void
 
     @Environment(BibleStore.self) private var store
@@ -292,7 +313,7 @@ private struct ReadingCard: View {
     /// 「성경」(knb)에서 참조에 해당하는 절만 골라 (장, 절) 목록으로 돌려준다.
     /// 참조 문자열을 구간으로 풀어(불연속·여러 장·여러 인용 지원) 그 구간의 절만 담는다.
     private func previewItems(_ reading: MassReading) -> [(chapter: Int, verse: Verse)] {
-        guard let edition = Editions.edition("knb") else { return [] }
+        guard let edition = Editions.edition(editionID) ?? Editions.edition("knb") else { return [] }
         // 참조 문자열 파싱 우선, 실패하면 citation의 단순 범위로 대체.
         let bookID: String
         var segs: [ScriptureReference.RefSegment] = []
