@@ -108,85 +108,70 @@ enum ScriptureReference {
                                  verseStart: vStart, verseEnd: vEnd, endChapter: endChapter)
     }
 
-    /// 참조 문자열을 강조용 구간(segment)까지 풀어 준다.
-    /// 불연속 독서(예: "마태 4,12-17.23-25")의 빠진 절을 칠하지 않도록,
-    /// 절 그룹을 각각 나눠 담는다. (칠하기 전용 — 리더 이동 위치는 parse가 담당)
-    static func highlight(_ reference: String) -> (bookID: String, highlight: VerseHighlight)? {
+    /// 한 절 구간(같은 장의 low~high).
+    struct RefSegment { let chapter: Int; let low: Int; let high: Int }
+
+    /// 참조 문자열을 절 구간 목록으로 푼다.
+    /// ';'(여러 인용) · '.'·'·'·'과'·'와'(불연속) · '-'(범위) · 장 넘김("12,31-13,13")을 모두 처리.
+    /// 예) "예레 26,11-16.24" → [26:11-16, 26:24]
+    ///     "나훔 2,1.3; 3,1-3.6-7" → [2:1, 2:3, 3:1-3, 3:6-7]
+    static func segmentList(_ reference: String) -> (bookID: String, segments: [RefSegment])? {
         var s = reference.trimmingCharacters(in: .whitespaces)
         guard let match = aliasToID.first(where: { s.hasPrefix($0.alias) }) else { return nil }
-        s = String(s.dropFirst(match.alias.count)).trimmingCharacters(in: .whitespaces)
-        // 히브리어 병기 "(66)" 등 괄호 제거
+        s = String(s.dropFirst(match.alias.count))
         if let paren = try? NSRegularExpression(pattern: "\\([^)]*\\)") {
             s = paren.stringByReplacingMatches(in: s, range: NSRange(location: 0, length: (s as NSString).length), withTemplate: "")
         }
-        // 앞머리 장 번호
-        let ns = s as NSString
-        guard let chMatch = try? NSRegularExpression(pattern: "^\\s*(\\d+)"),
-              let m = chMatch.firstMatch(in: s, range: NSRange(location: 0, length: ns.length)),
-              let firstChapter = Int(ns.substring(with: m.range(at: 1))) else { return nil }
-
-        var cur = firstChapter
-        var rest = ns.substring(from: m.range.location + m.range.length)
-        rest = rest.trimmingCharacters(in: .whitespaces)
-
-        var segs: [VerseHighlight.Segment] = []
-        let bigEnd = Int.max
-
-        // ",절…"이 없으면 장 전체
-        guard rest.hasPrefix(",") else {
-            return (match.id, VerseHighlight(segments: [.init(chapter: cur, low: 1, high: bigEnd)],
-                                             startChapter: cur, startVerse: 1))
+        let big = Int.max
+        func leadInt(_ t: Substring) -> Int? {
+            let d = t.prefix { $0.isNumber }; return d.isEmpty ? nil : Int(d)
         }
-        rest.removeFirst()
-        // '과'·'와'(그리고)와 '·'를 그룹 구분자 '.'로 통일, 공백 제거
-        rest = rest.replacingOccurrences(of: "과", with: ".")
-                   .replacingOccurrences(of: "와", with: ".")
-                   .replacingOccurrences(of: "·", with: ".")
-                   .replacingOccurrences(of: " ", with: "")
-        func leadingInt(_ t: Substring) -> Int? {
-            let digits = t.prefix { $0.isNumber }
-            return digits.isEmpty ? nil : Int(digits)
-        }
-        var firstVerse: Int?
-        for g in rest.split(separator: ".") where !g.isEmpty {
-            if let dash = g.firstIndex(where: { $0 == "-" || $0 == "–" }) {
-                let left = g[g.startIndex..<dash]
-                let right = g[g.index(after: dash)...]
-                guard let lo = leadingInt(left) else { continue }
-                if let comma = right.firstIndex(of: ",") {
-                    // 장을 넘는 범위 "31-13,13"
-                    let c2s = right[right.startIndex..<comma]
-                    let v2s = right[right.index(after: comma)...]
-                    guard let c2 = leadingInt(c2s), let v2 = leadingInt(v2s) else { continue }
-                    segs.append(.init(chapter: cur, low: lo, high: bigEnd))
-                    if c2 > cur + 1 { for c in (cur + 1)..<c2 { segs.append(.init(chapter: c, low: 1, high: bigEnd)) } }
-                    segs.append(.init(chapter: c2, low: 1, high: v2))
-                    cur = c2
-                    if firstVerse == nil { firstVerse = lo }
-                } else if let hi = leadingInt(right) {
-                    segs.append(.init(chapter: cur, low: lo, high: hi))
-                    if firstVerse == nil { firstVerse = lo }
+        var segs: [RefSegment] = []
+        var cur: Int? = nil   // 현재 장 (';' 구획 사이에서도 이어진다)
+        for rawPart in s.split(separator: ";", omittingEmptySubsequences: true) {
+            var part = String(rawPart)
+                .replacingOccurrences(of: "과", with: ".")
+                .replacingOccurrences(of: "와", with: ".")
+                .replacingOccurrences(of: "·", with: ".")
+                .replacingOccurrences(of: " ", with: "")
+            if part.isEmpty { continue }
+            var vspec = Substring(part)
+            if let comma = part.firstIndex(of: ",") {
+                let head = part[part.startIndex..<comma]
+                if !head.isEmpty, head.allSatisfy({ $0.isNumber }) {
+                    cur = Int(head); vspec = part[part.index(after: comma)...]
                 }
-            } else if let comma = g.firstIndex(of: ",") {
-                // 새 장의 한 절 "13,13"
-                let c2s = g[g.startIndex..<comma]
-                let v2s = g[g.index(after: comma)...]
-                guard let c2 = leadingInt(c2s), let v2 = leadingInt(v2s) else { continue }
-                cur = c2
-                segs.append(.init(chapter: cur, low: v2, high: v2))
-                if firstVerse == nil { firstVerse = v2 }
-            } else if let v = leadingInt(g) {
-                segs.append(.init(chapter: cur, low: v, high: v))
-                if firstVerse == nil { firstVerse = v }
+            } else if let only = Int(part) {   // "150" 같은 장 전체
+                segs.append(RefSegment(chapter: only, low: 1, high: big)); cur = only; continue
             }
+            guard var chap = cur else { continue }
+            for g in vspec.split(separator: ".", omittingEmptySubsequences: true) {
+                if let dash = g.firstIndex(where: { $0 == "-" || $0 == "–" }) {
+                    let left = g[g.startIndex..<dash]; let right = g[g.index(after: dash)...]
+                    guard let lo = leadInt(left) else { continue }
+                    if let comma = right.firstIndex(of: ",") {
+                        let c2s = right[right.startIndex..<comma]; let v2s = right[right.index(after: comma)...]
+                        guard let c2 = leadInt(c2s), let v2 = leadInt(v2s) else { continue }
+                        segs.append(RefSegment(chapter: chap, low: lo, high: big))
+                        if c2 > chap + 1 { for c in (chap + 1)..<c2 { segs.append(RefSegment(chapter: c, low: 1, high: big)) } }
+                        segs.append(RefSegment(chapter: c2, low: 1, high: v2)); chap = c2
+                    } else if let hi = leadInt(right) {
+                        segs.append(RefSegment(chapter: chap, low: lo, high: hi))
+                    }
+                } else if let v = leadInt(g) {
+                    segs.append(RefSegment(chapter: chap, low: v, high: v))
+                }
+            }
+            cur = chap
         }
-        if segs.isEmpty {
-            segs = [.init(chapter: firstChapter, low: 1, high: bigEnd)]
-            firstVerse = 1
-        }
-        return (match.id, VerseHighlight(segments: segs,
-                                         startChapter: firstChapter,
-                                         startVerse: firstVerse ?? 1))
+        return segs.isEmpty ? nil : (match.id, segs)
+    }
+
+    /// 강조용 VerseHighlight (불연속·여러 장·여러 인용 모두 반영).
+    static func highlight(_ reference: String) -> (bookID: String, highlight: VerseHighlight)? {
+        guard let (bid, segs) = segmentList(reference), let first = segs.first else { return nil }
+        let vh = segs.map { VerseHighlight.Segment(chapter: $0.chapter, low: $0.low, high: $0.high) }
+        return (bid, VerseHighlight(segments: vh, startChapter: first.chapter, startVerse: first.low, bookID: bid))
     }
 }
 

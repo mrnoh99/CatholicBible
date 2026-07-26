@@ -213,11 +213,11 @@ private struct ReadingCard: View {
 
             // 소제목·성구·화답송·(펼치면) 본문을 한 덩어리로 묶어, 성구와 본문을
             // 함께 낱말 단위로 선택·복사할 수 있게 한다(아이패드 기본 선택 방식).
-            let verses = reading.primaryCitation.map { previewVerses($0) } ?? []
+            let items = previewItems(reading)
             SelectableAttributedText(attributed:
-                readingAttributed(reading, verses: verses, expanded: expanded))
+                readingAttributed(reading, items: items, expanded: expanded))
 
-            if !verses.isEmpty {
+            if !items.isEmpty {
                 Button {
                     withAnimation(.easeInOut(duration: 0.2)) { expanded.toggle() }
                 } label: {
@@ -234,7 +234,10 @@ private struct ReadingCard: View {
     }
 
     /// 소제목·성구·화답송·(펼치면) 본문을 한 덩어리로 묶는다. 성구와 본문을 함께 선택·복사 가능.
-    private func readingAttributed(_ reading: MassReading, verses: [Verse], expanded: Bool) -> NSAttributedString {
+    /// 불연속·여러 장 독서는 해당 절만 골라 보여 준다(여러 장이면 '장,절'로 표기).
+    private func readingAttributed(_ reading: MassReading,
+                                   items: [(chapter: Int, verse: Verse)],
+                                   expanded: Bool) -> NSAttributedString {
         let textColor = UIColor(settings.theme.text)
         let secondary = UIColor(settings.theme.secondary)
         let para = NSMutableParagraphStyle()
@@ -253,16 +256,18 @@ private struct ReadingCard: View {
         if let refrain = reading.refrain, !refrain.isEmpty {
             append("\n◎ \(refrain)", font: uiBodyFont(max(settings.fontSize * 0.92, 13)), color: secondary)
         }
-        if expanded && !verses.isEmpty {
+        if expanded && !items.isEmpty {
             result.append(NSAttributedString(string: "\n\n"))
             let numFont = uiBodyFont(max(settings.fontSize * 0.7, 10))
             let bodyFont = uiBodyFont(settings.fontSize)
-            for (i, v) in verses.enumerated() {
+            let multiChapter = Set(items.map { $0.chapter }).count > 1
+            for (i, item) in items.enumerated() {
                 if i > 0 { result.append(NSAttributedString(string: "\n")) }
-                result.append(NSAttributedString(string: "\(v.number) ", attributes: [
+                let label = multiChapter ? "\(item.chapter),\(item.verse.number) " : "\(item.verse.number) "
+                result.append(NSAttributedString(string: label, attributes: [
                     .font: numFont, .foregroundColor: secondary, .paragraphStyle: para,
                 ]))
-                result.append(NSAttributedString(string: v.text, attributes: [
+                result.append(NSAttributedString(string: item.verse.text, attributes: [
                     .font: bodyFont, .foregroundColor: textColor, .paragraphStyle: para,
                 ]))
             }
@@ -280,15 +285,29 @@ private struct ReadingCard: View {
         }
     }
 
-    /// 「성경」(knb) 판본에서 인용 범위의 절을 가져온다(같은 장 안에서).
-    private func previewVerses(_ c: ScriptureCitation) -> [Verse] {
-        guard let edition = Editions.edition("knb"), let book = Bible.book(c.bookID) else { return [] }
-        let verses = store.verses(edition: edition, book: book, chapter: c.chapter)
-        guard !verses.isEmpty else { return [] }
-        let endVerse = (c.endChapter != nil && c.endChapter != c.chapter)
-            ? (verses.last?.number ?? c.verseEnd)   // 여러 장에 걸치면 이 장 끝까지
-            : c.verseEnd
-        return verses.filter { $0.number >= c.verseStart && $0.number <= max(endVerse, c.verseStart) }
+    /// 「성경」(knb)에서 참조에 해당하는 절만 골라 (장, 절) 목록으로 돌려준다.
+    /// 참조 문자열을 구간으로 풀어(불연속·여러 장·여러 인용 지원) 그 구간의 절만 담는다.
+    private func previewItems(_ reading: MassReading) -> [(chapter: Int, verse: Verse)] {
+        guard let edition = Editions.edition("knb") else { return [] }
+        // 참조 문자열 파싱 우선, 실패하면 citation의 단순 범위로 대체.
+        let bookID: String
+        var segs: [ScriptureReference.RefSegment] = []
+        if let parsed = ScriptureReference.segmentList(reading.reference) {
+            bookID = parsed.bookID; segs = parsed.segments
+        } else if let c = reading.primaryCitation {
+            bookID = c.bookID
+            segs = [.init(chapter: c.chapter, low: c.verseStart, high: max(c.verseEnd, c.verseStart))]
+        } else { return [] }
+        guard let book = Bible.book(bookID) else { return [] }
+        var out: [(Int, Verse)] = []
+        var seen = Set<String>()
+        for seg in segs {
+            for v in store.verses(edition: edition, book: book, chapter: seg.chapter)
+                where v.number >= seg.low && v.number <= seg.high {
+                if seen.insert("\(seg.chapter):\(v.number)").inserted { out.append((seg.chapter, v)) }
+            }
+        }
+        return out
     }
 }
 
