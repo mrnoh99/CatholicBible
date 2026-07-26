@@ -23,10 +23,10 @@ struct DailyMassView: View {
 
     @State private var viewedDate: Date = LDate.today()
     @State private var showCalendar = false
-    /// 모든 독서의 본문 미리보기를 한꺼번에 펼치거나 닫는다.
-    @State private var showAllText = false
-    /// 본문보기에 쓸 성경 판본(기본: 성경).
-    @State private var previewEditionID = "knb"
+    /// 모든 독서의 본문 미리보기를 한꺼번에 펼치거나 닫는다(날짜·재실행에도 유지).
+    @AppStorage("mass.showAllText") private var showAllText = false
+    /// 본문보기에 쓸 성경 판본(기본: 성경, 날짜·재실행에도 유지).
+    @AppStorage("mass.previewEditionID") private var previewEditionID = "knb"
 
     private var isToday: Bool { viewedDate == LDate.today() }
 
