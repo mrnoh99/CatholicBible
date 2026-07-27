@@ -26,13 +26,17 @@ struct DailyMassView: View {
     @Environment(LiturgyStore.self) private var liturgy
     @Environment(ReaderSettings.self) private var settings
     @Environment(ReaderNavigation.self) private var navigation
+    @Environment(ReadingState.self) private var readingState
     @Environment(AnnotationStore.self) private var annotations
+    @Environment(KnbNotesStore.self) private var knbNotes
     @Environment(\.dismiss) private var dismiss
 
     @State private var viewedDate: Date = LDate.today()
     @State private var showCalendar = false
     @State private var noteTarget: MassNoteTarget?
     @State private var dictRequest: DictionaryRequest?
+    /// 주석 성경 본문에서 각주 마커('N)')를 탭했을 때 뜨는 주석 팝업
+    @State private var markerNote: MarkerNoteTarget?
     /// 모든 독서의 본문 미리보기를 한꺼번에 펼치거나 닫는다(날짜·재실행에도 유지).
     @AppStorage("mass.showAllText") private var showAllText = false
     /// 본문보기에 쓸 성경 판본(기본: 성경, 날짜·재실행에도 유지).
@@ -87,6 +91,20 @@ struct DailyMassView: View {
             }
             .sheet(item: $dictRequest) { req in
                 DictionaryView(initialTerm: req.term)
+            }
+            // 주석 성경 본문의 각주 마커 'N)' 탭 → 해당 주석 팝업
+            .environment(\.openURL, OpenURLAction { url in
+                guard url.scheme == "catholicbible", url.host == "note" else { return .systemAction }
+                let items = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems ?? []
+                func q(_ k: String) -> String? { items.first { $0.name == k }?.value }
+                if let b = q("b"), let cs = q("c"), let c = Int(cs), let n = q("n") {
+                    let note = knbNotes.notes(bookID: b, chapter: c).first { $0.n == n }
+                    markerNote = MarkerNoteTarget(n: n, text: note?.text ?? "이 주석을 찾지 못했습니다.")
+                }
+                return .handled
+            })
+            .sheet(item: $markerNote) { mn in
+                MarkerNoteSheet(n: mn.n, text: mn.text).environment(settings)
             }
         }
     }
@@ -221,6 +239,8 @@ struct DailyMassView: View {
     /// 성구를 리더로 연다(시트를 닫고 사이드바 선택을 옮긴다).
     private func open(_ reading: MassReading) {
         guard let c = reading.primaryCitation, Bible.book(c.bookID) != nil else { return }
+        // 오늘의 미사에서 고른 본문 판본으로 리더를 연다(사이드바 판본이 아니라).
+        readingState.selectedEditionID = previewEditionID
         // 참조 문자열에서 불연속 구간까지 살린 강조를 만든다(빠진 절은 칠하지 않음).
         if let parsed = ScriptureReference.highlight(reading.reference), parsed.bookID == c.bookID {
             navigation.open(bookID: c.bookID, chapter: parsed.highlight.startChapter,
