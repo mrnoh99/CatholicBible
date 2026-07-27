@@ -7,6 +7,26 @@
 //
 
 import SwiftUI
+import AVFoundation
+
+/// 사이드바 credit을 누르면 생일 축하 노래를 재생한다.
+/// (AVAudioPlayer는 재생 중 유지되어야 하므로 shared로 붙잡아 둔다.)
+final class BirthdaySound {
+    static let shared = BirthdaySound()
+    private var player: AVAudioPlayer?
+
+    func play() {
+        guard let url = Bundle.main.url(forResource: "happy_birthday", withExtension: "m4a") else { return }
+        #if !targetEnvironment(macCatalyst)
+        try? AVAudioSession.sharedInstance().setCategory(.playback, mode: .default)
+        try? AVAudioSession.sharedInstance().setActive(true)
+        #endif
+        guard let p = try? AVAudioPlayer(contentsOf: url) else { return }
+        player = p
+        p.prepareToPlay()
+        p.play()
+    }
+}
 
 struct LibraryView: View {
     @Environment(BibleStore.self) private var store
@@ -73,17 +93,26 @@ struct LibraryView: View {
         }
     }
 
-    /// 사이드바 맨 아래 개발자·버전·빌드 표기 (개발자 이름은 이메일 연결)
+    /// 사이드바 맨 아래 개발자·버전·빌드 표기.
+    /// 문구를 누르면 생일 축하 노래가 재생된다(길게 누르면 이메일).
     private var creditFooter: some View {
         VStack(spacing: 2) {
-            if let mail = URL(string: "mailto:joonho.noh@gmail.com") {
-                Link("Developed by JaiSung NOH MD.,\nas a birthday gift for Eunkyung (Teresa) Kim\n— July 30, 2026", destination: mail)
-                    .tint(Color.accentColor)
-                    .multilineTextAlignment(.center)
-            } else {
+            Button {
+                BirthdaySound.shared.play()
+            } label: {
                 Text("Developed by JaiSung NOH MD.,\nas a birthday gift for Eunkyung (Teresa) Kim\n— July 30, 2026")
                     .multilineTextAlignment(.center)
+                    .foregroundStyle(Color.accentColor)
             }
+            .buttonStyle(.plain)
+            .contextMenu {
+                if let mail = URL(string: "mailto:joonho.noh@gmail.com") {
+                    Link("이메일 보내기", destination: mail)
+                }
+            }
+            .accessibilityLabel("생일 축하 노래 재생")
+            .accessibilityHint("눌러서 생일 축하 노래를 듣습니다")
+
             Text(appVersionText)
                 .foregroundStyle(.tertiary)
         }
