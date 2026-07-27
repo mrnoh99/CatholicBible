@@ -116,6 +116,21 @@ python3 scripts/fetch_knbnotes.py                   # 전체 (본문+주석+입�
 
 ## 6. 문제 해결
 
+- **`SSL: CERTIFICATE_VERIFY_FAILED` (인증서 오류)** → python.org 에서 설치한
+  Python이 시스템 인증서를 쓰지 않아 생깁니다. 아래 중 하나로 해결:
+  1. **인증서 설치(권장)** — 설치된 Python 버전에 맞춰 한 번만 실행:
+     ```bash
+     open "/Applications/Python 3.12/Install Certificates.command"
+     # 3.11 등 다른 버전이면 숫자만 바꿔서
+     ```
+  2. **certifi 설치** — 스크립트가 자동으로 사용합니다:
+     ```bash
+     python3 -m pip install --user certifi
+     ```
+  3. **최후 수단(검증 끄기)** — 위 두 방법이 안 되면:
+     ```bash
+     python3 scripts/fetch_knb.py --verify --insecure
+     ```
 - **`받은 절이 0개` / 요청 실패** → 네트워크에서 `bible.cbck.or.kr` 접속이
   막힌 경우입니다. 브라우저로 사이트가 열리는지 확인하세요. 사내/학교
   프록시라면 개인 네트워크에서 실행합니다.

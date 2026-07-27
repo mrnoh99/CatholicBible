@@ -143,12 +143,34 @@ def url_code(book_id: str) -> str:
     return book_id
 
 
+# SSL 인증서 처리 — macOS의 python.org Python은 시스템 인증서를 쓰지 않아
+# CERTIFICATE_VERIFY_FAILED 가 날 수 있다. certifi 가 있으면 그 CA 번들을,
+# 없으면 기본 컨텍스트를 쓴다. INSECURE=True 면 검증을 끈다(최후 수단).
+import ssl  # noqa: E402
+
+INSECURE = False
+
+
+def _ssl_context() -> "ssl.SSLContext":
+    if INSECURE:
+        ctx = ssl.create_default_context()
+        ctx.check_hostname = False
+        ctx.verify_mode = ssl.CERT_NONE
+        return ctx
+    try:
+        import certifi  # type: ignore
+        return ssl.create_default_context(cafile=certifi.where())
+    except Exception:  # noqa: BLE001
+        return ssl.create_default_context()
+
+
 def fetch(url: str, *, retries: int = 3, delay: float = 2.0) -> str:
     last_err: Exception | None = None
+    ctx = _ssl_context()
     for attempt in range(retries):
         try:
             req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
-            with urllib.request.urlopen(req, timeout=30) as resp:
+            with urllib.request.urlopen(req, timeout=30, context=ctx) as resp:
                 charset = resp.headers.get_content_charset() or "utf-8"
                 return resp.read().decode(charset, errors="replace")
         except Exception as err:  # noqa: BLE001 — 네트워크 오류 전반 재시도

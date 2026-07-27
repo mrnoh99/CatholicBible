@@ -92,8 +92,12 @@ def main() -> None:
                     help="소제목 저장 경로")
     ap.add_argument("--verify", action="store_true",
                     help="수집 후 현재 BibleText_knb.json 과 대조 리포트")
+    ap.add_argument("--insecure", action="store_true",
+                    help="SSL 인증서 검증을 끈다(macOS 인증서 오류 최후 수단)")
     args = ap.parse_args()
     fx._make_console_utf8()
+    if args.insecure:
+        fx.INSECURE = True
 
     book_ids = args.books or [b[0] for b in fx.BOOKS]
     id2meta = {b[0]: b for b in fx.BOOKS}
