@@ -105,11 +105,6 @@ struct LibraryView: View {
                     .foregroundStyle(Color.accentColor)
             }
             .buttonStyle(.plain)
-            .contextMenu {
-                if let mail = URL(string: "mailto:joonho.noh@gmail.com") {
-                    Link("이메일 보내기", destination: mail)
-                }
-            }
             .accessibilityLabel("생일 축하 노래 재생")
             .accessibilityHint("눌러서 생일 축하 노래를 듣습니다")
 
