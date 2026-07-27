@@ -45,6 +45,16 @@ enum ReaderTheme: String, CaseIterable, Identifiable {
         }
     }
 
+    /// 제목·독서 헤더용 색 — 본문색보다 명도를 높여 특히 어두운 테마에서 또렷하게.
+    var headingText: Color {
+        switch self {
+        case .light: return Color(red: 0.10, green: 0.09, blue: 0.08)
+        case .sepia: return Color(red: 0.26, green: 0.20, blue: 0.14)
+        case .gray:  return Color(red: 0.98, green: 0.98, blue: 0.99)
+        case .black: return Color(red: 0.97, green: 0.97, blue: 0.98)
+        }
+    }
+
     /// 절 번호·머리글 등 보조 요소 색
     var secondary: Color { text.opacity(0.55) }
 

@@ -135,7 +135,7 @@ struct DailyMassView: View {
         let para = NSMutableParagraphStyle()
         para.lineSpacing = settings.lineSpacing * 0.5
         return NSAttributedString(string: title, attributes: [
-            .font: font, .foregroundColor: UIColor(settings.theme.text), .paragraphStyle: para,
+            .font: font, .foregroundColor: UIColor(settings.theme.headingText), .paragraphStyle: para,
         ])
     }
 
@@ -310,7 +310,7 @@ private struct ReadingCard: View {
 
     /// 소제목·성구·화답송을 낱말 선택·복사 가능한 머리글로 묶는다.
     private func headerAttributed(_ reading: MassReading) -> NSAttributedString {
-        let textColor = UIColor(settings.theme.text)
+        let textColor = UIColor(settings.theme.headingText)
         let secondary = UIColor(settings.theme.secondary)
         let para = NSMutableParagraphStyle()
         para.lineSpacing = settings.lineSpacing
