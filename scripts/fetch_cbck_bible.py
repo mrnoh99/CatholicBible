@@ -128,6 +128,7 @@ def scope_book_ids(scope: str) -> list[str]:
 # 첫 글자 대문자 규칙과 다른 사이트 책 코드 (실제 확인된 것)
 URL_CODE_OVERRIDES: dict[str, str] = {
     "sg": "Sng",   # 아가서 — 사이트는 Sng (예: /Knb/Sng/1)
+    "rev": "Rv",   # 요한 묵시록 — 사이트는 Rv (예: /Knb/Rv/1)
 }
 # 목차 링크의 사이트 코드 → 우리 책 id (역매핑)
 SITE_CODE_TO_ID: dict[str, str] = {v.lower(): k for k, v in URL_CODE_OVERRIDES.items()}

@@ -43,8 +43,7 @@ import time
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-import fetch_cbck_bible as fx          # fetch, BOOKS, url_code, scope_book_ids, SUP_ANNO_RE …
-import fetch_knbnotes as kn            # JUL_RE, TITLE_RE, strip_tags, _before_notes
+import fetch_cbck_bible as fx          # fetch, BOOKS, url_code, SUP_ANNO_RE, SCRIPT_STYLE_RE …
 
 BASE = "https://bible.cbck.or.kr"
 EDITION_PATH = "Knb"
@@ -52,28 +51,60 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 RES = REPO_ROOT / "CatholicBible" / "Resources"
 
 
+# /Knb 실제 마크업 (2024~ 사이트 기준):
+#   본문 : <span class="highlight">N</span>  (col-1)
+#          <div class="col-11"><div class="text-justify"><p>본문<sup class="annotation">1)</sup>…<br>…</p></div></div>
+#   소제목: <div class="col-12 ..."><h3><p>소제목</p></h3></div>   (다음 절 앞)
+#   각주 마커는 <sup class="annotation">…</sup>, 시행 줄바꿈은 <br>.
+TAG_RE = re.compile(r"<[^>]+>")
+BR_RE = re.compile(r"<br\s*/?>", re.I)
+CONTENTS_RE = re.compile(r'<div id="bibleContents".*?>(.*?)<!--\s*성경 Menu', re.S)
+VERSE_RE = re.compile(
+    r'class="highlight"[^>]*>\s*(\d+)\s*</span>.*?<div class="text-justify"[^>]*>(.*?)</div>', re.S)
+H3_OR_NUM_RE = re.compile(
+    r'<h3>\s*<p>(.*?)</p>\s*</h3>|class="highlight"[^>]*>\s*(\d+)\s*</span>', re.S)
+
+
+def _region(html: str) -> str:
+    m = CONTENTS_RE.search(html)
+    return m.group(1) if m else html
+
+
+def _clean(frag: str, *, plain: bool = True) -> str:
+    from html import unescape
+    frag = BR_RE.sub(" ", frag)                     # 시행 줄바꿈 → 공백
+    if plain:
+        frag = fx.SUP_ANNO_RE.sub("", frag)         # 각주 마커 '2)' 제거 → 평문
+    frag = TAG_RE.sub("", unescape(frag))
+    return re.sub(r"\s+", " ", frag).strip()
+
+
 def extract_verses_plain(html: str) -> dict[str, str]:
-    """장 본문에서 {절: 평문}을 뽑는다(각주 마커 제거)."""
-    region = kn._before_notes(html)                 # 하단 주석 카드(있으면) 제거
-    region = fx.SCRIPT_STYLE_RE.sub(" ", region)
-    region = fx.SUP_ANNO_RE.sub("", region)         # 각주 마커 '2)' 제거 → 평문
+    """장 본문에서 {절: 평문}을 뽑는다(각주 마커 제거, 시행은 공백으로 이음)."""
+    region = _region(html)
     verses: dict[str, str] = {}
-    for m in kn.JUL_RE.finditer(region):
-        num = m.group(1)
-        text = kn.strip_tags(m.group(2)).strip()
+    for m in VERSE_RE.finditer(region):
+        text = _clean(m.group(2), plain=True)
         if text:
-            verses.setdefault(num, text)
+            verses.setdefault(m.group(1), text)
     return verses
 
 
 def extract_titles(html: str) -> list[dict]:
-    """소제목 [{'v':절, 'text':소제목}] (본문과 분리)."""
-    region = fx.SCRIPT_STYLE_RE.sub(" ", kn._before_notes(html))
+    """소제목 [{'v':절, 'text':소제목}] — <h3> 가 그 다음 절 앞에 놓인 것으로 본다."""
+    region = _region(html)
+    toks = list(H3_OR_NUM_RE.finditer(region))
     out: list[dict] = []
-    for m in kn.TITLE_RE.finditer(region):
-        text = kn.strip_tags(m.group(1)).strip()
-        if text and text != "입문":
-            out.append({"v": int(m.group(2)), "text": text})
+    for i, t in enumerate(toks):
+        if t.group(1) is None:                      # 절 번호 토큰이면 건너뜀
+            continue
+        title = _clean(t.group(1))
+        if not title:
+            continue
+        for u in toks[i + 1:]:                      # 다음 절 번호에 귀속
+            if u.group(2) is not None:
+                out.append({"v": int(u.group(2)), "text": title})
+                break
     return out
 
 
