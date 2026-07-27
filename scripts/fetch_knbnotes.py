@@ -238,13 +238,20 @@ def main() -> None:
                     help="구조 확인용: 입문 1개 + 창세기 1장만")
     ap.add_argument("--delay", type=float, default=0.7)
     ap.add_argument("--dump-html", metavar="DIR", help="받은 HTML을 이 폴더에 저장")
+    ap.add_argument("--fresh", action="store_true",
+                    help="기존 파일을 덮지 않고 *_fresh.json 에 새로 수집(대조 후 병합용)")
     args = ap.parse_args()
+
+    # 출력 경로 — --fresh 면 비파괴(*_fresh.json), 아니면 제자리
+    bible_out = (RES / "BibleText_knbnotes_fresh.json") if args.fresh else BIBLE_OUT
+    notes_out = (RES / "KnbNotes_fresh.json") if args.fresh else NOTES_OUT
 
     dump = Path(args.dump_html) if args.dump_html else None
     if dump:
         dump.mkdir(parents=True, exist_ok=True)
 
-    out = load_notes_out()
+    out = ({"source": INDEX_URL, "intros": [], "annotations": {}, "titles": {}}
+           if args.fresh else load_notes_out())
 
     # 1) 입문 목록
     print("입문 목록을 찾는 중 …")
@@ -274,15 +281,15 @@ def main() -> None:
         time.sleep(args.delay)
     if intro_records:
         out["intros"] = intro_records
-        save_json(NOTES_OUT, out)
+        save_json(notes_out, out)
 
     if args.intros_only:
-        print(f"\n저장: {NOTES_OUT}")
+        print(f"\n저장: {notes_out}")
         return
 
     # 2) 장 본문 + 주석
-    bible = (json.loads(BIBLE_OUT.read_text(encoding="utf-8"))
-             if BIBLE_OUT.exists() else
+    bible = (json.loads(bible_out.read_text(encoding="utf-8"))
+             if (bible_out.exists() and not args.fresh) else
              {"translation": "주석 성경", "source": f"{BASE}/{BIBLE_PATH}",
               "bookNames": {}, "books": {}})
     bible.setdefault("books", {})
@@ -324,13 +331,13 @@ def main() -> None:
             out["annotations"][bid] = anno_book
         if title_book:
             out["titles"][bid] = title_book
-        save_json(BIBLE_OUT, bible)
-        save_json(NOTES_OUT, out)
+        save_json(bible_out, bible)
+        save_json(notes_out, out)
         tot_n = sum(len(v) for v in anno_book.values())
         tot_t = sum(len(v) for v in title_book.values())
         print(f"✓ {name}: {len(chapters)}장, 주석 {tot_n}개, 소제목 {tot_t}개")
 
-    print(f"\n저장:\n  {BIBLE_OUT}\n  {NOTES_OUT}")
+    print(f"\n저장:\n  {bible_out}\n  {notes_out}")
     print("검증: python scripts\\validate_bible_text.py knbnotes")
 
 

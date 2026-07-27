@@ -100,17 +100,32 @@ python3 scripts/apply_errata.py --apply              # 정오표 재적용
 
 ---
 
-## 5. (선택) 주석성경도 다시 받기
+## 5. 주석성경(knbnotes) 재수집
 
-주석성경은 현재 데이터가 정확하므로 보통 다시 받을 필요는 없습니다. 굳이
-받으려면 — **기존 파일을 덮으므로 먼저 백업**하세요:
+주석성경 사이트 구조(`id="jul-N"` 절 + `<h4>` 소제목 + `주석` 카드)는 그대로라
+기존 파서가 맞습니다. `--fresh` 로 **기존 파일을 덮지 않고** 새로 받습니다.
 
 ```bash
-cp CatholicBible/Resources/BibleText_knbnotes.json ~/knbnotes.backup.json
-cp CatholicBible/Resources/KnbNotes.json           ~/KnbNotes.backup.json
-python3 scripts/fetch_knbnotes.py --books gn        # 먼저 한 책만 시험
-python3 scripts/fetch_knbnotes.py                   # 전체 (본문+주석+입문)
+# (a) 구조 확인 (입문 1개 + 창세기 1장)
+python3 scripts/fetch_knbnotes.py --dump-html dumpnotes --only-sample
+
+# (b) 전체 재수집 → *_fresh.json (본문+주석+입문)
+python3 scripts/fetch_knbnotes.py --fresh
 ```
+
+끝나면 이렇게 생깁니다(기존 파일은 그대로):
+- `CatholicBible/Resources/BibleText_knbnotes_fresh.json`  (본문 — 각주 마커 유지)
+- `CatholicBible/Resources/KnbNotes_fresh.json`            (입문 + 장별 주석 + 소제목)
+
+대조:
+```bash
+python3 scripts/compare_bibletext.py \
+  CatholicBible/Resources/BibleText_knbnotes.json \
+  CatholicBible/Resources/BibleText_knbnotes_fresh.json --full
+```
+
+그런 다음 **두 `*_fresh.json` 을 채팅에 올려 주세요.** 제가 현재본과 병합
+(현행 본문·주석 채택, 파서가 놓친 시적 병렬행은 보완)해서 커밋하겠습니다.
 
 ---
 
