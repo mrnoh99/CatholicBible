@@ -879,7 +879,9 @@ struct SelectableVerseText: UIViewRepresentable {
         return CGSize(width: width, height: ceil(fit.height))
     }
 
-    private static let markerRegex = try? NSRegularExpression(pattern: "(?<![\\d(])(\\d{1,3})\\)")
+    // 인용 참조의 닫는 괄호(예: "1,19-28)")를 각주 마커로 오인하지 않도록
+    // 숫자 앞이 하이픈·쉼표·마침표·숫자·'('이면 마커로 보지 않는다.
+    private static let markerRegex = try? NSRegularExpression(pattern: "(?<![-,.\\d(])(\\d{1,3})\\)")
 
     final class Coordinator: NSObject, UITextViewDelegate {
         var onOpenURL: ((URL) -> Void)?

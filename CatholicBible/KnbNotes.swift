@@ -55,8 +55,10 @@ enum AnnotationMarkup {
         return result
     }
 
+    // 각주 마커 'N)' — 단, 인용 참조의 닫는 괄호(예: "요한 1,19-28)", "(마태 3,1-12)")는
+    // 마커가 아니므로, 숫자 앞이 하이픈·쉼표·마침표·숫자·'('이면 마커로 보지 않는다.
     private static let markerRegex = try? NSRegularExpression(
-        pattern: "(?<![\\d(])(\\d{1,3})\\)")
+        pattern: "(?<![-,.\\d(])(\\d{1,3})\\)")
 
     /// 각주 마커('N)')를 지운 깨끗한 문자열(주석 없는 「성경」 소제목 표시용).
     static func stripMarkers(_ text: String) -> String {
