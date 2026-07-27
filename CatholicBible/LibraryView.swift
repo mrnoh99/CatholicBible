@@ -9,6 +9,20 @@
 import SwiftUI
 import AVFoundation
 
+/// 앱 에디션 구분.
+/// - 기본(플래그 없음): 생일 선물 버전 — credit을 누르면 생일 축하 노래 재생.
+/// - `GENERAL_EDITION` 컴파일 플래그를 켜면: 일반 버전 — 사운드 없이
+///   "Developed by JaiSung NOH MD., 2026"만 표시.
+/// (Build Settings ▸ Swift Compiler - Custom Flags ▸ Active Compilation
+///  Conditions 에 GENERAL_EDITION 을 추가하면 일반 버전으로 빌드된다.)
+enum AppEdition {
+    #if GENERAL_EDITION
+    static let isBirthday = false
+    #else
+    static let isBirthday = true
+    #endif
+}
+
 /// 사이드바 credit을 누르면 생일 축하 노래를 재생한다.
 /// (AVAudioPlayer는 재생 중 유지되어야 하므로 shared로 붙잡아 둔다.)
 final class BirthdaySound {
@@ -94,19 +108,26 @@ struct LibraryView: View {
     }
 
     /// 사이드바 맨 아래 개발자·버전·빌드 표기.
-    /// 문구를 누르면 생일 축하 노래가 재생된다(길게 누르면 이메일).
+    /// 생일 버전(기본): 문구를 누르면 생일 축하 노래가 재생된다.
+    /// 일반 버전(GENERAL_EDITION 플래그): 사운드 없이 개발자·연도만 표시.
     private var creditFooter: some View {
         VStack(spacing: 2) {
-            Button {
-                BirthdaySound.shared.play()
-            } label: {
-                Text("Developed by JaiSung NOH MD.,\nas a birthday gift for Eunkyung (Teresa) Kim\n— July 30, 2026")
+            if AppEdition.isBirthday {
+                Button {
+                    BirthdaySound.shared.play()
+                } label: {
+                    Text("Developed by JaiSung NOH MD.,\nas a birthday gift for Eunkyung (Teresa) Kim\n— July 30, 2026")
+                        .multilineTextAlignment(.center)
+                        .foregroundStyle(Color.accentColor)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("생일 축하 노래 재생")
+                .accessibilityHint("눌러서 생일 축하 노래를 듣습니다")
+            } else {
+                Text("Developed by JaiSung NOH MD., 2026")
                     .multilineTextAlignment(.center)
-                    .foregroundStyle(Color.accentColor)
+                    .foregroundStyle(.secondary)
             }
-            .buttonStyle(.plain)
-            .accessibilityLabel("생일 축하 노래 재생")
-            .accessibilityHint("눌러서 생일 축하 노래를 듣습니다")
 
             Text(appVersionText)
                 .foregroundStyle(.tertiary)
