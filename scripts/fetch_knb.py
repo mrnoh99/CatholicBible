@@ -46,9 +46,21 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import fetch_cbck_bible as fx          # fetch, BOOKS, url_code, SUP_ANNO_RE, SCRIPT_STYLE_RE …
 
 BASE = "https://bible.cbck.or.kr"
-EDITION_PATH = "Knb"
 REPO_ROOT = Path(__file__).resolve().parent.parent
 RES = REPO_ROOT / "CatholicBible" / "Resources"
+
+# 판본 id → (사이트 URL 경로, 책 범위). 범위 None=구약+신약 73권,
+# "nt"=신약 27권, "psalter"=시편만. (성경/주석성경과 같은 highlight-span
+#  마크업이므로 동일 파서로 받는다.)
+EDITIONS = {
+    "knb":     ("Knb",     None),
+    "b200":    ("200",     "nt"),       # 200주년 신약성서
+    "ncb":     ("Ncb",     None),
+    "nab":     ("Nab",     None),
+    "vulgata": ("Vulgata", None),
+    "pscms":   ("Pscms",   "psalter"),
+    "pslitur": ("Pslitur", "psalter"),
+}
 
 
 # /Knb 실제 마크업 (2024~ 사이트 기준):
@@ -112,17 +124,19 @@ def main() -> None:
     ap = argparse.ArgumentParser(
         description="성경(/Knb) 깨끗한 재수집 (소제목 분리)",
         formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--books", nargs="*", help="책 id (기본: 전체 73권)")
+    ap.add_argument("--edition", default="knb", choices=sorted(EDITIONS),
+                    help="수집할 판본 (기본: knb). 예: b200, ncb, nab …")
+    ap.add_argument("--books", nargs="*", help="책 id (기본: 판본 범위 전체)")
     ap.add_argument("--delay", type=float, default=0.8, help="요청 간 대기(초)")
     ap.add_argument("--dump-html", metavar="DIR", help="장 HTML을 이 폴더에 저장")
     ap.add_argument("--only-sample", action="store_true",
                     help="--dump-html 과 함께: 샘플 1장만 받는다")
-    ap.add_argument("--out", default=str(RES / "BibleText_knb_fresh.json"),
-                    help="본문 저장 경로(기본: BibleText_knb_fresh.json)")
-    ap.add_argument("--titles-out", default=str(RES / "knb_titles.json"),
-                    help="소제목 저장 경로")
+    ap.add_argument("--out", default=None,
+                    help="본문 저장 경로(기본: BibleText_<판본>_fresh.json)")
+    ap.add_argument("--titles-out", default=None,
+                    help="소제목 저장 경로(기본: <판본>_titles.json)")
     ap.add_argument("--verify", action="store_true",
-                    help="수집 후 현재 BibleText_knb.json 과 대조 리포트")
+                    help="수집 후 현재 BibleText_<판본>.json 과 대조 리포트")
     ap.add_argument("--insecure", action="store_true",
                     help="SSL 인증서 검증을 끈다(macOS 인증서 오류 최후 수단)")
     args = ap.parse_args()
@@ -130,8 +144,13 @@ def main() -> None:
     if args.insecure:
         fx.INSECURE = True
 
-    book_ids = args.books or [b[0] for b in fx.BOOKS]
+    edition_path, scope = EDITIONS[args.edition]
+    out_path = args.out or str(RES / f"BibleText_{args.edition}_fresh.json")
+    titles_path = args.titles_out or str(RES / f"{args.edition}_titles.json")
+
     id2meta = {b[0]: b for b in fx.BOOKS}
+    scoped = fx.scope_book_ids(scope) if scope else [b[0] for b in fx.BOOKS]
+    book_ids = args.books or scoped
 
     books_out: dict[str, dict[str, dict[str, str]]] = {}
     titles_out: dict[str, dict[str, list]] = {}
@@ -147,7 +166,7 @@ def main() -> None:
         chapters: dict[str, dict[str, str]] = {}
         tchapters: dict[str, list] = {}
         for ch in range(1, nchap + 1):
-            url = f"{BASE}/{EDITION_PATH}/{fx.url_code(bid)}/{ch}"
+            url = f"{BASE}/{edition_path}/{fx.url_code(bid)}/{ch}"
             try:
                 html = fx.fetch(url, delay=args.delay)
             except Exception as e:                      # noqa: BLE001
@@ -177,22 +196,22 @@ def main() -> None:
         if dump_dir and args.only_sample:
             break
 
-    out = {"translation": "성경", "source": f"{BASE}/{EDITION_PATH}",
+    out = {"translation": args.edition, "source": f"{BASE}/{edition_path}",
            "bookNames": {}, "books": books_out}
-    Path(args.out).write_text(
+    Path(out_path).write_text(
         json.dumps(out, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
-    Path(args.titles_out).write_text(
-        json.dumps({"source": f"{BASE}/{EDITION_PATH}", "titles": titles_out},
+    Path(titles_path).write_text(
+        json.dumps({"source": f"{BASE}/{edition_path}", "titles": titles_out},
                    ensure_ascii=False, indent=1), encoding="utf-8")
-    print(f"\n완료: {len(books_out)}권, 총 {grand}절 → {args.out}")
-    print(f"소제목 → {args.titles_out}")
+    print(f"\n완료: {len(books_out)}권, 총 {grand}절 → {out_path}")
+    print(f"소제목 → {titles_path}")
 
     if args.verify:
-        cur = RES / "BibleText_knb.json"
+        cur = RES / f"BibleText_{args.edition}.json"
         if cur.exists():
             _report_diff(json.loads(cur.read_text(encoding="utf-8"))["books"], books_out)
         else:
-            print("현재 BibleText_knb.json 이 없어 대조를 건너뜁니다.")
+            print(f"현재 {cur.name} 이 없어 대조를 건너뜁니다.")
 
 
 def _kc(t: str) -> str:
