@@ -18,24 +18,34 @@ USCCB 는 온라인 열람을 무료로 제공하지만, 본문·주석을 다�
 동일한 조건).
 
 ────────────────────────────────────────────────────────────────────────
-사용법 (Mac):
+사용법 — Windows (명령 프롬프트 / PowerShell):
 
-  # 0) 먼저 표본 1장의 HTML 구조를 저장해서 파서가 맞는지 확인한다.
-  #    (창세기 1장 → scripts/dump/gn_1.html)
+  REM 0) 먼저 표본 1장의 HTML 구조를 저장해서 파서가 맞는지 확인한다.
+  REM    (창세기 1장 → scripts\dump\gn_1.html)
+  python scripts\fetch_nabre_usccb.py --books gn --dump-html scripts\dump --only-sample
+  REM    → 이 gn_1.html 을 나에게 보내 주면 파서를 정확히 맞춘 뒤 전체를 돌린다.
+
+  REM 1) 특정 책만 시험 수집
+  python scripts\fetch_nabre_usccb.py --books gn jn ps
+
+  REM 2) 전체 73권 수집 (본문 + 주석)
+  python scripts\fetch_nabre_usccb.py
+
+  REM 3) 수집 후 현재 BibleText_nab.json 과 절 수 대조
+  python scripts\fetch_nabre_usccb.py --verify
+
+  REM 4) 인증서 오류(CERTIFICATE_VERIFY_FAILED) 시 최후 수단
+  python scripts\fetch_nabre_usccb.py --insecure
+
+  * 'python' 이 안 먹으면 'py' 를 쓴다:  py scripts\fetch_nabre_usccb.py ...
+  * 인증서 오류가 나면 먼저:  pip install certifi  (그래도 나면 --insecure)
+  * 한글이 깨지면(선택):  chcp 65001  로 콘솔을 UTF-8 로 바꾼다.
+
+사용법 — Mac/Linux:
+
   python3 scripts/fetch_nabre_usccb.py --books gn --dump-html scripts/dump --only-sample
-  #    → 이 gn_1.html 을 나에게 보내 주면 파서를 정확히 맞춘 뒤 전체를 돌린다.
-
-  # 1) 특정 책만 시험 수집
-  python3 scripts/fetch_nabre_usccb.py --books gn jn ps
-
-  # 2) 전체 73권 수집 (본문 + 주석)
-  python3 scripts/fetch_nabre_usccb.py
-
-  # 3) 수집 후 현재 BibleText_nab.json 과 절 수 대조
-  python3 scripts/fetch_nabre_usccb.py --verify
-
-  # 4) macOS 인증서 오류(CERTIFICATE_VERIFY_FAILED) 시 최후 수단
-  python3 scripts/fetch_nabre_usccb.py --insecure
+  python3 scripts/fetch_nabre_usccb.py --verify        # 전체 + 대조
+  python3 scripts/fetch_nabre_usccb.py --insecure      # 인증서 오류 시
 ────────────────────────────────────────────────────────────────────────
 
 주의: USCCB 사이트 URL '슬러그(slug)'는 아래 USCCB_SLUG 에 정의돼 있다.
