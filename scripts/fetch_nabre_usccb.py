@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""USCCB(미국 천주교주교회의) 공식 사이트에서 NABRE(New American Bible,
+r"""USCCB(미국 천주교주교회의) 공식 사이트에서 NABRE(New American Bible,
 Revised Edition) '본문 + 각주(footnotes) + 상호참조(cross-references)'를
 내려받아 CatholicBible 앱의 NAB 판본을 '본문+주석 세트'로 통째 교체한다.
 
@@ -60,13 +60,47 @@ import json
 import re
 import sys
 import time
+import urllib.request
 from html import unescape
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-import fetch_cbck_bible as fx      # fetch, BOOKS, scope_book_ids, INSECURE, _ssl…
+import fetch_cbck_bible as fx      # BOOKS, INSECURE, _ssl_context, _make_console_utf8
 
 BASE = "https://bible.usccb.org/bible"
+
+# USCCB 는 비-브라우저 요청을 403 으로 막는다. 실제 브라우저처럼 헤더를 갖춘다.
+BROWSER_HEADERS = {
+    "User-Agent": ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                   "AppleWebKit/537.36 (KHTML, like Gecko) "
+                   "Chrome/126.0.0.0 Safari/537.36"),
+    "Accept": ("text/html,application/xhtml+xml,application/xml;q=0.9,"
+               "image/avif,image/webp,image/apng,*/*;q=0.8"),
+    "Accept-Language": "en-US,en;q=0.9",
+    "Accept-Encoding": "identity",   # gzip 해제 로직 없이 평문으로 받는다
+    "Referer": "https://bible.usccb.org/bible",
+    "Upgrade-Insecure-Requests": "1",
+    "Sec-Fetch-Dest": "document",
+    "Sec-Fetch-Mode": "navigate",
+    "Sec-Fetch-Site": "same-origin",
+    "Connection": "keep-alive",
+}
+
+
+def _fetch(url: str, *, retries: int = 3, delay: float = 2.0) -> str:
+    """브라우저 헤더로 USCCB 페이지를 받는다(403 회피). SSL 은 fx 설정 재사용."""
+    ctx = fx._ssl_context()
+    last: Exception | None = None
+    for attempt in range(retries):
+        try:
+            req = urllib.request.Request(url, headers=BROWSER_HEADERS)
+            with urllib.request.urlopen(req, timeout=30, context=ctx) as resp:
+                charset = resp.headers.get_content_charset() or "utf-8"
+                return resp.read().decode(charset, errors="replace")
+        except Exception as err:                     # noqa: BLE001
+            last = err
+            time.sleep(delay * (attempt + 1))
+    raise RuntimeError(f"요청 실패: {url} ({last})")
 REPO_ROOT = Path(__file__).resolve().parent.parent
 RES = REPO_ROOT / "CatholicBible" / "Resources"
 
@@ -95,89 +129,126 @@ USCCB_SLUG: dict[str, str] = {
     "rv": "revelation",
 }
 
-# ── 파서 (USCCB Drupal 마크업 기준 — 표본 HTML로 확정할 것) ──────────────
+# ── 파서 (USCCB 실제 마크업, 표본 gn_1.html 로 확정) ─────────────────────
 #
-# USCCB NABRE 장 페이지의 본문은 대개 아래 형태다:
-#   <p>
-#     <a id="..."></a>
-#     <sup class="v">1</sup> In the beginning ...<sup class="notes"><a ...>*</a></sup>
-#     <sup class="v">2</sup> ...
-#   </p>
-# 각주는 페이지 아래 별도 영역(<aside>/<div> "footnotes")에 목록으로 온다:
-#   <li id="...footnote..."><a ...>* [1:1–2:3]</a> The account of creation ...</li>
+# 본문 영역 : <div class="contentarea" id="scribeI"> … </div>
+#   장 제목 : <h3 class="ch" id="01001000">CHAPTER 1</h3>
+#   소제목  : <strong>The Story of Creation.</strong>   (절 앞, 굵게)
+#   절 번호 : <span class="bcv">1</span>   (bcv=book-chapter-verse)
+#             — 절 본문은 이 다음부터 다음 bcv 앞까지. 시 구절은
+#               <p class="poi"/"poil"> 로 여러 줄에 걸치기도 한다.
+#   각주 마커     : <a class="fnref" href="#…"><sup>*</sup></a>   (본문 속)
+#   상호참조 마커 : <a class="enref" href="#…"><sup>a</sup></a>   (본문 속)
 #
-# 아래 정규식은 표본으로 검증·조정하기 쉽게 넉넉히 잡았다.
-TAG_RE = re.compile(r"<[^>]+>")
-BR_RE = re.compile(r"<br\s*/?>", re.I)
+# 페이지 아래(같은 contentarea 안):
+#   각주(주석)   : <p class="fn" id="01001001-1">* [1:1–2:3] 본문…</p>
+#                  (뒤따르는 id 없는 <p class="fn">·<p class="fncon">·<table>
+#                   는 같은 각주의 이어지는 문단)
+#   상호참조     : <p class="en" id="01001001-a">a. [1:1] Gn 2:1, 4; …</p>
+#
+#   id 8자리 = BBCCCVVV (책2·장3·절3). 절 번호는 뒤 3자리.
 
-# 본문 영역: <div class="content-body ..."> ~ 각주(footnotes) 직전.
-BODY_RE = re.compile(
-    r'<div[^>]*class="[^"]*\b(?:content-body|node__content|bibletext)\b[^"]*"[^>]*>(.*)',
-    re.S | re.I)
-FOOTNOTE_SPLIT_RE = re.compile(
-    r'<(?:aside|div|section)[^>]*\b(?:class|id)="[^"]*footnote', re.S | re.I)
+CONTENT_RE = re.compile(r'<div class="contentarea"[^>]*>', re.I)
+BCV_RE = re.compile(r'<span class="bcv">\s*(\d+)([a-z]?)\s*</span>')
+MARKER_RE = re.compile(r'<a class="(?:fnref|enref)"[^>]*>.*?</a>', re.S)
+STRONG_RE = re.compile(r'<strong>(.*?)</strong>', re.S)
+BLOCK_TAG_RE = re.compile(r'</?(?:p|br|h3|h4|td|tr|table|tbody|div)[^>]*>', re.I)
+INLINE_TAG_RE = re.compile(r'<[^>]+>')
+NOTE_REF_RE = re.compile(r'^\s*(?:[a-z]{1,2}\.\s*)?\*?\s*\[([^\]]+)\]\s*')
+FIRST_FN_RE = re.compile(r'<p class="(?:fn|fncon|en)\b', re.I)
 
-# 절 번호 마커: <sup class="v">N</sup> (일부 페이지는 class="verse" 또는 대소문자 차이)
-VERSE_RE = re.compile(
-    r'<sup[^>]*class="[^"]*\b(?:v|verse|versenum)\b[^"]*"[^>]*>\s*(\d+)\s*</sup>',
-    re.I)
-# 본문 속 주석/상호참조 위첨자 마커(별표·글자)는 평문에서 제거한다.
-SUP_MARK_RE = re.compile(r'<sup[^>]*>.*?</sup>', re.S)
-
-# 각주 목록 항목: <li ... id="...footnote...">...</li>
-NOTE_LI_RE = re.compile(
-    r'<li[^>]*id="([^"]*?footnote[^"]*?)"[^>]*>(.*?)</li>', re.S | re.I)
-# 각주 앞머리의 '* [1:1-2:3]' 또는 '[3:15]' 절 범위 라벨
-NOTE_REF_RE = re.compile(r'^\s*\*?\s*\[([^\]]+)\]\s*')
+# 각주/상호참조 문단 토큰 (문서 순서대로 훑는다)
+NOTE_TOKEN_RE = re.compile(
+    r'<p class="fn" id="(?P<vc>\d{8})-\d+">(?P<n1>.*?)</p>'
+    r'|<p class="fn">(?P<n2>.*?)</p>'
+    r'|<p class="fncon">(?P<n3>.*?)</p>'
+    r'|<table>(?P<tbl>.*?)</table>', re.S)
+XREF_RE = re.compile(r'<p class="en" id="(?P<vc>\d{8})-[a-z]+">(?P<x>.*?)</p>', re.S)
 
 
-def _text(frag: str) -> str:
-    frag = BR_RE.sub(" ", frag)
-    frag = TAG_RE.sub("", unescape(frag))
+def _clean(frag: str) -> str:
+    """절/주석 조각 → 평문 (마커·소제목 제거, 블록 태그는 공백으로)."""
+    frag = MARKER_RE.sub("", frag)              # 각주·상호참조 위첨자 제거
+    frag = STRONG_RE.sub("", frag)              # 소제목(굵은 글씨) 제거
+    frag = BLOCK_TAG_RE.sub(" ", frag)          # 문단·표 경계 → 공백
+    frag = INLINE_TAG_RE.sub("", frag)          # 남은 인라인 태그 제거
+    frag = unescape(frag)
     return re.sub(r"\s+", " ", frag).strip()
 
 
-def _body_region(html: str) -> str:
-    m = BODY_RE.search(html)
-    region = m.group(1) if m else html
-    cut = FOOTNOTE_SPLIT_RE.search(region)
-    return region[:cut.start()] if cut else region
-
-
-def _footnote_region(html: str) -> str:
-    cut = FOOTNOTE_SPLIT_RE.search(html)
-    return html[cut.start():] if cut else ""
+def _content(html: str) -> str:
+    m = CONTENT_RE.search(html)
+    return html[m.end():] if m else html
 
 
 def extract_verses(html: str) -> dict[str, str]:
-    """장 본문에서 {절: 평문}. 각주·상호참조 위첨자는 제거한다."""
-    region = _body_region(html)
+    """장 본문에서 {절: 평문}. 각주 문단(class=fn/en) 앞까지만 본다."""
+    region = _content(html)
+    cut = FIRST_FN_RE.search(region)
+    body = region[:cut.start()] if cut else region
     verses: dict[str, str] = {}
-    marks = list(VERSE_RE.finditer(region))
+    marks = list(BCV_RE.finditer(body))
     for i, m in enumerate(marks):
         start = m.end()
-        end = marks[i + 1].start() if i + 1 < len(marks) else len(region)
-        raw = region[start:end]
-        raw = SUP_MARK_RE.sub("", raw)          # 남은 주석·참조 마커 제거
-        text = _text(raw)
+        end = marks[i + 1].start() if i + 1 < len(marks) else len(body)
+        text = _clean(body[start:end])
         if text:
-            verses.setdefault(m.group(1), text)
+            verses.setdefault(m.group(1), text)  # 12a 같은 경우 앞선 것 우선
     return verses
 
 
-def extract_notes(html: str) -> list[dict]:
-    """페이지 각주 목록 → [{'ref': '1:1-2:3', 'text': '…'}]."""
-    region = _footnote_region(html)
+def extract_titles(html: str) -> list[dict]:
+    """소제목 [{'v':절, 'text':소제목}] — <strong> 다음 절에 귀속."""
+    region = _content(html)
+    cut = FIRST_FN_RE.search(region)
+    body = region[:cut.start()] if cut else region
     out: list[dict] = []
-    for m in NOTE_LI_RE.finditer(region):
-        txt = _text(m.group(2))
+    for m in STRONG_RE.finditer(body):
+        title = _clean(m.group(1))
+        if not title:
+            continue
+        nxt = BCV_RE.search(body, m.end())
+        if nxt:
+            out.append({"v": int(nxt.group(1)), "text": title.rstrip(".")})
+    return out
+
+
+def extract_notes(html: str) -> list[dict]:
+    """각주(주석) [{'v':절, 'ref':'1:1-2:3', 'text':'…'}].
+    id 있는 fn 문단이 새 주석, 이어지는 fn·fncon·table 문단은 그 주석에 합친다."""
+    region = _content(html)
+    out: list[dict] = []
+    cur: dict | None = None
+    for m in NOTE_TOKEN_RE.finditer(region):
+        if m.group("vc"):                        # 새 주석
+            txt = _clean(m.group("n1"))
+            ref = ""
+            r = NOTE_REF_RE.match(txt)
+            if r:
+                ref = r.group(1).strip()
+                txt = txt[r.end():].strip()
+            cur = {"v": int(m.group("vc")[5:8]), "ref": ref, "text": txt}
+            out.append(cur)
+        elif cur is not None:                     # 이어지는 문단
+            extra = _clean(m.group("n2") or m.group("n3") or m.group("tbl") or "")
+            if extra:
+                cur["text"] = (cur["text"] + " " + extra).strip()
+    return [n for n in out if n["text"]]
+
+
+def extract_xrefs(html: str) -> list[dict]:
+    """상호참조 [{'v':절, 'ref':'1:1', 'text':'Gn 2:1, 4; …'}]."""
+    region = _content(html)
+    out: list[dict] = []
+    for m in XREF_RE.finditer(region):
+        txt = _clean(m.group("x"))
         ref = ""
-        m = NOTE_REF_RE.match(txt)
-        if m:
-            ref = m.group(1).strip()
-            txt = txt[m.end():].strip()
+        r = NOTE_REF_RE.match(txt)
+        if r:
+            ref = r.group(1).strip()
+            txt = txt[r.end():].strip()
         if txt:
-            out.append({"ref": ref, "text": txt})
+            out.append({"v": int(m.group("vc")[5:8]), "ref": ref, "text": txt})
     return out
 
 
@@ -211,11 +282,13 @@ def main() -> None:
 
     books_out: dict[str, dict[str, dict[str, str]]] = {}
     notes_out: dict[str, dict[str, list]] = {}
+    xref_out: dict[str, dict[str, list]] = {}
+    title_out: dict[str, dict[str, list]] = {}
     dump_dir = Path(args.dump_html) if args.dump_html else None
     if dump_dir:
         dump_dir.mkdir(parents=True, exist_ok=True)
 
-    grand_v = grand_n = 0
+    grand_v = grand_n = grand_t = 0
     for bid in book_ids:
         if bid not in id2meta:
             print(f"  ! 알 수 없는 책 id: {bid}", file=sys.stderr); continue
@@ -225,10 +298,12 @@ def main() -> None:
         _, name, nchap = id2meta[bid]
         chapters: dict[str, dict[str, str]] = {}
         nchapters: dict[str, list] = {}
+        xchapters: dict[str, list] = {}
+        tchapters: dict[str, list] = {}
         for ch in range(1, nchap + 1):
             url = f"{BASE}/{slug}/{ch}"
             try:
-                html = fx.fetch(url, delay=args.delay)
+                html = _fetch(url, delay=args.delay)
             except Exception as e:                       # noqa: BLE001
                 print(f"  ✗ {name} {ch}장 요청 실패: {e}", file=sys.stderr)
                 continue
@@ -236,6 +311,8 @@ def main() -> None:
                 (dump_dir / f"{bid}_{ch}.html").write_text(html, encoding="utf-8")
             verses = extract_verses(html)
             notes = extract_notes(html)
+            xrefs = extract_xrefs(html)
+            titles = extract_titles(html)
             if verses:
                 chapters[str(ch)] = verses
                 grand_v += len(verses)
@@ -244,6 +321,11 @@ def main() -> None:
             if notes:
                 nchapters[str(ch)] = notes
                 grand_n += len(notes)
+            if xrefs:
+                xchapters[str(ch)] = xrefs
+            if titles:
+                tchapters[str(ch)] = titles
+                grand_t += len(titles)
             time.sleep(args.delay)
             if dump_dir and args.only_sample:
                 break
@@ -251,9 +333,14 @@ def main() -> None:
             books_out[bid] = chapters
         if nchapters:
             notes_out[bid] = nchapters
+        if xchapters:
+            xref_out[bid] = xchapters
+        if tchapters:
+            title_out[bid] = tchapters
         print(f"✓ {name}: {len(chapters)}/{nchap}장, "
               f"{sum(len(v) for v in chapters.values())}절, 주석 "
-              f"{sum(len(t) for t in nchapters.values())}개")
+              f"{sum(len(t) for t in nchapters.values())}개, 소제목 "
+              f"{sum(len(t) for t in tchapters.values())}개")
         if dump_dir and args.only_sample:
             break
 
@@ -263,12 +350,13 @@ def main() -> None:
         json.dumps(text, ensure_ascii=False, separators=(",", ":")),
         encoding="utf-8")
     notes = {"translation": "New American Bible, revised edition",
-             "source": BASE, "annotations": notes_out}
+             "source": BASE, "annotations": notes_out,
+             "crossrefs": xref_out, "titles": title_out}
     Path(notes_path).write_text(
         json.dumps(notes, ensure_ascii=False, separators=(",", ":")),
         encoding="utf-8")
     print(f"\n완료: {len(books_out)}권, 본문 {grand_v}절 → {out_path}")
-    print(f"      주석 {grand_n}개 → {notes_path}")
+    print(f"      주석 {grand_n}개, 소제목 {grand_t}개 → {notes_path}")
 
     if args.verify:
         cur = RES / "BibleText_nab.json"
