@@ -315,20 +315,30 @@ def _content(html: str) -> str:
     return html[m.end():] if m else html
 
 
-# USCCB 는 짧은 코드 슬러그(gn, 1kgs, 2mc, 2cor, sg …)를 쓴다. 아래 맵은
-# 전체 이름(genesis…)이라 단어형은 되지만 숫자 접두 책은 실패한다. 그래서
-# 실제 수집 때는 [맵의 값, 책 id(짧은 코드)] 순으로 1장을 시험해 되는 걸 쓴다.
+# 사용자가 --slug 로 강제 지정한 책→슬러그 (예: --slug 1chr=1chronicles).
+SLUG_OVERRIDE: dict[str, str] = {}
+
+
+# USCCB 는 짧은 코드 슬러그(gn, 1kgs, 2mc, 2cor, sg …)와 단어형(genesis…)을
+# 함께 받는다. 책마다 후보 여러 개를 1장으로 시험해 되는 슬러그를 고른다.
+# 후보: [--slug 지정, 맵의 값(전체이름), 책 id(짧은 코드), 하이픈 뺀 전체이름].
+def _slug_candidates(bid: str) -> list[str]:
+    full = USCCB_SLUG.get(bid) or ""
+    out: list[str] = []
+    for c in (SLUG_OVERRIDE.get(bid), full, bid, full.replace("-", "")):
+        if c and c not in out:
+            out.append(c)
+    return out
+
+
 def _resolve_slug(bid: str, delay: float) -> str | None:
-    tried: list[str] = []
-    for s in (USCCB_SLUG.get(bid), bid):
-        if not s or s in tried:
-            continue
-        tried.append(s)
+    for s in _slug_candidates(bid):
         try:
-            html = _fetch(f"{BASE}/{s}/1", retries=1, delay=delay)
-        except Exception:                            # noqa: BLE001
+            html = _fetch(f"{BASE}/{s}/1", retries=2, delay=delay)
+        except Exception:                            # noqa: BLE001 — 404 등: 다음 후보
             continue
-        if extract_verses(html):
+        # 성경 본문 페이지면 채택(족보 장처럼 절 파싱이 비어도 contentarea 로 인정).
+        if 'class="contentarea"' in html or extract_verses(html):
             return s
     return None
 
@@ -419,6 +429,8 @@ def main() -> None:
                          "pip install playwright && playwright install chromium")
     ap.add_argument("--headless", action="store_true",
                     help="--browser 와 함께: 크롬 창을 숨긴다(기본은 보이게)")
+    ap.add_argument("--slug", nargs="*", metavar="BID=SLUG", default=[],
+                    help="특정 책의 USCCB 슬러그를 강제 지정 (예: --slug 1chr=1chronicles)")
     ap.add_argument("--dump-html", metavar="DIR", help="장 HTML을 이 폴더에 저장")
     ap.add_argument("--only-sample", action="store_true",
                     help="--dump-html 과 함께: 표본 1장만 받는다")
@@ -437,6 +449,10 @@ def main() -> None:
     global BROWSER_MODE, BROWSER_HEADLESS
     BROWSER_MODE = args.browser
     BROWSER_HEADLESS = args.headless
+    for pair in args.slug:                            # 예: 1chr=1chronicles
+        if "=" in pair:
+            k, v = pair.split("=", 1)
+            SLUG_OVERRIDE[k.strip()] = v.strip()
 
     out_path = args.out or str(RES / "BibleText_nab_fresh.json")
     notes_path = args.notes_out or str(RES / "NabNotes_fresh.json")
