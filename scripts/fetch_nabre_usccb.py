@@ -41,6 +41,16 @@ USCCB 는 온라인 열람을 무료로 제공하지만, 본문·주석을 다�
   * 인증서 오류가 나면 먼저:  pip install certifi  (그래도 나면 --insecure)
   * 한글이 깨지면(선택):  chcp 65001  로 콘솔을 UTF-8 로 바꾼다.
 
+  ── 403(Forbidden) 대처 ──────────────────────────────────────────────
+  USCCB 는 빠른 연속 접속을 봇으로 보고 403 으로 막는다. 이 스크립트는
+  세션 쿠키 유지·홈 워밍업·403 시 긴 대기(20·40초…)·요청 간 지터로
+  이를 완화한다. 그래도 중간에 막히면 잠시(수 분) 쉬었다가 이어받기:
+
+    python scripts\fetch_nabre_usccb.py --resume            # 받은 책은 건너뜀
+    python scripts\fetch_nabre_usccb.py --resume --delay 3  # 더 느리게(안전)
+
+  책마다 중간 저장하므로 중단(Ctrl+C)돼도 진행분은 보존된다.
+
 사용법 — Mac/Linux:
 
   python3 scripts/fetch_nabre_usccb.py --books gn --dump-html scripts/dump --only-sample
@@ -56,10 +66,13 @@ USCCB 는 온라인 열람을 무료로 제공하지만, 본문·주석을 다�
 from __future__ import annotations
 
 import argparse
+import http.cookiejar
 import json
+import random
 import re
 import sys
 import time
+import urllib.error
 import urllib.request
 from html import unescape
 from pathlib import Path
@@ -69,7 +82,8 @@ import fetch_cbck_bible as fx      # BOOKS, INSECURE, _ssl_context, _make_consol
 
 BASE = "https://bible.usccb.org/bible"
 
-# USCCB 는 비-브라우저 요청을 403 으로 막는다. 실제 브라우저처럼 헤더를 갖춘다.
+# USCCB 는 비-브라우저·고빈도 요청을 403 으로 막는다. 실제 브라우저처럼
+# ① 브라우저 헤더 ② 세션 쿠키 유지 ③ 처음에 홈 워밍업 ④ 403 시 긴 백오프.
 BROWSER_HEADERS = {
     "User-Agent": ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
                    "AppleWebKit/537.36 (KHTML, like Gecko) "
@@ -86,18 +100,49 @@ BROWSER_HEADERS = {
     "Connection": "keep-alive",
 }
 
+_OPENER: urllib.request.OpenerDirector | None = None
 
-def _fetch(url: str, *, retries: int = 3, delay: float = 2.0) -> str:
-    """브라우저 헤더로 USCCB 페이지를 받는다(403 회피). SSL 은 fx 설정 재사용."""
-    ctx = fx._ssl_context()
+
+def _opener() -> urllib.request.OpenerDirector:
+    """쿠키를 유지하는 브라우저형 세션(오프너)을 한 번 만들어 재사용한다."""
+    global _OPENER
+    if _OPENER is None:
+        cj = http.cookiejar.CookieJar()
+        _OPENER = urllib.request.build_opener(
+            urllib.request.HTTPSHandler(context=fx._ssl_context()),
+            urllib.request.HTTPCookieProcessor(cj))
+    return _OPENER
+
+
+def warm_up() -> None:
+    """브라우저처럼 먼저 홈을 한 번 열어 세션 쿠키를 받는다(403 완화)."""
+    try:
+        _fetch(BASE, retries=1)
+        print("· USCCB 세션 워밍업 완료")
+    except Exception as e:          # noqa: BLE001
+        print(f"· 워밍업 실패(계속 진행): {e}", file=sys.stderr)
+
+
+def _fetch(url: str, *, retries: int = 4, delay: float = 2.0) -> str:
+    """브라우저 세션으로 USCCB 페이지를 받는다. 403 은 봇 감지이므로 길게 쉬고
+    재시도한다(20·40·60초…)."""
     last: Exception | None = None
     for attempt in range(retries):
         try:
             req = urllib.request.Request(url, headers=BROWSER_HEADERS)
-            with urllib.request.urlopen(req, timeout=30, context=ctx) as resp:
+            with _opener().open(req, timeout=30) as resp:
                 charset = resp.headers.get_content_charset() or "utf-8"
                 return resp.read().decode(charset, errors="replace")
-        except Exception as err:                     # noqa: BLE001
+        except urllib.error.HTTPError as err:
+            last = err
+            if err.code == 403:      # 소프트 차단 — 오래 쉰다
+                wait = 20 * (attempt + 1) + random.uniform(0, 5)
+                print(f"    403 — {wait:.0f}초 대기 후 재시도 "
+                      f"({attempt + 1}/{retries})", file=sys.stderr)
+                time.sleep(wait)
+            else:
+                time.sleep(delay * (attempt + 1))
+        except Exception as err:     # noqa: BLE001 — 네트워크 오류 등
             last = err
             time.sleep(delay * (attempt + 1))
     raise RuntimeError(f"요청 실패: {url} ({last})")
@@ -257,7 +302,11 @@ def main() -> None:
         description="USCCB NABRE 본문+주석 수집 (nab 판본 교체용)",
         formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--books", nargs="*", help="책 id (기본: 73권 전체)")
-    ap.add_argument("--delay", type=float, default=0.8, help="요청 간 대기(초)")
+    ap.add_argument("--delay", type=float, default=1.5, help="요청 간 대기(초)")
+    ap.add_argument("--resume", action="store_true",
+                    help="기존 *_fresh.json 을 읽어 이미 받은 책은 건너뛴다")
+    ap.add_argument("--no-warmup", action="store_true",
+                    help="시작 시 홈 워밍업(세션 쿠키 획득)을 하지 않는다")
     ap.add_argument("--dump-html", metavar="DIR", help="장 HTML을 이 폴더에 저장")
     ap.add_argument("--only-sample", action="store_true",
                     help="--dump-html 과 함께: 표본 1장만 받는다")
@@ -288,77 +337,105 @@ def main() -> None:
     if dump_dir:
         dump_dir.mkdir(parents=True, exist_ok=True)
 
+    # --resume: 기존 *_fresh.json 을 읽어 이어서 받는다(403 로 중단됐을 때).
+    if args.resume:
+        try:
+            books_out = json.loads(Path(out_path).read_text(encoding="utf-8"))["books"]
+            nf = json.loads(Path(notes_path).read_text(encoding="utf-8"))
+            notes_out = nf.get("annotations", {})
+            xref_out = nf.get("crossrefs", {})
+            title_out = nf.get("titles", {})
+            print(f"· 이어받기: 이미 {len(books_out)}권 있음 → 건너뜀")
+        except Exception:                            # noqa: BLE001
+            print("· 이어받기: 기존 파일 없음(처음부터 수집)")
+
+    def save() -> None:
+        text = {"translation": "New American Bible, revised edition",
+                "source": BASE, "bookNames": {}, "books": books_out}
+        Path(out_path).write_text(
+            json.dumps(text, ensure_ascii=False, separators=(",", ":")),
+            encoding="utf-8")
+        notes = {"translation": "New American Bible, revised edition",
+                 "source": BASE, "annotations": notes_out,
+                 "crossrefs": xref_out, "titles": title_out}
+        Path(notes_path).write_text(
+            json.dumps(notes, ensure_ascii=False, separators=(",", ":")),
+            encoding="utf-8")
+
+    if not (dump_dir and args.only_sample) and not args.no_warmup:
+        warm_up()
+
     grand_v = grand_n = grand_t = 0
-    for bid in book_ids:
-        if bid not in id2meta:
-            print(f"  ! 알 수 없는 책 id: {bid}", file=sys.stderr); continue
-        slug = USCCB_SLUG.get(bid)
-        if not slug:
-            print(f"  ! USCCB 슬러그 없음: {bid}", file=sys.stderr); continue
-        _, name, nchap = id2meta[bid]
-        chapters: dict[str, dict[str, str]] = {}
-        nchapters: dict[str, list] = {}
-        xchapters: dict[str, list] = {}
-        tchapters: dict[str, list] = {}
-        for ch in range(1, nchap + 1):
-            url = f"{BASE}/{slug}/{ch}"
-            try:
-                html = _fetch(url, delay=args.delay)
-            except Exception as e:                       # noqa: BLE001
-                print(f"  ✗ {name} {ch}장 요청 실패: {e}", file=sys.stderr)
-                continue
-            if dump_dir:
-                (dump_dir / f"{bid}_{ch}.html").write_text(html, encoding="utf-8")
-            verses = extract_verses(html)
-            notes = extract_notes(html)
-            xrefs = extract_xrefs(html)
-            titles = extract_titles(html)
-            if verses:
-                chapters[str(ch)] = verses
-                grand_v += len(verses)
-            else:
-                print(f"  ✗ {name} {ch}장: 절 추출 실패 ({url})", file=sys.stderr)
-            if notes:
-                nchapters[str(ch)] = notes
-                grand_n += len(notes)
-            if xrefs:
-                xchapters[str(ch)] = xrefs
-            if titles:
-                tchapters[str(ch)] = titles
-                grand_t += len(titles)
-            time.sleep(args.delay)
+    interrupted = False
+    try:
+        for bid in book_ids:
+            if bid not in id2meta:
+                print(f"  ! 알 수 없는 책 id: {bid}", file=sys.stderr); continue
+            if args.resume and bid in books_out:
+                continue                             # 이미 받은 책
+            slug = USCCB_SLUG.get(bid)
+            if not slug:
+                print(f"  ! USCCB 슬러그 없음: {bid}", file=sys.stderr); continue
+            _, name, nchap = id2meta[bid]
+            chapters: dict[str, dict[str, str]] = {}
+            nchapters: dict[str, list] = {}
+            xchapters: dict[str, list] = {}
+            tchapters: dict[str, list] = {}
+            for ch in range(1, nchap + 1):
+                url = f"{BASE}/{slug}/{ch}"
+                try:
+                    html = _fetch(url, delay=args.delay)
+                except Exception as e:               # noqa: BLE001
+                    print(f"  ✗ {name} {ch}장 요청 실패: {e}", file=sys.stderr)
+                    continue
+                if dump_dir:
+                    (dump_dir / f"{bid}_{ch}.html").write_text(html, encoding="utf-8")
+                verses = extract_verses(html)
+                notes = extract_notes(html)
+                xrefs = extract_xrefs(html)
+                titles = extract_titles(html)
+                if verses:
+                    chapters[str(ch)] = verses
+                    grand_v += len(verses)
+                else:
+                    print(f"  ✗ {name} {ch}장: 절 추출 실패 ({url})", file=sys.stderr)
+                if notes:
+                    nchapters[str(ch)] = notes
+                    grand_n += len(notes)
+                if xrefs:
+                    xchapters[str(ch)] = xrefs
+                if titles:
+                    tchapters[str(ch)] = titles
+                    grand_t += len(titles)
+                time.sleep(args.delay + random.uniform(0, args.delay))  # 지터
+                if dump_dir and args.only_sample:
+                    break
+            if chapters:
+                books_out[bid] = chapters
+            if nchapters:
+                notes_out[bid] = nchapters
+            if xchapters:
+                xref_out[bid] = xchapters
+            if tchapters:
+                title_out[bid] = tchapters
+            save()                                   # 책마다 중간 저장(중단 대비)
+            print(f"✓ {name}: {len(chapters)}/{nchap}장, "
+                  f"{sum(len(v) for v in chapters.values())}절, 주석 "
+                  f"{sum(len(t) for t in nchapters.values())}개, 소제목 "
+                  f"{sum(len(t) for t in tchapters.values())}개")
             if dump_dir and args.only_sample:
                 break
-        if chapters:
-            books_out[bid] = chapters
-        if nchapters:
-            notes_out[bid] = nchapters
-        if xchapters:
-            xref_out[bid] = xchapters
-        if tchapters:
-            title_out[bid] = tchapters
-        print(f"✓ {name}: {len(chapters)}/{nchap}장, "
-              f"{sum(len(v) for v in chapters.values())}절, 주석 "
-              f"{sum(len(t) for t in nchapters.values())}개, 소제목 "
-              f"{sum(len(t) for t in tchapters.values())}개")
-        if dump_dir and args.only_sample:
-            break
+    except KeyboardInterrupt:
+        interrupted = True
+        print("\n⚠️ 중단됨 — 지금까지 받은 분량을 저장합니다. "
+              "다시 --resume 로 이어서 받으세요.", file=sys.stderr)
 
-    text = {"translation": "New American Bible, revised edition",
-            "source": BASE, "bookNames": {}, "books": books_out}
-    Path(out_path).write_text(
-        json.dumps(text, ensure_ascii=False, separators=(",", ":")),
-        encoding="utf-8")
-    notes = {"translation": "New American Bible, revised edition",
-             "source": BASE, "annotations": notes_out,
-             "crossrefs": xref_out, "titles": title_out}
-    Path(notes_path).write_text(
-        json.dumps(notes, ensure_ascii=False, separators=(",", ":")),
-        encoding="utf-8")
-    print(f"\n완료: {len(books_out)}권, 본문 {grand_v}절 → {out_path}")
+    save()
+    tag = "중단(부분 저장)" if interrupted else "완료"
+    print(f"\n{tag}: {len(books_out)}권, 본문 {grand_v}절 → {out_path}")
     print(f"      주석 {grand_n}개, 소제목 {grand_t}개 → {notes_path}")
 
-    if args.verify:
+    if args.verify and not interrupted:
         cur = RES / "BibleText_nab.json"
         if cur.exists():
             _report_diff(json.loads(cur.read_text(encoding="utf-8"))["books"],
