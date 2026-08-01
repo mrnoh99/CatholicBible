@@ -108,10 +108,12 @@ struct AnnotatedReader: View {
                 chip(store.bookShortName(edition: edition, book: book))
             }
             Spacer(minLength: 0)
-            Button { showIntros = true } label: {
-                Label("입문", systemImage: "text.book.closed")
+            if knb.hasIntros(edition: editionID) {
+                Button { showIntros = true } label: {
+                    Label("입문", systemImage: "text.book.closed")
+                }
+                .font(.subheadline)
             }
-            .font(.subheadline)
         }
         .font(.subheadline)
         .padding(.horizontal, 16).padding(.vertical, 8)
@@ -133,7 +135,7 @@ struct AnnotatedReader: View {
 
     private var content: some View {
         let verses = chapter > 0 ? store.verses(edition: edition, book: book, chapter: chapter) : []
-        let notes = knb.notes(bookID: book.id, chapter: max(chapter, 1))
+        let notes = knb.notes(edition: editionID, bookID: book.id, chapter: max(chapter, 1))
         return Group {
             if wide {
                 HStack(spacing: 0) {
@@ -158,7 +160,7 @@ struct AnnotatedReader: View {
     }
 
     private var emptyNotesHint: String {
-        knb.hasData ? "이 장에는 주석이 없습니다." : "주석 자료 준비 중 — scripts/fetch_knbnotes.py 로 받으세요."
+        knb.hasData(edition: editionID) ? "이 장에는 주석이 없습니다." : "주석 자료 준비 중입니다."
     }
 
     private func textColumn(_ verses: [Verse]) -> some View {

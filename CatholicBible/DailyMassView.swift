@@ -98,7 +98,8 @@ struct DailyMassView: View {
                 let items = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems ?? []
                 func q(_ k: String) -> String? { items.first { $0.name == k }?.value }
                 if let b = q("b"), let cs = q("c"), let c = Int(cs), let n = q("n") {
-                    let note = knbNotes.notes(bookID: b, chapter: c).first { $0.n == n }
+                    let note = knbNotes.notes(edition: previewEditionID,
+                                              bookID: b, chapter: c).first { $0.n == n }
                     markerNote = MarkerNoteTarget(n: n, text: note?.text ?? "이 주석을 찾지 못했습니다.")
                 }
                 return .handled

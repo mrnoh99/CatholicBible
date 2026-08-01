@@ -54,6 +54,11 @@ struct Edition: Identifiable, Hashable, Sendable {
     let scope: EditionScope
     /// 본문 언어 코드 ("ko", "en", "la")
     let language: String
+
+    /// 본문 + 주석을 2단으로 보는 '주석 판본'인지 (주석성경·NABRE).
+    /// 주석 데이터는 KnbNotesStore 가 판본 id 별로 로드한다
+    /// (knbnotes→KnbNotes.json, nabre→NabreNotes.json).
+    var isAnnotated: Bool { id == "knbnotes" || id == "nabre" }
 }
 
 enum Editions {
@@ -82,6 +87,11 @@ enum Editions {
                 name: "NAB (New American Bible)", shortName: "NAB",
                 copyright: "New American Bible ⓒ Confraternity of Christian Doctrine",
                 summary: "미국 가톨릭 공용 영어 성경",
+                scope: .full, language: "en"),
+        Edition(id: "nabre", urlPath: "",
+                name: "NABRE (본문+주석)", shortName: "NABRE 주석",
+                copyright: "New American Bible, revised edition ⓒ Confraternity of Christian Doctrine (USCCB)",
+                summary: "미국 가톨릭 공용 영어 성경(개정판) + 주석·소제목",
                 scope: .full, language: "en"),
         Edition(id: "pscms", urlPath: "Pscms",
                 name: "최민순 역 시편", shortName: "최민순 시편",

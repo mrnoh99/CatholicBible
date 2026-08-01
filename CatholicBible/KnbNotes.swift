@@ -130,73 +130,89 @@ private struct KnbNotesFile: Decodable {
 @Observable
 final class KnbNotesStore {
     private(set) var isLoaded = false
-    private(set) var intros: [Introduction] = []
-    /// 책 id → 장 → 주석
-    private(set) var annotations: [String: [Int: [ChapterNote]]] = [:]
-    /// 책 id → 장 → 소제목
-    private(set) var titles: [String: [Int: [TitleItem]]] = [:]
 
-    var hasData: Bool { !intros.isEmpty || !annotations.isEmpty }
+    /// 판본 id → 데이터. 주석성경(knbnotes)·NABRE(nabre) 등 '주석 판본'별로 보관.
+    private var introsByEd: [String: [Introduction]] = [:]
+    private var annoByEd: [String: [String: [Int: [ChapterNote]]]] = [:]
+    private var titlesByEd: [String: [String: [Int: [TitleItem]]]] = [:]
+
+    /// 판본 id → 번들 리소스 파일명 (확장자 없이).
+    private static let resourceMap: [(edition: String, file: String)] = [
+        ("knbnotes", "KnbNotes"),
+        ("nabre", "NabreNotes"),
+    ]
+
+    // 하위호환: 인자 없는 접근자는 주석성경(knbnotes) 기준.
+    var intros: [Introduction] { introsByEd["knbnotes"] ?? [] }
+    var bibleIntro: Introduction? { intros.first { $0.level == .bible } }
+    var hasData: Bool { hasData(edition: "knbnotes") }
+
+    func hasData(edition: String) -> Bool {
+        !(introsByEd[edition]?.isEmpty ?? true) || !(annoByEd[edition]?.isEmpty ?? true)
+    }
+
+    func hasIntros(edition: String) -> Bool { !(introsByEd[edition]?.isEmpty ?? true) }
 
     func load() async {
         guard !isLoaded else { return }
-        guard let url = Bundle.main.url(forResource: "KnbNotes", withExtension: "json") else {
-            isLoaded = true
-            return
-        }
-        let parsed: (intros: [Introduction],
-                     anno: [String: [Int: [ChapterNote]]],
-                     titles: [String: [Int: [TitleItem]]])? =
-            await Task.detached(priority: .userInitiated) {
-                guard let data = try? Data(contentsOf: url),
-                      let file = try? JSONDecoder().decode(KnbNotesFile.self, from: data)
-                else { return nil }
+        let parsed = await Task.detached(priority: .userInitiated) {
+            () -> (intros: [String: [Introduction]],
+                   anno: [String: [String: [Int: [ChapterNote]]]],
+                   titles: [String: [String: [Int: [TitleItem]]]]) in
+            var introsByEd: [String: [Introduction]] = [:]
+            var annoByEd: [String: [String: [Int: [ChapterNote]]]] = [:]
+            var titlesByEd: [String: [String: [Int: [TitleItem]]]] = [:]
+            for (edition, file) in Self.resourceMap {
+                guard let url = Bundle.main.url(forResource: file, withExtension: "json"),
+                      let data = try? Data(contentsOf: url),
+                      let f = try? JSONDecoder().decode(KnbNotesFile.self, from: data)
+                else { continue }
+                introsByEd[edition] = f.intros ?? []
                 var anno: [String: [Int: [ChapterNote]]] = [:]
-                for (bookID, chapters) in file.annotations ?? [:] {
+                for (bookID, chapters) in f.annotations ?? [:] {
                     var map: [Int: [ChapterNote]] = [:]
                     for (chKey, notes) in chapters where Int(chKey) != nil {
                         map[Int(chKey)!] = notes
                     }
                     anno[bookID] = map
                 }
+                annoByEd[edition] = anno
                 var titleMap: [String: [Int: [TitleItem]]] = [:]
-                for (bookID, chapters) in file.titles ?? [:] {
+                for (bookID, chapters) in f.titles ?? [:] {
                     var map: [Int: [TitleItem]] = [:]
                     for (chKey, items) in chapters where Int(chKey) != nil {
                         map[Int(chKey)!] = items
                     }
                     titleMap[bookID] = map
                 }
-                return (file.intros ?? [], anno, titleMap)
-            }.value
-        if let parsed {
-            intros = parsed.intros
-            annotations = parsed.anno
-            titles = parsed.titles
-        }
+                titlesByEd[edition] = titleMap
+            }
+            return (introsByEd, annoByEd, titlesByEd)
+        }.value
+        introsByEd = parsed.intros
+        annoByEd = parsed.anno
+        titlesByEd = parsed.titles
         isLoaded = true
     }
 
-    // MARK: 조회
+    // MARK: 조회 (edition 기본값 = 주석성경)
 
-    func notes(bookID: String, chapter: Int) -> [ChapterNote] {
-        annotations[bookID]?[chapter] ?? []
+    func notes(edition: String = "knbnotes", bookID: String, chapter: Int) -> [ChapterNote] {
+        annoByEd[edition]?[bookID]?[chapter] ?? []
     }
 
     /// 절 번호 → 그 절 앞에 놓일 소제목
-    func titlesByVerse(bookID: String, chapter: Int) -> [Int: String] {
+    func titlesByVerse(edition: String = "knbnotes", bookID: String, chapter: Int) -> [Int: String] {
         var map: [Int: String] = [:]
-        for item in titles[bookID]?[chapter] ?? [] { map[item.v] = item.text }
+        for item in titlesByEd[edition]?[bookID]?[chapter] ?? [] { map[item.v] = item.text }
         return map
     }
 
-    func intro(forBook bookID: String) -> Introduction? {
-        intros.first { $0.level == .book && $0.bookID == bookID }
+    func intro(edition: String = "knbnotes", forBook bookID: String) -> Introduction? {
+        introsByEd[edition]?.first { $0.level == .book && $0.bookID == bookID }
     }
 
-    var bibleIntro: Introduction? { intros.first { $0.level == .bible } }
-
-    func intros(of level: IntroLevel) -> [Introduction] {
-        intros.filter { $0.level == level }
+    func intros(edition: String = "knbnotes", of level: IntroLevel) -> [Introduction] {
+        (introsByEd[edition] ?? []).filter { $0.level == level }
     }
 }

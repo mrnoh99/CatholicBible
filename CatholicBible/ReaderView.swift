@@ -42,9 +42,9 @@ struct ReaderView: View {
     private var canDual: Bool { hSize == .regular }
     /// 좁은 화면(iPhone)에서는 항상 한 페이지
     private var layout: ReaderLayout { canDual ? readingState.readerLayout : .single }
-    /// 주석 성경 전용 본문|주석 화면을 쓸지 (비교 모드가 아니면 사용)
+    /// 주석 판본(주석성경·NABRE) 본문|주석 화면을 쓸지 (비교 모드가 아니면 사용)
     private var showAnnotated: Bool {
-        readingState.selectedEditionID == "knbnotes"
+        (Editions.edition(readingState.selectedEditionID)?.isAnnotated ?? false)
             && !(canDual && readingState.readerLayout == .compare)
     }
 
@@ -126,7 +126,8 @@ struct ReaderView: View {
             let items = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems ?? []
             func q(_ k: String) -> String? { items.first { $0.name == k }?.value }
             if let b = q("b"), let cs = q("c"), let c = Int(cs), let n = q("n") {
-                let note = knbNotes.notes(bookID: b, chapter: c).first { $0.n == n }
+                let note = knbNotes.notes(edition: readingState.selectedEditionID,
+                                          bookID: b, chapter: c).first { $0.n == n }
                 markerNote = MarkerNoteTarget(n: n, text: note?.text ?? "이 주석을 찾지 못했습니다.")
             }
             return .handled
@@ -161,8 +162,8 @@ struct ReaderView: View {
     @ToolbarContentBuilder
     private var readerToolbar: some ToolbarContent {
         ToolbarItemGroup(placement: .primaryAction) {
-            if canDual && readingState.selectedEditionID == "knbnotes" {
-                // 주석 성경: 본문·주석 vs 판본 비교
+            if canDual && (Editions.edition(readingState.selectedEditionID)?.isAnnotated ?? false) {
+                // 주석 판본(주석성경·NABRE): 본문·주석 vs 판본 비교
                 Menu {
                     Button {
                         readingState.readerLayout = .single
@@ -240,11 +241,11 @@ struct ReaderPane: View {
     private var book: BibleBook { Bible.book(bookID) ?? Bible.books[0] }
 
     /// 「성경」·「주석 성경」(같은 주교회의 번역)은 절 앞에 소제목을 보여 준다.
-    private var showsTitles: Bool { edition.id == "knb" || edition.id == "knbnotes" }
+    private var showsTitles: Bool { edition.id == "knb" || edition.isAnnotated }
     /// 절 번호 → 그 절 앞에 놓일 소제목(각주 마커는 지운다).
     private var titleMap: [Int: String] {
         guard showsTitles, chapter > 0 else { return [:] }
-        return knbNotes.titlesByVerse(bookID: book.id, chapter: chapter)
+        return knbNotes.titlesByVerse(edition: edition.id, bookID: book.id, chapter: chapter)
             .mapValues { AnnotationMarkup.stripMarkers($0) }
     }
 
@@ -561,10 +562,10 @@ struct SpreadReader: View {
     private var pages: [[Verse]] { paginate(verses, size: contentSize) }
     private var spreadCount: Int { max(1, Int(ceil(Double(pages.count) / 2.0))) }
 
-    private var showsTitles: Bool { edition.id == "knb" || edition.id == "knbnotes" }
+    private var showsTitles: Bool { edition.id == "knb" || edition.isAnnotated }
     private var titleMap: [Int: String] {
         guard showsTitles, chapter > 0 else { return [:] }
-        return knbNotes.titlesByVerse(bookID: book.id, chapter: chapter)
+        return knbNotes.titlesByVerse(edition: edition.id, bookID: book.id, chapter: chapter)
             .mapValues { AnnotationMarkup.stripMarkers($0) }
     }
 
