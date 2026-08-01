@@ -159,10 +159,16 @@ def _browser_close() -> None:
 
 def _fetch_browser(url: str) -> str:
     page = _browser_page()
-    resp = page.goto(url, wait_until="domcontentloaded", timeout=45000)
-    if resp is not None and resp.status == 403:
+    # 원본 응답 HTML 을 읽는다. page.content() 는 USCCB 의 JS 가 각주 문단
+    # (<p class="fn">)을 치워 버린 '변형된 DOM' 이라 주석이 사라진다.
+    resp = page.goto(url, wait_until="commit", timeout=45000)
+    if resp is None:
+        raise RuntimeError("응답 없음")
+    if resp.status == 403:
         raise urllib.error.HTTPError(url, 403, "Forbidden", None, None)
-    return page.content()
+    if resp.status == 404:
+        raise urllib.error.HTTPError(url, 404, "Not Found", None, None)
+    return resp.text()
 
 
 def _opener() -> urllib.request.OpenerDirector:
@@ -307,6 +313,24 @@ def _clean(frag: str) -> str:
 def _content(html: str) -> str:
     m = CONTENT_RE.search(html)
     return html[m.end():] if m else html
+
+
+# USCCB 는 짧은 코드 슬러그(gn, 1kgs, 2mc, 2cor, sg …)를 쓴다. 아래 맵은
+# 전체 이름(genesis…)이라 단어형은 되지만 숫자 접두 책은 실패한다. 그래서
+# 실제 수집 때는 [맵의 값, 책 id(짧은 코드)] 순으로 1장을 시험해 되는 걸 쓴다.
+def _resolve_slug(bid: str, delay: float) -> str | None:
+    tried: list[str] = []
+    for s in (USCCB_SLUG.get(bid), bid):
+        if not s or s in tried:
+            continue
+        tried.append(s)
+        try:
+            html = _fetch(f"{BASE}/{s}/1", retries=1, delay=delay)
+        except Exception:                            # noqa: BLE001
+            continue
+        if extract_verses(html):
+            return s
+    return None
 
 
 def extract_verses(html: str) -> dict[str, str]:
@@ -461,9 +485,6 @@ def main() -> None:
         for bid in book_ids:
             if bid not in id2meta:
                 print(f"  ! 알 수 없는 책 id: {bid}", file=sys.stderr); continue
-            slug = USCCB_SLUG.get(bid)
-            if not slug:
-                print(f"  ! USCCB 슬러그 없음: {bid}", file=sys.stderr); continue
             _, name, nchap = id2meta[bid]
             # 부분 진행분이 남아 있으면 이어서 채운다(장 단위 이어받기).
             chapters = books_out.setdefault(bid, {})
@@ -472,6 +493,10 @@ def main() -> None:
             tchapters = title_out.setdefault(bid, {})
             if args.resume and len(chapters) >= nchap:
                 continue                             # 이미 다 받은 책
+            slug = _resolve_slug(bid, args.delay)
+            if not slug:
+                print(f"  ! USCCB 슬러그를 못 찾음(건너뜀): {bid}", file=sys.stderr)
+                continue
             for ch in range(1, nchap + 1):
                 if args.resume and str(ch) in chapters:
                     continue                         # 이미 받은 장
