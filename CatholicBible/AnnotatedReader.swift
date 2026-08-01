@@ -135,13 +135,16 @@ struct AnnotatedReader: View {
 
     private var content: some View {
         let verses = chapter > 0 ? store.verses(edition: edition, book: book, chapter: chapter) : []
-        let notes = knb.notes(edition: editionID, bookID: book.id, chapter: max(chapter, 1))
+        let ch = max(chapter, 1)
+        let notes = knb.notes(edition: editionID, bookID: book.id, chapter: ch)
+        let xrefs = knb.crossrefs(edition: editionID, bookID: book.id, chapter: ch)
         return Group {
             if wide {
                 HStack(spacing: 0) {
                     textColumn(verses)
                     Divider()
-                    NotesColumn(title: "주석", notes: notes, emptyHint: emptyNotesHint)
+                    AnnotationsPane(notes: notes, xrefs: xrefs,
+                                    emptyHint: emptyNotesHint, wide: true)
                         .frame(maxWidth: .infinity)
                 }
             } else {
@@ -149,7 +152,8 @@ struct AnnotatedReader: View {
                     VStack(alignment: .leading, spacing: 0) {
                         versesBlock(verses)
                         Divider().padding(.vertical, 16)
-                        NotesList(title: "주석", notes: notes, emptyHint: emptyNotesHint)
+                        AnnotationsPane(notes: notes, xrefs: xrefs,
+                                        emptyHint: emptyNotesHint)
                     }
                     .frame(maxWidth: 720, alignment: .leading)
                     .padding(.horizontal, 28).padding(.bottom, 40)
@@ -321,6 +325,50 @@ struct NotesColumn: View {
     }
 }
 
+/// 주석 / 상호참조 탭 패널. 상호참조(xrefs)가 있으면 세그먼트로 전환한다.
+/// wide=true 면 자체 스크롤·배경을 가진 오른쪽 칼럼, false 면 인라인(상위 스크롤).
+struct AnnotationsPane: View {
+    let notes: [ChapterNote]
+    let xrefs: [ChapterNote]
+    let emptyHint: String
+    var wide: Bool = false
+    @State private var tab = 0        // 0=주석, 1=상호참조
+    @Environment(ReaderSettings.self) private var settings
+
+    private var hasXrefs: Bool { !xrefs.isEmpty }
+
+    @ViewBuilder private var inner: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            if hasXrefs {
+                Picker("보기", selection: $tab) {
+                    Text("주석").tag(0)
+                    Text("상호참조").tag(1)
+                }
+                .pickerStyle(.segmented)
+                .labelsHidden()
+                NotesList(title: "",
+                          notes: tab == 1 ? xrefs : notes,
+                          emptyHint: tab == 1 ? "이 장에는 상호참조가 없습니다." : emptyHint)
+            } else {
+                NotesList(title: "주석", notes: notes, emptyHint: emptyHint)
+            }
+        }
+    }
+
+    var body: some View {
+        if wide {
+            ScrollView {
+                inner
+                    .padding(.horizontal, 22).padding(.vertical, 24)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .background(settings.theme.background)
+        } else {
+            inner
+        }
+    }
+}
+
 /// 주석 목록 본문(제목 + 항목들)
 struct NotesList: View {
     let title: String
@@ -330,9 +378,11 @@ struct NotesList: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            Text(title)
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(settings.theme.secondary)
+            if !title.isEmpty {
+                Text(title)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(settings.theme.secondary)
+            }
             if notes.isEmpty {
                 Text(emptyHint)
                     .font(.footnote)

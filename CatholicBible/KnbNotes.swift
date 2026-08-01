@@ -121,6 +121,8 @@ private struct KnbNotesFile: Decodable {
     let intros: [Introduction]?
     /// 책 id → 장(문자열) → 주석 목록
     let annotations: [String: [String: [ChapterNote]]]?
+    /// 책 id → 장(문자열) → 상호참조 목록 (NABRE 등)
+    let crossrefs: [String: [String: [ChapterNote]]]?
     /// 책 id → 장(문자열) → 소제목 목록
     let titles: [String: [String: [TitleItem]]]?
 }
@@ -134,6 +136,7 @@ final class KnbNotesStore {
     /// 판본 id → 데이터. 주석성경(knbnotes)·NABRE(nabre) 등 '주석 판본'별로 보관.
     private var introsByEd: [String: [Introduction]] = [:]
     private var annoByEd: [String: [String: [Int: [ChapterNote]]]] = [:]
+    private var xrefByEd: [String: [String: [Int: [ChapterNote]]]] = [:]
     private var titlesByEd: [String: [String: [Int: [TitleItem]]]] = [:]
 
     /// 판본 id → 번들 리소스 파일명 (확장자 없이).
@@ -158,9 +161,23 @@ final class KnbNotesStore {
         let parsed = await Task.detached(priority: .userInitiated) {
             () -> (intros: [String: [Introduction]],
                    anno: [String: [String: [Int: [ChapterNote]]]],
+                   xref: [String: [String: [Int: [ChapterNote]]]],
                    titles: [String: [String: [Int: [TitleItem]]]]) in
+            // 책 id → 장(문자열) → 목록  을  장(Int) 키로 변환
+            func byIntCh<T>(_ src: [String: [String: [T]]]?) -> [String: [Int: [T]]] {
+                var out: [String: [Int: [T]]] = [:]
+                for (bookID, chapters) in src ?? [:] {
+                    var map: [Int: [T]] = [:]
+                    for (chKey, items) in chapters where Int(chKey) != nil {
+                        map[Int(chKey)!] = items
+                    }
+                    out[bookID] = map
+                }
+                return out
+            }
             var introsByEd: [String: [Introduction]] = [:]
             var annoByEd: [String: [String: [Int: [ChapterNote]]]] = [:]
+            var xrefByEd: [String: [String: [Int: [ChapterNote]]]] = [:]
             var titlesByEd: [String: [String: [Int: [TitleItem]]]] = [:]
             for (edition, file) in Self.resourceMap {
                 guard let url = Bundle.main.url(forResource: file, withExtension: "json"),
@@ -168,29 +185,15 @@ final class KnbNotesStore {
                       let f = try? JSONDecoder().decode(KnbNotesFile.self, from: data)
                 else { continue }
                 introsByEd[edition] = f.intros ?? []
-                var anno: [String: [Int: [ChapterNote]]] = [:]
-                for (bookID, chapters) in f.annotations ?? [:] {
-                    var map: [Int: [ChapterNote]] = [:]
-                    for (chKey, notes) in chapters where Int(chKey) != nil {
-                        map[Int(chKey)!] = notes
-                    }
-                    anno[bookID] = map
-                }
-                annoByEd[edition] = anno
-                var titleMap: [String: [Int: [TitleItem]]] = [:]
-                for (bookID, chapters) in f.titles ?? [:] {
-                    var map: [Int: [TitleItem]] = [:]
-                    for (chKey, items) in chapters where Int(chKey) != nil {
-                        map[Int(chKey)!] = items
-                    }
-                    titleMap[bookID] = map
-                }
-                titlesByEd[edition] = titleMap
+                annoByEd[edition] = byIntCh(f.annotations)
+                xrefByEd[edition] = byIntCh(f.crossrefs)
+                titlesByEd[edition] = byIntCh(f.titles)
             }
-            return (introsByEd, annoByEd, titlesByEd)
+            return (introsByEd, annoByEd, xrefByEd, titlesByEd)
         }.value
         introsByEd = parsed.intros
         annoByEd = parsed.anno
+        xrefByEd = parsed.xref
         titlesByEd = parsed.titles
         isLoaded = true
     }
@@ -200,6 +203,14 @@ final class KnbNotesStore {
     func notes(edition: String = "knbnotes", bookID: String, chapter: Int) -> [ChapterNote] {
         annoByEd[edition]?[bookID]?[chapter] ?? []
     }
+
+    /// 상호참조(병행구/평행 구절). NABRE 등에서 제공.
+    func crossrefs(edition: String, bookID: String, chapter: Int) -> [ChapterNote] {
+        xrefByEd[edition]?[bookID]?[chapter] ?? []
+    }
+
+    /// 이 판본이 상호참조 데이터를 갖는가(탭 노출 여부).
+    func hasCrossrefs(edition: String) -> Bool { !(xrefByEd[edition]?.isEmpty ?? true) }
 
     /// 절 번호 → 그 절 앞에 놓일 소제목
     func titlesByVerse(edition: String = "knbnotes", bookID: String, chapter: Int) -> [Int: String] {
