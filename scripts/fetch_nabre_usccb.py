@@ -283,10 +283,15 @@ USCCB_SLUG: dict[str, str] = {
 #   id 8자리 = BBCCCVVV (책2·장3·절3). 절 번호는 뒤 3자리.
 
 CONTENT_RE = re.compile(r'<div class="contentarea"[^>]*>', re.I)
-BCV_RE = re.compile(r'<span class="bcv">\s*(\d+)([a-z]?)\s*</span>')
+# 절 경계 앵커(모든 마크업 공통): <a name="BBCCCVVV"> 또는 <p … id="BBCCCVVV">.
+#   - bcv 방식(창세기): <a name="01001001"><span class="bcv">1</span>본문
+#   - 붙은번호 방식(역대기): <a name="13001001">1본문  (bcv 스팬 없이 번호가 붙음)
+#   - 시 구절: 같은 <a name> 이 여러 <p class="pof/poi/…"> 에 반복
+VMARK_RE = re.compile(r'<(?:a\s+name|p\b[^>]*?\bid)="(\d{8})"[^>]*>', re.I)
+BCV_SPAN_RE = re.compile(r'<span class="bcv">.*?</span>', re.S)
 MARKER_RE = re.compile(r'<a class="(?:fnref|enref)"[^>]*>.*?</a>', re.S)
 STRONG_RE = re.compile(r'<strong>(.*?)</strong>', re.S)
-BLOCK_TAG_RE = re.compile(r'</?(?:p|br|h3|h4|td|tr|table|tbody|div)[^>]*>', re.I)
+BLOCK_TAG_RE = re.compile(r'</?(?:p|br|h2|h3|h4|td|tr|table|tbody|div)[^>]*>', re.I)
 INLINE_TAG_RE = re.compile(r'<[^>]+>')
 NOTE_REF_RE = re.compile(r'^\s*(?:[a-z]{1,2}\.\s*)?\*?\s*\[([^\]]+)\]\s*')
 FIRST_FN_RE = re.compile(r'<p class="(?:fn|fncon|en)\b', re.I)
@@ -301,8 +306,9 @@ XREF_RE = re.compile(r'<p class="en" id="(?P<vc>\d{8})-[a-z]+">(?P<x>.*?)</p>', 
 
 
 def _clean(frag: str) -> str:
-    """절/주석 조각 → 평문 (마커·소제목 제거, 블록 태그는 공백으로)."""
+    """절/주석 조각 → 평문 (마커·bcv번호·소제목 제거, 블록 태그는 공백으로)."""
     frag = MARKER_RE.sub("", frag)              # 각주·상호참조 위첨자 제거
+    frag = BCV_SPAN_RE.sub("", frag)            # bcv 절번호 스팬 통째 제거
     frag = STRONG_RE.sub("", frag)              # 소제목(굵은 글씨) 제거
     frag = BLOCK_TAG_RE.sub(" ", frag)          # 문단·표 경계 → 공백
     frag = INLINE_TAG_RE.sub("", frag)          # 남은 인라인 태그 제거
@@ -344,23 +350,30 @@ def _resolve_slug(bid: str, delay: float) -> str | None:
 
 
 def extract_verses(html: str) -> dict[str, str]:
-    """장 본문에서 {절: 평문}. 각주 문단(class=fn/en) 앞까지만 본다."""
+    """장 본문에서 {절: 평문}. 각주 문단(class=fn/en) 앞까지만 본다.
+    절 경계는 <a name>/<p id> 앵커(BBCCCVVV)로 잡는다. 붙은번호 방식은
+    본문 앞에 붙은 절번호를 떼고, 시 구절처럼 같은 절이 여러 번 나오면 잇는다."""
     region = _content(html)
     cut = FIRST_FN_RE.search(region)
     body = region[:cut.start()] if cut else region
-    verses: dict[str, str] = {}
-    marks = list(BCV_RE.finditer(body))
+    marks = list(VMARK_RE.finditer(body))
+    verses: dict[int, str] = {}
     for i, m in enumerate(marks):
-        start = m.end()
-        end = marks[i + 1].start() if i + 1 < len(marks) else len(body)
-        text = _clean(body[start:end])
+        v = int(m.group(1)[5:8])
+        if v == 0:
+            continue
+        seg = body[m.end(): marks[i + 1].start() if i + 1 < len(marks) else len(body)]
+        is_bcv = seg.lstrip().startswith('<span class="bcv"')
+        text = _clean(seg)
+        if not is_bcv and text.startswith(str(v)):   # 붙은번호 방식: 앞 번호 제거
+            text = text[len(str(v)):].lstrip()
         if text:
-            verses.setdefault(m.group(1), text)  # 12a 같은 경우 앞선 것 우선
-    return verses
+            verses[v] = (verses[v] + " " + text).strip() if v in verses else text
+    return {str(k): verses[k] for k in sorted(verses)}
 
 
 def extract_titles(html: str) -> list[dict]:
-    """소제목 [{'v':절, 'text':소제목}] — <strong> 다음 절에 귀속."""
+    """소제목 [{'v':절, 'text':소제목}] — <strong> 다음 절 앵커에 귀속."""
     region = _content(html)
     cut = FIRST_FN_RE.search(region)
     body = region[:cut.start()] if cut else region
@@ -369,9 +382,11 @@ def extract_titles(html: str) -> list[dict]:
         title = _clean(m.group(1))
         if not title:
             continue
-        nxt = BCV_RE.search(body, m.end())
+        nxt = VMARK_RE.search(body, m.start())    # <strong> 를 감싼/뒤따르는 앵커
         if nxt:
-            out.append({"v": int(nxt.group(1)), "text": title.rstrip(".")})
+            v = int(nxt.group(1)[5:8])
+            if v > 0:
+                out.append({"v": v, "text": title.rstrip(".")})
     return out
 
 
@@ -431,6 +446,10 @@ def main() -> None:
                     help="--browser 와 함께: 크롬 창을 숨긴다(기본은 보이게)")
     ap.add_argument("--slug", nargs="*", metavar="BID=SLUG", default=[],
                     help="특정 책의 USCCB 슬러그를 강제 지정 (예: --slug 1chr=1chronicles)")
+    ap.add_argument("--from-dir", metavar="DIR", default=None,
+                    help="네트워크 없이, DIR 의 <책id>_<장>.html 파일을 읽어 파싱한다"
+                         "(403 우회: 브라우저로 저장한 페이지를 여기서 처리). "
+                         "--resume 와 함께 쓰면 기존 결과에 병합된다.")
     ap.add_argument("--dump-html", metavar="DIR", help="장 HTML을 이 폴더에 저장")
     ap.add_argument("--only-sample", action="store_true",
                     help="--dump-html 과 함께: 표본 1장만 받는다")
@@ -493,7 +512,7 @@ def main() -> None:
             json.dumps(notes, ensure_ascii=False, separators=(",", ":")),
             encoding="utf-8")
 
-    if not (dump_dir and args.only_sample) and not args.no_warmup:
+    if not (dump_dir and args.only_sample) and not args.no_warmup and not args.from_dir:
         warm_up()
 
     interrupted = False
@@ -507,24 +526,30 @@ def main() -> None:
             nchapters = notes_out.setdefault(bid, {})
             xchapters = xref_out.setdefault(bid, {})
             tchapters = title_out.setdefault(bid, {})
-            if args.resume and len(chapters) >= nchap:
+            if args.resume and not args.from_dir and len(chapters) >= nchap:
                 continue                             # 이미 다 받은 책
-            slug = _resolve_slug(bid, args.delay)
-            if not slug:
+            slug = None if args.from_dir else _resolve_slug(bid, args.delay)
+            if not args.from_dir and not slug:
                 print(f"  ! USCCB 슬러그를 못 찾음(건너뜀): {bid}", file=sys.stderr)
                 continue
             for ch in range(1, nchap + 1):
-                if args.resume and str(ch) in chapters:
-                    continue                         # 이미 받은 장
-                url = f"{BASE}/{slug}/{ch}"
-                try:
-                    html = _fetch(url, delay=args.delay)
-                except Exception as e:               # noqa: BLE001
-                    print(f"  ✗ {name} {ch}장 요청 실패: {e}", file=sys.stderr)
-                    save()                           # 막히기 직전까지 보존
-                    continue
-                if dump_dir:
-                    (dump_dir / f"{bid}_{ch}.html").write_text(html, encoding="utf-8")
+                if args.from_dir:                    # 네트워크 없이 로컬 HTML 파싱
+                    fp = Path(args.from_dir) / f"{bid}_{ch}.html"
+                    if not fp.exists():
+                        continue
+                    html = fp.read_text(encoding="utf-8", errors="replace")
+                else:
+                    if args.resume and str(ch) in chapters:
+                        continue                     # 이미 받은 장
+                    url = f"{BASE}/{slug}/{ch}"
+                    try:
+                        html = _fetch(url, delay=args.delay)
+                    except Exception as e:           # noqa: BLE001
+                        print(f"  ✗ {name} {ch}장 요청 실패: {e}", file=sys.stderr)
+                        save()                       # 막히기 직전까지 보존
+                        continue
+                    if dump_dir:
+                        (dump_dir / f"{bid}_{ch}.html").write_text(html, encoding="utf-8")
                 verses = extract_verses(html)
                 if verses:
                     chapters[str(ch)] = verses
@@ -540,7 +565,8 @@ def main() -> None:
                 if titles:
                     tchapters[str(ch)] = titles
                 save()                               # 장마다 중간 저장(중단 대비)
-                time.sleep(args.delay + random.uniform(0, args.delay))  # 지터
+                if not args.from_dir:
+                    time.sleep(args.delay + random.uniform(0, args.delay))  # 지터
                 if dump_dir and args.only_sample:
                     break
             print(f"✓ {name}: {len(chapters)}/{nchap}장, "
