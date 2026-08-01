@@ -42,14 +42,17 @@ USCCB 는 온라인 열람을 무료로 제공하지만, 본문·주석을 다�
   * 한글이 깨지면(선택):  chcp 65001  로 콘솔을 UTF-8 로 바꾼다.
 
   ── 403(Forbidden) 대처 ──────────────────────────────────────────────
-  USCCB 는 빠른 연속 접속을 봇으로 보고 403 으로 막는다. 이 스크립트는
-  세션 쿠키 유지·홈 워밍업·403 시 긴 대기(20·40초…)·요청 간 지터로
-  이를 완화한다. 그래도 중간에 막히면 잠시(수 분) 쉬었다가 이어받기:
+  USCCB 는 봇(파이썬 TLS 지문)을 403 으로 막는다. 헤더·쿠키·워밍업만으로는
+  부족하므로 크롬 TLS 지문을 흉내 내는 curl_cffi 를 쓴다(강력 권장):
+
+    pip install curl_cffi
+
+  설치돼 있으면 스크립트가 자동으로 이를 사용한다(워밍업 줄에
+  [curl_cffi(크롬 위장)] 표시). 그래도 IP 가 이미 막혀 있으면 10~15분쯤
+  쉰 뒤 이어받기로 재개한다(책마다 중간 저장 → 진행분 보존):
 
     python scripts\fetch_nabre_usccb.py --resume            # 받은 책은 건너뜀
     python scripts\fetch_nabre_usccb.py --resume --delay 3  # 더 느리게(안전)
-
-  책마다 중간 저장하므로 중단(Ctrl+C)돼도 진행분은 보존된다.
 
 사용법 — Mac/Linux:
 
@@ -100,11 +103,21 @@ BROWSER_HEADERS = {
     "Connection": "keep-alive",
 }
 
+# curl_cffi 가 있으면 크롬 TLS 지문을 흉내 내 봇 차단(403)을 통과한다.
+# (urllib 은 TLS 핸드셰이크 지문으로 봇 판정돼 USCCB 에서 403 이 난다.)
+#   설치:  pip install curl_cffi
+try:
+    from curl_cffi import requests as _cffi   # type: ignore
+    HAVE_CFFI = True
+except Exception:                              # noqa: BLE001
+    HAVE_CFFI = False
+
 _OPENER: urllib.request.OpenerDirector | None = None
+_SESSION = None                                # curl_cffi Session (쿠키 유지)
 
 
 def _opener() -> urllib.request.OpenerDirector:
-    """쿠키를 유지하는 브라우저형 세션(오프너)을 한 번 만들어 재사용한다."""
+    """urllib 폴백용: 쿠키를 유지하는 오프너를 한 번 만들어 재사용한다."""
     global _OPENER
     if _OPENER is None:
         cj = http.cookiejar.CookieJar()
@@ -114,21 +127,39 @@ def _opener() -> urllib.request.OpenerDirector:
     return _OPENER
 
 
+def _cffi_session():
+    """크롬을 흉내 내는 curl_cffi 세션(쿠키 유지)."""
+    global _SESSION
+    if _SESSION is None:
+        _SESSION = _cffi.Session(impersonate="chrome")
+    return _SESSION
+
+
 def warm_up() -> None:
     """브라우저처럼 먼저 홈을 한 번 열어 세션 쿠키를 받는다(403 완화)."""
+    mode = "curl_cffi(크롬 위장)" if HAVE_CFFI else "urllib(폴백)"
     try:
         _fetch(BASE, retries=1)
-        print("· USCCB 세션 워밍업 완료")
+        print(f"· USCCB 세션 워밍업 완료 [{mode}]")
     except Exception as e:          # noqa: BLE001
-        print(f"· 워밍업 실패(계속 진행): {e}", file=sys.stderr)
+        print(f"· 워밍업 실패(계속 진행) [{mode}]: {e}", file=sys.stderr)
 
 
 def _fetch(url: str, *, retries: int = 4, delay: float = 2.0) -> str:
-    """브라우저 세션으로 USCCB 페이지를 받는다. 403 은 봇 감지이므로 길게 쉬고
-    재시도한다(20·40·60초…)."""
+    """USCCB 페이지를 받는다. curl_cffi 가 있으면 크롬 TLS 지문으로 요청해
+    봇 차단을 통과한다. 403 은 소프트 차단이므로 길게 쉬고 재시도(20·40·60초)."""
     last: Exception | None = None
     for attempt in range(retries):
         try:
+            if HAVE_CFFI:
+                # impersonate 가 UA·헤더를 크롬과 일치시키므로 UA 는 덮지 않는다.
+                r = _cffi_session().get(
+                    url, timeout=30, verify=not fx.INSECURE,
+                    headers={"Referer": "https://bible.usccb.org/bible"})
+                if r.status_code == 403:
+                    raise urllib.error.HTTPError(url, 403, "Forbidden", None, None)
+                r.raise_for_status()
+                return r.text
             req = urllib.request.Request(url, headers=BROWSER_HEADERS)
             with _opener().open(req, timeout=30) as resp:
                 charset = resp.headers.get_content_charset() or "utf-8"
