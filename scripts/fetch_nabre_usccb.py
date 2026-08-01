@@ -49,10 +49,20 @@ USCCB 는 온라인 열람을 무료로 제공하지만, 본문·주석을 다�
 
   설치돼 있으면 스크립트가 자동으로 이를 사용한다(워밍업 줄에
   [curl_cffi(크롬 위장)] 표시). 그래도 IP 가 이미 막혀 있으면 10~15분쯤
-  쉰 뒤 이어받기로 재개한다(책마다 중간 저장 → 진행분 보존):
+  쉰 뒤 이어받기로 재개한다(장마다 중간 저장 → 진행분 보존):
 
-    python scripts\fetch_nabre_usccb.py --resume            # 받은 책은 건너뜀
+    python scripts\fetch_nabre_usccb.py --resume            # 받은 장은 건너뜀
     python scripts\fetch_nabre_usccb.py --resume --delay 3  # 더 느리게(안전)
+
+  ── curl_cffi 로도 계속 막히면: --browser (가장 확실) ──────────────────
+  진짜 크롬을 구동해 받으므로 봇 탐지를 완전히 우회한다.
+
+    pip install playwright
+    playwright install chromium
+    python scripts\fetch_nabre_usccb.py --resume --browser --delay 2
+
+  크롬 창이 떠서 페이지를 넘긴다(--headless 로 숨김). 장마다 저장되므로
+  중단돼도 --resume 로 이어진다.
 
 사용법 — Mac/Linux:
 
@@ -115,6 +125,45 @@ except Exception:                              # noqa: BLE001
 _OPENER: urllib.request.OpenerDirector | None = None
 _SESSION = None                                # curl_cffi Session (쿠키 유지)
 
+# --browser 모드: Playwright 로 진짜 크롬을 구동해 페이지를 받는다(봇 탐지
+# 완전 우회). 설치:  pip install playwright  &&  playwright install chromium
+BROWSER_MODE = False
+BROWSER_HEADLESS = False
+_PW = None
+_PW_PAGE = None
+
+
+def _browser_page():
+    """Playwright 크롬 페이지를 한 번 띄워 재사용한다."""
+    global _PW, _PW_PAGE
+    if _PW_PAGE is None:
+        from playwright.sync_api import sync_playwright   # 지연 임포트
+        _PW = sync_playwright().start()
+        browser = _PW.chromium.launch(headless=BROWSER_HEADLESS)
+        ctx = browser.new_context(
+            user_agent=BROWSER_HEADERS["User-Agent"],
+            locale="en-US")
+        _PW_PAGE = ctx.new_page()
+    return _PW_PAGE
+
+
+def _browser_close() -> None:
+    global _PW, _PW_PAGE
+    try:
+        if _PW is not None:
+            _PW.stop()
+    except Exception:                              # noqa: BLE001
+        pass
+    _PW = _PW_PAGE = None
+
+
+def _fetch_browser(url: str) -> str:
+    page = _browser_page()
+    resp = page.goto(url, wait_until="domcontentloaded", timeout=45000)
+    if resp is not None and resp.status == 403:
+        raise urllib.error.HTTPError(url, 403, "Forbidden", None, None)
+    return page.content()
+
 
 def _opener() -> urllib.request.OpenerDirector:
     """urllib 폴백용: 쿠키를 유지하는 오프너를 한 번 만들어 재사용한다."""
@@ -137,7 +186,8 @@ def _cffi_session():
 
 def warm_up() -> None:
     """브라우저처럼 먼저 홈을 한 번 열어 세션 쿠키를 받는다(403 완화)."""
-    mode = "curl_cffi(크롬 위장)" if HAVE_CFFI else "urllib(폴백)"
+    mode = ("Playwright(진짜 크롬)" if BROWSER_MODE
+            else "curl_cffi(크롬 위장)" if HAVE_CFFI else "urllib(폴백)")
     try:
         _fetch(BASE, retries=1)
         print(f"· USCCB 세션 워밍업 완료 [{mode}]")
@@ -151,6 +201,8 @@ def _fetch(url: str, *, retries: int = 4, delay: float = 2.0) -> str:
     last: Exception | None = None
     for attempt in range(retries):
         try:
+            if BROWSER_MODE:
+                return _fetch_browser(url)
             if HAVE_CFFI:
                 # impersonate 가 UA·헤더를 크롬과 일치시키므로 UA 는 덮지 않는다.
                 r = _cffi_session().get(
@@ -338,6 +390,11 @@ def main() -> None:
                     help="기존 *_fresh.json 을 읽어 이미 받은 책은 건너뛴다")
     ap.add_argument("--no-warmup", action="store_true",
                     help="시작 시 홈 워밍업(세션 쿠키 획득)을 하지 않는다")
+    ap.add_argument("--browser", action="store_true",
+                    help="Playwright 로 진짜 크롬을 구동해 받는다(봇 차단 완전 우회). "
+                         "pip install playwright && playwright install chromium")
+    ap.add_argument("--headless", action="store_true",
+                    help="--browser 와 함께: 크롬 창을 숨긴다(기본은 보이게)")
     ap.add_argument("--dump-html", metavar="DIR", help="장 HTML을 이 폴더에 저장")
     ap.add_argument("--only-sample", action="store_true",
                     help="--dump-html 과 함께: 표본 1장만 받는다")
@@ -353,6 +410,9 @@ def main() -> None:
     fx._make_console_utf8()
     if args.insecure:
         fx.INSECURE = True
+    global BROWSER_MODE, BROWSER_HEADLESS
+    BROWSER_MODE = args.browser
+    BROWSER_HEADLESS = args.headless
 
     out_path = args.out or str(RES / "BibleText_nab_fresh.json")
     notes_path = args.notes_out or str(RES / "NabNotes_fresh.json")
@@ -396,60 +456,52 @@ def main() -> None:
     if not (dump_dir and args.only_sample) and not args.no_warmup:
         warm_up()
 
-    grand_v = grand_n = grand_t = 0
     interrupted = False
     try:
         for bid in book_ids:
             if bid not in id2meta:
                 print(f"  ! 알 수 없는 책 id: {bid}", file=sys.stderr); continue
-            if args.resume and bid in books_out:
-                continue                             # 이미 받은 책
             slug = USCCB_SLUG.get(bid)
             if not slug:
                 print(f"  ! USCCB 슬러그 없음: {bid}", file=sys.stderr); continue
             _, name, nchap = id2meta[bid]
-            chapters: dict[str, dict[str, str]] = {}
-            nchapters: dict[str, list] = {}
-            xchapters: dict[str, list] = {}
-            tchapters: dict[str, list] = {}
+            # 부분 진행분이 남아 있으면 이어서 채운다(장 단위 이어받기).
+            chapters = books_out.setdefault(bid, {})
+            nchapters = notes_out.setdefault(bid, {})
+            xchapters = xref_out.setdefault(bid, {})
+            tchapters = title_out.setdefault(bid, {})
+            if args.resume and len(chapters) >= nchap:
+                continue                             # 이미 다 받은 책
             for ch in range(1, nchap + 1):
+                if args.resume and str(ch) in chapters:
+                    continue                         # 이미 받은 장
                 url = f"{BASE}/{slug}/{ch}"
                 try:
                     html = _fetch(url, delay=args.delay)
                 except Exception as e:               # noqa: BLE001
                     print(f"  ✗ {name} {ch}장 요청 실패: {e}", file=sys.stderr)
+                    save()                           # 막히기 직전까지 보존
                     continue
                 if dump_dir:
                     (dump_dir / f"{bid}_{ch}.html").write_text(html, encoding="utf-8")
                 verses = extract_verses(html)
-                notes = extract_notes(html)
-                xrefs = extract_xrefs(html)
-                titles = extract_titles(html)
                 if verses:
                     chapters[str(ch)] = verses
-                    grand_v += len(verses)
                 else:
                     print(f"  ✗ {name} {ch}장: 절 추출 실패 ({url})", file=sys.stderr)
+                notes = extract_notes(html)
                 if notes:
                     nchapters[str(ch)] = notes
-                    grand_n += len(notes)
+                xrefs = extract_xrefs(html)
                 if xrefs:
                     xchapters[str(ch)] = xrefs
+                titles = extract_titles(html)
                 if titles:
                     tchapters[str(ch)] = titles
-                    grand_t += len(titles)
+                save()                               # 장마다 중간 저장(중단 대비)
                 time.sleep(args.delay + random.uniform(0, args.delay))  # 지터
                 if dump_dir and args.only_sample:
                     break
-            if chapters:
-                books_out[bid] = chapters
-            if nchapters:
-                notes_out[bid] = nchapters
-            if xchapters:
-                xref_out[bid] = xchapters
-            if tchapters:
-                title_out[bid] = tchapters
-            save()                                   # 책마다 중간 저장(중단 대비)
             print(f"✓ {name}: {len(chapters)}/{nchap}장, "
                   f"{sum(len(v) for v in chapters.values())}절, 주석 "
                   f"{sum(len(t) for t in nchapters.values())}개, 소제목 "
@@ -460,11 +512,21 @@ def main() -> None:
         interrupted = True
         print("\n⚠️ 중단됨 — 지금까지 받은 분량을 저장합니다. "
               "다시 --resume 로 이어서 받으세요.", file=sys.stderr)
+    finally:
+        if BROWSER_MODE:
+            _browser_close()
 
+    # 빈 항목 정리 후 저장
+    for d in (books_out, notes_out, xref_out, title_out):
+        for k in [k for k, v in d.items() if not v]:
+            del d[k]
     save()
+    gv = sum(len(v) for bk in books_out.values() for v in bk.values())
+    gn = sum(len(v) for bk in notes_out.values() for v in bk.values())
+    gt = sum(len(v) for bk in title_out.values() for v in bk.values())
     tag = "중단(부분 저장)" if interrupted else "완료"
-    print(f"\n{tag}: {len(books_out)}권, 본문 {grand_v}절 → {out_path}")
-    print(f"      주석 {grand_n}개, 소제목 {grand_t}개 → {notes_path}")
+    print(f"\n{tag}: {len(books_out)}권, 본문 {gv}절 → {out_path}")
+    print(f"      주석 {gn}개, 소제목 {gt}개 → {notes_path}")
 
     if args.verify and not interrupted:
         cur = RES / "BibleText_nab.json"
