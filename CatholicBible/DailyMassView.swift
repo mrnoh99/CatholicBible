@@ -39,8 +39,21 @@ struct DailyMassView: View {
     @State private var markerNote: MarkerNoteTarget?
     /// 모든 독서의 본문 미리보기를 한꺼번에 펼치거나 닫는다(날짜·재실행에도 유지).
     @AppStorage("mass.showAllText") private var showAllText = false
-    /// 본문보기에 쓸 성경 판본(기본: 성경, 날짜·재실행에도 유지).
-    @AppStorage("mass.previewEditionID") private var previewEditionID = "knb"
+    /// 본문보기에 쓸 성경 판본(화답송 제외, 기본: 주석 성경, 날짜·재실행에도 유지).
+    @AppStorage("mass.previewEditionID") private var previewEditionID = "knbnotes"
+    /// 화답송 전용 판본(기본: 전례 시편, 따로 선택·유지).
+    @AppStorage("mass.psalmEditionID") private var psalmEditionID = "pslitur"
+
+    /// 이 독서가 화답송인가(화답송은 전례 시편 등 별도 판본으로 본다).
+    private func isPsalm(_ reading: MassReading) -> Bool { reading.role.contains("화답송") }
+    /// 독서별 본문보기 판본(화답송이면 psalmEditionID, 그 외 previewEditionID).
+    private func editionID(for reading: MassReading) -> String {
+        isPsalm(reading) ? psalmEditionID : previewEditionID
+    }
+    /// 화답송 판본 후보: 시편을 담은 판본만(신약 전용 b200 제외).
+    private var psalmEditions: [Edition] {
+        Editions.all.filter { $0.scope != .newTestament }
+    }
 
     private var isToday: Bool { viewedDate == LDate.today() }
 
@@ -210,8 +223,11 @@ struct DailyMassView: View {
                     .buttonStyle(.plain)
                     Spacer(minLength: 0)
                     Menu {
-                        Picker("본문 판본", selection: $previewEditionID) {
+                        Picker("본문 판본 (화답송 제외)", selection: $previewEditionID) {
                             ForEach(Editions.all) { ed in Text(ed.name).tag(ed.id) }
+                        }
+                        Picker("화답송 판본", selection: $psalmEditionID) {
+                            ForEach(psalmEditions) { ed in Text(ed.name).tag(ed.id) }
                         }
                     } label: {
                         HStack(spacing: 4) {
@@ -227,7 +243,7 @@ struct DailyMassView: View {
 
                 ForEach(readings) { reading in
                     ReadingCard(reading: reading, expanded: showAllText,
-                                editionID: previewEditionID, openReading: open,
+                                editionID: editionID(for: reading), openReading: open,
                                 onOpenNote: { ref, text in noteTarget = MassNoteTarget(ref: ref, text: text) },
                                 onLookUp: { dictRequest = DictionaryRequest() })
                         .environment(store)
@@ -241,7 +257,8 @@ struct DailyMassView: View {
     private func open(_ reading: MassReading) {
         guard let c = reading.primaryCitation, Bible.book(c.bookID) != nil else { return }
         // 오늘의 미사에서 고른 본문 판본으로 리더를 연다(사이드바 판본이 아니라).
-        readingState.selectedEditionID = previewEditionID
+        // 화답송은 화답송 전용 판본(전례 시편 등)으로 연다.
+        readingState.selectedEditionID = editionID(for: reading)
         // 참조 문자열에서 불연속 구간까지 살린 강조를 만든다(빠진 절은 칠하지 않음).
         if let parsed = ScriptureReference.highlight(reading.reference), parsed.bookID == c.bookID {
             navigation.open(bookID: c.bookID, chapter: parsed.highlight.startChapter,
