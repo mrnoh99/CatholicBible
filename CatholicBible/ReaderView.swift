@@ -378,7 +378,8 @@ struct ReaderPane: View {
                             ForEach(verses) { verse in
                                 VStack(alignment: .leading, spacing: settings.lineSpacing * 0.9) {
                                     if let title = titleMap[verse.number] {
-                                        SectionTitleView(text: title, bookID: book.id, chapter: chapter)
+                                        SectionTitleView(text: title, bookID: book.id, chapter: chapter,
+                                                         linkable: edition.id == "knbnotes")
                                     }
                                     VerseRowView(edition: edition, book: book, chapter: chapter,
                                                  verse: verse,
@@ -719,7 +720,8 @@ struct SpreadReader: View {
             if let verses {
                 ForEach(verses) { verse in
                     if let title = titleMap[verse.number] {
-                        SectionTitleView(text: title, bookID: book.id, chapter: chapter)
+                        SectionTitleView(text: title, bookID: book.id, chapter: chapter,
+                                                         linkable: edition.id == "knbnotes")
                     }
                     VerseRowView(edition: edition, book: book, chapter: chapter,
                                  verse: verse,

@@ -30,6 +30,10 @@ struct AnnotatedReader: View {
     @State private var showBookPicker = false
     @State private var showChapterPicker = false
     @State private var showIntros = false
+    /// 주석·상호참조에서 탭한 인용 구절 미리보기 대상
+    @State private var xrefTarget: XrefTarget?
+    /// 부모(ReaderView 등)가 설치한 각주 마커 처리 액션에 위임하기 위해 보관
+    @Environment(\.openURL) private var parentOpenURL
 
     private var edition: Edition { Editions.edition(editionID) ?? Editions.all[0] }
     private var book: BibleBook { Bible.book(bookID) ?? Bible.books[0] }
@@ -65,6 +69,26 @@ struct AnnotatedReader: View {
         .sheet(isPresented: $showIntros) {
             IntroductionsView(currentBookID: bookID)
                 .environment(knb)
+                .environment(settings)
+        }
+        // 주석·상호참조의 성경 인용(catholicbible://xref)은 여기서 미리보기로,
+        // 나머지(각주 마커 catholicbible://note 등)는 부모 처리에 위임한다.
+        .environment(\.openURL, OpenURLAction { url in
+            if url.scheme == "catholicbible", url.host == "xref" {
+                let items = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems ?? []
+                func q(_ k: String) -> String? { items.first { $0.name == k }?.value }
+                if let b = q("b"), let cs = q("c"), let c = Int(cs),
+                   let vs = q("v"), let v = Int(vs) {
+                    xrefTarget = XrefTarget(bookID: b, chapter: c, verse: v)
+                }
+                return .handled
+            }
+            parentOpenURL(url)          // 각주 마커 등은 부모(ReaderView)가 처리
+            return .handled
+        })
+        .sheet(item: $xrefTarget) { t in
+            RefPreviewSheet(target: t)
+                .environment(store)
                 .environment(settings)
         }
     }
@@ -144,7 +168,7 @@ struct AnnotatedReader: View {
                     textColumn(verses)
                     Divider()
                     AnnotationsPane(notes: notes, xrefs: xrefs,
-                                    emptyHint: emptyNotesHint, wide: true)
+                                    emptyHint: emptyNotesHint, bookID: book.id, wide: true)
                         .frame(maxWidth: .infinity)
                 }
             } else {
@@ -153,7 +177,7 @@ struct AnnotatedReader: View {
                         versesBlock(verses)
                         Divider().padding(.vertical, 16)
                         AnnotationsPane(notes: notes, xrefs: xrefs,
-                                        emptyHint: emptyNotesHint)
+                                        emptyHint: emptyNotesHint, bookID: book.id)
                     }
                     .frame(maxWidth: 720, alignment: .leading)
                     .padding(.horizontal, 28).padding(.bottom, 40)
@@ -204,7 +228,8 @@ struct AnnotatedReader: View {
                 ForEach(verses) { verse in
                     VStack(alignment: .leading, spacing: settings.lineSpacing * 0.9) {
                         if let title = titleMap[verse.number] {
-                            SectionTitleView(text: title, bookID: book.id, chapter: chapter)
+                            SectionTitleView(text: title, bookID: book.id, chapter: chapter,
+                                             linkable: editionID == "knbnotes")
                         }
                         VerseRowView(edition: edition, book: book, chapter: chapter,
                                      verse: verse,
@@ -262,10 +287,12 @@ struct SectionTitleView: View {
     let text: String
     let bookID: String
     let chapter: Int
+    /// 각주 마커('N)')를 링크로 만들지 — 정수 마커를 쓰는 주석성경만 true.
+    var linkable: Bool = true
     @Environment(ReaderSettings.self) private var settings
 
     var body: some View {
-        Text(AnnotationMarkup.attributed(text, linkable: true, bookID: bookID, chapter: chapter))
+        Text(AnnotationMarkup.attributed(text, linkable: linkable, bookID: bookID, chapter: chapter))
             .font(settings.fontChoice.font(size: settings.fontSize * 1.05, relativeTo: .headline, bold: true))
             .foregroundStyle(settings.theme.text)
             .tint(Color.accentColor)
@@ -311,12 +338,14 @@ struct NotesColumn: View {
     let title: String
     let notes: [ChapterNote]
     let emptyHint: String
+    /// 인용의 '이어지는 절' 기준 책 id (링크 연결용).
+    var bookID: String = ""
     @Environment(ReaderSettings.self) private var settings
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
-                NotesList(title: title, notes: notes, emptyHint: emptyHint)
+                NotesList(title: title, notes: notes, emptyHint: emptyHint, bookID: bookID)
             }
             .padding(.horizontal, 22).padding(.vertical, 24)
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -331,6 +360,7 @@ struct AnnotationsPane: View {
     let notes: [ChapterNote]
     let xrefs: [ChapterNote]
     let emptyHint: String
+    var bookID: String = ""
     var wide: Bool = false
     @State private var tab = 0        // 0=주석, 1=상호참조
     @Environment(ReaderSettings.self) private var settings
@@ -348,9 +378,10 @@ struct AnnotationsPane: View {
                 .labelsHidden()
                 NotesList(title: "",
                           notes: tab == 1 ? xrefs : notes,
-                          emptyHint: tab == 1 ? "이 장에는 상호참조가 없습니다." : emptyHint)
+                          emptyHint: tab == 1 ? "이 장에는 상호참조가 없습니다." : emptyHint,
+                          bookID: bookID)
             } else {
-                NotesList(title: "주석", notes: notes, emptyHint: emptyHint)
+                NotesList(title: "주석", notes: notes, emptyHint: emptyHint, bookID: bookID)
             }
         }
     }
@@ -374,6 +405,8 @@ struct NotesList: View {
     let title: String
     let notes: [ChapterNote]
     let emptyHint: String
+    /// 인용의 '이어지는 절'(예: "33:6")이 이을 기준 책 id.
+    var bookID: String = ""
     @Environment(ReaderSettings.self) private var settings
 
     var body: some View {
@@ -394,9 +427,11 @@ struct NotesList: View {
                             .font(settings.fontChoice.font(size: settings.fontSize * 0.72, bold: true))
                             .foregroundStyle(Color.accentColor)
                             .frame(minWidth: settings.fontSize * 1.3, alignment: .trailing)
-                        Text(note.text)
+                        // 본문 속 성경 인용을 탭 가능한 링크로(탭 → RefPreviewSheet).
+                        Text(ScriptureRef.linkify(note.text, currentBook: bookID))
                             .font(settings.fontChoice.font(size: settings.fontSize * 0.9))
                             .foregroundStyle(settings.theme.text)
+                            .tint(Color.accentColor)
                             .textSelection(.enabled)
                             .frame(maxWidth: .infinity, alignment: .leading)
                     }
