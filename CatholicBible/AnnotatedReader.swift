@@ -68,7 +68,7 @@ struct AnnotatedReader: View {
             }
         }
         .sheet(isPresented: $showIntros) {
-            IntroductionsView(currentBookID: bookID)
+            IntroductionsView(currentBookID: bookID, editionID: editionID)
                 .environment(knb)
                 .environment(settings)
         }
@@ -452,6 +452,7 @@ struct NotesList: View {
 
 struct IntroductionsView: View {
     let currentBookID: String
+    var editionID: String = "knbnotes"
     @Environment(KnbNotesStore.self) private var knb
     @Environment(ReaderSettings.self) private var settings
     @Environment(\.dismiss) private var dismiss
@@ -460,15 +461,15 @@ struct IntroductionsView: View {
     var body: some View {
         NavigationStack {
             Group {
-                if !knb.hasData || knb.intros.isEmpty {
+                if !knb.hasIntros(edition: editionID) {
                     ContentUnavailableView(
                         "입문 자료 없음",
                         systemImage: "text.book.closed",
-                        description: Text("scripts/fetch_knbnotes.py 로 주석 성경의 입문을 내려받은 뒤 다시 빌드하세요.")
+                        description: Text("이 판본의 입문 자료가 아직 없습니다.")
                     )
                 } else {
                     List {
-                        if let book = knb.intro(forBook: currentBookID) {
+                        if let book = knb.intro(edition: editionID, forBook: currentBookID) {
                             Section("현재 책") { introRow(book) }
                         }
                         section("성경 전체", .bible)
@@ -489,7 +490,7 @@ struct IntroductionsView: View {
 
     @ViewBuilder
     private func section(_ title: String, _ level: IntroLevel) -> some View {
-        let items = knb.intros(of: level)
+        let items = knb.intros(edition: editionID, of: level)
         if !items.isEmpty {
             Section(title) { ForEach(items) { introRow($0) } }
         }
