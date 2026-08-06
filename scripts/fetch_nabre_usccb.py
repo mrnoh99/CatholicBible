@@ -429,6 +429,30 @@ def extract_xrefs(html: str) -> list[dict]:
     return out
 
 
+TITLE_PAGE_RE = re.compile(r'<h1 class="title-page">(.*?)</h1>', re.S)
+INTRO_BLOCK_RE = re.compile(r'<(p|h2|h3)\b[^>]*>(.*?)</\1>', re.S | re.I)
+
+
+def extract_intro(html: str) -> dict:
+    """책 입문 페이지(/<slug>/0) → {'title', 'body', 'notes'}.
+    contentarea 안 각주(fn/en) 앞까지의 문단·소제목을 본문으로, fn 은 주석으로."""
+    region = _content(html)
+    cut = FIRST_FN_RE.search(region)
+    body_region = region[:cut.start()] if cut else region
+    lines: list[str] = []
+    for m in INTRO_BLOCK_RE.finditer(body_region):
+        # 절 앵커가 든 문단(본문)은 입문이 아니므로 제외
+        if '<span class="bcv"' in m.group(2) or '<a name="' in m.group(2):
+            continue
+        t = _clean(m.group(2))
+        if t:
+            lines.append(t)
+    body = "\n".join(lines).strip()
+    tm = TITLE_PAGE_RE.search(html)
+    title = _clean(tm.group(1)) if tm else ""
+    return {"title": title, "body": body, "notes": extract_notes(html)}
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(
         description="USCCB NABRE 본문+주석 수집 (nab 판본 교체용)",
@@ -446,6 +470,9 @@ def main() -> None:
                     help="--browser 와 함께: 크롬 창을 숨긴다(기본은 보이게)")
     ap.add_argument("--slug", nargs="*", metavar="BID=SLUG", default=[],
                     help="특정 책의 USCCB 슬러그를 강제 지정 (예: --slug 1chr=1chronicles)")
+    ap.add_argument("--intros", action="store_true",
+                    help="각 책 입문(/<slug>/0)만 수집해 기존 결과에 병합(본문·주석은 건너뜀). "
+                         "--resume 로 이미 받은 입문은 건너뜀.")
     ap.add_argument("--from-dir", metavar="DIR", default=None,
                     help="네트워크 없이, DIR 의 <책id>_<장>.html 파일을 읽어 파싱한다"
                          "(403 우회: 브라우저로 저장한 페이지를 여기서 처리). "
@@ -487,6 +514,8 @@ def main() -> None:
     if dump_dir:
         dump_dir.mkdir(parents=True, exist_ok=True)
 
+    intros_out: dict[str, dict] = {}     # bid → Introduction dict
+
     # --resume: 기존 *_fresh.json 을 읽어 이어서 받는다(403 로 중단됐을 때).
     if args.resume:
         try:
@@ -495,6 +524,9 @@ def main() -> None:
             notes_out = nf.get("annotations", {})
             xref_out = nf.get("crossrefs", {})
             title_out = nf.get("titles", {})
+            for it in nf.get("intros", []):
+                if it.get("bookID"):
+                    intros_out[it["bookID"]] = it
             print(f"· 이어받기: 이미 {len(books_out)}권 있음 → 건너뜀")
         except Exception:                            # noqa: BLE001
             print("· 이어받기: 기존 파일 없음(처음부터 수집)")
@@ -507,10 +539,53 @@ def main() -> None:
             encoding="utf-8")
         notes = {"translation": "New American Bible, revised edition",
                  "source": BASE, "annotations": notes_out,
-                 "crossrefs": xref_out, "titles": title_out}
+                 "crossrefs": xref_out, "titles": title_out,
+                 "intros": list(intros_out.values())}
         Path(notes_path).write_text(
             json.dumps(notes, ensure_ascii=False, separators=(",", ":")),
             encoding="utf-8")
+
+    # ── --intros: 각 책의 입문(/<slug>/0)만 수집해 병합 ────────────────
+    if args.intros:
+        if not args.no_warmup and not args.from_dir:
+            warm_up()
+        for bid in book_ids:
+            if bid not in id2meta:
+                continue
+            _, name, _ = id2meta[bid]
+            if args.resume and intros_out.get(bid, {}).get("body"):
+                continue                             # 이미 받은 입문
+            if args.from_dir:
+                fp0 = Path(args.from_dir) / f"{bid}_0.html"
+                if not fp0.exists():
+                    continue
+                html = fp0.read_text(encoding="utf-8", errors="replace")
+            else:
+                slug = _resolve_slug(bid, args.delay)
+                if not slug:
+                    print(f"  ! 슬러그 못 찾음(건너뜀): {bid}", file=sys.stderr); continue
+                try:
+                    html = _fetch(f"{BASE}/{slug}/0", delay=args.delay)
+                except Exception as e:               # noqa: BLE001
+                    print(f"  ✗ {name} 입문 요청 실패: {e}", file=sys.stderr); continue
+            if dump_dir:
+                (dump_dir / f"{bid}_0.html").write_text(html, encoding="utf-8")
+            ei = extract_intro(html)
+            if ei["body"]:
+                intros_out[bid] = {"id": f"nabre-{bid}", "title": ei["title"] or name,
+                                   "level": "book", "bookID": bid,
+                                   "body": ei["body"], "notes": ei["notes"]}
+                save()
+                print(f"✓ {name} 입문: {len(ei['body'])}자, 주석 {len(ei['notes'])}개")
+            else:
+                print(f"  ✗ {name} 입문 본문 추출 실패", file=sys.stderr)
+            if not args.from_dir:
+                time.sleep(args.delay + random.uniform(0, args.delay))
+        save()
+        print(f"\n입문 완료: {len(intros_out)}권 → {notes_path}")
+        if BROWSER_MODE:
+            _browser_close()
+        return
 
     if not (dump_dir and args.only_sample) and not args.no_warmup and not args.from_dir:
         warm_up()
