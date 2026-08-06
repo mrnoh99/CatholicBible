@@ -79,6 +79,13 @@ struct XrefTarget: Identifiable {
     var id: String { "\(bookID).\(chapter).\(verse)" }
 }
 
+/// 미리보기 창에서 노트 편집 요청 대상
+private struct RefNoteTarget: Identifiable {
+    let ref: VerseRef
+    let text: String
+    var id: String { ref.id }
+}
+
 // MARK: - 인용 구절 미리보기(판본 선택 가능)
 
 struct RefPreviewSheet: View {
@@ -87,7 +94,11 @@ struct RefPreviewSheet: View {
     @AppStorage("xref.editionID") private var editionID = "knb"
     @Environment(BibleStore.self) private var store
     @Environment(ReaderSettings.self) private var settings
+    @Environment(AnnotationStore.self) private var annotations
+    @Environment(ReaderNavigation.self) private var navigation
     @Environment(\.dismiss) private var dismiss
+    @State private var noteTarget: RefNoteTarget?
+    @State private var dictRequest: DictionaryRequest?
 
     private var book: BibleBook? { Bible.book(target.bookID) }
     private var edition: Edition {
@@ -122,24 +133,21 @@ struct RefPreviewSheet: View {
                     .pickerStyle(.menu)
                     .tint(Color.accentColor)
 
-                    if verses.isEmpty {
+                    if let book, !verses.isEmpty {
+                        // 절 번호를 눌러 책갈피·노트·사전·복사(리더와 동일한 절 행).
+                        ForEach(verses) { v in
+                            VerseRowView(edition: edition, book: book,
+                                         chapter: target.chapter, verse: v,
+                                         highlighted: v.number == target.verse,
+                                         onOpenNote: { ref, text in
+                                             noteTarget = RefNoteTarget(ref: ref, text: text)
+                                         },
+                                         onLookUp: { dictRequest = DictionaryRequest() })
+                        }
+                    } else {
                         Text("이 판본에는 해당 본문이 없습니다.")
                             .font(.footnote)
                             .foregroundStyle(settings.theme.secondary)
-                    } else {
-                        ForEach(verses) { v in
-                            HStack(alignment: .firstTextBaseline, spacing: 8) {
-                                Text("\(v.number)")
-                                    .font(settings.fontChoice.font(size: settings.fontSize * 0.72, bold: true))
-                                    .foregroundStyle(Color.accentColor)
-                                    .frame(minWidth: settings.fontSize, alignment: .trailing)
-                                Text(AnnotationMarkup.stripMarkers(v.text))
-                                    .font(settings.bodyFont())
-                                    .foregroundStyle(settings.theme.text)
-                                    .textSelection(.enabled)
-                                    .frame(maxWidth: .infinity, alignment: .leading)
-                            }
-                        }
                     }
                 }
                 .padding(20)
@@ -150,6 +158,16 @@ struct RefPreviewSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .cancellationAction) { Button("닫기") { dismiss() } } }
             .preferredColorScheme(settings.theme.colorScheme)
+            .sheet(item: $noteTarget) { t in
+                NoteEditorView(verse: t.ref, verseText: t.text,
+                               existing: annotations.noteOrNew(for: t.ref))
+                    .environment(annotations)
+                    .environment(settings)
+            }
+            .sheet(item: $dictRequest) { req in
+                DictionaryView(initialTerm: req.term)
+                    .environment(settings)
+            }
         }
         .presentationDetents([.medium, .large])
     }

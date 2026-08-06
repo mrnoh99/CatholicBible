@@ -22,6 +22,7 @@ struct AnnotatedReader: View {
     @Environment(ReadingState.self) private var readingState
     @Environment(ReaderNavigation.self) private var navigation
     @Environment(KnbNotesStore.self) private var knb
+    @Environment(AnnotationStore.self) private var annotations
     @Environment(\.horizontalSizeClass) private var hSize
 
     @State private var chapter = 0
@@ -90,6 +91,8 @@ struct AnnotatedReader: View {
             RefPreviewSheet(target: t)
                 .environment(store)
                 .environment(settings)
+                .environment(annotations)
+                .environment(navigation)
         }
     }
 
