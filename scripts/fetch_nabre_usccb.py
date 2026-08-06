@@ -431,14 +431,23 @@ def extract_xrefs(html: str) -> list[dict]:
 
 TITLE_PAGE_RE = re.compile(r'<h1 class="title-page">(.*?)</h1>', re.S)
 INTRO_BLOCK_RE = re.compile(r'<(p|h2|h3)\b[^>]*>(.*?)</\1>', re.S | re.I)
+# contentarea 다음에 오는 공유·저작권 블록과 푸터 — 입문 본문은 여기 전까지만.
+INTRO_END_RE = re.compile(
+    r'<div class="wr-block b-button-container social'
+    r'|<div class="b-note wr-block'
+    r'|<footer\b', re.I)
 
 
 def extract_intro(html: str) -> dict:
     """책 입문 페이지(/<slug>/0) → {'title', 'body', 'notes'}.
-    contentarea 안 각주(fn/en) 앞까지의 문단·소제목을 본문으로, fn 은 주석으로."""
+    contentarea 안 각주(fn/en)·푸터 앞까지의 문단·소제목을 본문으로, fn 은 주석으로."""
     region = _content(html)
-    cut = FIRST_FN_RE.search(region)
-    body_region = region[:cut.start()] if cut else region
+    ends = [len(region)]
+    for r in (FIRST_FN_RE, INTRO_END_RE):
+        m = r.search(region)
+        if m:
+            ends.append(m.start())
+    body_region = region[:min(ends)]
     lines: list[str] = []
     for m in INTRO_BLOCK_RE.finditer(body_region):
         # 절 앵커가 든 문단(본문)은 입문이 아니므로 제외
