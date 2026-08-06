@@ -431,8 +431,10 @@ struct NotesList: View {
                             .foregroundStyle(Color.accentColor)
                             .frame(minWidth: settings.fontSize * 1.3, alignment: .trailing)
                         // 본문 속 성경 인용을 탭 가능한 링크로(탭 → RefPreviewSheet).
-                        Text(ScriptureRef.linkify(note.text, currentBook: bookID))
-                            .font(settings.fontChoice.font(size: settings.fontSize * 0.9))
+                        // 링크 런도 같은 글꼴로 지정해 크기가 본문과 같게 한다.
+                        Text(ScriptureRef.linkify(
+                            note.text, currentBook: bookID,
+                            font: settings.fontChoice.font(size: settings.fontSize * 0.9)))
                             .foregroundStyle(settings.theme.text)
                             .tint(Color.accentColor)
                             .textSelection(.enabled)

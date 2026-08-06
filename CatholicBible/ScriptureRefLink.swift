@@ -36,8 +36,12 @@ enum ScriptureRef {
 
     /// text → 인용을 링크로 바꾼 AttributedString.
     /// currentBook: 책약어 없는 "33:6" 이 이을 기준 책(그 장의 책 id).
-    static func linkify(_ text: String, currentBook: String?) -> AttributedString {
-        guard let regex, !text.isEmpty else { return AttributedString(text) }
+    /// font: 링크·비링크 런에 똑같이 적용할 글꼴(링크 런이 기본 크기로 커지는 것 방지).
+    static func linkify(_ text: String, currentBook: String?,
+                        font: Font? = nil) -> AttributedString {
+        guard let regex, !text.isEmpty else {
+            var a = AttributedString(text); if let font { a.font = font }; return a
+        }
         let ns = text as NSString
         var result = AttributedString()
         var last = 0
@@ -67,6 +71,8 @@ enum ScriptureRef {
             last = m.range.location + m.range.length
         }
         if last < ns.length { result += AttributedString(ns.substring(from: last)) }
+        // 링크 런은 Text 의 .font() 를 무시하므로, 모든 런에 같은 글꼴을 직접 준다.
+        if let font { result.font = font }
         return result
     }
 }
