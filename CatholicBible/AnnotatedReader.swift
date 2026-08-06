@@ -80,7 +80,9 @@ struct AnnotatedReader: View {
                 func q(_ k: String) -> String? { items.first { $0.name == k }?.value }
                 if let b = q("b"), let cs = q("c"), let c = Int(cs),
                    let vs = q("v"), let v = Int(vs) {
-                    xrefTarget = XrefTarget(bookID: b, chapter: c, verse: v)
+                    xrefTarget = XrefTarget(bookID: b, chapter: c, verse: v,
+                                            endChapter: q("ec").flatMap { Int($0) } ?? 0,
+                                            endVerse: q("ev").flatMap { Int($0) } ?? 0)
                 }
                 return .handled
             }

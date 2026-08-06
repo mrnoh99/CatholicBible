@@ -30,9 +30,10 @@ enum ScriptureRef {
         "3 Jn": "3jn", "Jude": "jude", "Rev": "rv",
     ]
 
-    // (선택적 책약어)(장):(절)(–끝절)?  — 이어지는 "33:6" 는 앞 책을 잇는다.
+    // (선택적 책약어)(장):(절)(–끝절 또는 –끝장:끝절)?  — "33:6" 는 앞 책을 잇는다.
+    //  그룹: 1=책약어 2=장 3=절 4=대시뒤 첫 수 5=대시뒤 둘째 수(교차장일 때 끝절)
     private static let regex = try? NSRegularExpression(
-        pattern: "((?:[1-4]\\s)?[A-Z][A-Za-z]{1,4})?\\s?(\\d{1,3}):(\\d{1,3})(?:[–-]\\d{1,3})?")
+        pattern: "((?:[1-4]\\s)?[A-Z][A-Za-z]{1,4})?\\s?(\\d{1,3}):(\\d{1,3})(?:[–-](\\d{1,3})(?::(\\d{1,3}))?)?")
 
     /// text → 인용을 링크로 바꾼 AttributedString.
     /// currentBook: 책약어 없는 "33:6" 이 이을 기준 책(그 장의 책 id).
@@ -59,6 +60,13 @@ enum ScriptureRef {
             guard let bID = bookID,
                   let c = Int(ns.substring(with: m.range(at: 2))),
                   let v = Int(ns.substring(with: m.range(at: 3))) else { continue }
+            // 범위 끝(장·절) 계산: "1:16–17"→같은 장 17절, "1:1–2:3"→2장 3절.
+            let d1 = m.range(at: 4).location != NSNotFound
+                ? Int(ns.substring(with: m.range(at: 4))) : nil
+            let d2 = m.range(at: 5).location != NSNotFound
+                ? Int(ns.substring(with: m.range(at: 5))) : nil
+            let endChapter = d2 != nil ? (d1 ?? c) : c
+            let endVerse = d2 ?? d1 ?? v
             if m.range.location > last {
                 result += AttributedString(ns.substring(with:
                     NSRange(location: last, length: m.range.location - last)))
@@ -66,7 +74,8 @@ enum ScriptureRef {
             var link = AttributedString(ns.substring(with: m.range))
             link.foregroundColor = .accentColor
             link.underlineStyle = .single
-            link.link = URL(string: "catholicbible://xref?b=\(bID)&c=\(c)&v=\(v)")
+            link.link = URL(string:
+                "catholicbible://xref?b=\(bID)&c=\(c)&v=\(v)&ec=\(endChapter)&ev=\(endVerse)")
             result += link
             last = m.range.location + m.range.length
         }
@@ -77,12 +86,14 @@ enum ScriptureRef {
     }
 }
 
-/// 상호참조/주석에서 탭한 인용 구절 대상
+/// 상호참조/주석에서 탭한 인용 구절 대상(범위 끝 포함)
 struct XrefTarget: Identifiable {
     let bookID: String
     let chapter: Int
     let verse: Int
-    var id: String { "\(bookID).\(chapter).\(verse)" }
+    var endChapter: Int = 0    // 0 또는 <chapter 이면 시작과 같은 단일 절
+    var endVerse: Int = 0
+    var id: String { "\(bookID).\(chapter).\(verse).\(endChapter).\(endVerse)" }
 }
 
 /// 미리보기 창에서 노트 편집 요청 대상
@@ -90,6 +101,14 @@ private struct RefNoteTarget: Identifiable {
     let ref: VerseRef
     let text: String
     var id: String { ref.id }
+}
+
+/// 미리보기에 표시할 (장, 절) 한 항목
+private struct RangeVerse: Identifiable {
+    let chapter: Int
+    let verse: Verse
+    let newChapter: Bool   // 여러 장에 걸칠 때 장 라벨을 붙일 첫 절
+    var id: String { "\(chapter).\(verse.number)" }
 }
 
 // MARK: - 인용 구절 미리보기(판본 선택 가능)
@@ -117,16 +136,43 @@ struct RefPreviewSheet: View {
         return list.isEmpty ? Editions.all : list
     }
 
+    /// 범위 끝(장·절). endChapter 가 시작보다 작으면 단일 절.
+    private var endChapter: Int { max(target.endChapter, target.chapter) }
+    private var endVerse: Int {
+        endChapter == target.chapter ? max(target.endVerse, target.verse) : target.endVerse
+    }
+
     private var title: String {
         let name = book.map { store.bookShortName(edition: edition, book: $0) } ?? target.bookID
+        if endChapter > target.chapter {
+            return "\(name) \(target.chapter),\(target.verse)–\(endChapter),\(endVerse)"
+        }
+        if endVerse > target.verse {
+            return "\(name) \(target.chapter),\(target.verse)-\(endVerse)"
+        }
         return "\(name) \(target.chapter),\(target.verse)"
     }
 
-    /// 대상 절과 이어지는 몇 절(문맥). 시작 절부터 최대 5절.
-    private var verses: [Verse] {
+    /// 인용 범위에 해당하는 절 목록. 아주 큰 범위는 40절로 제한한다.
+    private var rangeVerses: [RangeVerse] {
         guard let book else { return [] }
-        return store.verses(edition: edition, book: book, chapter: target.chapter)
-            .filter { $0.number >= target.verse && $0.number < target.verse + 5 }
+        var out: [RangeVerse] = []
+        let cap = 40
+        let multi = endChapter > target.chapter
+        var ch = target.chapter
+        while ch <= endChapter && out.count < cap {
+            let lo = ch == target.chapter ? target.verse : 1
+            let hi = ch == endChapter ? endVerse : Int.max
+            var first = true
+            for v in store.verses(edition: edition, book: book, chapter: ch)
+                where v.number >= lo && v.number <= hi {
+                out.append(RangeVerse(chapter: ch, verse: v, newChapter: multi && first))
+                first = false
+                if out.count >= cap { break }
+            }
+            ch += 1
+        }
+        return out
     }
 
     var body: some View {
@@ -139,12 +185,19 @@ struct RefPreviewSheet: View {
                     .pickerStyle(.menu)
                     .tint(Color.accentColor)
 
-                    if let book, !verses.isEmpty {
+                    if let book, !rangeVerses.isEmpty {
                         // 절 번호를 눌러 책갈피·노트·사전·복사(리더와 동일한 절 행).
-                        ForEach(verses) { v in
+                        ForEach(rangeVerses) { item in
+                            if item.newChapter {
+                                Text(book.chapterLabel(item.chapter))
+                                    .font(.caption.weight(.semibold))
+                                    .foregroundStyle(settings.theme.secondary)
+                                    .padding(.top, 4)
+                            }
                             VerseRowView(edition: edition, book: book,
-                                         chapter: target.chapter, verse: v,
-                                         highlighted: v.number == target.verse,
+                                         chapter: item.chapter, verse: item.verse,
+                                         highlighted: item.chapter == target.chapter
+                                             && item.verse.number == target.verse,
                                          onOpenNote: { ref, text in
                                              noteTarget = RefNoteTarget(ref: ref, text: text)
                                          },
