@@ -119,7 +119,59 @@ enum ScriptureRef {
                                    range: m.range)
             }
         }
+        addKoreanLinks(to: attr, color: color)
     }
+
+    /// 한국어 인용(창세 2,4 / 1코린 15,22 / 창세 1,1-2,3)을 링크로.
+    /// 책 약어 화이트리스트에 있는 것만 링크해 오탐(예: "명단은 17,5")을 막는다.
+    static func addKoreanLinks(to attr: NSMutableAttributedString, color: UIColor) {
+        guard let kre = koreanRegex else { return }
+        let s = attr.string as NSString
+        for m in kre.matches(in: attr.string,
+                             range: NSRange(location: 0, length: s.length)) {
+            let tok = s.substring(with: m.range(at: 1))
+            guard let bID = koreanAbbrev[tok],
+                  let c = Int(s.substring(with: m.range(at: 2))),
+                  let v = Int(s.substring(with: m.range(at: 3))) else { continue }
+            let d1 = m.range(at: 4).location != NSNotFound
+                ? Int(s.substring(with: m.range(at: 4))) : nil
+            let d2 = m.range(at: 5).location != NSNotFound
+                ? Int(s.substring(with: m.range(at: 5))) : nil
+            let ec = d2 != nil ? (d1 ?? c) : c
+            let ev = d2 ?? d1 ?? v
+            if let url = URL(string:
+                "catholicbible://xref?b=\(bID)&c=\(c)&v=\(v)&ec=\(ec)&ev=\(ev)") {
+                attr.addAttributes([.link: url,
+                                    .foregroundColor: color,
+                                    .underlineStyle: NSUnderlineStyle.single.rawValue],
+                                   range: m.range)
+            }
+        }
+    }
+
+    // 한국어 책 약어(주교회의 성경) → 앱 책 id
+    static let koreanAbbrev: [String: String] = [
+        "창세": "gn", "탈출": "ex", "레위": "lv", "민수": "nm", "신명": "dt",
+        "여호": "jos", "판관": "jgs", "룻": "ru",
+        "1사무": "1sm", "2사무": "2sm", "1열왕": "1kgs", "2열왕": "2kgs",
+        "1역대": "1chr", "2역대": "2chr", "에즈": "ezr", "느헤": "neh", "토빗": "tb",
+        "유딧": "jdt", "에스": "est", "1마카": "1mc", "2마카": "2mc",
+        "욥": "jb", "시편": "ps", "잠언": "prv", "코헬": "eccl", "아가": "sg",
+        "지혜": "wis", "집회": "sir", "이사": "is", "예레": "jer", "애가": "lam",
+        "바룩": "bar", "에제": "ez", "다니": "dn", "호세": "hos", "요엘": "jl",
+        "아모": "am", "오바": "ob", "요나": "jon", "미카": "mi", "나훔": "na",
+        "하바": "hb", "스바": "zep", "하까": "hg", "즈카": "zec", "말라": "mal",
+        "마태": "mt", "마르": "mk", "루카": "lk", "요한": "jn", "사도": "acts",
+        "로마": "rom", "1코린": "1cor", "2코린": "2cor", "갈라": "gal", "에페": "eph",
+        "필리": "phil", "콜로": "col", "1테살": "1thes", "2테살": "2thes",
+        "1티모": "1tm", "2티모": "2tm", "티토": "ti", "필레": "phlm", "히브": "heb",
+        "야고": "jas", "1베드": "1pt", "2베드": "2pt", "1요한": "1jn", "2요한": "2jn",
+        "3요한": "3jn", "유다": "jude", "묵시": "rv",
+    ]
+
+    // (앞이 한글 아님) 책약어(선택적 1~3 번호+1~2 한글) 장,절(-끝절 또는 -끝장,끝절)
+    private static let koreanRegex = try? NSRegularExpression(
+        pattern: "(?<![가-힣])([1-3]?[가-힣]{1,2})\\s?(\\d{1,3}),(\\d{1,3})(?:[-–](\\d{1,3})(?:,(\\d{1,3}))?)?")
 }
 
 /// 주석·상호참조 본문 뷰 — 단어 선택(네이티브)과 성경 인용 링크 탭을 함께 지원.
