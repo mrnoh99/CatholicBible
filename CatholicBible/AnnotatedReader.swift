@@ -413,6 +413,15 @@ struct NotesList: View {
     /// 인용의 '이어지는 절'(예: "33:6")이 이을 기준 책 id.
     var bookID: String = ""
     @Environment(ReaderSettings.self) private var settings
+    @Environment(\.openURL) private var openURL
+
+    private var noteUIFont: UIFont {
+        let size = settings.fontSize * 0.9
+        switch settings.fontChoice {
+        case .myeongjo: return UIFont(name: "NanumMyeongjo", size: size) ?? .systemFont(ofSize: size)
+        case .gothic:   return .systemFont(ofSize: size)
+        }
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
@@ -432,14 +441,13 @@ struct NotesList: View {
                             .font(settings.fontChoice.font(size: settings.fontSize * 0.72, bold: true))
                             .foregroundStyle(Color.accentColor)
                             .frame(minWidth: settings.fontSize * 1.3, alignment: .trailing)
-                        // 본문 속 성경 인용을 탭 가능한 링크로(탭 → RefPreviewSheet).
-                        // 링크 런도 같은 글꼴로 지정해 크기가 본문과 같게 한다.
-                        Text(ScriptureRef.linkify(
-                            note.text, currentBook: bookID,
-                            font: settings.fontChoice.font(size: settings.fontSize * 0.9)))
-                            .foregroundStyle(settings.theme.text)
-                            .tint(Color.accentColor)
-                            .textSelection(.enabled)
+                        // 단어 선택(네이티브)과 성경 인용 링크 탭을 함께 지원.
+                        SelectableNoteText(text: note.text, currentBook: bookID,
+                                           font: noteUIFont,
+                                           color: UIColor(settings.theme.text),
+                                           linkColor: UIColor(Color.accentColor),
+                                           lineSpacing: settings.lineSpacing,
+                                           onOpenURL: { openURL($0) })
                             .frame(maxWidth: .infinity, alignment: .leading)
                     }
                 }

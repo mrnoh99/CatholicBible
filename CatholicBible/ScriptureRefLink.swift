@@ -8,6 +8,7 @@
 //
 
 import SwiftUI
+import UIKit
 
 // MARK: - 인용 파서
 
@@ -83,6 +84,102 @@ enum ScriptureRef {
         // 링크 런은 Text 의 .font() 를 무시하므로, 모든 런에 같은 글꼴을 직접 준다.
         if let font { result.font = font }
         return result
+    }
+
+    /// NSAttributedString 에 성경 인용 링크(catholicbible://xref)를 입힌다.
+    /// (선택 가능한 UITextView 용 — 단어 선택과 링크 탭을 함께 지원.)
+    static func addLinks(to attr: NSMutableAttributedString, currentBook: String?,
+                         color: UIColor) {
+        guard let regex else { return }
+        let s = attr.string as NSString
+        var lastBook = currentBook
+        for m in regex.matches(in: attr.string,
+                               range: NSRange(location: 0, length: s.length)) {
+            var bookID: String?
+            if m.range(at: 1).location != NSNotFound {
+                let ab = s.substring(with: m.range(at: 1)).trimmingCharacters(in: .whitespaces)
+                if let id = abbrev[ab] { bookID = id; lastBook = id } else { continue }
+            } else {
+                bookID = lastBook
+            }
+            guard let bID = bookID,
+                  let c = Int(s.substring(with: m.range(at: 2))),
+                  let v = Int(s.substring(with: m.range(at: 3))) else { continue }
+            let d1 = m.range(at: 4).location != NSNotFound
+                ? Int(s.substring(with: m.range(at: 4))) : nil
+            let d2 = m.range(at: 5).location != NSNotFound
+                ? Int(s.substring(with: m.range(at: 5))) : nil
+            let ec = d2 != nil ? (d1 ?? c) : c
+            let ev = d2 ?? d1 ?? v
+            if let url = URL(string:
+                "catholicbible://xref?b=\(bID)&c=\(c)&v=\(v)&ec=\(ec)&ev=\(ev)") {
+                attr.addAttributes([.link: url,
+                                    .foregroundColor: color,
+                                    .underlineStyle: NSUnderlineStyle.single.rawValue],
+                                   range: m.range)
+            }
+        }
+    }
+}
+
+/// 주석·상호참조 본문 뷰 — 단어 선택(네이티브)과 성경 인용 링크 탭을 함께 지원.
+/// SwiftUI Text(.textSelection)는 링크가 섞이면 선택이 막혀, UITextView 로 렌더한다.
+struct SelectableNoteText: UIViewRepresentable {
+    let text: String
+    let currentBook: String?
+    let font: UIFont
+    let color: UIColor
+    let linkColor: UIColor
+    let lineSpacing: CGFloat
+    let onOpenURL: (URL) -> Void
+
+    func makeCoordinator() -> Coordinator { Coordinator(onOpenURL: onOpenURL) }
+
+    func makeUIView(context: Context) -> UITextView {
+        let tv = UITextView()
+        tv.isEditable = false
+        tv.isSelectable = true
+        tv.isScrollEnabled = false
+        tv.backgroundColor = .clear
+        tv.textContainerInset = .zero
+        tv.textContainer.lineFragmentPadding = 0
+        tv.delegate = context.coordinator
+        tv.setContentCompressionResistancePriority(.required, for: .vertical)
+        tv.setContentHuggingPriority(.required, for: .vertical)
+        return tv
+    }
+
+    func updateUIView(_ tv: UITextView, context: Context) {
+        context.coordinator.onOpenURL = onOpenURL
+        let para = NSMutableParagraphStyle()
+        para.lineSpacing = lineSpacing
+        let attr = NSMutableAttributedString(string: text, attributes: [
+            .font: font, .foregroundColor: color, .paragraphStyle: para,
+        ])
+        ScriptureRef.addLinks(to: attr, currentBook: currentBook, color: linkColor)
+        tv.linkTextAttributes = [.foregroundColor: linkColor]
+        tv.attributedText = attr
+    }
+
+    func sizeThatFits(_ proposal: ProposedViewSize, uiView: UITextView,
+                      context: Context) -> CGSize? {
+        let width = proposal.width ?? uiView.bounds.width
+        guard width > 0, width.isFinite else { return nil }
+        let fit = uiView.sizeThatFits(CGSize(width: width, height: .greatestFiniteMagnitude))
+        return CGSize(width: width, height: ceil(fit.height))
+    }
+
+    final class Coordinator: NSObject, UITextViewDelegate {
+        var onOpenURL: ((URL) -> Void)?
+        init(onOpenURL: ((URL) -> Void)?) { self.onOpenURL = onOpenURL }
+
+        func textView(_ textView: UITextView, primaryActionFor textItem: UITextItem,
+                      defaultAction: UIAction) -> UIAction? {
+            if case .link(let url) = textItem.content {
+                return UIAction { [onOpenURL] _ in onOpenURL?(url) }
+            }
+            return defaultAction
+        }
     }
 }
 
