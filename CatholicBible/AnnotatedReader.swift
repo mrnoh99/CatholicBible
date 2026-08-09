@@ -318,14 +318,24 @@ struct MarkerNoteSheet: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(ReaderSettings.self) private var settings
 
+    private var bodyUIFont: UIFont {
+        let size = settings.fontSize
+        switch settings.fontChoice {
+        case .myeongjo: return UIFont(name: "NanumMyeongjo", size: size) ?? .systemFont(ofSize: size)
+        case .gothic:   return .systemFont(ofSize: size)
+        }
+    }
+
     var body: some View {
         NavigationStack {
             ScrollView {
-                Text(text)
-                    .font(settings.bodyFont())
-                    .foregroundStyle(settings.theme.text)
-                    .lineSpacing(settings.lineSpacing)
-                    .textSelection(.enabled)
+                // 단어 선택(네이티브) 가능한 뷰로 렌더한다.
+                SelectableNoteText(text: text, currentBook: nil,
+                                   font: bodyUIFont,
+                                   color: UIColor(settings.theme.text),
+                                   linkColor: UIColor(Color.accentColor),
+                                   lineSpacing: settings.lineSpacing,
+                                   onOpenURL: { _ in })
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(20)
             }
