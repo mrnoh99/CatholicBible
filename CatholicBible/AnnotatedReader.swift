@@ -71,6 +71,9 @@ struct AnnotatedReader: View {
             IntroductionsView(currentBookID: bookID, editionID: editionID)
                 .environment(knb)
                 .environment(settings)
+                .environment(store)
+                .environment(annotations)
+                .environment(navigation)
         }
         // 주석·상호참조의 성경 인용(catholicbible://xref)은 여기서 미리보기로,
         // 나머지(각주 마커 catholicbible://note 등)는 부모 처리에 위임한다.
@@ -463,6 +466,9 @@ struct IntroductionsView: View {
     var editionID: String = "knbnotes"
     @Environment(KnbNotesStore.self) private var knb
     @Environment(ReaderSettings.self) private var settings
+    @Environment(BibleStore.self) private var store
+    @Environment(AnnotationStore.self) private var annotations
+    @Environment(ReaderNavigation.self) private var navigation
     @Environment(\.dismiss) private var dismiss
     @State private var selected: Introduction?
 
@@ -491,7 +497,11 @@ struct IntroductionsView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .cancellationAction) { Button("닫기") { dismiss() } } }
             .fullScreenCover(item: $selected) { intro in
-                IntroDetailView(intro: intro).environment(settings)
+                IntroDetailView(intro: intro)
+                    .environment(settings)
+                    .environment(store)
+                    .environment(annotations)
+                    .environment(navigation)
             }
         }
     }
@@ -525,10 +535,34 @@ struct IntroductionsView: View {
 struct IntroDetailView: View {
     let intro: Introduction
     @Environment(ReaderSettings.self) private var settings
+    @Environment(BibleStore.self) private var store
+    @Environment(AnnotationStore.self) private var annotations
+    @Environment(ReaderNavigation.self) private var navigation
     @Environment(\.horizontalSizeClass) private var hSize
     @Environment(\.dismiss) private var dismiss
+    @State private var xrefTarget: XrefTarget?
 
     private var wide: Bool { hSize == .regular }
+
+    private var bodyUIFont: UIFont {
+        let size = settings.fontSize
+        switch settings.fontChoice {
+        case .myeongjo: return UIFont(name: "NanumMyeongjo", size: size) ?? .systemFont(ofSize: size)
+        case .gothic:   return .systemFont(ofSize: size)
+        }
+    }
+
+    /// 입문 본문·주석의 성경 인용(catholicbible://xref) 탭 → 구절 미리보기.
+    private func handleURL(_ url: URL) {
+        guard url.scheme == "catholicbible", url.host == "xref" else { return }
+        let items = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems ?? []
+        func q(_ k: String) -> String? { items.first { $0.name == k }?.value }
+        if let b = q("b"), let cs = q("c"), let c = Int(cs), let vs = q("v"), let v = Int(vs) {
+            xrefTarget = XrefTarget(bookID: b, chapter: c, verse: v,
+                                    endChapter: q("ec").flatMap { Int($0) } ?? 0,
+                                    endVerse: q("ev").flatMap { Int($0) } ?? 0)
+        }
+    }
 
     var body: some View {
         NavigationStack {
@@ -559,6 +593,15 @@ struct IntroDetailView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .cancellationAction) { Button("닫기") { dismiss() } } }
             .preferredColorScheme(settings.theme.colorScheme)
+            // 주석 열(NotesList)의 인용 링크도 여기서 처리하도록 openURL 재정의
+            .environment(\.openURL, OpenURLAction { url in handleURL(url); return .handled })
+            .sheet(item: $xrefTarget) { t in
+                RefPreviewSheet(target: t)
+                    .environment(store)
+                    .environment(settings)
+                    .environment(annotations)
+                    .environment(navigation)
+            }
         }
     }
 
@@ -572,11 +615,13 @@ struct IntroDetailView: View {
     }
 
     private var bodyText: some View {
-        Text(intro.body.isEmpty ? "본문이 비어 있습니다." : intro.body)
-            .font(settings.bodyFont())
-            .foregroundStyle(settings.theme.text)
-            .lineSpacing(settings.lineSpacing)
-            .textSelection(.enabled)
+        SelectableNoteText(text: intro.body.isEmpty ? "본문이 비어 있습니다." : intro.body,
+                           currentBook: intro.bookID,
+                           font: bodyUIFont,
+                           color: UIColor(settings.theme.text),
+                           linkColor: UIColor(Color.accentColor),
+                           lineSpacing: settings.lineSpacing,
+                           onOpenURL: { handleURL($0) })
             .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
