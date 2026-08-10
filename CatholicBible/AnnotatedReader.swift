@@ -103,7 +103,7 @@ struct AnnotatedReader: View {
             parentOpenURL(url)          // 나머지는 부모(ReaderView)가 처리
             return .handled
         })
-        .sheet(item: $xrefTarget) { t in
+        .fullScreenCover(item: $xrefTarget) { t in
             RefPreviewSheet(target: t)
                 .environment(store)
                 .environment(settings)
