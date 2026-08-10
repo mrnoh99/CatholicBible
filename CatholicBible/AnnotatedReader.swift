@@ -378,7 +378,7 @@ struct MarkerNoteSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .cancellationAction) { Button("닫기") { dismiss() } } }
             .preferredColorScheme(settings.theme.colorScheme)
-            .sheet(item: $xrefTarget) { t in
+            .fullScreenCover(item: $xrefTarget) { t in
                 RefPreviewSheet(target: t)
                     .environment(store)
                     .environment(settings)
