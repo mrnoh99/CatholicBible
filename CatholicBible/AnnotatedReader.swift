@@ -69,7 +69,7 @@ struct AnnotatedReader: View {
                 chapter = picked; showChapterPicker = false
             }
         }
-        .sheet(isPresented: $showIntros) {
+        .fullScreenCover(isPresented: $showIntros) {
             IntroductionsView(currentBookID: bookID, editionID: editionID)
                 .environment(knb)
                 .environment(settings)
