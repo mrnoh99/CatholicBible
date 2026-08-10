@@ -366,17 +366,20 @@ struct RefPreviewSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .cancellationAction) { Button("닫기") { dismiss() } } }
             .preferredColorScheme(settings.theme.colorScheme)
-            .sheet(item: $noteTarget) { t in
+            // 시트 위에서 다시 시트를 띄우면 지연되므로(‘현재 시트가 닫혀야…’),
+            // 노트·사전은 fullScreenCover 로 띄운다.
+            .fullScreenCover(item: $noteTarget) { t in
                 NoteEditorView(verse: t.ref, verseText: t.text,
                                existing: annotations.noteOrNew(for: t.ref))
                     .environment(annotations)
                     .environment(settings)
             }
-            .sheet(item: $dictRequest) { req in
+            .fullScreenCover(item: $dictRequest) { req in
                 DictionaryView(initialTerm: req.term)
                     .environment(settings)
             }
         }
         .presentationDetents([.medium, .large])
+        .presentationDragIndicator(.visible)   // 드래그로 위치·크기 변경
     }
 }

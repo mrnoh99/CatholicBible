@@ -346,6 +346,7 @@ struct MarkerNoteSheet: View {
             .preferredColorScheme(settings.theme.colorScheme)
         }
         .presentationDetents([.medium, .large])
+        .presentationDragIndicator(.visible)   // 드래그로 위치·크기 변경
     }
 }
 
