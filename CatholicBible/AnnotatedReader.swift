@@ -317,12 +317,28 @@ struct MarkerNoteSheet: View {
     let text: String
     @Environment(\.dismiss) private var dismiss
     @Environment(ReaderSettings.self) private var settings
+    @Environment(BibleStore.self) private var store
+    @Environment(AnnotationStore.self) private var annotations
+    @Environment(ReaderNavigation.self) private var navigation
+    @State private var xrefTarget: XrefTarget?
 
     private var bodyUIFont: UIFont {
         let size = settings.fontSize
         switch settings.fontChoice {
         case .myeongjo: return UIFont(name: "NanumMyeongjo", size: size) ?? .systemFont(ofSize: size)
         case .gothic:   return .systemFont(ofSize: size)
+        }
+    }
+
+    /// 인용 링크 탭 → 구절 미리보기
+    private func handleURL(_ url: URL) {
+        guard url.scheme == "catholicbible", url.host == "xref" else { return }
+        let items = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems ?? []
+        func q(_ k: String) -> String? { items.first { $0.name == k }?.value }
+        if let b = q("b"), let cs = q("c"), let c = Int(cs), let vs = q("v"), let v = Int(vs) {
+            xrefTarget = XrefTarget(bookID: b, chapter: c, verse: v,
+                                    endChapter: q("ec").flatMap { Int($0) } ?? 0,
+                                    endVerse: q("ev").flatMap { Int($0) } ?? 0)
         }
     }
 
@@ -335,7 +351,7 @@ struct MarkerNoteSheet: View {
                                    color: UIColor(settings.theme.text),
                                    linkColor: UIColor(Color.accentColor),
                                    lineSpacing: settings.lineSpacing,
-                                   onOpenURL: { _ in })
+                                   onOpenURL: { handleURL($0) })
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(20)
             }
@@ -344,6 +360,13 @@ struct MarkerNoteSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .cancellationAction) { Button("닫기") { dismiss() } } }
             .preferredColorScheme(settings.theme.colorScheme)
+            .fullScreenCover(item: $xrefTarget) { t in
+                RefPreviewSheet(target: t)
+                    .environment(store)
+                    .environment(settings)
+                    .environment(annotations)
+                    .environment(navigation)
+            }
         }
         .presentationDetents([.medium, .large])
         .presentationDragIndicator(.visible)   // 드래그로 위치·크기 변경
