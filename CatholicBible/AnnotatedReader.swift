@@ -103,7 +103,7 @@ struct AnnotatedReader: View {
             parentOpenURL(url)          // 나머지는 부모(ReaderView)가 처리
             return .handled
         })
-        .sheet(item: $xrefTarget) { t in
+        .fullScreenCover(item: $xrefTarget) { t in
             RefPreviewSheet(target: t)
                 .environment(store)
                 .environment(settings)
@@ -378,7 +378,7 @@ struct MarkerNoteSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .cancellationAction) { Button("닫기") { dismiss() } } }
             .preferredColorScheme(settings.theme.colorScheme)
-            .fullScreenCover(item: $xrefTarget) { t in
+            .sheet(item: $xrefTarget) { t in
                 RefPreviewSheet(target: t)
                     .environment(store)
                     .environment(settings)
@@ -647,7 +647,7 @@ struct IntroDetailView: View {
             .preferredColorScheme(settings.theme.colorScheme)
             // 주석 열(NotesList)의 인용 링크도 여기서 처리하도록 openURL 재정의
             .environment(\.openURL, OpenURLAction { url in handleURL(url); return .handled })
-            .sheet(item: $xrefTarget) { t in
+            .fullScreenCover(item: $xrefTarget) { t in
                 RefPreviewSheet(target: t)
                     .environment(store)
                     .environment(settings)
