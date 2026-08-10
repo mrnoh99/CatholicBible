@@ -935,7 +935,7 @@ struct VerseRowView: View {
                             markerColor: isAnnotationEdition ? UIColor(Color.accentColor) : nil,
                             bookID: book.id,
                             chapter: chapter,
-                            onOpenURL: isAnnotationEdition ? { openURL($0) } : nil)
+                            onOpenURL: { openURL($0) })
     }
 
     private var uiBodyFont: UIFont {
