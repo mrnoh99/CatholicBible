@@ -33,6 +33,8 @@ struct AnnotatedReader: View {
     @State private var showIntros = false
     /// 주석·상호참조에서 탭한 인용 구절 미리보기 대상
     @State private var xrefTarget: XrefTarget?
+    /// 각주 마커 팝업 대상
+    @State private var noteTarget: MarkerNoteTarget?
     /// 부모(ReaderView 등)가 설치한 각주 마커 처리 액션에 위임하기 위해 보관
     @Environment(\.openURL) private var parentOpenURL
 
@@ -75,8 +77,8 @@ struct AnnotatedReader: View {
                 .environment(annotations)
                 .environment(navigation)
         }
-        // 주석·상호참조의 성경 인용(catholicbible://xref)은 여기서 미리보기로,
-        // 나머지(각주 마커 catholicbible://note 등)는 부모 처리에 위임한다.
+        // 주석·상호참조의 성경 인용(catholicbible://xref)과 각주 마커(catholicbible://note)는
+        // 여기서 중첩 미리보기로 처리하고, 나머지는 부모 처리에 위임한다.
         .environment(\.openURL, OpenURLAction { url in
             if url.scheme == "catholicbible", url.host == "xref" {
                 let items = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems ?? []
@@ -89,11 +91,27 @@ struct AnnotatedReader: View {
                 }
                 return .handled
             }
-            parentOpenURL(url)          // 각주 마커 등은 부모(ReaderView)가 처리
+            if url.scheme == "catholicbible", url.host == "note" {
+                let items = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems ?? []
+                func q(_ k: String) -> String? { items.first { $0.name == k }?.value }
+                if let n = q("n"), let text = knb.notes(edition: editionID, bookID: book.id, chapter: max(chapter, 1))
+                    .first(where: { $0.n == n })?.text {
+                    noteTarget = MarkerNoteTarget(n: n, text: text)
+                }
+                return .handled
+            }
+            parentOpenURL(url)          // 나머지는 부모(ReaderView)가 처리
             return .handled
         })
         .sheet(item: $xrefTarget) { t in
             RefPreviewSheet(target: t)
+                .environment(store)
+                .environment(settings)
+                .environment(annotations)
+                .environment(navigation)
+        }
+        .fullScreenCover(item: $noteTarget) { t in
+            MarkerNoteSheet(n: t.n, text: t.text)
                 .environment(store)
                 .environment(settings)
                 .environment(annotations)
