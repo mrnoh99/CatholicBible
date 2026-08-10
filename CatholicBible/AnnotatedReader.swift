@@ -58,13 +58,13 @@ struct AnnotatedReader: View {
             readingState.savePosition(edition: edition, book: book, chapter: new)
         }
         .onChange(of: navigation.pendingChapter) { _, _ in applyPending() }
-        .sheet(isPresented: $showBookPicker) {
+        .fullScreenCover(isPresented: $showBookPicker) {
             BookPickerView(edition: edition, current: bookID) { picked in
                 bookID = picked; showBookPicker = false
             }
             .environment(store)   // Mac Catalyst: 모달 환경 전파 대비
         }
-        .sheet(isPresented: $showChapterPicker) {
+        .fullScreenCover(isPresented: $showChapterPicker) {
             ChapterPickerView(book: book, current: max(chapter, 1)) { picked in
                 chapter = picked; showChapterPicker = false
             }
