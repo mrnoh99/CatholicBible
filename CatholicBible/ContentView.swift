@@ -130,6 +130,7 @@ struct ContentView: View {
     @Environment(AnnotationStore.self) private var annotations
     @Environment(KnbNotesStore.self) private var knbNotes
     @Environment(LiturgyStore.self) private var liturgy
+    @Environment(\.horizontalSizeClass) private var hSize
 
     @State private var navigation = ReaderNavigation()
     @State private var showSearch = false
@@ -152,11 +153,34 @@ struct ContentView: View {
                     }
                 }
         } detail: {
-            if let bookID = navigation.selectedBookID, let book = Bible.book(bookID) {
-                ReaderView(book: book)
-                    .id(book.id) // 책이 바뀌면 리더를 새로 만든다 (판본 전환은 열 안에서)
-            } else {
-                ShelfView()
+            VStack(spacing: 0) {
+                // iPad/Mac에서 상단 메뉴 표시
+                if hSize == .regular {
+                    HStack(spacing: 12) {
+                        Button("", systemImage: "sun.max") { showMass = true }
+                            .help("오늘의 미사")
+                        Button("", systemImage: "magnifyingglass") { showSearch = true }
+                            .help("검색")
+                        Button("", systemImage: "character.book.closed") { navigation.lookUp() }
+                            .help("사전")
+                        Button("", systemImage: "bookmark") { showBookmarks = true }
+                            .help("책갈피")
+                        Button("", systemImage: "note.text") { showNotes = true }
+                            .help("노트")
+                        Spacer()
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 8)
+                    .background(settings.theme.background)
+                    .border(settings.theme.secondary.opacity(0.1), width: 1)
+                }
+
+                if let bookID = navigation.selectedBookID, let book = Bible.book(bookID) {
+                    ReaderView(book: book)
+                        .id(book.id) // 책이 바뀌면 리더를 새로 만든다 (판본 전환은 열 안에서)
+                } else {
+                    ShelfView()
+                }
             }
         }
         .environment(navigation)
