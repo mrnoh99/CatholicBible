@@ -113,12 +113,12 @@ struct DailyMassView: View {
                 if let b = q("b"), let cs = q("c"), let c = Int(cs), let n = q("n") {
                     let note = knbNotes.notes(edition: previewEditionID,
                                               bookID: b, chapter: c).first { $0.n == n }
-                    markerNote = MarkerNoteTarget(n: n, text: note?.text ?? "이 주석을 찾지 못했습니다.")
+                    markerNote = MarkerNoteTarget(n: n, text: note?.text ?? "이 주석을 찾지 못했습니다.", bookID: b, chapter: c)
                 }
                 return .handled
             })
             .sheet(item: $markerNote) { mn in
-                MarkerNoteSheet(n: mn.n, text: mn.text).environment(settings)
+                MarkerNoteSheet(n: mn.n, text: mn.text, bookID: mn.bookID, chapter: mn.chapter).environment(settings)
             }
         }
     }
