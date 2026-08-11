@@ -400,15 +400,12 @@ struct RefPreviewSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .cancellationAction) { Button("닫기") { dismiss() } } }
             .preferredColorScheme(settings.theme.colorScheme)
-            // 절 선택 시 노트 편집은 sheet 로 띄운다(fullScreenCover 아님).
-            // AnnotatedReader 의 openURL 핸들러가 xrefTarget(fullScreenCover) 위에서
-            // noteTarget(sheet)을 띄울 수 있도록 하기 위해.
-            // 중첩된 fullScreenCover 내에서 sheet 표시 지연을 피하기 위해 fullScreenCover 사용
+            // 중첩된 fullScreenCover 내에서 주석 표시 지연을 피하기 위해 fullScreenCover 사용
             .fullScreenCover(item: $noteTarget) { t in
-                NoteEditorView(verse: t.ref, verseText: t.text,
-                               existing: annotations.noteOrNew(for: t.ref))
-                    .environment(annotations)
+                MarkerNoteSheet(n: "", text: t.text, bookID: t.ref.bookID, chapter: t.ref.chapter)
                     .environment(settings)
+                    .environment(store)
+                    .environment(knb)
             }
             .fullScreenCover(item: $dictRequest) { req in
                 DictionaryView(initialTerm: req.term)
