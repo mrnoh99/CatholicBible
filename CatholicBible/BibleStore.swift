@@ -126,7 +126,7 @@ final class BibleStore {
 
     // MARK: - 검색 (현재 판본 안에서)
 
-    func search(_ query: String, edition: Edition, limit: Int = 200) async -> [SearchHit] {
+    func search(_ query: String, edition: Edition, mode: SearchMode = .text, limit: Int = 200) async -> [SearchHit] {
         let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
         guard trimmed.count >= 2, let text = editions[edition.id] else { return [] }
         let snapshot = text.rawBooks
@@ -135,37 +135,130 @@ final class BibleStore {
 
         return await Task.detached(priority: .userInitiated) {
             var hits: [SearchHit] = []
-            outer: for bookID in order {
+
+            switch mode {
+            case .text:
+                hits = self.searchByText(trimmed, snapshot: snapshot, order: order, editionID: editionID, limit: limit)
+            case .bookName:
+                hits = self.searchByBookName(trimmed, snapshot: snapshot, order: order, editionID: editionID, limit: limit)
+            case .reference:
+                hits = self.searchByReference(trimmed, snapshot: snapshot, order: order, editionID: editionID, limit: limit)
+            }
+
+            return hits
+        }.value
+    }
+
+    private func searchByText(_ query: String, snapshot: [String: [String: [String: String]]],
+                             order: [String], editionID: String, limit: Int) -> [SearchHit] {
+        var hits: [SearchHit] = []
+        let terms = query.split(separator: " ").filter { !$0.isEmpty }
+        let orTerms = terms.count > 1 && query.contains("OR") ? terms.map(String.init) : []
+        let andTerms = orTerms.isEmpty ? terms.map(String.init) : []
+
+        outer: for bookID in order {
+            guard let chapters = snapshot[bookID] else { continue }
+            let chapterNumbers = chapters.keys.compactMap { Int($0) }.sorted()
+            for chapterNumber in chapterNumbers {
+                guard let verses = chapters[String(chapterNumber)] else { continue }
+                let verseNumbers = verses.keys.compactMap { Int($0) }.sorted()
+                for verseNumber in verseNumbers {
+                    guard let verseText = verses[String(verseNumber)] else { continue }
+                    var matches = false
+
+                    if !orTerms.isEmpty {
+                        matches = orTerms.contains { verseText.localizedStandardContains($0) }
+                    } else if !andTerms.isEmpty {
+                        matches = andTerms.allSatisfy { verseText.localizedStandardContains($0) }
+                    }
+
+                    if matches {
+                        hits.append(SearchHit(editionID: editionID, bookID: bookID,
+                                            chapter: chapterNumber, verse: verseNumber,
+                                            text: verseText))
+                        if hits.count >= limit { break outer }
+                    }
+                }
+            }
+        }
+        return hits
+    }
+
+    private func searchByBookName(_ query: String, snapshot: [String: [String: [String: String]]],
+                                  order: [String], editionID: String, limit: Int) -> [SearchHit] {
+        var hits: [SearchHit] = []
+        let searchTerms = query.split(separator: " ").map(String.init)
+
+        outer: for bookID in order {
+            guard let book = Bible.book(bookID) else { continue }
+            let fullName = book.name
+            let abbrev = book.abbrev
+            let matches = searchTerms.contains { term in
+                fullName.localizedStandardContains(term) || abbrev.localizedStandardContains(term)
+            }
+
+            if matches {
                 guard let chapters = snapshot[bookID] else { continue }
                 let chapterNumbers = chapters.keys.compactMap { Int($0) }.sorted()
                 for chapterNumber in chapterNumbers {
                     guard let verses = chapters[String(chapterNumber)] else { continue }
                     let verseNumbers = verses.keys.compactMap { Int($0) }.sorted()
-                    for verseNumber in verseNumbers {
+                    for verseNumber in verseNumbers.prefix(3) {
                         guard let verseText = verses[String(verseNumber)] else { continue }
-                        if verseText.localizedStandardContains(trimmed) {
-                            hits.append(SearchHit(editionID: editionID, bookID: bookID,
-                                                  chapter: chapterNumber, verse: verseNumber,
-                                                  text: verseText))
-                            if hits.count >= limit { break outer }
-                        }
+                        hits.append(SearchHit(editionID: editionID, bookID: bookID,
+                                            chapter: chapterNumber, verse: verseNumber,
+                                            text: verseText))
+                        if hits.count >= limit { break outer }
                     }
                 }
             }
-            return hits
-        }.value
+        }
+        return hits
+    }
+
+    private func searchByReference(_ query: String, snapshot: [String: [String: [String: String]]],
+                                   order: [String], editionID: String, limit: Int) -> [SearchHit] {
+        var hits: [SearchHit] = []
+        let pattern = "^(\\d+):(\\d+)(?:-(\\d+))?$"
+        guard let regex = try? NSRegularExpression(pattern: pattern) else { return hits }
+
+        let queryNS = query as NSString
+        let range = NSRange(location: 0, length: queryNS.length)
+
+        if let match = regex.firstMatch(in: query, range: range) {
+            let chapter = Int(queryNS.substring(with: match.range(at: 1))) ?? 0
+            let verse = Int(queryNS.substring(with: match.range(at: 2))) ?? 0
+            let endVerse = match.range(at: 3).location != NSNotFound ? Int(queryNS.substring(with: match.range(at: 3))) ?? verse : verse
+
+            guard chapter > 0, verse > 0 else { return hits }
+
+            for bookID in order {
+                guard let chapters = snapshot[bookID] else { continue }
+                guard let verses = chapters[String(chapter)] else { continue }
+
+                for v in verse...min(endVerse, verse + 10) {
+                    guard let verseText = verses[String(v)] else { continue }
+                    hits.append(SearchHit(editionID: editionID, bookID: bookID,
+                                        chapter: chapter, verse: v,
+                                        text: verseText))
+                    if hits.count >= limit { break }
+                }
+                if !hits.isEmpty { break }
+            }
+        }
+        return hits
     }
 
     /// 여러 판본에서 한꺼번에 검색한다(판본 순서대로, 판본별 상한 적용).
     func searchAll(_ query: String, editions searchEditions: [Edition],
-                   limit: Int = 400) async -> [SearchHit] {
+                   mode: SearchMode = .text, limit: Int = 400) async -> [SearchHit] {
         let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
         guard trimmed.count >= 2 else { return [] }
         let perEdition = max(40, limit / max(1, searchEditions.count))
         var all: [SearchHit] = []
         for edition in searchEditions {
             guard editions[edition.id] != nil else { continue }
-            let hits = await search(trimmed, edition: edition, limit: perEdition)
+            let hits = await search(trimmed, edition: edition, mode: mode, limit: perEdition)
             all.append(contentsOf: hits)
             if all.count >= limit { break }
         }

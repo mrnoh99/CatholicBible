@@ -20,6 +20,20 @@ enum SearchScope: String, CaseIterable, Identifiable {
     }
 }
 
+enum SearchMode: String, CaseIterable, Identifiable {
+    case text
+    case bookName
+    case reference
+    var id: String { rawValue }
+    var label: String {
+        switch self {
+        case .text: return "말씀"
+        case .bookName: return "명칭"
+        case .reference: return "장:절"
+        }
+    }
+}
+
 struct SearchView: View {
     @Environment(BibleStore.self) private var store
     @Environment(ReadingState.self) private var readingState
@@ -28,6 +42,7 @@ struct SearchView: View {
 
     @State private var query = ""
     @State private var scope: SearchScope = .current
+    @State private var mode: SearchMode = .text
     @State private var results: [SearchHit] = []
     @State private var isSearching = false
     @State private var hasSearched = false
@@ -38,10 +53,17 @@ struct SearchView: View {
 
         NavigationStack {
             VStack(spacing: 0) {
-                Picker("검색 범위", selection: $scope) {
-                    ForEach(SearchScope.allCases) { s in Text(s.label).tag(s) }
+                VStack(spacing: 8) {
+                    Picker("검색 범위", selection: $scope) {
+                        ForEach(SearchScope.allCases) { s in Text(s.label).tag(s) }
+                    }
+                    .pickerStyle(.segmented)
+
+                    Picker("검색 방식", selection: $mode) {
+                        ForEach(SearchMode.allCases) { m in Text(m.label).tag(m) }
+                    }
+                    .pickerStyle(.segmented)
                 }
-                .pickerStyle(.segmented)
                 .padding(.horizontal).padding(.vertical, 8)
 
                 Group {
@@ -88,13 +110,21 @@ struct SearchView: View {
             .navigationTitle("검색")
             .navigationBarTitleDisplayMode(.inline)
             .searchable(text: $query, placement: .navigationBarDrawer(displayMode: .always),
-                        prompt: "말씀 검색 (예: 사랑, 빛)")
+                        prompt: searchPrompt)
             .onSubmit(of: .search) { runSearch() }
             .onChange(of: query) { runSearch() }
             .onChange(of: scope) { runSearch() }
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("닫기") { dismiss() } }
             }
+        }
+    }
+
+    private var searchPrompt: String {
+        switch mode {
+        case .text: return "말씀 검색 (예: 사랑 OR love)"
+        case .bookName: return "명칭 검색 (예: 창세기, 마태)"
+        case .reference: return "장:절 검색 (예: 1:1, 2:3-5)"
         }
     }
 
@@ -121,15 +151,16 @@ struct SearchView: View {
         let currentEdition = readingState.selectedEdition
         let editionsToSearch = store.loadedEditions
         let scope = scope
+        let mode = mode
         searchTask = Task {
             try? await Task.sleep(for: .milliseconds(300))
             guard !Task.isCancelled else { return }
             isSearching = true
             let hits: [SearchHit]
             if scope == .all {
-                hits = await store.searchAll(text, editions: editionsToSearch)
+                hits = await store.searchAll(text, editions: editionsToSearch, mode: mode)
             } else {
-                hits = await store.search(text, edition: currentEdition)
+                hits = await store.search(text, edition: currentEdition, mode: mode)
             }
             guard !Task.isCancelled else { return }
             results = hits
