@@ -117,7 +117,7 @@ struct DailyMassView: View {
                 }
                 return .handled
             })
-            .sheet(item: $markerNote) { mn in
+            .fullScreenCover(item: $markerNote) { mn in
                 MarkerNoteSheet(n: mn.n, text: mn.text, bookID: mn.bookID, chapter: mn.chapter).environment(settings)
             }
         }
