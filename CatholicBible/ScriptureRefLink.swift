@@ -381,20 +381,22 @@ struct RefPreviewSheet: View {
                 DictionaryView(initialTerm: req.term)
                     .environment(settings)
             }
-        }
-        .environment(\.openURL, OpenURLAction { url in
-            if url.scheme == "catholicbible", url.host == "note" {
-                let items = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems ?? []
-                func q(_ k: String) -> String? { items.first { $0.name == k }?.value }
-                if let n = q("n"), let book, let text = knb.notes(edition: editionID, bookID: book.id, chapter: target.chapter)
-                    .first(where: { $0.n == n })?.text {
-                    noteTarget = RefNoteTarget(ref: VerseRef(bookID: book.id, chapter: target.chapter, verse: target.verse), text: text)
+            // NavigationStack 내부에서 openURL 환경 오버라이드
+            // → NavigationStack 내의 VerseRowView가 올바른 openURL을 받음
+            .environment(\.openURL, OpenURLAction { url in
+                if url.scheme == "catholicbible", url.host == "note" {
+                    let items = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems ?? []
+                    func q(_ k: String) -> String? { items.first { $0.name == k }?.value }
+                    if let n = q("n"), let book, let text = knb.notes(edition: editionID, bookID: book.id, chapter: target.chapter)
+                        .first(where: { $0.n == n })?.text {
+                        noteTarget = RefNoteTarget(ref: VerseRef(bookID: book.id, chapter: target.chapter, verse: target.verse), text: text)
+                    }
+                    return .handled
                 }
+                parentOpenURL(url)
                 return .handled
-            }
-            parentOpenURL(url)
-            return .handled
-        })
+            })
+        }
         .presentationDetents([.medium, .large])
         .presentationDragIndicator(.visible)   // 드래그로 위치·크기 변경
     }

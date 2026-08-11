@@ -407,10 +407,11 @@ struct MarkerNoteSheet: View {
                     .environment(navigation)
                     .environment(knb)
             }
+            // NavigationStack 내부에서 openURL 환경 오버라이드
+            .environment(\.openURL, OpenURLAction { url in
+                handleURL(url)
+            })
         }
-        .environment(\.openURL, OpenURLAction { url in
-            handleURL(url)
-        })
         .presentationDetents([.medium, .large])
         .presentationDragIndicator(.visible)   // 드래그로 위치·크기 변경
     }
