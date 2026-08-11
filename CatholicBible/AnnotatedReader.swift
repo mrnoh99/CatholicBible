@@ -378,8 +378,8 @@ struct MarkerNoteSheet: View {
     }
 
     /// 인용 링크/주석 마커 탭 → 구절 미리보기/주석 팝업
-    private func handleURL(_ url: URL) {
-        guard url.scheme == "catholicbible" else { return }
+    private func handleURL(_ url: URL) -> OpenURLAction.Result {
+        guard url.scheme == "catholicbible" else { return .discarded }
         let items = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems ?? []
         func q(_ k: String) -> String? { items.first { $0.name == k }?.value }
 
@@ -388,14 +388,17 @@ struct MarkerNoteSheet: View {
                 xrefTarget = XrefTarget(bookID: b, chapter: c, verse: v,
                                         endChapter: q("ec").flatMap { Int($0) } ?? 0,
                                         endVerse: q("ev").flatMap { Int($0) } ?? 0)
+                return .handled
             }
         } else if url.host == "note" {
             if let b = q("b"), let cs = q("c"), let c = Int(cs), let n = q("n"),
                let noteText = knb.notes(edition: "knbnotes", bookID: b, chapter: c)
                 .first(where: { $0.n == n })?.text {
                 noteTarget = MarkerNoteTarget(n: n, text: noteText, bookID: b, chapter: c)
+                return .handled
             }
         }
+        return .discarded
     }
 
     var body: some View {
@@ -659,15 +662,17 @@ struct IntroDetailView: View {
     }
 
     /// 입문 본문·주석의 성경 인용(catholicbible://xref) 탭 → 구절 미리보기.
-    private func handleURL(_ url: URL) {
-        guard url.scheme == "catholicbible", url.host == "xref" else { return }
+    private func handleURL(_ url: URL) -> OpenURLAction.Result {
+        guard url.scheme == "catholicbible", url.host == "xref" else { return .discarded }
         let items = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems ?? []
         func q(_ k: String) -> String? { items.first { $0.name == k }?.value }
         if let b = q("b"), let cs = q("c"), let c = Int(cs), let vs = q("v"), let v = Int(vs) {
             xrefTarget = XrefTarget(bookID: b, chapter: c, verse: v,
                                     endChapter: q("ec").flatMap { Int($0) } ?? 0,
                                     endVerse: q("ev").flatMap { Int($0) } ?? 0)
+            return .handled
         }
+        return .discarded
     }
 
     var body: some View {
