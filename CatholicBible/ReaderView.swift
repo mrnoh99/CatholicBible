@@ -51,16 +51,44 @@ struct ReaderView: View {
     var body: some View {
         @Bindable var rs = readingState
 
-        ZStack {
-            settings.theme.background.ignoresSafeArea()
-            if showAnnotated {
-                // 주석 성경: 왼쪽 본문 · 오른쪽 주석 (입문 접근 포함)
-                AnnotatedReader(editionID: $rs.selectedEditionID,
-                                bookID: primaryBookBinding,
-                                ownerBookID: book.id,
-                                onOpenNote: openNote)
-            } else {
-            switch layout {
+        VStack(spacing: 0) {
+            // 네비게이션 바 (이전/다음 페이지)
+            HStack(spacing: 12) {
+                Button { navigation.goBack() } label: {
+                    Image(systemName: "chevron.left")
+                        .font(.title2)
+                        .frame(width: 32, height: 32)
+                }
+                .disabled(!navigation.canGoBack)
+                .buttonStyle(.plain)
+                .help("이전 페이지")
+
+                Spacer()
+
+                Button { navigation.goForward() } label: {
+                    Image(systemName: "chevron.right")
+                        .font(.title2)
+                        .frame(width: 32, height: 32)
+                }
+                .disabled(!navigation.canGoForward)
+                .buttonStyle(.plain)
+                .help("다음 페이지")
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+            .background(settings.theme.background)
+            .border(settings.theme.secondary.opacity(0.1), width: 1)
+
+            ZStack {
+                settings.theme.background.ignoresSafeArea()
+                if showAnnotated {
+                    // 주석 성경: 왼쪽 본문 · 오른쪽 주석 (입문 접근 포함)
+                    AnnotatedReader(editionID: $rs.selectedEditionID,
+                                    bookID: primaryBookBinding,
+                                    ownerBookID: book.id,
+                                    onOpenNote: openNote)
+                } else {
+                switch layout {
             case .single:
                 ReaderPane(role: .primary,
                            editionID: $rs.selectedEditionID,

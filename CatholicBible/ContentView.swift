@@ -69,6 +69,12 @@ struct VerseHighlight: Equatable {
     }
 }
 
+/// 네비게이션 히스토리 항목
+struct NavigationHistoryItem: Equatable {
+    let bookID: String
+    let chapter: Int
+}
+
 @Observable
 final class ReaderNavigation {
     var selectedBookID: String?
@@ -82,6 +88,11 @@ final class ReaderNavigation {
     var activeHighlight: VerseHighlight?
     /// 사전 시트 요청 (nil이 아니면 사전이 열린다)
     var dictionaryRequest: DictionaryRequest?
+
+    /// 네비게이션 히스토리
+    private var history: [NavigationHistoryItem] = []
+    /// 현재 히스토리 위치 (history 배열의 인덱스)
+    private var historyIndex: Int = -1
 
     /// 한 절 또는 연속 범위로 연다(검색·책갈피 등).
     func open(bookID: String, chapter: Int, verse: Int? = nil,
@@ -101,7 +112,52 @@ final class ReaderNavigation {
         pendingBookID = bookID
         pendingChapter = chapter
         selectedBookID = bookID
+
+        // 히스토리 추가
+        addToHistory(bookID: bookID, chapter: chapter)
     }
+
+    /// 히스토리에 항목 추가
+    private func addToHistory(bookID: String, chapter: Int) {
+        let item = NavigationHistoryItem(bookID: bookID, chapter: chapter)
+
+        // 현재 위치 이후의 앞으로가기 히스토리 제거
+        if historyIndex >= 0 && historyIndex < history.count - 1 {
+            history.removeSubrange((historyIndex + 1)...)
+        }
+
+        // 마지막 항목과 같으면 추가하지 않음 (중복 방지)
+        if history.last != item {
+            history.append(item)
+            historyIndex = history.count - 1
+        }
+    }
+
+    /// 이전 페이지로 돌아가기
+    func goBack() {
+        guard historyIndex > 0 else { return }
+        historyIndex -= 1
+        let item = history[historyIndex]
+        pendingBookID = item.bookID
+        pendingChapter = item.chapter
+        selectedBookID = item.bookID
+    }
+
+    /// 다음 페이지로 이동 (뒤로가기 후)
+    func goForward() {
+        guard historyIndex < history.count - 1 else { return }
+        historyIndex += 1
+        let item = history[historyIndex]
+        pendingBookID = item.bookID
+        pendingChapter = item.chapter
+        selectedBookID = item.bookID
+    }
+
+    /// 뒤로가기 가능 여부
+    var canGoBack: Bool { historyIndex > 0 }
+
+    /// 앞으로가기 가능 여부
+    var canGoForward: Bool { historyIndex < history.count - 1 }
 
     /// 이 책을 여는 리더가 지금 소비할 대기 이동이 있는가.
     func hasPending(forBook bookID: String) -> Bool {
