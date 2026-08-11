@@ -109,8 +109,9 @@ struct AnnotatedReader: View {
                 .environment(settings)
                 .environment(annotations)
                 .environment(navigation)
+                .environment(knb)
         }
-        .fullScreenCover(item: $noteTarget) { t in
+        .sheet(item: $noteTarget) { t in
             MarkerNoteSheet(n: t.n, text: t.text)
                 .environment(store)
                 .environment(settings)

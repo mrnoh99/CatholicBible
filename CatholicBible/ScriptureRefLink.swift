@@ -270,7 +270,9 @@ struct RefPreviewSheet: View {
     @Environment(ReaderSettings.self) private var settings
     @Environment(AnnotationStore.self) private var annotations
     @Environment(ReaderNavigation.self) private var navigation
+    @Environment(KnbNotesStore.self) private var knb
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.openURL) private var parentOpenURL
     @State private var noteTarget: RefNoteTarget?
     @State private var dictRequest: DictionaryRequest?
 
@@ -366,9 +368,10 @@ struct RefPreviewSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .cancellationAction) { Button("닫기") { dismiss() } } }
             .preferredColorScheme(settings.theme.colorScheme)
-            // 시트 위에서 다시 시트를 띄우면 지연되므로(‘현재 시트가 닫혀야…’),
-            // 노트·사전은 fullScreenCover 로 띄운다.
-            .fullScreenCover(item: $noteTarget) { t in
+            // 절 선택 시 노트 편집은 sheet 로 띄운다(fullScreenCover 아님).
+            // AnnotatedReader 의 openURL 핸들러가 xrefTarget(fullScreenCover) 위에서
+            // noteTarget(sheet)을 띄울 수 있도록 하기 위해.
+            .sheet(item: $noteTarget) { t in
                 NoteEditorView(verse: t.ref, verseText: t.text,
                                existing: annotations.noteOrNew(for: t.ref))
                     .environment(annotations)
@@ -379,6 +382,19 @@ struct RefPreviewSheet: View {
                     .environment(settings)
             }
         }
+        .environment(\.openURL, OpenURLAction { url in
+            if url.scheme == "catholicbible", url.host == "note" {
+                let items = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems ?? []
+                func q(_ k: String) -> String? { items.first { $0.name == k }?.value }
+                if let n = q("n"), let book, let text = knb.notes(edition: editionID, bookID: book.id, chapter: target.chapter)
+                    .first(where: { $0.n == n })?.text {
+                    noteTarget = RefNoteTarget(ref: VerseRef(bookID: book.id, chapter: target.chapter, verse: target.verse), text: text)
+                }
+                return .handled
+            }
+            parentOpenURL(url)
+            return .handled
+        })
         .presentationDetents([.medium, .large])
         .presentationDragIndicator(.visible)   // 드래그로 위치·크기 변경
     }
