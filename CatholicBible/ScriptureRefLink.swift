@@ -179,11 +179,25 @@ enum ScriptureRef {
 struct SelectableNoteText: UIViewRepresentable {
     let text: String
     let currentBook: String?
+    let chapter: Int  // 각주 마커 링크용
     let font: UIFont
     let color: UIColor
     let linkColor: UIColor
     let lineSpacing: CGFloat
     let onOpenURL: (URL) -> Void
+
+    init(text: String, currentBook: String? = nil, chapter: Int = 0,
+         font: UIFont, color: UIColor, linkColor: UIColor,
+         lineSpacing: CGFloat, onOpenURL: @escaping (URL) -> Void) {
+        self.text = text
+        self.currentBook = currentBook
+        self.chapter = chapter
+        self.font = font
+        self.color = color
+        self.linkColor = linkColor
+        self.lineSpacing = lineSpacing
+        self.onOpenURL = onOpenURL
+    }
 
     func makeCoordinator() -> Coordinator { Coordinator(onOpenURL: onOpenURL) }
 
@@ -209,8 +223,26 @@ struct SelectableNoteText: UIViewRepresentable {
             .font: font, .foregroundColor: color, .paragraphStyle: para,
         ])
         ScriptureRef.addLinks(to: attr, currentBook: currentBook, color: linkColor)
+        addMarkerLinks(to: attr, color: linkColor)  // 주석 마커 링크도 추가
         tv.linkTextAttributes = [.foregroundColor: linkColor]
         tv.attributedText = attr
+    }
+
+    /// 각주 마커('N)')를 NSAttributedString에 링크로 추가
+    private func addMarkerLinks(to attr: NSMutableAttributedString, color: UIColor) {
+        guard let book = currentBook, chapter > 0 else { return }  // 책과 장 정보 필요
+        let pattern = "(?<![-,.\\d(])(\\d{1,3})\\)"
+        guard let regex = try? NSRegularExpression(pattern: pattern) else { return }
+        let s = attr.string as NSString
+        for m in regex.matches(in: attr.string, range: NSRange(location: 0, length: s.length)) {
+            if let n = m.range(at: 1).location != NSNotFound ? s.substring(with: m.range(at: 1)) : nil {
+                if let url = URL(string: "catholicbible://note?b=\(book)&c=\(chapter)&n=\(n)") {
+                    attr.addAttributes([.link: url, .foregroundColor: color,
+                                       .underlineStyle: NSUnderlineStyle.single.rawValue],
+                                      range: m.range)
+                }
+            }
+        }
     }
 
     func sizeThatFits(_ proposal: ProposedViewSize, uiView: UITextView,

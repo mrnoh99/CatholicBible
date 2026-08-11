@@ -76,6 +76,8 @@ struct MarkerNoteTarget: Identifiable {
     let id = UUID()
     let n: String
     let text: String
+    let bookID: String  // 소제목 링크의 각주 마커를 위해 필요
+    let chapter: Int    // 소제목 링크의 각주 마커를 위해 필요
 }
 
 enum IntroLevel: String, Codable, Sendable {

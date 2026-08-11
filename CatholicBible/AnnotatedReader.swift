@@ -94,9 +94,10 @@ struct AnnotatedReader: View {
             if url.scheme == "catholicbible", url.host == "note" {
                 let items = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems ?? []
                 func q(_ k: String) -> String? { items.first { $0.name == k }?.value }
-                if let n = q("n"), let text = knb.notes(edition: editionID, bookID: book.id, chapter: max(chapter, 1))
+                if let b = q("b"), let cs = q("c"), let c = Int(cs), let n = q("n"),
+                   let text = knb.notes(edition: editionID, bookID: b, chapter: c)
                     .first(where: { $0.n == n })?.text {
-                    noteTarget = MarkerNoteTarget(n: n, text: text)
+                    noteTarget = MarkerNoteTarget(n: n, text: text, bookID: b, chapter: c)
                 }
                 return .handled
             }
@@ -111,12 +112,13 @@ struct AnnotatedReader: View {
                 .environment(navigation)
                 .environment(knb)
         }
-        .sheet(item: $noteTarget) { t in
-            MarkerNoteSheet(n: t.n, text: t.text)
+        .fullScreenCover(item: $noteTarget) { t in
+            MarkerNoteSheet(n: t.n, text: t.text, bookID: t.bookID, chapter: t.chapter)
                 .environment(store)
                 .environment(settings)
                 .environment(annotations)
                 .environment(navigation)
+                .environment(knb)
         }
     }
 
@@ -317,15 +319,36 @@ struct SectionTitleView: View {
     /// 각주 마커('N)')를 링크로 만들지 — 정수 마커를 쓰는 주석성경만 true.
     var linkable: Bool = true
     @Environment(ReaderSettings.self) private var settings
+    @Environment(\.openURL) private var openURL
+
+    private var titleUIFont: UIFont {
+        let size = settings.fontSize * 1.05
+        switch settings.fontChoice {
+        case .myeongjo: return UIFont(name: "NanumMyeongjo", size: size) ?? .systemFont(ofSize: size)
+        case .gothic:   return .systemFont(ofSize: size, weight: .semibold)
+        }
+    }
 
     var body: some View {
-        Text(AnnotationMarkup.attributed(text, linkable: linkable, bookID: bookID, chapter: chapter))
-            .font(settings.fontChoice.font(size: settings.fontSize * 1.05, relativeTo: .headline, bold: true))
-            .foregroundStyle(settings.theme.text)
-            .tint(Color.accentColor)
-            .textSelection(.enabled)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.top, settings.lineSpacing)
+        if linkable {
+            // 주석성경: 소제목의 성경 인용과 각주 마커를 모두 링크로 활성화
+            SelectableNoteText(text: text, currentBook: bookID, chapter: chapter,
+                              font: titleUIFont,
+                              color: UIColor(settings.theme.text),
+                              linkColor: UIColor(Color.accentColor),
+                              lineSpacing: settings.lineSpacing,
+                              onOpenURL: { openURL($0) })
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.top, settings.lineSpacing)
+        } else {
+            // 다른 판본: 단순 텍스트만 표시
+            Text(text)
+                .font(settings.fontChoice.font(size: settings.fontSize * 1.05, relativeTo: .headline, bold: true))
+                .foregroundStyle(settings.theme.text)
+                .textSelection(.enabled)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.top, settings.lineSpacing)
+        }
     }
 }
 
@@ -334,6 +357,8 @@ struct SectionTitleView: View {
 struct MarkerNoteSheet: View {
     let n: String
     let text: String
+    let bookID: String  // 소제목 링크의 각주 마커를 위해 필요
+    let chapter: Int    // 소제목 링크의 각주 마커를 위해 필요
     @Environment(\.dismiss) private var dismiss
     @Environment(ReaderSettings.self) private var settings
     @Environment(BibleStore.self) private var store
@@ -368,7 +393,7 @@ struct MarkerNoteSheet: View {
             if let b = q("b"), let cs = q("c"), let c = Int(cs), let n = q("n"),
                let noteText = knb.notes(edition: "knbnotes", bookID: b, chapter: c)
                 .first(where: { $0.n == n })?.text {
-                noteTarget = MarkerNoteTarget(n: n, text: noteText)
+                noteTarget = MarkerNoteTarget(n: n, text: noteText, bookID: b, chapter: c)
             }
         }
     }
@@ -377,7 +402,7 @@ struct MarkerNoteSheet: View {
         NavigationStack {
             ScrollView {
                 // 단어 선택(네이티브) 가능한 뷰로 렌더한다.
-                SelectableNoteText(text: text, currentBook: nil,
+                SelectableNoteText(text: text, currentBook: bookID, chapter: chapter,
                                    font: bodyUIFont,
                                    color: UIColor(settings.theme.text),
                                    linkColor: UIColor(Color.accentColor),
@@ -401,7 +426,7 @@ struct MarkerNoteSheet: View {
             }
             // 중첩된 presentation 상황에서 sheet 표시 지연을 피하기 위해 fullScreenCover 사용
             .fullScreenCover(item: $noteTarget) { t in
-                MarkerNoteSheet(n: t.n, text: t.text)
+                MarkerNoteSheet(n: t.n, text: t.text, bookID: t.bookID, chapter: t.chapter)
                     .environment(store)
                     .environment(settings)
                     .environment(annotations)
@@ -494,6 +519,8 @@ struct NotesList: View {
     let emptyHint: String
     /// 인용의 '이어지는 절'(예: "33:6")이 이을 기준 책 id.
     var bookID: String = ""
+    /// 각주 마커 링크를 위해 필요
+    var chapter: Int = 0
     @Environment(ReaderSettings.self) private var settings
     @Environment(\.openURL) private var openURL
 
@@ -524,7 +551,7 @@ struct NotesList: View {
                             .foregroundStyle(Color.accentColor)
                             .frame(minWidth: settings.fontSize * 1.3, alignment: .trailing)
                         // 단어 선택(네이티브)과 성경 인용 링크 탭을 함께 지원.
-                        SelectableNoteText(text: note.text, currentBook: bookID,
+                        SelectableNoteText(text: note.text, currentBook: bookID, chapter: chapter,
                                            font: noteUIFont,
                                            color: UIColor(settings.theme.text),
                                            linkColor: UIColor(Color.accentColor),
