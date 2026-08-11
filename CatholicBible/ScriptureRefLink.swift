@@ -403,8 +403,10 @@ struct RefPreviewSheet: View {
             // 중첩된 fullScreenCover 내에서 주석 표시 지연을 피하기 위해 fullScreenCover 사용
             .fullScreenCover(item: $noteTarget) { t in
                 MarkerNoteSheet(n: "", text: t.text, bookID: t.ref.bookID, chapter: t.ref.chapter)
-                    .environment(settings)
                     .environment(store)
+                    .environment(settings)
+                    .environment(annotations)
+                    .environment(navigation)
                     .environment(knb)
             }
             .fullScreenCover(item: $dictRequest) { req in
