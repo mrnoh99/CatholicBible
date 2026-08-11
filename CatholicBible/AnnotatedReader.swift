@@ -339,7 +339,10 @@ struct MarkerNoteSheet: View {
     @Environment(BibleStore.self) private var store
     @Environment(AnnotationStore.self) private var annotations
     @Environment(ReaderNavigation.self) private var navigation
+    @Environment(KnbNotesStore.self) private var knb
+    @Environment(\.openURL) private var parentOpenURL
     @State private var xrefTarget: XrefTarget?
+    @State private var noteTarget: MarkerNoteTarget?
 
     private var bodyUIFont: UIFont {
         let size = settings.fontSize
@@ -349,15 +352,24 @@ struct MarkerNoteSheet: View {
         }
     }
 
-    /// 인용 링크 탭 → 구절 미리보기
+    /// 인용 링크/주석 마커 탭 → 구절 미리보기/주석 팝업
     private func handleURL(_ url: URL) {
-        guard url.scheme == "catholicbible", url.host == "xref" else { return }
+        guard url.scheme == "catholicbible" else { return }
         let items = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems ?? []
         func q(_ k: String) -> String? { items.first { $0.name == k }?.value }
-        if let b = q("b"), let cs = q("c"), let c = Int(cs), let vs = q("v"), let v = Int(vs) {
-            xrefTarget = XrefTarget(bookID: b, chapter: c, verse: v,
-                                    endChapter: q("ec").flatMap { Int($0) } ?? 0,
-                                    endVerse: q("ev").flatMap { Int($0) } ?? 0)
+
+        if url.host == "xref" {
+            if let b = q("b"), let cs = q("c"), let c = Int(cs), let vs = q("v"), let v = Int(vs) {
+                xrefTarget = XrefTarget(bookID: b, chapter: c, verse: v,
+                                        endChapter: q("ec").flatMap { Int($0) } ?? 0,
+                                        endVerse: q("ev").flatMap { Int($0) } ?? 0)
+            }
+        } else if url.host == "note" {
+            if let b = q("b"), let cs = q("c"), let c = Int(cs), let n = q("n"),
+               let noteText = knb.notes(edition: "knbnotes", bookID: b, chapter: c)
+                .first(where: { $0.n == n })?.text {
+                noteTarget = MarkerNoteTarget(n: n, text: noteText)
+            }
         }
     }
 
@@ -385,8 +397,20 @@ struct MarkerNoteSheet: View {
                     .environment(settings)
                     .environment(annotations)
                     .environment(navigation)
+                    .environment(knb)
+            }
+            .sheet(item: $noteTarget) { t in
+                MarkerNoteSheet(n: t.n, text: t.text)
+                    .environment(store)
+                    .environment(settings)
+                    .environment(annotations)
+                    .environment(navigation)
+                    .environment(knb)
             }
         }
+        .environment(\.openURL, OpenURLAction { url in
+            handleURL(url)
+        })
         .presentationDetents([.medium, .large])
         .presentationDragIndicator(.visible)   // 드래그로 위치·크기 변경
     }
