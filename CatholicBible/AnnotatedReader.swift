@@ -399,7 +399,8 @@ struct MarkerNoteSheet: View {
                     .environment(navigation)
                     .environment(knb)
             }
-            .sheet(item: $noteTarget) { t in
+            // 중첩된 presentation 상황에서 sheet 표시 지연을 피하기 위해 fullScreenCover 사용
+            .fullScreenCover(item: $noteTarget) { t in
                 MarkerNoteSheet(n: t.n, text: t.text)
                     .environment(store)
                     .environment(settings)
