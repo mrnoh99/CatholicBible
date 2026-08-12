@@ -72,8 +72,8 @@ struct SearchView: View {
                 if mode == .reference {
                     let selectedBook = Bible.book(selectedBookID)
                     let maxVerse = selectedBook.flatMap { book in
-                        store.verses(edition: readingState.selectedEdition, bookID: book.id, chapter: selectedChapter)?
-                            .map { $0.verse }.max()
+                        store.verses(edition: readingState.selectedEdition, book: book, chapter: selectedChapter)
+                            .map { $0.number }.max()
                     } ?? 1
 
                     VStack(spacing: 8) {
@@ -238,12 +238,12 @@ struct SearchView: View {
                 isSearching = true
 
                 var hits: [SearchHit] = []
+                guard let book = Bible.book(selectedBookID) else { return }
                 for edition in editionsToSearch {
-                    if let verses = store.verses(edition: edition, bookID: selectedBookID, chapter: chapter) {
-                        if let hit = verses.first(where: { $0.verse == verse }) {
-                            hits.append(SearchHit(bookID: selectedBookID, chapter: chapter, verse: verse,
-                                                 editionID: edition.id, text: hit.text))
-                        }
+                    let verses = store.verses(edition: edition, book: book, chapter: chapter)
+                    if let hit = verses.first(where: { $0.number == verse }) {
+                        hits.append(SearchHit(editionID: edition.id, bookID: selectedBookID, chapter: chapter, verse: verse,
+                                             text: hit.text))
                     }
                 }
 
