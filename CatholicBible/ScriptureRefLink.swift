@@ -99,10 +99,10 @@ enum ScriptureRef {
     private static let regex = try? NSRegularExpression(
         pattern: "((?:[1-4]\\s)?[A-Z][A-Za-z]{1,4})?\\s?(\\d{1,3}):(\\d{1,3})(?:[–-](\\d{1,3})(?::(\\d{1,3}))?)?")
 
-    /// 한글 성경 참조 정규식: "책이름 장,절" 또는 "장,절"
-    /// 그룹: 1=책이름(선택적) 2=장 3=절 4=대시뒤 첫 수 5=대시뒤 둘째 수
+    /// 한글 성경 참조 정규식: "책이름 장,절" 또는 "장,절" (점으로 구분된 절 범위 포함)
+    /// 그룹: 1=책이름(선택적) 2=장 3=절 4=대시뒤 첫 수 5=대시뒤 둘째 수 6=점뒤 절 7=점뒤 대시 절
     private static let koreanRegex = try? NSRegularExpression(
-        pattern: "([가-힣]+(?:복음|서간|기|편)?)?\\s*(\\d{1,3})[:,](\\d{1,3})(?:[–-](\\d{1,3})(?:[:,](\\d{1,3}))?)?")
+        pattern: "([가-힣]+(?:복음|서간|기|편)?)?\\s*(\\d{1,3})[:,](\\d{1,3})(?:[–-](\\d{1,3})(?:[:,](\\d{1,3}))?)?(?:\\.(\\d{1,3})(?:[–-](\\d{1,3}))?)?")
 
     /// text → 인용을 링크로 바꾼 AttributedString.
     /// currentBook: 책약어 없는 "33:6" 이 이을 기준 책(그 장의 책 id).
@@ -177,8 +177,10 @@ enum ScriptureRef {
                 ? Int(s.substring(with: m.range(at: 4))) : nil
             let d2 = m.range(at: 5).location != NSNotFound
                 ? Int(s.substring(with: m.range(at: 5))) : nil
+            let d2_dot = m.range(at: 7).location != NSNotFound
+                ? Int(s.substring(with: m.range(at: 7))) : nil
             let ec = d2 != nil ? (d1 ?? c) : c
-            let ev = d2 ?? d1 ?? v
+            let ev = d2 ?? d2_dot ?? d1 ?? v
             if let url = URL(string:
                 "catholicbible://xref?b=\(bID)&c=\(c)&v=\(v)&ec=\(ec)&ev=\(ev)") {
                 attr.addAttributes([.link: url,
@@ -223,8 +225,10 @@ enum ScriptureRef {
                 ? Int(s.substring(with: m.range(at: 4))) : nil
             let d2 = m.range(at: 5).location != NSNotFound
                 ? Int(s.substring(with: m.range(at: 5))) : nil
+            let d2_dot = m.range(at: 7).location != NSNotFound
+                ? Int(s.substring(with: m.range(at: 7))) : nil
             let ec = d2 != nil ? (d1 ?? c) : c
-            let ev = d2 ?? d1 ?? v
+            let ev = d2 ?? d2_dot ?? d1 ?? v
             if let url = URL(string:
                 "catholicbible://xref?b=\(bID)&c=\(c)&v=\(v)&ec=\(ec)&ev=\(ev)") {
                 attr.addAttributes([.link: url,
