@@ -53,16 +53,26 @@ struct SearchView: View {
 
         NavigationStack {
             VStack(spacing: 0) {
-                VStack(spacing: 8) {
+                HStack(spacing: 12) {
                     Picker("검색 범위", selection: $scope) {
                         ForEach(SearchScope.allCases) { s in Text(s.label).tag(s) }
                     }
                     .pickerStyle(.segmented)
+                    .frame(maxWidth: .infinity)
 
-                    Picker("검색 방식", selection: $mode) {
-                        ForEach(SearchMode.allCases) { m in Text(m.label).tag(m) }
+                    Menu {
+                        Picker("검색 방식", selection: $mode) {
+                            ForEach(SearchMode.allCases) { m in Text(m.label).tag(m) }
+                        }
+                    } label: {
+                        HStack(spacing: 4) {
+                            Text(mode.label)
+                            Image(systemName: "chevron.down")
+                        }
+                        .font(.subheadline)
+                        .foregroundStyle(Color.accentColor)
                     }
-                    .pickerStyle(.segmented)
+                    .frame(minWidth: 0, maxWidth: .infinity, alignment: .trailing)
                 }
                 .padding(.horizontal).padding(.vertical, 8)
 
