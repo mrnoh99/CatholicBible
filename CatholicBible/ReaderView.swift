@@ -59,7 +59,7 @@ struct ReaderView: View {
                     AnnotatedReader(editionID: $rs.selectedEditionID,
                                     bookID: primaryBookBinding,
                                     ownerBookID: book.id,
-                                    showHeader: false,
+                                    showHeader: true,
                                     onOpenNote: openNote)
                 } else {
                     switch layout {
@@ -110,7 +110,7 @@ struct ReaderView: View {
                 }
             }
         }
-        .navigationTitle("성경 읽기")
+        .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar { readerToolbar }
         .preferredColorScheme(settings.theme.colorScheme)
@@ -164,51 +164,31 @@ struct ReaderView: View {
 
     @ToolbarContentBuilder
     private var readerToolbar: some ToolbarContent {
-        ToolbarItemGroup(placement: .navigationBarLeading) {
-            Button { navigation.goBack() } label: {
-                Image(systemName: "chevron.left")
-                    .font(.title2)
-            }
-            .disabled(!navigation.canGoBack)
-            .help("이전 페이지")
+        ToolbarItem(placement: .navigationBarLeading) {
+            HStack(spacing: 12) {
+                Button { navigation.goBack() } label: {
+                    Image(systemName: "chevron.left")
+                        .font(.title2)
+                }
+                .disabled(!navigation.canGoBack)
+                .help("이전 페이지")
 
-            Menu {
-                Picker("판본", selection: Binding(
-                    get: { readingState.selectedEditionID },
-                    set: { readingState.selectedEditionID = $0 })) {
-                    ForEach(Editions.all) { ed in Text(ed.name).tag(ed.id) }
-                }
-            } label: {
-                HStack(spacing: 4) {
-                    Text(readingState.selectedEdition.shortName)
-                        .fontWeight(.semibold)
-                    Image(systemName: "chevron.down")
-                }
-                .font(.subheadline)
-                .foregroundStyle(Color.accentColor)
-            }
-
-            Menu {
-                Button { } label: { Text(book.name) }
-            } label: {
-                HStack(spacing: 4) {
-                    Text(book.shortName)
-                        .fontWeight(.semibold)
-                    Image(systemName: "chevron.down")
-                }
-                .font(.subheadline)
-                .foregroundStyle(Color.accentColor)
+                Text("성경 읽기")
+                    .font(.headline)
+                    .fontWeight(.semibold)
             }
         }
 
-        ToolbarItemGroup(placement: .navigationBarTrailing) {
-            Button { navigation.goForward() } label: {
-                Image(systemName: "chevron.right")
-                    .font(.title2)
-            }
-            .disabled(!navigation.canGoForward)
-            .help("다음 페이지")
-            Menu {
+        ToolbarItem(placement: .navigationBarTrailing) {
+            HStack(spacing: 12) {
+                Button { navigation.goForward() } label: {
+                    Image(systemName: "chevron.right")
+                        .font(.title2)
+                }
+                .disabled(!navigation.canGoForward)
+                .help("다음 페이지")
+
+                Menu {
                 if canDual && (Editions.edition(readingState.selectedEditionID)?.isAnnotated ?? false) {
                     // 주석 판본(주석성경·NABRE): 본문·주석 vs 판본 비교
                     Section("보기") {
