@@ -163,7 +163,6 @@ struct SearchView: View {
             .navigationBarTitleDisplayMode(.inline)
             .searchable(text: $query, placement: .navigationBarDrawer(displayMode: .always),
                         prompt: mode == .text ? "말씀 검색 (예: 사랑 OR love)" : "")
-            .searchableComparison(mode == .text)
             .onSubmit(of: .search) { runSearch() }
             .onChange(of: query) { runSearch() }
             .onChange(of: scope) { runSearch() }
