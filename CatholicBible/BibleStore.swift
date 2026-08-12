@@ -147,7 +147,7 @@ final class BibleStore {
         }.value
     }
 
-    private func searchByText(_ query: String, snapshot: [String: [String: [String: String]]],
+    nonisolated private func searchByText(_ query: String, snapshot: [String: [String: [String: String]]],
                              order: [String], editionID: String, limit: Int) -> [SearchHit] {
         var hits: [SearchHit] = []
         let terms = query.split(separator: " ").filter { !$0.isEmpty }
@@ -182,7 +182,7 @@ final class BibleStore {
         return hits
     }
 
-    private func searchByReference(_ query: String, snapshot: [String: [String: [String: String]]],
+    nonisolated private func searchByReference(_ query: String, snapshot: [String: [String: [String: String]]],
                                    order: [String], editionID: String, limit: Int) -> [SearchHit] {
         var hits: [SearchHit] = []
         let pattern = "^(\\d+):(\\d+)(?:-(\\d+))?$"
