@@ -160,6 +160,7 @@ final class KnbNotesStore {
 
     func load() async {
         guard !isLoaded else { return }
+        let resourceMap = Self.resourceMap
         let parsed = await Task.detached(priority: .userInitiated) {
             () -> (intros: [String: [Introduction]],
                    anno: [String: [String: [Int: [ChapterNote]]]],
@@ -181,7 +182,7 @@ final class KnbNotesStore {
             var annoByEd: [String: [String: [Int: [ChapterNote]]]] = [:]
             var xrefByEd: [String: [String: [Int: [ChapterNote]]]] = [:]
             var titlesByEd: [String: [String: [Int: [TitleItem]]]] = [:]
-            for (edition, file) in Self.resourceMap {
+            for (edition, file) in resourceMap {
                 guard let url = Bundle.main.url(forResource: file, withExtension: "json"),
                       let data = try? Data(contentsOf: url),
                       let f = try? JSONDecoder().decode(KnbNotesFile.self, from: data)
