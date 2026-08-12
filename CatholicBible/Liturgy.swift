@@ -236,7 +236,7 @@ struct DailyReadings: Codable, Hashable, Sendable {
     }
 }
 
-private struct DailyReadingsFile: Decodable {
+nonisolated private struct DailyReadingsFile: Decodable {
     let year: Int?
     let source: String?
     let days: [String: DailyReadings]?
