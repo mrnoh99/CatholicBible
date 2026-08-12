@@ -21,6 +21,10 @@ private struct NoteTarget: Identifiable {
 struct ReaderView: View {
     /// 사이드바에서 고른 책 — 첫째 열의 책이 된다.
     let book: BibleBook
+    @Binding var showMass: Bool
+    @Binding var showSearch: Bool
+    @Binding var showBookmarks: Bool
+    @Binding var showNotes: Bool
 
     @Environment(BibleStore.self) private var store
     @Environment(ReaderSettings.self) private var settings
@@ -222,7 +226,11 @@ struct ReaderView: View {
                     }
                 }
                 Section("도구") {
+                    Button("오늘의 미사", systemImage: "sun.max") { showMass = true }
+                    Button("찾기", systemImage: "magnifyingglass") { showSearch = true }
                     Button("사전", systemImage: "character.book.closed") { navigation.lookUp() }
+                    Button("책갈피", systemImage: "bookmark") { showBookmarks = true }
+                    Button("노트", systemImage: "note.text") { showNotes = true }
                     Button("보기 설정", systemImage: "textformat.size") { showAppearance = true }
                 }
             } label: {
