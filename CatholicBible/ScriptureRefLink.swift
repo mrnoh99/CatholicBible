@@ -237,6 +237,47 @@ enum ScriptureRef {
                                    range: m.range)
             }
         }
+
+        addSemicolonSeparatedLinks(to: attr, color: color)
+    }
+
+    /// 세미콜론으로 분리된 인용 처리: (1,11; 9,7) 형식 (기본 책: 마르코)
+    /// 괄호 안의 여러 인용을 각각 링크로 변환
+    private static func addSemicolonSeparatedLinks(to attr: NSMutableAttributedString, color: UIColor) {
+        let s = attr.string as NSString
+        // 패턴: (숫자,숫자; 숫자,숫자) 또는 그 이상
+        guard let semiPattern = try? NSRegularExpression(
+            pattern: "\\(\\d{1,3}[,:]\\d{1,3}(?:;\\s*\\d{1,3}[,:]\\d{1,3})+\\)") else { return }
+
+        guard let partPattern = try? NSRegularExpression(pattern: "(\\d{1,3})[,:]\\s?(\\d{1,3})") else { return }
+
+        for m in semiPattern.matches(in: attr.string, range: NSRange(location: 0, length: s.length)) {
+            let fullText = s.substring(with: m.range)
+            let inner = String(fullText.dropFirst().dropLast()) // 괄호 제거
+            let parts = inner.split(separator: ";").map { String($0).trimmingCharacters(in: .whitespaces) }
+
+            var searchStart = m.range.location + 1
+            for part in parts {
+                let partLen = (part as NSString).length
+                let partRange = NSRange(location: 0, length: partLen)
+
+                if let partMatch = partPattern.firstMatch(in: part, range: partRange),
+                   let c = Int((part as NSString).substring(with: partMatch.range(at: 1))),
+                   let v = Int((part as NSString).substring(with: partMatch.range(at: 2))),
+                   let url = URL(string: "catholicbible://xref?b=mk&c=\(c)&v=\(v)&ec=\(c)&ev=\(v)") {
+
+                    let searchRange = NSRange(location: searchStart, length: s.length - searchStart)
+                    let partNSRange = s.range(of: part, options: [], range: searchRange)
+                    if partNSRange.location != NSNotFound {
+                        attr.addAttributes([.link: url,
+                                          .foregroundColor: color,
+                                          .underlineStyle: NSUnderlineStyle.single.rawValue],
+                                         range: partNSRange)
+                        searchStart = partNSRange.location + partNSRange.length
+                    }
+                }
+            }
+        }
     }
 
     // 한국어 책 약어(주교회의 성경) → 앱 책 id
