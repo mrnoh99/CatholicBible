@@ -573,17 +573,7 @@ struct ChapterNavBar: View {
     private func move(to n: Int) {
         guard n != chapter else { return }
         onChange()
-        setChapter(n)
-    }
-
-    private func parseBookSelection(_ picked: String) {
-        let components = picked.split(separator: "-", maxSplits: 1).map(String.init)
-        if components.count == 2, let chapterNum = Int(components[1]) {
-            bookID = components[0]
-            setChapter(chapterNum)
-        } else {
-            bookID = picked
-        }
+        chapter = n
     }
 }
 
