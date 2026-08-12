@@ -60,9 +60,10 @@ struct AnnotatedReader: View {
             readingState.savePosition(edition: edition, book: book, chapter: new)
         }
         .onChange(of: navigation.pendingChapter) { _, _ in applyPending() }
-        .fullScreenCover(isPresented: $showBookPicker) {
+        .sheet(isPresented: $showBookPicker) {
             BookPickerView(edition: edition, current: bookID) { picked in
-                bookID = picked; showBookPicker = false
+                parseBookSelection(picked)
+                showBookPicker = false
             }
             .environment(store)   // Mac Catalyst: 모달 환경 전파 대비
         }
@@ -142,6 +143,16 @@ struct AnnotatedReader: View {
         chapter = min(max(p, 1), book.chapterCount)
         navigation.pendingChapter = nil
         scrollTarget = navigation.consumePending(forBook: ownerBookID)
+    }
+
+    private func parseBookSelection(_ picked: String) {
+        let components = picked.split(separator: "-", maxSplits: 1).map(String.init)
+        if components.count == 2, let chapterNum = Int(components[1]) {
+            bookID = components[0]
+            chapter = chapterNum
+        } else {
+            bookID = picked
+        }
     }
 
     private func step(_ d: Int) {
