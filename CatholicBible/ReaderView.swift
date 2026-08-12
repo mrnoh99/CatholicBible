@@ -52,33 +52,6 @@ struct ReaderView: View {
         @Bindable var rs = readingState
 
         VStack(spacing: 0) {
-            // 네비게이션 바 (이전/다음 페이지)
-            HStack(spacing: 12) {
-                Button { navigation.goBack() } label: {
-                    Image(systemName: "chevron.left")
-                        .font(.title2)
-                        .frame(width: 32, height: 32)
-                }
-                .disabled(!navigation.canGoBack)
-                .buttonStyle(.plain)
-                .help("이전 페이지")
-
-                Spacer()
-
-                Button { navigation.goForward() } label: {
-                    Image(systemName: "chevron.right")
-                        .font(.title2)
-                        .frame(width: 32, height: 32)
-                }
-                .disabled(!navigation.canGoForward)
-                .buttonStyle(.plain)
-                .help("다음 페이지")
-            }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 8)
-            .background(settings.theme.background)
-            .border(settings.theme.secondary.opacity(0.1), width: 1)
-
             ZStack {
                 settings.theme.background.ignoresSafeArea()
                 if showAnnotated {
@@ -191,6 +164,13 @@ struct ReaderView: View {
     @ToolbarContentBuilder
     private var readerToolbar: some ToolbarContent {
         ToolbarItemGroup(placement: .navigationBarLeading) {
+            Button { navigation.goBack() } label: {
+                Image(systemName: "chevron.left")
+                    .font(.title2)
+            }
+            .disabled(!navigation.canGoBack)
+            .help("이전 페이지")
+
             Menu {
                 Picker("판본", selection: $readingState.selectedEditionID) {
                     ForEach(Editions.all) { ed in Text(ed.name).tag(ed.id) }
@@ -219,6 +199,12 @@ struct ReaderView: View {
         }
 
         ToolbarItemGroup(placement: .navigationBarTrailing) {
+            Button { navigation.goForward() } label: {
+                Image(systemName: "chevron.right")
+                    .font(.title2)
+            }
+            .disabled(!navigation.canGoForward)
+            .help("다음 페이지")
             Menu {
                 if canDual && (Editions.edition(readingState.selectedEditionID)?.isAnnotated ?? false) {
                     // 주석 판본(주석성경·NABRE): 본문·주석 vs 판본 비교
