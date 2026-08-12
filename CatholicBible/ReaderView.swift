@@ -21,10 +21,6 @@ private struct NoteTarget: Identifiable {
 struct ReaderView: View {
     /// 사이드바에서 고른 책 — 첫째 열의 책이 된다.
     let book: BibleBook
-    @Binding var showMass: Bool
-    @Binding var showSearch: Bool
-    @Binding var showBookmarks: Bool
-    @Binding var showNotes: Bool
 
     @Environment(BibleStore.self) private var store
     @Environment(ReaderSettings.self) private var settings
@@ -35,6 +31,10 @@ struct ReaderView: View {
     @Environment(LiturgyStore.self) private var liturgy
     @Environment(\.horizontalSizeClass) private var hSize
 
+    @State private var showMass = false
+    @State private var showSearch = false
+    @State private var showBookmarks = false
+    @State private var showNotes = false
     @State private var showAppearance = false
     @State private var noteTarget: NoteTarget?
     @State private var markerNote: MarkerNoteTarget?
@@ -121,6 +121,18 @@ struct ReaderView: View {
         .sheet(isPresented: $showAppearance) {
             injectShared(AppearanceControls())
                 .presentationDetents([.medium])
+        }
+        .sheet(isPresented: $showSearch) {
+            injectShared(SearchView().environment(navigation))
+        }
+        .sheet(isPresented: $showBookmarks) {
+            injectShared(BookmarksView().environment(navigation))
+        }
+        .sheet(isPresented: $showNotes) {
+            injectShared(NotesListView().environment(navigation))
+        }
+        .fullScreenCover(isPresented: $showMass) {
+            injectShared(DailyMassView().environment(navigation))
         }
         .sheet(item: $noteTarget) { target in
             injectShared(NoteEditorView(verse: target.ref,

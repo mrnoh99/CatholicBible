@@ -210,11 +210,7 @@ struct ContentView: View {
                 }
         } detail: {
             if let bookID = navigation.selectedBookID, let book = Bible.book(bookID) {
-                ReaderView(book: book,
-                          showMass: $showMass,
-                          showSearch: $showSearch,
-                          showBookmarks: $showBookmarks,
-                          showNotes: $showNotes)
+                ReaderView(book: book)
                     .id(book.id) // 책이 바뀌면 리더를 새로 만든다 (판본 전환은 열 안에서)
             } else {
                 VStack(spacing: 0) {
