@@ -180,31 +180,30 @@ struct ReaderView: View {
 
     @ToolbarContentBuilder
     private var readerToolbar: some ToolbarContent {
-        ToolbarItem(placement: .navigationBarLeading) {
-            Button { navigation.goBack() } label: {
-                Image(systemName: "chevron.left")
-                    .font(.title2)
-            }
-            .disabled(!navigation.canGoBack)
-            .help("이전 페이지")
-        }
-
         ToolbarItem(placement: .principal) {
-            Text("성경 읽기")
-                .font(.headline)
-                .fontWeight(.semibold)
-        }
+            HStack(spacing: 4) {
+                Button { navigation.goBack() } label: {
+                    Image(systemName: "chevron.left")
+                        .font(.title2)
+                }
+                .disabled(!navigation.canGoBack)
+                .help("이전 페이지")
 
-        ToolbarItem(placement: .navigationBarTrailing) {
-            HStack(spacing: 12) {
+                Text("성경 읽기")
+                    .font(.headline)
+                    .fontWeight(.semibold)
+
                 Button { navigation.goForward() } label: {
                     Image(systemName: "chevron.right")
                         .font(.title2)
                 }
                 .disabled(!navigation.canGoForward)
                 .help("다음 페이지")
+            }
+        }
 
-                Menu {
+        ToolbarItem(placement: .navigationBarTrailing) {
+            Menu {
                 if canDual && (Editions.edition(readingState.selectedEditionID)?.isAnnotated ?? false) {
                     // 주석 판본(주석성경·NABRE): 본문·주석 vs 판본 비교
                     Section("보기") {
@@ -246,7 +245,6 @@ struct ReaderView: View {
                 }
             } label: {
                 Image(systemName: "ellipsis.circle")
-            }
             }
         }
     }
