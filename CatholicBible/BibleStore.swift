@@ -139,8 +139,6 @@ final class BibleStore {
             switch mode {
             case .text:
                 hits = self.searchByText(trimmed, snapshot: snapshot, order: order, editionID: editionID, limit: limit)
-            case .bookName:
-                hits = self.searchByBookName(trimmed, snapshot: snapshot, order: order, editionID: editionID, limit: limit)
             case .reference:
                 hits = self.searchByReference(trimmed, snapshot: snapshot, order: order, editionID: editionID, limit: limit)
             }
@@ -173,38 +171,6 @@ final class BibleStore {
                     }
 
                     if matches {
-                        hits.append(SearchHit(editionID: editionID, bookID: bookID,
-                                            chapter: chapterNumber, verse: verseNumber,
-                                            text: verseText))
-                        if hits.count >= limit { break outer }
-                    }
-                }
-            }
-        }
-        return hits
-    }
-
-    private func searchByBookName(_ query: String, snapshot: [String: [String: [String: String]]],
-                                  order: [String], editionID: String, limit: Int) -> [SearchHit] {
-        var hits: [SearchHit] = []
-        let searchTerms = query.split(separator: " ").map(String.init)
-
-        outer: for bookID in order {
-            guard let book = Bible.book(bookID) else { continue }
-            let fullName = book.name
-            let abbrev = book.abbrev
-            let matches = searchTerms.contains { term in
-                fullName.localizedStandardContains(term) || abbrev.localizedStandardContains(term)
-            }
-
-            if matches {
-                guard let chapters = snapshot[bookID] else { continue }
-                let chapterNumbers = chapters.keys.compactMap { Int($0) }.sorted()
-                for chapterNumber in chapterNumbers {
-                    guard let verses = chapters[String(chapterNumber)] else { continue }
-                    let verseNumbers = verses.keys.compactMap { Int($0) }.sorted()
-                    for verseNumber in verseNumbers.prefix(3) {
-                        guard let verseText = verses[String(verseNumber)] else { continue }
                         hits.append(SearchHit(editionID: editionID, bookID: bookID,
                                             chapter: chapterNumber, verse: verseNumber,
                                             text: verseText))
