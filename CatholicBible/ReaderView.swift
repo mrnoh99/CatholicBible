@@ -872,6 +872,16 @@ struct SpreadReader: View {
         if !cur.isEmpty { pages.append(cur) }
         return pages
     }
+
+    private func parseBookSelection(_ picked: String) {
+        let components = picked.split(separator: "-", maxSplits: 1).map(String.init)
+        if components.count == 2, let chapterNum = Int(components[1]) {
+            bookID = components[0]
+            chapter = chapterNum
+        } else {
+            bookID = picked
+        }
+    }
 }
 
 // MARK: - 선택 가능한 본문 (UIKit)
