@@ -88,51 +88,52 @@ struct ReaderView: View {
                                     ownerBookID: book.id,
                                     onOpenNote: openNote)
                 } else {
-                switch layout {
-            case .single:
-                ReaderPane(role: .primary,
-                           editionID: $rs.selectedEditionID,
-                           bookID: primaryBookBinding,
-                           ownerBookID: book.id,
-                           onOpenNote: openNote)
-            case .spread:
-                SpreadReader(editionID: $rs.selectedEditionID,
-                             bookID: primaryBookBinding,
-                             ownerBookID: book.id,
-                             onOpenNote: openNote)
-            case .compare:
-                let linked = readingState.compareLinked
-                let compareBook = Bible.book(navigation.selectedBookID ?? book.id) ?? book
-                VStack(spacing: 0) {
-                    HStack(spacing: 0) {
+                    switch layout {
+                    case .single:
                         ReaderPane(role: .primary,
                                    editionID: $rs.selectedEditionID,
                                    bookID: primaryBookBinding,
-                                   linkedChapter: $compareChapter,
-                                   showChapterBar: !linked,
                                    ownerBookID: book.id,
-                                   syncVerse: linked ? $compareTopVerse : nil,
                                    onOpenNote: openNote)
-                        Divider()
-                        ReaderPane(role: .secondary,
-                                   editionID: $rs.secondaryEditionID,
-                                   bookID: linked ? primaryBookBinding : secondaryBookBinding,
-                                   onClose: { readingState.readerLayout = .single },
-                                   linkedChapter: linked ? $compareChapter : nil,
-                                   isFollower: linked,
-                                   showChapterBar: !linked,
-                                   syncVerse: linked ? $compareTopVerse : nil,
-                                   onOpenNote: openNote)
-                            // 연동 ↔ 분리를 바꾸면 둘째 열을 새로 만들어 위치를 다시 잡는다.
-                            .id(linked)
-                    }
-                    // 연동 시: 두 열을 함께 움직이는 공용 이동줄 하나만 아래에 둔다.
-                    if linked {
-                        ChapterNavBar(book: compareBook, chapter: $compareChapter,
-                                      onChange: { compareTopVerse = nil })  // 장 이동 시 각 열 맨 위
+                    case .spread:
+                        SpreadReader(editionID: $rs.selectedEditionID,
+                                     bookID: primaryBookBinding,
+                                     ownerBookID: book.id,
+                                     onOpenNote: openNote)
+                    case .compare:
+                        let linked = readingState.compareLinked
+                        let compareBook = Bible.book(navigation.selectedBookID ?? book.id) ?? book
+                        VStack(spacing: 0) {
+                            HStack(spacing: 0) {
+                                ReaderPane(role: .primary,
+                                           editionID: $rs.selectedEditionID,
+                                           bookID: primaryBookBinding,
+                                           linkedChapter: $compareChapter,
+                                           showChapterBar: !linked,
+                                           ownerBookID: book.id,
+                                           syncVerse: linked ? $compareTopVerse : nil,
+                                           onOpenNote: openNote)
+                                Divider()
+                                ReaderPane(role: .secondary,
+                                           editionID: $rs.secondaryEditionID,
+                                           bookID: linked ? primaryBookBinding : secondaryBookBinding,
+                                           onClose: { readingState.readerLayout = .single },
+                                           linkedChapter: linked ? $compareChapter : nil,
+                                           isFollower: linked,
+                                           showChapterBar: !linked,
+                                           syncVerse: linked ? $compareTopVerse : nil,
+                                           onOpenNote: openNote)
+                                    // 연동 ↔ 분리를 바꾸면 둘째 열을 새로 만들어 위치를 다시 잡는다.
+                                    .id(linked)
+                            }
+                            // 연동 시: 두 열을 함께 움직이는 공용 이동줄 하나만 아래에 둔다.
+                            if linked {
+                                ChapterNavBar(book: compareBook, chapter: $compareChapter,
+                                              onChange: { compareTopVerse = nil })  // 장 이동 시 각 열 맨 위
+                            }
+                        }
                     }
                 }
-            }
             }
         }
         .navigationTitle("성경 읽기")
