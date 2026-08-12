@@ -119,7 +119,7 @@ struct Introduction: Codable, Identifiable, Hashable, Sendable {
 
 // MARK: - 파일 구조
 
-private struct KnbNotesFile: Decodable {
+nonisolated private struct KnbNotesFile: Decodable {
     let intros: [Introduction]?
     /// 책 id → 장(문자열) → 주석 목록
     let annotations: [String: [String: [ChapterNote]]]?
