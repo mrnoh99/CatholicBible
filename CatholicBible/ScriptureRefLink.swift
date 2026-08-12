@@ -177,7 +177,7 @@ enum ScriptureRef {
                 ? Int(s.substring(with: m.range(at: 4))) : nil
             let d2 = m.range(at: 5).location != NSNotFound
                 ? Int(s.substring(with: m.range(at: 5))) : nil
-            let d2_dot = m.range(at: 7).location != NSNotFound
+            let d2_dot = m.numberOfRanges > 7 && m.range(at: 7).location != NSNotFound
                 ? Int(s.substring(with: m.range(at: 7))) : nil
             let ec = d2 != nil ? (d1 ?? c) : c
             let ev = d2 ?? d2_dot ?? d1 ?? v
@@ -225,7 +225,7 @@ enum ScriptureRef {
                 ? Int(s.substring(with: m.range(at: 4))) : nil
             let d2 = m.range(at: 5).location != NSNotFound
                 ? Int(s.substring(with: m.range(at: 5))) : nil
-            let d2_dot = m.range(at: 7).location != NSNotFound
+            let d2_dot = m.numberOfRanges > 7 && m.range(at: 7).location != NSNotFound
                 ? Int(s.substring(with: m.range(at: 7))) : nil
             let ec = d2 != nil ? (d1 ?? c) : c
             let ev = d2 ?? d2_dot ?? d1 ?? v
