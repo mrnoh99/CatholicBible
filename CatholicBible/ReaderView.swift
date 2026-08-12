@@ -497,16 +497,6 @@ struct ReaderPane: View {
             .padding(.top, 40)
     }
 
-    private func parseBookSelection(_ picked: String) {
-        let components = picked.split(separator: "-", maxSplits: 1).map(String.init)
-        if components.count == 2, let chapterNum = Int(components[1]) {
-            bookID = components[0]
-            chapter = chapterNum
-        } else {
-            bookID = picked
-        }
-    }
-
     // MARK: 하단 장 이동 바
 
     @ViewBuilder
@@ -573,14 +563,14 @@ struct ChapterNavBar: View {
     private func move(to n: Int) {
         guard n != chapter else { return }
         onChange()
-        chapter = n
+        setChapter(n)
     }
 
     private func parseBookSelection(_ picked: String) {
         let components = picked.split(separator: "-", maxSplits: 1).map(String.init)
         if components.count == 2, let chapterNum = Int(components[1]) {
             bookID = components[0]
-            chapter = chapterNum
+            setChapter(chapterNum)
         } else {
             bookID = picked
         }
