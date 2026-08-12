@@ -232,7 +232,7 @@ struct ContentView: View {
                             .help("노트")
                     }
                     .padding(.horizontal, 16)
-                    .padding(.vertical, 4)
+                    .padding(.vertical, 2)
                     .background(settings.theme.background)
                     .border(settings.theme.secondary.opacity(0.1), width: 1)
                 }
