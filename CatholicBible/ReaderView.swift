@@ -165,18 +165,18 @@ struct ReaderView: View {
     @ToolbarContentBuilder
     private var readerToolbar: some ToolbarContent {
         ToolbarItem(placement: .navigationBarLeading) {
-            HStack(spacing: 12) {
-                Button { navigation.goBack() } label: {
-                    Image(systemName: "chevron.left")
-                        .font(.title2)
-                }
-                .disabled(!navigation.canGoBack)
-                .help("이전 페이지")
-
-                Text("성경 읽기")
-                    .font(.headline)
-                    .fontWeight(.semibold)
+            Button { navigation.goBack() } label: {
+                Image(systemName: "chevron.left")
+                    .font(.title2)
             }
+            .disabled(!navigation.canGoBack)
+            .help("이전 페이지")
+        }
+
+        ToolbarItem(placement: .principal) {
+            Text("성경 읽기")
+                .font(.headline)
+                .fontWeight(.semibold)
         }
 
         ToolbarItem(placement: .navigationBarTrailing) {
@@ -227,6 +227,7 @@ struct ReaderView: View {
                 } label: {
                     Image(systemName: "ellipsis.circle")
                 }
+            }
         }
     }
 }
