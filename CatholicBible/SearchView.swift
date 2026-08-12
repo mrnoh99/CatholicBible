@@ -71,10 +71,11 @@ struct SearchView: View {
 
                 if mode == .reference {
                     let selectedBook = Bible.book(selectedBookID)
-                    let maxVerse = selectedBook.flatMap { book in
-                        store.verses(edition: readingState.selectedEdition, book: book, chapter: selectedChapter)
-                            .map { $0.number }.max()
-                    } ?? 1
+                    let maxVerse: Int = {
+                        guard let book = selectedBook else { return 1 }
+                        return store.verses(edition: readingState.selectedEdition, book: book, chapter: selectedChapter)
+                            .map { $0.number }.max() ?? 1
+                    }()
 
                     VStack(spacing: 8) {
                         Picker("명칭", selection: $selectedBookID) {
