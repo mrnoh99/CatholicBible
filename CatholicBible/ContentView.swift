@@ -212,8 +212,25 @@ struct ContentView: View {
             VStack(spacing: 0) {
                 // iPad/Mac에서 상단 메뉴 표시
                 if hSize == .regular {
-                    HStack(spacing: 12) {
+                    HStack(spacing: 8) {
+                        Button { navigation.goBack() } label: {
+                            Image(systemName: "chevron.left").font(.title3)
+                        }
+                        .disabled(!navigation.canGoBack)
+                        .help("이전 페이지")
+
+                        Text("성경 읽기")
+                            .font(.headline)
+                            .fontWeight(.semibold)
+
+                        Button { navigation.goForward() } label: {
+                            Image(systemName: "chevron.right").font(.title3)
+                        }
+                        .disabled(!navigation.canGoForward)
+                        .help("다음 페이지")
+
                         Spacer()
+
                         Button("", systemImage: "sun.max") { showMass = true }
                             .help("오늘의 미사")
                         Button("", systemImage: "magnifyingglass") { showSearch = true }

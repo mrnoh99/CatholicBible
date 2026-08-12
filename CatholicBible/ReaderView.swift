@@ -165,68 +165,66 @@ struct ReaderView: View {
     @ToolbarContentBuilder
     private var readerToolbar: some ToolbarContent {
         ToolbarItem(placement: .navigationBarLeading) {
-            Button { navigation.goBack() } label: {
-                Image(systemName: "chevron.left")
-                    .font(.title2)
-            }
-            .disabled(!navigation.canGoBack)
-            .help("이전 페이지")
-        }
+            HStack(spacing: 2) {
+                Button { navigation.goBack() } label: {
+                    Image(systemName: "chevron.left")
+                        .font(.title2)
+                }
+                .disabled(!navigation.canGoBack)
+                .help("이전 페이지")
 
-        ToolbarItem(placement: .principal) {
-            Text("성경 읽기")
-                .font(.headline)
-                .fontWeight(.semibold)
-        }
+                Text("성경 읽기")
+                    .font(.headline)
+                    .fontWeight(.semibold)
 
-        ToolbarItem(placement: .navigationBarTrailing) {
-            HStack(spacing: 12) {
                 Button { navigation.goForward() } label: {
                     Image(systemName: "chevron.right")
                         .font(.title2)
                 }
                 .disabled(!navigation.canGoForward)
                 .help("다음 페이지")
+            }
+        }
 
-                Menu {
-                    if canDual && (Editions.edition(readingState.selectedEditionID)?.isAnnotated ?? false) {
-                        // 주석 판본(주석성경·NABRE): 본문·주석 vs 판본 비교
-                        Section("보기") {
-                            Button {
-                                readingState.readerLayout = .single
-                            } label: { Label("본문·주석", systemImage: "book.pages") }
-                            Button {
-                                readingState.readerLayout = .compare
-                            } label: { Label("판본 비교", systemImage: "rectangle.split.2x1") }
-                        }
-                    } else if canDual {
-                        Section("페이지") {
-                            Picker("페이지", selection: Binding(
-                                get: { readingState.readerLayout },
-                                set: { readingState.readerLayout = $0 })) {
-                                ForEach(ReaderLayout.allCases) { l in
-                                    Label(l.label, systemImage: l.systemImage).tag(l)
-                                }
+        ToolbarItem(placement: .navigationBarTrailing) {
+            Menu {
+                if canDual && (Editions.edition(readingState.selectedEditionID)?.isAnnotated ?? false) {
+                    // 주석 판본(주석성경·NABRE): 본문·주석 vs 판본 비교
+                    Section("보기") {
+                        Button {
+                            readingState.readerLayout = .single
+                        } label: { Label("본문·주석", systemImage: "book.pages") }
+                        Button {
+                            readingState.readerLayout = .compare
+                        } label: { Label("판본 비교", systemImage: "rectangle.split.2x1") }
+                    }
+                } else if canDual {
+                    Section("페이지") {
+                        Picker("페이지", selection: Binding(
+                            get: { readingState.readerLayout },
+                            set: { readingState.readerLayout = $0 })) {
+                            ForEach(ReaderLayout.allCases) { l in
+                                Label(l.label, systemImage: l.systemImage).tag(l)
                             }
                         }
                     }
-                    if canDual && readingState.readerLayout == .compare {
-                        Section {
-                            Button {
-                                readingState.compareLinked.toggle()
-                            } label: {
-                                Label(readingState.compareLinked ? "두 열 연동됨" : "두 열 분리됨",
-                                      systemImage: readingState.compareLinked ? "link.circle.fill" : "link.circle")
-                            }
-                        }
-                    }
-                    Section("도구") {
-                        Button("사전", systemImage: "character.book.closed") { navigation.lookUp() }
-                        Button("보기 설정", systemImage: "textformat.size") { showAppearance = true }
-                    }
-                } label: {
-                    Image(systemName: "ellipsis.circle")
                 }
+                if canDual && readingState.readerLayout == .compare {
+                    Section {
+                        Button {
+                            readingState.compareLinked.toggle()
+                        } label: {
+                            Label(readingState.compareLinked ? "두 열 연동됨" : "두 열 분리됨",
+                                  systemImage: readingState.compareLinked ? "link.circle.fill" : "link.circle")
+                        }
+                    }
+                }
+                Section("도구") {
+                    Button("사전", systemImage: "character.book.closed") { navigation.lookUp() }
+                    Button("보기 설정", systemImage: "textformat.size") { showAppearance = true }
+                }
+            } label: {
+                Image(systemName: "ellipsis.circle")
             }
         }
     }
