@@ -110,7 +110,6 @@ struct ReaderView: View {
                 }
             }
         }
-        .padding(.top, -20)
         .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar { readerToolbar }

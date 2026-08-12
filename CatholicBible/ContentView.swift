@@ -209,38 +209,38 @@ struct ContentView: View {
                     }
                 }
         } detail: {
-            VStack(spacing: 0) {
-                // iPad/Mac에서 상단 메뉴 표시
-                if hSize == .regular {
-                    HStack(spacing: 16) {
-                        Text("성경 읽기")
-                            .font(.headline)
-                            .fontWeight(.semibold)
-                            .frame(maxWidth: .infinity, alignment: .center)
+            if let bookID = navigation.selectedBookID, let book = Bible.book(bookID) {
+                ReaderView(book: book)
+                    .id(book.id) // 책이 바뀌면 리더를 새로 만든다 (판본 전환은 열 안에서)
+            } else {
+                VStack(spacing: 0) {
+                    // iPad/Mac에서 상단 메뉴 표시
+                    if hSize == .regular {
+                        HStack(spacing: 16) {
+                            Text("성경 읽기")
+                                .font(.headline)
+                                .fontWeight(.semibold)
+                                .frame(maxWidth: .infinity, alignment: .center)
 
-                        Spacer()
+                            Spacer()
 
-                        Button("", systemImage: "sun.max") { showMass = true }
-                            .help("오늘의 미사")
-                        Button("", systemImage: "magnifyingglass") { showSearch = true }
-                            .help("검색")
-                        Button("", systemImage: "character.book.closed") { navigation.lookUp() }
-                            .help("사전")
-                        Button("", systemImage: "bookmark") { showBookmarks = true }
-                            .help("책갈피")
-                        Button("", systemImage: "note.text") { showNotes = true }
-                            .help("노트")
+                            Button("", systemImage: "sun.max") { showMass = true }
+                                .help("오늘의 미사")
+                            Button("", systemImage: "magnifyingglass") { showSearch = true }
+                                .help("검색")
+                            Button("", systemImage: "character.book.closed") { navigation.lookUp() }
+                                .help("사전")
+                            Button("", systemImage: "bookmark") { showBookmarks = true }
+                                .help("책갈피")
+                            Button("", systemImage: "note.text") { showNotes = true }
+                                .help("노트")
+                        }
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 2)
+                        .background(settings.theme.background)
+                        .border(settings.theme.secondary.opacity(0.1), width: 1)
                     }
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 2)
-                    .background(settings.theme.background)
-                    .border(settings.theme.secondary.opacity(0.1), width: 1)
-                }
 
-                if let bookID = navigation.selectedBookID, let book = Bible.book(bookID) {
-                    ReaderView(book: book)
-                        .id(book.id) // 책이 바뀌면 리더를 새로 만든다 (판본 전환은 열 안에서)
-                } else {
                     ShelfView()
                 }
             }
