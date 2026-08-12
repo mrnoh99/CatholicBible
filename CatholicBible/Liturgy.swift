@@ -129,7 +129,7 @@ enum ScriptureReference {
         var segs: [RefSegment] = []
         var cur: Int? = nil   // 현재 장 (';' 구획 사이에서도 이어진다)
         for rawPart in s.split(separator: ";", omittingEmptySubsequences: true) {
-            var part = String(rawPart)
+            let part = String(rawPart)
                 .replacingOccurrences(of: "과", with: ".")
                 .replacingOccurrences(of: "와", with: ".")
                 .replacingOccurrences(of: "·", with: ".")
