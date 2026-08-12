@@ -213,6 +213,7 @@ struct ContentView: View {
                 // iPad/Mac에서 상단 메뉴 표시
                 if hSize == .regular {
                     HStack(spacing: 12) {
+                        Spacer()
                         Button("", systemImage: "sun.max") { showMass = true }
                             .help("오늘의 미사")
                         Button("", systemImage: "magnifyingglass") { showSearch = true }
@@ -223,10 +224,9 @@ struct ContentView: View {
                             .help("책갈피")
                         Button("", systemImage: "note.text") { showNotes = true }
                             .help("노트")
-                        Spacer()
                     }
                     .padding(.horizontal, 16)
-                    .padding(.vertical, 8)
+                    .padding(.vertical, 4)
                     .background(settings.theme.background)
                     .border(settings.theme.secondary.opacity(0.1), width: 1)
                 }
