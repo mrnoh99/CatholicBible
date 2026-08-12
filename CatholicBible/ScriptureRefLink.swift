@@ -195,10 +195,12 @@ enum ScriptureRef {
     /// 한국어 인용(창세 2,4 / 1코린 15,22 / 창세 1,1-2,3 / 7,56; 10,11-16)을 링크로.
     /// 책 이름 없는 약자도 이전 책을 잇는다(예: "사도 7,56; 10,11-16" → 10,11-16은 사도).
     /// 화이트리스트에 있는 것만 링크해 오탐(예: "명단은 17,5")을 막는다.
+    /// 세미콜론 분리 인용도 지원(예: (1,11; 9,7) / (로마 1,1; 갈라 2,2)).
     static func addKoreanLinks(to attr: NSMutableAttributedString, color: UIColor) {
         guard let kre = koreanRegex else { return }
         let s = attr.string as NSString
         var lastBook: String?
+        var processed: [NSRange] = []
 
         for m in kre.matches(in: attr.string,
                              range: NSRange(location: 0, length: s.length)) {
@@ -211,10 +213,9 @@ enum ScriptureRef {
                     bookID = id
                     lastBook = id
                 } else {
-                    continue  // 화이트리스트에 없는 단어 → 성경 인용 아님
+                    continue
                 }
             } else {
-                // 책 이름 없음 → 이전 책 이어가기
                 bookID = lastBook
             }
 
@@ -235,45 +236,77 @@ enum ScriptureRef {
                                     .foregroundColor: color,
                                     .underlineStyle: NSUnderlineStyle.single.rawValue],
                                    range: m.range)
+                processed.append(m.range)
             }
         }
 
-        addSemicolonSeparatedLinks(to: attr, color: color)
+        // 세미콜론 분리 인용 처리
+        addSemicolonSeparatedLinks(to: attr, color: color, processed: processed)
     }
 
-    /// 세미콜론으로 분리된 인용 처리: (1,11; 9,7) 형식 (기본 책: 마르코)
-    /// 괄호 안의 여러 인용을 각각 링크로 변환
-    private static func addSemicolonSeparatedLinks(to attr: NSMutableAttributedString, color: UIColor) {
+    /// 세미콜론으로 분리된 인용 처리: (1,11; 9,7), (로마 1,1; 갈라 2,2) 형식
+    /// 괄호 안의 여러 인용을 각각 링크로 변환. 이미 처리된 부분은 건너뜀.
+    private static func addSemicolonSeparatedLinks(to attr: NSMutableAttributedString, color: UIColor, processed: [NSRange]) {
         let s = attr.string as NSString
-        // 패턴: (숫자,숫자; 숫자,숫자) 또는 그 이상
-        guard let semiPattern = try? NSRegularExpression(
-            pattern: "\\(\\d{1,3}[,:]\\d{1,3}(?:;\\s*\\d{1,3}[,:]\\d{1,3})+\\)") else { return }
 
-        guard let partPattern = try? NSRegularExpression(pattern: "(\\d{1,3})[,:]\\s?(\\d{1,3})") else { return }
+        // 괄호 내 세미콜론 분리 인용을 찾는 패턴
+        guard let semiPattern = try? NSRegularExpression(
+            pattern: "\\([^)]*;[^)]*\\)") else { return }
+
+        guard let versePattern = try? NSRegularExpression(
+            pattern: "([가-힣]*)?\\s*(\\d{1,3})[,:]\\s?(\\d{1,3})(?:[–-](\\d{1,3}))?") else { return }
 
         for m in semiPattern.matches(in: attr.string, range: NSRange(location: 0, length: s.length)) {
+            // 이미 처리된 범위인지 확인
+            if processed.contains(where: { m.range.location >= $0.location && m.range.location < $0.location + $0.length }) {
+                continue
+            }
+
             let fullText = s.substring(with: m.range)
             let inner = String(fullText.dropFirst().dropLast()) // 괄호 제거
             let parts = inner.split(separator: ";").map { String($0).trimmingCharacters(in: .whitespaces) }
 
+            var lastBook: String?
             var searchStart = m.range.location + 1
+
             for part in parts {
                 let partLen = (part as NSString).length
                 let partRange = NSRange(location: 0, length: partLen)
 
-                if let partMatch = partPattern.firstMatch(in: part, range: partRange),
-                   let c = Int((part as NSString).substring(with: partMatch.range(at: 1))),
-                   let v = Int((part as NSString).substring(with: partMatch.range(at: 2))),
-                   let url = URL(string: "catholicbible://xref?b=mk&c=\(c)&v=\(v)&ec=\(c)&ev=\(v)") {
+                if let verseMatch = versePattern.firstMatch(in: part, range: partRange) {
+                    var bookID: String?
 
-                    let searchRange = NSRange(location: searchStart, length: s.length - searchStart)
-                    let partNSRange = s.range(of: part, options: [], range: searchRange)
-                    if partNSRange.location != NSNotFound {
-                        attr.addAttributes([.link: url,
-                                          .foregroundColor: color,
-                                          .underlineStyle: NSUnderlineStyle.single.rawValue],
-                                         range: partNSRange)
-                        searchStart = partNSRange.location + partNSRange.length
+                    // 책 이름 확인
+                    if verseMatch.range(at: 1).location != NSNotFound {
+                        let bookName = (part as NSString).substring(with: verseMatch.range(at: 1))
+                        if let id = koreanNames[bookName] {
+                            bookID = id
+                            lastBook = id
+                        }
+                    } else {
+                        bookID = lastBook ?? "mk" // 기본값: 마르코
+                    }
+
+                    if let bID = bookID,
+                       let c = Int((part as NSString).substring(with: verseMatch.range(at: 2))),
+                       let v = Int((part as NSString).substring(with: verseMatch.range(at: 3))) {
+
+                        let endVerse = verseMatch.range(at: 4).location != NSNotFound
+                            ? Int((part as NSString).substring(with: verseMatch.range(at: 4))) ?? v
+                            : v
+
+                        if let url = URL(string: "catholicbible://xref?b=\(bID)&c=\(c)&v=\(v)&ec=\(c)&ev=\(endVerse)") {
+                            // 이 부분을 텍스트에서 찾아 링크 추가
+                            let searchRange = NSRange(location: searchStart, length: s.length - searchStart)
+                            let partNSRange = s.range(of: part, options: [], range: searchRange)
+                            if partNSRange.location != NSNotFound {
+                                attr.addAttributes([.link: url,
+                                                  .foregroundColor: color,
+                                                  .underlineStyle: NSUnderlineStyle.single.rawValue],
+                                                 range: partNSRange)
+                                searchStart = partNSRange.location + partNSRange.length
+                            }
+                        }
                     }
                 }
             }
