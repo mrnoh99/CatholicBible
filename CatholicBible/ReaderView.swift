@@ -190,6 +190,34 @@ struct ReaderView: View {
 
     @ToolbarContentBuilder
     private var readerToolbar: some ToolbarContent {
+        ToolbarItemGroup(placement: .navigationBarLeading) {
+            Menu {
+                Picker("판본", selection: $readingState.selectedEditionID) {
+                    ForEach(Editions.all) { ed in Text(ed.name).tag(ed.id) }
+                }
+            } label: {
+                HStack(spacing: 4) {
+                    Text(readingState.selectedEdition.shortName)
+                        .fontWeight(.semibold)
+                    Image(systemName: "chevron.down")
+                }
+                .font(.subheadline)
+                .foregroundStyle(Color.accentColor)
+            }
+
+            Menu {
+                Button { } label: { Text(book.name) }
+            } label: {
+                HStack(spacing: 4) {
+                    Text(book.shortName)
+                        .fontWeight(.semibold)
+                    Image(systemName: "chevron.down")
+                }
+                .font(.subheadline)
+                .foregroundStyle(Color.accentColor)
+            }
+        }
+
         ToolbarItemGroup(placement: .navigationBarTrailing) {
             Menu {
                 if canDual && (Editions.edition(readingState.selectedEditionID)?.isAnnotated ?? false) {
@@ -248,6 +276,8 @@ struct ReaderPane: View {
     var isFollower: Bool = false
     /// 하단 장 이동줄을 이 열 안에 표시할지 (연동 비교에서는 공용 줄 하나만 쓰므로 끈다).
     var showChapterBar: Bool = true
+    /// 첫 열 헤더를 표시할지 (False면 상단 툴바에서 판본·책을 선택).
+    var showHeader: Bool { role == .secondary }
     /// 이 리더가 담당하는 책(리더가 다시 만들어질 때 고정). 책이 바뀌는 순간
     /// 사라지는 옛 리더가 대기 이동을 가로채지 않도록 목표 책과 대조한다.
     var ownerBookID: String = ""
@@ -288,7 +318,9 @@ struct ReaderPane: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            paneHeader
+            if showHeader {
+                paneHeader
+            }
             versesScroll
             chapterBar
         }
