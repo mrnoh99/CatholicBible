@@ -15,6 +15,8 @@ struct AnnotatedReader: View {
     @Binding var bookID: String
     /// 이 리더가 담당하는 책(대기 이동 가로채기 방지용).
     var ownerBookID: String = ""
+    /// 헤더를 표시할지 (False면 상단 툴바에서 판본·책을 선택).
+    var showHeader: Bool = true
     let onOpenNote: (VerseRef, String) -> Void
 
     @Environment(BibleStore.self) private var store
@@ -44,7 +46,7 @@ struct AnnotatedReader: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            header
+            if showHeader { header }
             content
             chapterBar
         }

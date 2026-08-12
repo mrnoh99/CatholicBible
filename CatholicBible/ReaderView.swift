@@ -59,6 +59,7 @@ struct ReaderView: View {
                     AnnotatedReader(editionID: $rs.selectedEditionID,
                                     bookID: primaryBookBinding,
                                     ownerBookID: book.id,
+                                    showHeader: false,
                                     onOpenNote: openNote)
                 } else {
                     switch layout {
