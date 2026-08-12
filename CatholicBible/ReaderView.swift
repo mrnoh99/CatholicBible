@@ -329,7 +329,7 @@ struct ReaderPane: View {
         .modifier(PendingChapterModifier(active: role == .primary, apply: applyPending))
         .sheet(isPresented: $showBookPicker) {
             BookPickerView(edition: edition, current: bookID) { picked in
-                bookID = picked
+                parseBookSelection(picked)
                 showBookPicker = false
             }
             .environment(store)   // Mac Catalyst: 모달로 환경이 전파되지 않아 다시 주입
@@ -567,6 +567,16 @@ struct ChapterNavBar: View {
         onChange()
         chapter = n
     }
+
+    private func parseBookSelection(_ picked: String) {
+        let components = picked.split(separator: "-", maxSplits: 1).map(String.init)
+        if components.count == 2, let chapterNum = Int(components[1]) {
+            bookID = components[0]
+            chapter = chapterNum
+        } else {
+            bookID = picked
+        }
+    }
 }
 
 /// 첫째 열에서만 검색·책갈피에서 넘어온 이동 요청(pendingChapter)에 반응한다.
@@ -646,7 +656,8 @@ struct SpreadReader: View {
         .onChange(of: pages.count) { _, _ in reconcileSpreadIndex() }
         .sheet(isPresented: $showBookPicker) {
             BookPickerView(edition: edition, current: bookID) { picked in
-                bookID = picked; showBookPicker = false
+                parseBookSelection(picked)
+                showBookPicker = false
             }
             .environment(store)   // Mac Catalyst: 모달 환경 전파 대비
         }
@@ -1109,31 +1120,129 @@ struct BookPickerView: View {
 
     @Environment(BibleStore.self) private var store
     @Environment(\.dismiss) private var dismiss
+    @State private var selectedBook: BibleBook?
 
     var body: some View {
         NavigationStack {
-            List {
-                ForEach(Testament.allCases) { testament in
-                    let books = edition.scope.books.filter { $0.testament == testament }
-                    if !books.isEmpty {
-                        Section(testament.title) {
-                            ForEach(books) { book in row(book) }
-                        }
+            if let book = selectedBook {
+                chapterView(book)
+            } else {
+                bookList
+            }
+        }
+    }
+
+    private var bookList: some View {
+        List {
+            ForEach(Testament.allCases) { testament in
+                let books = edition.scope.books.filter { $0.testament == testament }
+                if !books.isEmpty {
+                    Section(testament.title) {
+                        ForEach(books) { book in row(book) }
                     }
                 }
             }
-            .listStyle(.insetGrouped)
-            .navigationTitle("\(edition.shortName) · 책 선택")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) { Button("닫기") { dismiss() } }
+        }
+        .listStyle(.insetGrouped)
+        .navigationTitle("\(edition.shortName) · 책 선택")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .cancellationAction) { Button("닫기") { dismiss() } }
+        }
+    }
+
+    @ViewBuilder
+    private func chapterView(_ book: BibleBook) -> some View {
+        if book.id == "ps" {
+            psalmsView(book)
+        } else {
+            chaptersView(book)
+        }
+    }
+
+    private func psalmsView(_ book: BibleBook) -> some View {
+        let sections: [(num: Int, range: String)] = [
+            (1, "1-41"), (2, "42-72"), (3, "73-89"), (4, "90-106"), (5, "107-150")
+        ]
+        return ScrollView {
+            VStack(spacing: 12) {
+                ForEach(sections, id: \.num) { section in
+                    Button {
+                        onPick("ps-\(section.num)")
+                        dismiss()
+                    } label: {
+                        HStack {
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("\(section.num)편").font(.headline.weight(.semibold))
+                                Text("시편 \(section.range)").font(.caption).foregroundStyle(.secondary)
+                            }
+                            Spacer()
+                            Image(systemName: "chevron.right").foregroundStyle(.tertiary)
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.horizontal, 16).padding(.vertical, 12)
+                        .background(Color(.systemGray6))
+                        .cornerRadius(8)
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .padding(16)
+        }
+        .navigationTitle("시편 선택")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarLeading) {
+                Button(action: { selectedBook = nil }) {
+                    HStack(spacing: 4) {
+                        Image(systemName: "chevron.left").font(.body.weight(.semibold))
+                        Text("책 선택")
+                    }
+                }
+            }
+        }
+    }
+
+    private func chaptersView(_ book: BibleBook) -> some View {
+        let columns = [GridItem(.adaptive(minimum: 56), spacing: 10)]
+        return ScrollView {
+            LazyVGrid(columns: columns, spacing: 10) {
+                ForEach(1...book.chapterCount, id: \.self) { number in
+                    Button {
+                        onPick("\(book.id)-\(number)")
+                        dismiss()
+                    } label: {
+                        Text("\(number)")
+                            .font(.body.monospacedDigit())
+                            .frame(maxWidth: .infinity, minHeight: 44)
+                            .background(
+                                RoundedRectangle(cornerRadius: 8)
+                                    .fill(Color.secondary.opacity(0.1))
+                            )
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(book.chapterLabel(number))
+                }
+            }
+            .padding(20)
+        }
+        .navigationTitle(store.bookShortName(edition: edition, book: book))
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarLeading) {
+                Button(action: { selectedBook = nil }) {
+                    HStack(spacing: 4) {
+                        Image(systemName: "chevron.left").font(.body.weight(.semibold))
+                        Text("책 선택")
+                    }
+                }
             }
         }
     }
 
     private func row(_ book: BibleBook) -> some View {
         let available = store.hasText(edition: edition, book: book)
-        return Button { onPick(book.id) } label: {
+        return Button { selectedBook = book } label: {
             HStack {
                 Text(store.bookShortName(edition: edition, book: book))
                     .foregroundStyle(available ? .primary : .secondary)
