@@ -190,22 +190,21 @@ struct ReaderView: View {
         }
 
         ToolbarItem(placement: .principal) {
-            HStack(spacing: 8) {
-                Text("성경 읽기")
-                    .font(.headline)
-                    .fontWeight(.semibold)
+            Text("성경 읽기")
+                .font(.headline)
+                .fontWeight(.semibold)
+        }
 
+        ToolbarItem(placement: .navigationBarTrailing) {
+            HStack(spacing: 12) {
                 Button { navigation.goForward() } label: {
                     Image(systemName: "chevron.right")
                         .font(.title2)
                 }
                 .disabled(!navigation.canGoForward)
                 .help("다음 페이지")
-            }
-        }
 
-        ToolbarItem(placement: .navigationBarTrailing) {
-            Menu {
+                Menu {
                 if canDual && (Editions.edition(readingState.selectedEditionID)?.isAnnotated ?? false) {
                     // 주석 판본(주석성경·NABRE): 본문·주석 vs 판본 비교
                     Section("보기") {
@@ -247,6 +246,7 @@ struct ReaderView: View {
                 }
             } label: {
                 Image(systemName: "ellipsis.circle")
+            }
             }
         }
     }
