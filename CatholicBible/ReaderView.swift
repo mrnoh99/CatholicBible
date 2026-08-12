@@ -172,7 +172,9 @@ struct ReaderView: View {
             .help("이전 페이지")
 
             Menu {
-                Picker("판본", selection: $readingState.selectedEditionID) {
+                Picker("판본", selection: Binding(
+                    get: { readingState.selectedEditionID },
+                    set: { readingState.selectedEditionID = $0 })) {
                     ForEach(Editions.all) { ed in Text(ed.name).tag(ed.id) }
                 }
             } label: {
