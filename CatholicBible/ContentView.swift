@@ -213,26 +213,10 @@ struct ContentView: View {
                 // iPad/Mac에서 상단 메뉴 표시
                 if hSize == .regular {
                     HStack(spacing: 16) {
-                        VStack(spacing: 2) {
-                            Text("성경 읽기")
-                                .font(.headline)
-                                .fontWeight(.semibold)
-
-                            HStack(spacing: 8) {
-                                Button { navigation.goBack() } label: {
-                                    Image(systemName: "chevron.left").font(.title3)
-                                }
-                                .disabled(!navigation.canGoBack)
-                                .help("이전 페이지")
-
-                                Button { navigation.goForward() } label: {
-                                    Image(systemName: "chevron.right").font(.title3)
-                                }
-                                .disabled(!navigation.canGoForward)
-                                .help("다음 페이지")
-                            }
-                        }
-                        .frame(maxWidth: .infinity, alignment: .center)
+                        Text("성경 읽기")
+                            .font(.headline)
+                            .fontWeight(.semibold)
+                            .frame(maxWidth: .infinity, alignment: .center)
 
                         Spacer()
 
