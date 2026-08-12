@@ -31,10 +31,78 @@ enum ScriptureRef {
         "3 Jn": "3jn", "Jude": "jude", "Rev": "rv",
     ]
 
+    /// 한글 책 이름/약칭 → 앱 책 id
+    static let koreanNames: [String: String] = {
+        var map: [String: String] = [:]
+        for book in Bible.books {
+            map[book.name] = book.id
+            map[book.shortName] = book.id
+            map[book.abbrev] = book.id
+        }
+        // 추가 별칭 (주석에 자주 나오는 형태)
+        map["마테오복음"] = "mt"
+        map["마테오"] = "mt"
+        map["마태오복음"] = "mt"
+        map["마태오"] = "mt"
+        map["마가복음"] = "mk"
+        map["마가"] = "mk"
+        map["누가복음"] = "lk"
+        map["누가"] = "lk"
+        map["요한복음"] = "jn"
+        map["요한"] = "jn"
+        map["사도행전"] = "acts"
+        map["사도"] = "acts"
+        // 주교회의 성경 약칭도 추가
+        map["창세"] = "gn"
+        map["탈출"] = "ex"
+        map["레위"] = "lv"
+        map["민수"] = "nm"
+        map["신명"] = "dt"
+        map["여호"] = "jos"
+        map["판관"] = "jgs"
+        map["시편"] = "ps"
+        map["에즈"] = "ezr"
+        map["느헤"] = "neh"
+        map["욥"] = "jb"
+        map["잠언"] = "prv"
+        map["이사"] = "is"
+        map["예레"] = "jer"
+        map["에제"] = "ez"
+        map["다니"] = "dn"
+        map["로마"] = "rom"
+        map["1코린"] = "1cor"
+        map["2코린"] = "2cor"
+        map["갈라"] = "gal"
+        map["에페"] = "eph"
+        map["필리"] = "phil"
+        map["콜로"] = "col"
+        map["1테살"] = "1thes"
+        map["2테살"] = "2thes"
+        map["1티모"] = "1tm"
+        map["2티모"] = "2tm"
+        map["티토"] = "ti"
+        map["필레"] = "phlm"
+        map["히브"] = "heb"
+        map["야고"] = "jas"
+        map["1베드"] = "1pt"
+        map["2베드"] = "2pt"
+        map["1요한"] = "1jn"
+        map["2요한"] = "2jn"
+        map["3요한"] = "3jn"
+        map["유다"] = "jude"
+        map["묵시"] = "rv"
+        return map
+    }()
+
     // (선택적 책약어)(장):(절)(–끝절 또는 –끝장:끝절)?  — "33:6" 는 앞 책을 잇는다.
     //  그룹: 1=책약어 2=장 3=절 4=대시뒤 첫 수 5=대시뒤 둘째 수(교차장일 때 끝절)
     private static let regex = try? NSRegularExpression(
         pattern: "((?:[1-4]\\s)?[A-Z][A-Za-z]{1,4})?\\s?(\\d{1,3}):(\\d{1,3})(?:[–-](\\d{1,3})(?::(\\d{1,3}))?)?")
+
+    /// 한글 성경 참조 정규식: "책이름 장,절" 또는 "장,절"
+    /// 그룹: 1=책이름(선택적) 2=장 3=절 4=대시뒤 첫 수 5=대시뒤 둘째 수
+    private static let koreanRegex = try? NSRegularExpression(
+        pattern: "([가-힣]+(?:복음|서간|기|편)?)?\\s*(\\d{1,3})[:,](\\d{1,3})(?:[–-](\\d{1,3})(?:[:,](\\d{1,3}))?)?")
 
     /// text → 인용을 링크로 바꾼 AttributedString.
     /// currentBook: 책약어 없는 "33:6" 이 이을 기준 책(그 장의 책 id).
@@ -122,15 +190,33 @@ enum ScriptureRef {
         addKoreanLinks(to: attr, color: color)
     }
 
-    /// 한국어 인용(창세 2,4 / 1코린 15,22 / 창세 1,1-2,3)을 링크로.
-    /// 책 약어 화이트리스트에 있는 것만 링크해 오탐(예: "명단은 17,5")을 막는다.
+    /// 한국어 인용(창세 2,4 / 1코린 15,22 / 창세 1,1-2,3 / 7,56; 10,11-16)을 링크로.
+    /// 책 이름 없는 약자도 이전 책을 잇는다(예: "사도 7,56; 10,11-16" → 10,11-16은 사도).
+    /// 화이트리스트에 있는 것만 링크해 오탐(예: "명단은 17,5")을 막는다.
     static func addKoreanLinks(to attr: NSMutableAttributedString, color: UIColor) {
         guard let kre = koreanRegex else { return }
         let s = attr.string as NSString
+        var lastBook: String?
+
         for m in kre.matches(in: attr.string,
                              range: NSRange(location: 0, length: s.length)) {
-            let tok = s.substring(with: m.range(at: 1))
-            guard let bID = koreanAbbrev[tok],
+            var bookID: String?
+
+            // 그룹 1: 책 이름 (선택적)
+            if m.range(at: 1).location != NSNotFound {
+                let bookName = s.substring(with: m.range(at: 1))
+                if let id = koreanNames[bookName] {
+                    bookID = id
+                    lastBook = id
+                } else {
+                    continue  // 화이트리스트에 없는 단어 → 성경 인용 아님
+                }
+            } else {
+                // 책 이름 없음 → 이전 책 이어가기
+                bookID = lastBook
+            }
+
+            guard let bID = bookID,
                   let c = Int(s.substring(with: m.range(at: 2))),
                   let v = Int(s.substring(with: m.range(at: 3))) else { continue }
             let d1 = m.range(at: 4).location != NSNotFound
@@ -169,9 +255,10 @@ enum ScriptureRef {
         "3요한": "3jn", "유다": "jude", "묵시": "rv",
     ]
 
-    // (앞이 한글 아님) 책약어(선택적 1~3 번호+1~2 한글) 장,절(-끝절 또는 -끝장,끝절)
+    // (앞이 한글 아님) 책약어(선택적 1~3 번호+1~2 한글, 선택적) 장,절(-끝절 또는 -끝장,끝절)
+    // 책 이름이 없으면 이전 책을 잇는다 (예: "사도 7,56; 10,11-16" → 10,11-16도 사도)
     private static let koreanRegex = try? NSRegularExpression(
-        pattern: "(?<![가-힣])([1-3]?[가-힣]{1,2})\\s?(\\d{1,3}),(\\d{1,3})(?:[-–](\\d{1,3})(?:,(\\d{1,3}))?)?")
+        pattern: "(?<![가-힣])([1-3]?[가-힣]{1,2})?\\s?(\\d{1,3}),(\\d{1,3})(?:[-–](\\d{1,3})(?:,(\\d{1,3}))?)?")
 }
 
 /// 주석·상호참조 본문 뷰 — 단어 선택(네이티브)과 성경 인용 링크 탭을 함께 지원.
