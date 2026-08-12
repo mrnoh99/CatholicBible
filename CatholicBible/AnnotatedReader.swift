@@ -423,7 +423,7 @@ struct MarkerNoteSheet: View {
                                    color: UIColor(settings.theme.text),
                                    linkColor: UIColor(Color.accentColor),
                                    lineSpacing: settings.lineSpacing,
-                                   onOpenURL: { handleURL($0) })
+                                   onOpenURL: { _ = handleURL($0) })
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(20)
             }
