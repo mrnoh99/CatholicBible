@@ -189,17 +189,18 @@ enum ScriptureRef {
                                    range: m.range)
             }
         }
-        addKoreanLinks(to: attr, color: color)
+        addKoreanLinks(to: attr, currentBook: lastBook, color: color)
     }
 
     /// 한국어 인용(창세 2,4 / 1코린 15,22 / 창세 1,1-2,3 / 7,56; 10,11-16)을 링크로.
     /// 책 이름 없는 약자도 이전 책을 잇는다(예: "사도 7,56; 10,11-16" → 10,11-16은 사도).
     /// 화이트리스트에 있는 것만 링크해 오탐(예: "명단은 17,5")을 막는다.
     /// 세미콜론 분리 인용도 지원(예: (1,11; 9,7) / (로마 1,1; 갈라 2,2)).
-    static func addKoreanLinks(to attr: NSMutableAttributedString, color: UIColor) {
+    static func addKoreanLinks(to attr: NSMutableAttributedString, currentBook: String?,
+                               color: UIColor) {
         guard let kre = koreanRegex else { return }
         let s = attr.string as NSString
-        var lastBook: String?
+        var lastBook = currentBook
         var processed: [NSRange] = []
 
         for m in kre.matches(in: attr.string,
@@ -241,12 +242,13 @@ enum ScriptureRef {
         }
 
         // 세미콜론 분리 인용 처리
-        addSemicolonSeparatedLinks(to: attr, color: color, processed: processed)
+        addSemicolonSeparatedLinks(to: attr, currentBook: lastBook, color: color, processed: processed)
     }
 
     /// 세미콜론으로 분리된 인용 처리: (1,11; 9,7), (로마 1,1; 갈라 2,2) 형식
     /// 괄호 안의 여러 인용을 각각 링크로 변환. 이미 처리된 부분은 건너뜀.
-    private static func addSemicolonSeparatedLinks(to attr: NSMutableAttributedString, color: UIColor, processed: [NSRange]) {
+    private static func addSemicolonSeparatedLinks(to attr: NSMutableAttributedString, currentBook: String?,
+                                                   color: UIColor, processed: [NSRange]) {
         let s = attr.string as NSString
 
         // 괄호 내 세미콜론 분리 인용을 찾는 패턴
@@ -266,7 +268,7 @@ enum ScriptureRef {
             let inner = String(fullText.dropFirst().dropLast()) // 괄호 제거
             let parts = inner.split(separator: ";").map { String($0).trimmingCharacters(in: .whitespaces) }
 
-            var lastBook: String?
+            var lastBook = currentBook
             var searchStart = m.range.location + 1
 
             for part in parts {
