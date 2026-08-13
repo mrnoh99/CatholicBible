@@ -242,7 +242,10 @@ enum ScriptureRef {
         }
 
         // 세미콜론 분리 인용 처리
-        addSemicolonSeparatedLinks(to: attr, currentBook: lastBook, color: color, processed: processed)
+        // 초기의 currentBook을 전달하여, 각 괄호 그룹이 독립적으로 처리되도록 함
+        // 이렇게 하면 koreanRegex에서 처리한 명시적 참조(예: 시편 2,2)가
+        // 이후 참조들의 책 컨텍스트에 영향을 주지 않음
+        addSemicolonSeparatedLinks(to: attr, currentBook: currentBook, color: color, processed: processed)
     }
 
     /// 세미콜론으로 분리된 인용 처리: (1,11; 9,7), (로마 1,1; 갈라 2,2) 형식
