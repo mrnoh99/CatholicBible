@@ -213,14 +213,102 @@ struct SearchView: View {
             return
         }
 
-        if let (bookID, chapter, verse) = parseReference(input) {
-            selectedBookID = bookID
-            selectedChapter = chapter
-            selectedVerse = verse
-            runSearch()
+        if let references = parseReferences(input) {
+            searchMultipleReferences(references)
         } else {
             results = []; hasSearched = true; isSearching = false
         }
+    }
+
+    private func searchMultipleReferences(_ references: [(bookID: String, chapter: Int, verse: Int)]) {
+        searchTask?.cancel()
+
+        let currentEdition = readingState.selectedEdition
+        let editionsToSearch = scope == .all ? store.loadedEditions : [currentEdition]
+
+        searchTask = Task {
+            try? await Task.sleep(for: .milliseconds(300))
+            guard !Task.isCancelled else { return }
+            isSearching = true
+
+            var hits: [SearchHit] = []
+
+            for (bookID, chapter, verse) in references {
+                guard let book = Bible.book(bookID) else { continue }
+                for edition in editionsToSearch {
+                    let verses = store.verses(edition: edition, book: book, chapter: chapter)
+                    if let hit = verses.first(where: { $0.number == verse }) {
+                        hits.append(SearchHit(editionID: edition.id, bookID: bookID, chapter: chapter, verse: verse,
+                                             text: hit.text))
+                    }
+                }
+            }
+
+            guard !Task.isCancelled else { return }
+            results = hits
+            hasSearched = true
+            isSearching = false
+        }
+    }
+
+    private func parseReferences(_ input: String) -> [(bookID: String, chapter: Int, verse: Int)]? {
+        if let single = parseReference(input) {
+            if let range = expandRange(single, input: input) {
+                return range
+            } else {
+                return [single]
+            }
+        }
+        return nil
+    }
+
+    private func expandRange(_ single: (String, Int, Int), input: String) -> [(String, Int, Int)]? {
+        let (bookID, chapter, verse) = single
+
+        if input.contains("-") {
+            let rangePattern = try! NSRegularExpression(pattern: "(\\d{1,3})(?:,(\\d{1,3}))?\\s*-\\s*(\\d{1,3})(?:,(\\d{1,3}))?", options: [])
+            let rangeRegex = NSRange(input.startIndex..<input.endIndex, in: input)
+
+            if let match = rangePattern.firstMatch(in: input, range: rangeRegex) {
+                var results: [(String, Int, Int)] = []
+
+                if match.numberOfRanges == 5 {
+                    let startChapterRange = Range(match.range(at: 1), in: input)
+                    let startVerseRange = Range(match.range(at: 2), in: input)
+                    let endChapterRange = Range(match.range(at: 3), in: input)
+                    let endVerseRange = Range(match.range(at: 4), in: input)
+
+                    guard let startChapter = startChapterRange.flatMap({ Int(input[$0]) }) else { return nil }
+                    let startVerse = startVerseRange.flatMap({ Int(input[$0]) }) ?? 1
+                    guard let endChapter = endChapterRange.flatMap({ Int(input[$0]) }) else { return nil }
+                    let endVerse = endVerseRange.flatMap({ Int(input[$0]) }) ?? (startChapter == endChapter ? 999 : 999)
+
+                    if startChapter == endChapter {
+                        for v in startVerse...min(endVerse, 999) {
+                            results.append((bookID, startChapter, v))
+                        }
+                    } else {
+                        for c in startChapter...endChapter {
+                            if c == startChapter {
+                                for v in startVerse...999 {
+                                    results.append((bookID, c, v))
+                                }
+                            } else if c == endChapter {
+                                for v in 1...min(endVerse, 999) {
+                                    results.append((bookID, c, v))
+                                }
+                            } else {
+                                results.append((bookID, c, 1))
+                            }
+                        }
+                    }
+
+                    return results.isEmpty ? nil : results
+                }
+            }
+        }
+
+        return nil
     }
 
     private func parseReference(_ input: String) -> (String, Int, Int)? {
