@@ -227,19 +227,16 @@ struct SearchView: View {
         let versePattern = try! NSRegularExpression(pattern: "(\\d{1,3})\\s*[:,;]\\s*(\\d{1,3})", options: [])
         let verseRange = NSRange(input.startIndex..<input.endIndex, in: input)
 
-        guard let verseMatch = versePattern.firstMatch(in: input, options: [], range: verseRange) else {
-            return nil
-        }
-
-        guard let chapterRange = Range(verseMatch.range(at: 1), in: input),
+        guard let verseMatch = versePattern.firstMatch(in: input, options: [], range: verseRange),
+              let chapterRange = Range(verseMatch.range(at: 1), in: input),
               let verseRangeInInput = Range(verseMatch.range(at: 2), in: input),
               let chapter = Int(input[chapterRange]),
-              let verse = Int(input[verseRangeInInput]) else {
+              let verse = Int(input[verseRangeInInput]),
+              let versePart = Range(verseMatch.range, in: input) else {
             return nil
         }
 
-        let bookPartEndIndex = input.index(input.startIndex, offsetBy: verseMatch.range.location)
-        let bookPart = String(input[..<bookPartEndIndex])
+        let bookPart = String(input[..<versePart.lowerBound])
 
         let digitPattern = try! NSRegularExpression(pattern: "([1-3])", options: [])
         let digitRange = NSRange(bookPart.startIndex..<bookPart.endIndex, in: bookPart)
