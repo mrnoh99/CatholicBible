@@ -272,8 +272,18 @@ struct SearchView: View {
             let beforeRange = parts[0].trimmingCharacters(in: .whitespaces)
             let afterRange = parts[1].trimmingCharacters(in: .whitespaces)
 
-            guard let (_, startChapter, startVerse) = parseReference(beforeRange),
-                  startChapter > 0, startVerse > 0 else { return nil }
+            var startChapter = 0
+            var startVerse = 1
+
+            if let (_, c, v) = parseReference(beforeRange) {
+                startChapter = c
+                startVerse = v
+            } else if let c = extractChapterNumber(from: beforeRange) {
+                startChapter = c
+                startVerse = 1
+            }
+
+            guard startChapter > 0 else { return nil }
 
             var results: [(String, Int, Int)] = []
 
@@ -310,6 +320,9 @@ struct SearchView: View {
                           let (_, c, v) = parseReference(book.abbrev + " " + afterRange), c > 0, v > 0 {
                     endChapter = c
                     endVerse = v
+                } else if let c = extractChapterNumber(from: afterRange), c > 0 {
+                    endChapter = c
+                    endVerse = 999
                 } else {
                     return nil
                 }
@@ -491,6 +504,17 @@ struct SearchView: View {
         result = result.replacingOccurrences(of: "기", with: "")
         result = result.replacingOccurrences(of: "복음", with: "")
         return result
+    }
+
+    private func extractChapterNumber(from text: String) -> Int? {
+        let pattern = try! NSRegularExpression(pattern: "\\d{1,3}", options: [])
+        let range = NSRange(text.startIndex..<text.endIndex, in: text)
+        if let match = pattern.firstMatch(in: text, range: range),
+           let numberRange = Range(match.range, in: text),
+           let chapter = Int(text[numberRange]) {
+            return chapter
+        }
+        return nil
     }
 
     private func runSearch() {
