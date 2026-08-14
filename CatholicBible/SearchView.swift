@@ -267,24 +267,37 @@ struct SearchView: View {
             let variants = generateBookVariants(from: book.abbrev)
             let lowerBookAbbrev = book.abbrev.lowercased()
 
-            if book.abbrev == searchAbbrev || book.abbrev == abbrev ||
-               book.abbrev == searchInput {
+            if book.abbrev == searchAbbrev || book.abbrev == searchInput {
                 return book.id
             }
 
-            if lowerBookAbbrev == searchAbbrev.lowercased() ||
-               lowerBookAbbrev == abbrev.lowercased() ||
-               lowerBookAbbrev == searchInput.lowercased() {
-                return book.id
-            }
-
-            for variant in variants {
-                if variant == searchAbbrev || variant == abbrev ||
-                   variant == searchInput ||
-                   variant.lowercased() == searchAbbrev.lowercased() ||
-                   variant.lowercased() == abbrev.lowercased() ||
-                   variant.lowercased() == searchInput.lowercased() {
+            if !digitPrefix.isEmpty {
+                if lowerBookAbbrev == searchAbbrev.lowercased() ||
+                   lowerBookAbbrev == searchInput.lowercased() {
                     return book.id
+                }
+
+                for variant in variants {
+                    if variant == searchAbbrev || variant == searchInput ||
+                       variant.lowercased() == searchAbbrev.lowercased() ||
+                       variant.lowercased() == searchInput.lowercased() {
+                        return book.id
+                    }
+                }
+            } else {
+                if book.abbrev == abbrev {
+                    return book.id
+                }
+
+                if lowerBookAbbrev == abbrev.lowercased() {
+                    return book.id
+                }
+
+                for variant in variants {
+                    if variant == abbrev ||
+                       variant.lowercased() == abbrev.lowercased() {
+                        return book.id
+                    }
                 }
             }
         }
