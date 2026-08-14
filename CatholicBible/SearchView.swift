@@ -314,34 +314,30 @@ struct SearchView: View {
                     return nil
                 }
 
-                let minChapter = min(startChapter, endChapter)
-                let maxChapter = max(startChapter, endChapter)
+                var chap1 = startChapter
+                var verse1 = startVerse
+                var chap2 = endChapter
+                var verse2 = endVerse
 
-                for c in minChapter...maxChapter {
-                    if startChapter < endChapter {
-                        if c == startChapter {
-                            for v in startVerse...999 {
-                                results.append((bookID, c, v))
-                            }
-                        } else if c == endChapter {
-                            for v in 1...endVerse {
-                                results.append((bookID, c, v))
-                            }
-                        } else {
-                            results.append((bookID, c, 1))
+                if chap1 > chap2 || (chap1 == chap2 && verse1 > verse2) {
+                    (chap1, verse1, chap2, verse2) = (chap2, verse2, chap1, verse1)
+                }
+
+                for c in chap1...chap2 {
+                    if c == chap1 && c == chap2 {
+                        for v in verse1...verse2 {
+                            results.append((bookID, c, v))
+                        }
+                    } else if c == chap1 {
+                        for v in verse1...999 {
+                            results.append((bookID, c, v))
+                        }
+                    } else if c == chap2 {
+                        for v in 1...verse2 {
+                            results.append((bookID, c, v))
                         }
                     } else {
-                        if c == endChapter {
-                            for v in 1...startVerse {
-                                results.append((bookID, c, v))
-                            }
-                        } else if c == startChapter {
-                            for v in startVerse...999 {
-                                results.append((bookID, c, v))
-                            }
-                        } else {
-                            results.append((bookID, c, 1))
-                        }
+                        results.append((bookID, c, 1))
                     }
                 }
             }
