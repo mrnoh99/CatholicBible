@@ -224,34 +224,36 @@ struct SearchView: View {
     }
 
     private func parseReference(_ input: String) -> (String, Int, Int)? {
-        let versePattern = try! NSRegularExpression(pattern: "(\\d{1,3})\\s*[:,;]\\s*(\\d{1,3})", options: [])
+        let versePattern = try! NSRegularExpression(pattern: "(\\d{1,3})\\s*[,:;]\\s*(\\d{1,3})", options: [])
         let verseRange = NSRange(input.startIndex..<input.endIndex, in: input)
 
-        guard let verseMatch = versePattern.firstMatch(in: input, options: [], range: verseRange),
+        guard let verseMatch = versePattern.firstMatch(in: input, range: verseRange),
               let chapterRange = Range(verseMatch.range(at: 1), in: input),
-              let verseRangeInInput = Range(verseMatch.range(at: 2), in: input),
+              let verseStrRange = Range(verseMatch.range(at: 2), in: input),
               let chapter = Int(input[chapterRange]),
-              let verse = Int(input[verseRangeInInput]),
+              let verse = Int(input[verseStrRange]),
               let versePart = Range(verseMatch.range, in: input) else {
             return nil
         }
 
-        let bookPart = String(input[..<versePart.lowerBound])
+        let bookPartRaw = String(input[..<versePart.lowerBound]).trimmingCharacters(in: .whitespaces)
+        guard !bookPartRaw.isEmpty else { return nil }
 
-        let digitPattern = try! NSRegularExpression(pattern: "([1-3])", options: [])
-        let digitRange = NSRange(bookPart.startIndex..<bookPart.endIndex, in: bookPart)
-        let digitMatches = digitPattern.matches(in: bookPart, options: [], range: digitRange)
-        let digitPrefix = digitMatches.last.map { String(bookPart[Range($0.range, in: bookPart)!]) } ?? ""
+        var koreanName = ""
+        var digitChars = ""
 
-        var bookName = bookPart.trimmingCharacters(in: .whitespaces)
-        if !digitPrefix.isEmpty {
-            bookName = bookName.replacingOccurrences(of: digitPrefix, with: "").trimmingCharacters(in: .whitespaces)
+        for char in bookPartRaw {
+            if char.isNumber && "123".contains(char) {
+                digitChars.append(char)
+            } else if ("가"..."힣").contains(char) {
+                koreanName.append(char)
+            }
         }
 
-        if !bookName.isEmpty {
-            if let bookID = findBookByAbbrev(bookName, digitPrefix: digitPrefix) {
-                return (bookID, chapter, verse)
-            }
+        let digitPrefix = digitChars.isEmpty ? "" : String(digitChars.suffix(1))
+
+        if !koreanName.isEmpty, let bookID = findBookByAbbrev(koreanName, digitPrefix: digitPrefix) {
+            return (bookID, chapter, verse)
         }
 
         return nil
