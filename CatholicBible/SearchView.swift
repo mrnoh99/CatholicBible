@@ -487,8 +487,9 @@ struct SearchView: View {
         }
 
         // Try matching with common Korean suffixes removed
-        let inputClean = abbrev.replacingOccurrences(of: "오", with: "")
-                               .replacingOccurrences(of: "복음서", with: "")
+        let inputClean = abbrev.replacingOccurrences(of: "복음서", with: "")
+                               .replacingOccurrences(of: "오", with: "")
+                               .replacingOccurrences(of: "코", with: "")
                                .replacingOccurrences(of: "서", with: "")
 
         if inputClean != abbrev {
