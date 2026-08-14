@@ -252,14 +252,23 @@ struct SearchView: View {
     }
 
     private func parseReferences(_ input: String) -> [(bookID: String, chapter: Int, verse: Int)]? {
-        if let single = parseReference(input) {
-            if let range = expandRange(single, input: input) {
-                return range
-            } else {
-                return [single]
+        let rangeStrings = input.split(separator: ";").map { String($0).trimmingCharacters(in: .whitespaces) }
+
+        var allReferences: [(bookID: String, chapter: Int, verse: Int)] = []
+
+        for rangeStr in rangeStrings {
+            guard !rangeStr.isEmpty else { continue }
+
+            if let single = parseReference(rangeStr) {
+                if let range = expandRange(single, input: rangeStr) {
+                    allReferences.append(contentsOf: range)
+                } else {
+                    allReferences.append(single)
+                }
             }
         }
-        return nil
+
+        return allReferences.isEmpty ? nil : allReferences
     }
 
     private func expandRange(_ single: (String, Int, Int), input: String) -> [(String, Int, Int)]? {
