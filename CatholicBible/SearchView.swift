@@ -238,14 +238,15 @@ struct SearchView: View {
             return nil
         }
 
-        let bookPart = input[..<verseMatch.range.location]
+        let bookPartEndIndex = input.index(input.startIndex, offsetBy: verseMatch.range.location)
+        let bookPart = String(input[..<bookPartEndIndex])
 
         let digitPattern = try! NSRegularExpression(pattern: "([1-3])", options: [])
         let digitRange = NSRange(bookPart.startIndex..<bookPart.endIndex, in: bookPart)
-        let digitMatches = digitPattern.matches(in: String(bookPart), options: [], range: digitRange)
+        let digitMatches = digitPattern.matches(in: bookPart, options: [], range: digitRange)
         let digitPrefix = digitMatches.last.map { String(bookPart[Range($0.range, in: bookPart)!]) } ?? ""
 
-        var bookName = String(bookPart).trimmingCharacters(in: .whitespaces)
+        var bookName = bookPart.trimmingCharacters(in: .whitespaces)
         if !digitPrefix.isEmpty {
             bookName = bookName.replacingOccurrences(of: digitPrefix, with: "").trimmingCharacters(in: .whitespaces)
         }
