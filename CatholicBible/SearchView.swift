@@ -318,7 +318,9 @@ struct SearchView: View {
 
         for book in Bible.books {
             let bookNameBase = extractBookNameBase(from: book.abbrev)
-            if bookNameBase.lowercased() == abbrev.lowercased() &&
+            let inputBase = extractBookNameBase(from: abbrev)
+
+            if bookNameBase.lowercased() == inputBase.lowercased() &&
                (digitPrefix.isEmpty || book.abbrev.contains(digitPrefix)) {
                 return book.id
             }
