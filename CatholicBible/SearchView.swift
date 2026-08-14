@@ -283,6 +283,9 @@ struct SearchView: View {
                     endVerse = parsedVerse
                 } else if let (_, _, v) = parseReference(afterRange), v > 0 {
                     endVerse = v
+                } else if let book = Bible.book(bookID),
+                          let (_, _, v) = parseReference(book.abbrev + " " + afterRange), v > 0 {
+                    endVerse = v
                 } else {
                     return nil
                 }
@@ -301,6 +304,10 @@ struct SearchView: View {
                     endChapter = parsedChapter
                     endVerse = 999
                 } else if let (_, c, v) = parseReference(afterRange), c > 0, v > 0 {
+                    endChapter = c
+                    endVerse = v
+                } else if let book = Bible.book(bookID),
+                          let (_, c, v) = parseReference(book.abbrev + " " + afterRange), c > 0, v > 0 {
                     endChapter = c
                     endVerse = v
                 } else {
