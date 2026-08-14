@@ -486,6 +486,20 @@ struct SearchView: View {
             }
         }
 
+        // Try matching with common Korean suffixes removed
+        let inputClean = abbrev.replacingOccurrences(of: "오", with: "")
+                               .replacingOccurrences(of: "복음서", with: "")
+                               .replacingOccurrences(of: "서", with: "")
+
+        if inputClean != abbrev {
+            for book in Bible.books {
+                if book.abbrev == inputClean ||
+                   book.abbrev.lowercased() == inputClean.lowercased() {
+                    return book.id
+                }
+            }
+        }
+
         return nil
     }
 
