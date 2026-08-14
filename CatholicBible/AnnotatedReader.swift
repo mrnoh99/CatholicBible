@@ -660,6 +660,7 @@ struct IntroDetailView: View {
     @Environment(BibleStore.self) private var store
     @Environment(AnnotationStore.self) private var annotations
     @Environment(ReaderNavigation.self) private var navigation
+    @Environment(KnbNotesStore.self) private var knb
     @Environment(\.horizontalSizeClass) private var hSize
     @Environment(\.dismiss) private var dismiss
     @State private var xrefTarget: XrefTarget?
@@ -725,6 +726,7 @@ struct IntroDetailView: View {
                     .environment(settings)
                     .environment(annotations)
                     .environment(navigation)
+                    .environment(knb)
             }
         }
     }
