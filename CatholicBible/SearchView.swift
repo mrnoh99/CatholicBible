@@ -272,28 +272,69 @@ struct SearchView: View {
             let beforeRange = parts[0].trimmingCharacters(in: .whitespaces)
             let afterRange = parts[1].trimmingCharacters(in: .whitespaces)
 
-            guard let (_, startChapter, startVerse) = parseReference(beforeRange) else { return nil }
+            guard let (_, startChapter, startVerse) = parseReference(beforeRange),
+                  startChapter > 0, startVerse > 0 else { return nil }
 
             var results: [(String, Int, Int)] = []
 
             if startChapter == chapter {
-                guard let endVerse = Int(afterRange) else { return nil }
-                for v in startVerse...endVerse {
+                let endVerse: Int
+                if let parsedVerse = Int(afterRange), parsedVerse > 0 {
+                    endVerse = parsedVerse
+                } else if let (_, _, v) = parseReference(afterRange), v > 0 {
+                    endVerse = v
+                } else {
+                    return nil
+                }
+
+                let minVerse = min(startVerse, endVerse)
+                let maxVerse = max(startVerse, endVerse)
+
+                for v in minVerse...maxVerse {
                     results.append((bookID, startChapter, v))
                 }
             } else {
-                guard let endChapter = Int(afterRange) else { return nil }
-                for c in startChapter...endChapter {
-                    if c == startChapter {
-                        for v in startVerse...999 {
-                            results.append((bookID, c, v))
-                        }
-                    } else if c == endChapter {
-                        for v in 1...999 {
-                            results.append((bookID, c, v))
+                let endChapter: Int
+                let endVerse: Int
+
+                if let parsedChapter = Int(afterRange), parsedChapter > 0 {
+                    endChapter = parsedChapter
+                    endVerse = 999
+                } else if let (_, c, v) = parseReference(afterRange), c > 0, v > 0 {
+                    endChapter = c
+                    endVerse = v
+                } else {
+                    return nil
+                }
+
+                let minChapter = min(startChapter, endChapter)
+                let maxChapter = max(startChapter, endChapter)
+
+                for c in minChapter...maxChapter {
+                    if startChapter < endChapter {
+                        if c == startChapter {
+                            for v in startVerse...999 {
+                                results.append((bookID, c, v))
+                            }
+                        } else if c == endChapter {
+                            for v in 1...endVerse {
+                                results.append((bookID, c, v))
+                            }
+                        } else {
+                            results.append((bookID, c, 1))
                         }
                     } else {
-                        results.append((bookID, c, 1))
+                        if c == endChapter {
+                            for v in 1...startVerse {
+                                results.append((bookID, c, v))
+                            }
+                        } else if c == startChapter {
+                            for v in startVerse...999 {
+                                results.append((bookID, c, v))
+                            }
+                        } else {
+                            results.append((bookID, c, 1))
+                        }
                     }
                 }
             }
