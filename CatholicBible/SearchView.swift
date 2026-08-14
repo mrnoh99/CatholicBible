@@ -294,6 +294,10 @@ struct SearchView: View {
                         return book.id
                     }
                 }
+
+                if book.shortName.contains(abbrev) && book.shortName.contains(digitPrefix) {
+                    return book.id
+                }
             } else {
                 if book.abbrev == abbrev {
                     return book.id
