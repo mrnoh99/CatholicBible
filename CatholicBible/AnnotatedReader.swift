@@ -624,6 +624,7 @@ struct IntroductionsView: View {
                     .environment(store)
                     .environment(annotations)
                     .environment(navigation)
+                    .environment(knb)
             }
         }
     }
