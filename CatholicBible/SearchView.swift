@@ -266,46 +266,39 @@ struct SearchView: View {
         let (bookID, chapter, verse) = single
 
         if input.contains("-") {
-            let rangePattern = try! NSRegularExpression(pattern: "(\\d{1,3})(?:,(\\d{1,3}))?\\s*-\\s*(\\d{1,3})(?:,(\\d{1,3}))?", options: [])
-            let rangeRegex = NSRange(input.startIndex..<input.endIndex, in: input)
+            let parts = input.split(separator: "-", maxSplits: 1, omittingEmptySubsequences: true).map(String.init)
+            guard parts.count == 2 else { return nil }
 
-            if let match = rangePattern.firstMatch(in: input, range: rangeRegex) {
-                var results: [(String, Int, Int)] = []
+            let beforeRange = parts[0].trimmingCharacters(in: .whitespaces)
+            let afterRange = parts[1].trimmingCharacters(in: .whitespaces)
 
-                if match.numberOfRanges == 5 {
-                    let startChapterRange = Range(match.range(at: 1), in: input)
-                    let startVerseRange = Range(match.range(at: 2), in: input)
-                    let endChapterRange = Range(match.range(at: 3), in: input)
-                    let endVerseRange = Range(match.range(at: 4), in: input)
+            guard let (_, startChapter, startVerse) = parseReference(beforeRange) else { return nil }
 
-                    guard let startChapter = startChapterRange.flatMap({ Int(input[$0]) }) else { return nil }
-                    let startVerse = startVerseRange.flatMap({ Int(input[$0]) }) ?? 1
-                    guard let endChapter = endChapterRange.flatMap({ Int(input[$0]) }) else { return nil }
-                    let endVerse = endVerseRange.flatMap({ Int(input[$0]) }) ?? (startChapter == endChapter ? 999 : 999)
+            var results: [(String, Int, Int)] = []
 
-                    if startChapter == endChapter {
-                        for v in startVerse...min(endVerse, 999) {
-                            results.append((bookID, startChapter, v))
+            if startChapter == chapter {
+                guard let endVerse = Int(afterRange) else { return nil }
+                for v in startVerse...endVerse {
+                    results.append((bookID, startChapter, v))
+                }
+            } else {
+                guard let endChapter = Int(afterRange) else { return nil }
+                for c in startChapter...endChapter {
+                    if c == startChapter {
+                        for v in startVerse...999 {
+                            results.append((bookID, c, v))
+                        }
+                    } else if c == endChapter {
+                        for v in 1...999 {
+                            results.append((bookID, c, v))
                         }
                     } else {
-                        for c in startChapter...endChapter {
-                            if c == startChapter {
-                                for v in startVerse...999 {
-                                    results.append((bookID, c, v))
-                                }
-                            } else if c == endChapter {
-                                for v in 1...min(endVerse, 999) {
-                                    results.append((bookID, c, v))
-                                }
-                            } else {
-                                results.append((bookID, c, 1))
-                            }
-                        }
+                        results.append((bookID, c, 1))
                     }
-
-                    return results.isEmpty ? nil : results
                 }
             }
+
+            return results.isEmpty ? nil : results
         }
 
         return nil
