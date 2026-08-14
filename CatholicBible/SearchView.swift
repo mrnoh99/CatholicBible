@@ -255,12 +255,23 @@ struct SearchView: View {
         let rangeStrings = input.split(separator: ";").map { String($0).trimmingCharacters(in: .whitespaces) }
 
         var allReferences: [(bookID: String, chapter: Int, verse: Int)] = []
+        var currentBookID: String?
 
         for rangeStr in rangeStrings {
             guard !rangeStr.isEmpty else { continue }
 
-            if let single = parseReference(rangeStr) {
-                if let range = expandRange(single, input: rangeStr) {
+            var rangeToProcess = rangeStr
+
+            // If range doesn't start with Korean characters, try prepending the last book
+            if let lastBook = currentBookID, !rangeStr.first?.isLetter ?? false {
+                if let book = Bible.book(lastBook) {
+                    rangeToProcess = book.abbrev + " " + rangeStr
+                }
+            }
+
+            if let single = parseReference(rangeToProcess) {
+                currentBookID = single.0
+                if let range = expandRange(single, input: rangeToProcess) {
                     allReferences.append(contentsOf: range)
                 } else {
                     allReferences.append(single)
