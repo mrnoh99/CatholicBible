@@ -78,6 +78,20 @@ struct SearchView: View {
                     }()
 
                     VStack(spacing: 8) {
+                        HStack(spacing: 8) {
+                            TextField("예: 1코린 13,13", text: $query,
+                                     onEditingChanged: { _ in }) {
+                                runSearch()
+                            }
+                            .textFieldStyle(.roundedBorder)
+                            .onSubmit { parseAndSearch() }
+
+                            Button(action: { parseAndSearch() }) {
+                                Image(systemName: "magnifyingglass")
+                            }
+                        }
+                        .padding(.horizontal).padding(.vertical, 8)
+
                         Picker("명칭", selection: $selectedBookID) {
                             Text("책 선택").tag("")
                             ForEach(Bible.books) { book in
@@ -192,6 +206,79 @@ struct SearchView: View {
         }
         navigation.open(bookID: hit.bookID, chapter: hit.chapter, verse: hit.verse)
         dismiss()
+    }
+
+    private func parseAndSearch() {
+        let input = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !input.isEmpty else {
+            results = []; hasSearched = false; isSearching = false
+            return
+        }
+
+        if let (bookID, chapter, verse) = parseReference(input) {
+            selectedBookID = bookID
+            selectedChapter = chapter
+            selectedVerse = verse
+            runSearch()
+        } else {
+            results = []; hasSearched = true; isSearching = false
+        }
+    }
+
+    private func parseReference(_ input: String) -> (String, Int, Int)? {
+        let patterns: [NSRegularExpression] = [
+            try! NSRegularExpression(pattern: "([1-3])?([가-힣]+(?:복음|서간|기|편)?)\\s*(?:[-,:;\\s]+|$)\\s*(\\d{1,3})\\s*[:,;\\s]+\\s*(\\d{1,3})", options: []),
+            try! NSRegularExpression(pattern: "([가-힣]+(?:복음|서간|기|편)?)\\s+(\\d)\\s+(\\d{1,3})\\s*[:,]\\s*(\\d{1,3})", options: []),
+        ]
+
+        for pattern in patterns {
+            let range = NSRange(input.startIndex..<input.endIndex, in: input)
+            if let match = pattern.firstMatch(in: input, options: [], range: range) {
+                if pattern == patterns[0] && match.numberOfRanges == 5 {
+                    let digitPrefix = match.range(at: 1).location != NSNotFound ? String(input[Range(match.range(at: 1), in: input)!]) : ""
+                    let bookAbbrev = String(input[Range(match.range(at: 2), in: input)!])
+                    let chapterStr = String(input[Range(match.range(at: 3), in: input)!])
+                    let verseStr = String(input[Range(match.range(at: 4), in: input)!])
+
+                    if let chapter = Int(chapterStr), let verse = Int(verseStr) {
+                        if let bookID = findBookByAbbrev(bookAbbrev, digitPrefix: digitPrefix) {
+                            return (bookID, chapter, verse)
+                        }
+                    }
+                } else if pattern == patterns[1] && match.numberOfRanges == 5 {
+                    let bookAbbrev = String(input[Range(match.range(at: 1), in: input)!])
+                    let digitPrefix = String(input[Range(match.range(at: 2), in: input)!])
+                    let chapterStr = String(input[Range(match.range(at: 3), in: input)!])
+                    let verseStr = String(input[Range(match.range(at: 4), in: input)!])
+
+                    if let chapter = Int(chapterStr), let verse = Int(verseStr) {
+                        if let bookID = findBookByAbbrev(bookAbbrev, digitPrefix: digitPrefix) {
+                            return (bookID, chapter, verse)
+                        }
+                    }
+                }
+            }
+        }
+
+        return nil
+    }
+
+    private func findBookByAbbrev(_ abbrev: String, digitPrefix: String = "") -> String? {
+        let searchAbbrev = digitPrefix + abbrev
+        for book in Bible.books {
+            if book.abbrev == searchAbbrev || book.abbrev == abbrev {
+                return book.id
+            }
+        }
+
+        for book in Bible.books {
+            if book.abbrev.lowercased() == searchAbbrev.lowercased() ||
+               book.abbrev.lowercased() == abbrev.lowercased() {
+                return book.id
+            }
+        }
+
+        return nil
     }
 
     private func runSearch() {
