@@ -78,20 +78,6 @@ struct SearchView: View {
                     }()
 
                     VStack(spacing: 8) {
-                        HStack(spacing: 8) {
-                            TextField("예: 1코린 13,13", text: $query,
-                                     onEditingChanged: { _ in }) {
-                                runSearch()
-                            }
-                            .textFieldStyle(.roundedBorder)
-                            .onSubmit { parseAndSearch() }
-
-                            Button(action: { parseAndSearch() }) {
-                                Image(systemName: "magnifyingglass")
-                            }
-                        }
-                        .padding(.horizontal).padding(.vertical, 8)
-
                         Picker("명칭", selection: $selectedBookID) {
                             Text("책 선택").tag("")
                             ForEach(Bible.books) { book in
@@ -176,9 +162,21 @@ struct SearchView: View {
             .navigationTitle("검색")
             .navigationBarTitleDisplayMode(.inline)
             .searchable(text: $query, placement: .navigationBarDrawer(displayMode: .always),
-                        prompt: mode == .text ? "말씀 검색 (예: 사랑 OR love)" : "")
-            .onSubmit { runSearch() }
-            .onChange(of: query) { runSearch() }
+                        prompt: mode == .text ? "말씀 검색 (예: 사랑 OR love)" : "장절 검색 (예: 1코린 13,13)")
+            .onSubmit {
+                if mode == .reference {
+                    parseAndSearch()
+                } else {
+                    runSearch()
+                }
+            }
+            .onChange(of: query) {
+                if mode == .reference {
+                    parseAndSearch()
+                } else {
+                    runSearch()
+                }
+            }
             .onChange(of: scope) { runSearch() }
             .onChange(of: mode) {
                 query = ""
