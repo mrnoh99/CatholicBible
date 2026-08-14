@@ -296,6 +296,8 @@ struct SearchView: View {
                 } else if let book = Bible.book(bookID),
                           let (_, _, v) = parseReference(book.abbrev + " " + afterRange), v > 0 {
                     endVerse = v
+                } else if let v = extractVerseNumber(from: afterRange), v > 0 {
+                    endVerse = v
                 } else {
                     return nil
                 }
@@ -513,6 +515,17 @@ struct SearchView: View {
            let numberRange = Range(match.range, in: text),
            let chapter = Int(text[numberRange]) {
             return chapter
+        }
+        return nil
+    }
+
+    private func extractVerseNumber(from text: String) -> Int? {
+        let pattern = try! NSRegularExpression(pattern: "\\d{1,3}", options: [])
+        let range = NSRange(text.startIndex..<text.endIndex, in: text)
+        if let match = pattern.firstMatch(in: text, range: range),
+           let numberRange = Range(match.range, in: text),
+           let verse = Int(text[numberRange]) {
+            return verse
         }
         return nil
     }
