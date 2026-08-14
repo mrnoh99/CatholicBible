@@ -224,52 +224,35 @@ struct SearchView: View {
     }
 
     private func parseReference(_ input: String) -> (String, Int, Int)? {
-        let patterns: [(pattern: NSRegularExpression, extractor: (NSTextCheckingResult, String) -> (String, String, String, String)?)] = [
-            (try! NSRegularExpression(pattern: "([1-3])([가-힣]+)\\s+(\\d{1,3})\\s*[:,]\\s*(\\d{1,3})", options: []), { match, text in
-                guard match.numberOfRanges == 5 else { return nil }
-                let digit = String(text[Range(match.range(at: 1), in: text)!])
-                let abbrev = String(text[Range(match.range(at: 2), in: text)!])
-                let chapter = String(text[Range(match.range(at: 3), in: text)!])
-                let verse = String(text[Range(match.range(at: 4), in: text)!])
-                return (abbrev, digit, chapter, verse)
-            }),
-            (try! NSRegularExpression(pattern: "([가-힣]+)\\s+([1-3])\\s+(\\d{1,3})\\s*[:,]\\s*(\\d{1,3})", options: []), { match, text in
-                guard match.numberOfRanges == 5 else { return nil }
-                let abbrev = String(text[Range(match.range(at: 1), in: text)!])
-                let digit = String(text[Range(match.range(at: 2), in: text)!])
-                let chapter = String(text[Range(match.range(at: 3), in: text)!])
-                let verse = String(text[Range(match.range(at: 4), in: text)!])
-                return (abbrev, digit, chapter, verse)
-            }),
-            (try! NSRegularExpression(pattern: "([1-3])([가-힣]+)\\s*([\\d,]+)\\s*[:,]\\s*(\\d{1,3})", options: []), { match, text in
-                guard match.numberOfRanges == 5 else { return nil }
-                let digit = String(text[Range(match.range(at: 1), in: text)!])
-                let abbrev = String(text[Range(match.range(at: 2), in: text)!])
-                let chapterStr = String(text[Range(match.range(at: 3), in: text)!])
-                let verseStr = String(text[Range(match.range(at: 4), in: text)!])
-                let chapter = chapterStr.replacingOccurrences(of: ",", with: "")
-                return (abbrev, digit, chapter, verseStr)
-            }),
-            (try! NSRegularExpression(pattern: "([가-힣]+)\\s*([1-3])\\s*(?:서|편|기)?\\s+(\\d{1,3})\\s*[:,]\\s*(\\d{1,3})", options: []), { match, text in
-                guard match.numberOfRanges == 5 else { return nil }
-                let abbrev = String(text[Range(match.range(at: 1), in: text)!])
-                let digit = String(text[Range(match.range(at: 2), in: text)!])
-                let chapter = String(text[Range(match.range(at: 3), in: text)!])
-                let verse = String(text[Range(match.range(at: 4), in: text)!])
-                return (abbrev, digit, chapter, verse)
-            }),
-        ]
+        let versePattern = try! NSRegularExpression(pattern: "(\\d{1,3})\\s*[:,;]\\s*(\\d{1,3})", options: [])
+        let verseRange = NSRange(input.startIndex..<input.endIndex, in: input)
 
-        for (pattern, extractor) in patterns {
-            let range = NSRange(input.startIndex..<input.endIndex, in: input)
-            if let match = pattern.firstMatch(in: input, options: [], range: range) {
-                if let (abbrev, digit, chapterStr, verseStr) = extractor(match, input) {
-                    if let chapter = Int(chapterStr), let verse = Int(verseStr) {
-                        if let bookID = findBookByAbbrev(abbrev, digitPrefix: digit) {
-                            return (bookID, chapter, verse)
-                        }
-                    }
-                }
+        guard let verseMatch = versePattern.firstMatch(in: input, options: [], range: verseRange) else {
+            return nil
+        }
+
+        guard let chapterRange = Range(verseMatch.range(at: 1), in: input),
+              let verseRangeInInput = Range(verseMatch.range(at: 2), in: input),
+              let chapter = Int(input[chapterRange]),
+              let verse = Int(input[verseRangeInInput]) else {
+            return nil
+        }
+
+        let bookPart = input[..<verseMatch.range.location]
+
+        let digitPattern = try! NSRegularExpression(pattern: "([1-3])", options: [])
+        let digitRange = NSRange(bookPart.startIndex..<bookPart.endIndex, in: bookPart)
+        let digitMatches = digitPattern.matches(in: String(bookPart), options: [], range: digitRange)
+        let digitPrefix = digitMatches.last.map { String(bookPart[Range($0.range, in: bookPart)!]) } ?? ""
+
+        var bookName = String(bookPart).trimmingCharacters(in: .whitespaces)
+        if !digitPrefix.isEmpty {
+            bookName = bookName.replacingOccurrences(of: digitPrefix, with: "").trimmingCharacters(in: .whitespaces)
+        }
+
+        if !bookName.isEmpty {
+            if let bookID = findBookByAbbrev(bookName, digitPrefix: digitPrefix) {
+                return (bookID, chapter, verse)
             }
         }
 
