@@ -201,6 +201,7 @@ enum ScriptureRef {
         guard let kre = koreanRegex else { return }
         let s = attr.string as NSString
         var lastBook = currentBook
+        let originalBook = currentBook  // preserve context book for unnamed references
         var processed: [NSRange] = []
 
         for m in kre.matches(in: attr.string,
@@ -217,7 +218,8 @@ enum ScriptureRef {
                     continue
                 }
             } else {
-                bookID = lastBook
+                // use original book context if available, else fall back to lastBook
+                bookID = originalBook ?? lastBook
             }
 
             guard let bID = bookID,
@@ -272,6 +274,7 @@ enum ScriptureRef {
             let parts = inner.split(separator: ";").map { String($0).trimmingCharacters(in: .whitespaces) }
 
             var lastBook = currentBook
+            let originalBook = currentBook  // preserve context book for unnamed references
             var searchStart = m.range.location + 1
 
             for part in parts {
@@ -289,7 +292,7 @@ enum ScriptureRef {
                             lastBook = id
                         }
                     } else {
-                        bookID = lastBook ?? "mk" // 기본값: 마르코
+                        bookID = originalBook ?? lastBook ?? "mk"
                     }
 
                     if let bID = bookID,
