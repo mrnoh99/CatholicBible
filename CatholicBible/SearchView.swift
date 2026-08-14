@@ -227,6 +227,7 @@ struct SearchView: View {
         let patterns: [NSRegularExpression] = [
             try! NSRegularExpression(pattern: "([1-3])?([가-힣]+(?:복음|서간|기|편)?)\\s*(?:[-,:;\\s]+|$)\\s*(\\d{1,3})\\s*[:,;\\s]+\\s*(\\d{1,3})", options: []),
             try! NSRegularExpression(pattern: "([가-힣]+(?:복음|서간|기|편)?)\\s+(\\d)\\s+(\\d{1,3})\\s*[:,]\\s*(\\d{1,3})", options: []),
+            try! NSRegularExpression(pattern: "([가-힣]+)\\s*(\\d)\\s*(?:서|편|기)?\\s+(\\d{1,3})\\s*[:,]\\s*(\\d{1,3})", options: []),
         ]
 
         for pattern in patterns {
@@ -254,6 +255,17 @@ struct SearchView: View {
                             return (bookID, chapter, verse)
                         }
                     }
+                } else if pattern == patterns[2] && match.numberOfRanges == 5 {
+                    let bookName = String(input[Range(match.range(at: 1), in: input)!])
+                    let digit = String(input[Range(match.range(at: 2), in: input)!])
+                    let chapterStr = String(input[Range(match.range(at: 3), in: input)!])
+                    let verseStr = String(input[Range(match.range(at: 4), in: input)!])
+
+                    if let chapter = Int(chapterStr), let verse = Int(verseStr) {
+                        if let bookID = findBookByAbbrev(bookName, digitPrefix: digit) {
+                            return (bookID, chapter, verse)
+                        }
+                    }
                 }
             }
         }
@@ -263,20 +275,82 @@ struct SearchView: View {
 
     private func findBookByAbbrev(_ abbrev: String, digitPrefix: String = "") -> String? {
         let searchAbbrev = digitPrefix + abbrev
+        let searchInput = abbrev + digitPrefix
+
         for book in Bible.books {
-            if book.abbrev == searchAbbrev || book.abbrev == abbrev {
+            let variants = generateBookVariants(from: book.abbrev)
+            let lowerBookAbbrev = book.abbrev.lowercased()
+
+            if book.abbrev == searchAbbrev || book.abbrev == abbrev ||
+               book.abbrev == searchInput {
                 return book.id
+            }
+
+            if lowerBookAbbrev == searchAbbrev.lowercased() ||
+               lowerBookAbbrev == abbrev.lowercased() ||
+               lowerBookAbbrev == searchInput.lowercased() {
+                return book.id
+            }
+
+            for variant in variants {
+                if variant == searchAbbrev || variant == abbrev ||
+                   variant == searchInput ||
+                   variant.lowercased() == searchAbbrev.lowercased() ||
+                   variant.lowercased() == abbrev.lowercased() ||
+                   variant.lowercased() == searchInput.lowercased() {
+                    return book.id
+                }
             }
         }
 
         for book in Bible.books {
-            if book.abbrev.lowercased() == searchAbbrev.lowercased() ||
-               book.abbrev.lowercased() == abbrev.lowercased() {
+            let bookNameBase = extractBookNameBase(from: book.abbrev)
+            if bookNameBase.lowercased() == abbrev.lowercased() &&
+               (digitPrefix.isEmpty || book.abbrev.contains(digitPrefix)) {
                 return book.id
             }
         }
 
         return nil
+    }
+
+    private func generateBookVariants(from abbrev: String) -> [String] {
+        var variants: [String] = []
+
+        let digit = abbrev.first?.isNumber == true ? String(abbrev.first!) : ""
+        let withoutDigit = abbrev.filter { !$0.isNumber }
+
+        if !digit.isEmpty {
+            variants.append(digit + withoutDigit)
+            variants.append(withoutDigit + digit)
+            variants.append(withoutDigit)
+        }
+
+        if abbrev.contains("서") || abbrev.contains("편") || abbrev.contains("기") {
+            let cleaned = abbrev.replacingOccurrences(of: "서", with: "")
+                                .replacingOccurrences(of: "편", with: "")
+                                .replacingOccurrences(of: "기", with: "")
+            if !cleaned.isEmpty && cleaned != abbrev {
+                variants.append(cleaned)
+                variants.append(digit + cleaned.filter { !$0.isNumber })
+            }
+        }
+
+        if abbrev.contains("복음") {
+            variants.append(abbrev.replacingOccurrences(of: "복음", with: ""))
+        }
+
+        return variants
+    }
+
+    private func extractBookNameBase(from abbrev: String) -> String {
+        var result = abbrev
+        result = result.filter { !$0.isNumber }
+        result = result.replacingOccurrences(of: "서", with: "")
+        result = result.replacingOccurrences(of: "편", with: "")
+        result = result.replacingOccurrences(of: "기", with: "")
+        result = result.replacingOccurrences(of: "복음", with: "")
+        return result
     }
 
     private func runSearch() {
