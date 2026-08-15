@@ -5,8 +5,7 @@
 //  iPad에 맞춘 2단 구성: 왼쪽 사이드바(판본 선택 + 책 목차) +
 //  오른쪽 화면(서재 또는 ebook 리더).
 //
-//  서재에는 bible.cbck.or.kr의 8가지 책(성경·주석 성경·공동번역·200주년·
-//  NAB·최민순 시편·Nova Vulgata·전례 시편)이 놓인다.
+//  서재에는 천주교회의 아홉가지 책이 놓인다.
 //
 
 import SwiftUI
@@ -293,7 +292,7 @@ struct ShelfView: View {
                         Text("가톨릭 성경 서재")
                             .font(settings.fontChoice.font(size: 32, relativeTo: .largeTitle, bold: true))
                             .foregroundStyle(settings.theme.text)
-                        Text("한국천주교주교회의 bible.cbck.or.kr의 8가지 책")
+                        Text("천주교회의 아홉가지 책")
                             .font(.subheadline)
                             .foregroundStyle(settings.theme.secondary)
                     }

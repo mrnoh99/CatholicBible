@@ -2,7 +2,7 @@
 //  Edition.swift
 //  CatholicBible
 //
-//  bible.cbck.or.kr가 제공하는 8가지 책(판본). 각 판본이 서재의 ebook 한 권이다.
+//  천주교회의 아홉가지 책(판본). 각 판본이 서재의 ebook 한 권이다.
 //
 //    1. 성경(새 번역)      /Knb             73권
 //    2. 주석 성경          /Knbnotes/Bible  73권 (TOB 기반 주석)
