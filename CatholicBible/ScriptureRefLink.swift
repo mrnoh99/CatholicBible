@@ -566,7 +566,7 @@ struct RefPreviewSheet: View {
             .background(settings.theme.background.ignoresSafeArea())
             .navigationTitle(title)
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar { ToolbarItem(placement: .cancellationAction) { Button("닫기") { dismiss() } } }
+            .toolbar { ToolbarItem(placement: .topBarTrailing) { Button("닫기") { dismiss() } } }
             .preferredColorScheme(settings.theme.colorScheme)
             // 중첩된 fullScreenCover 내에서 주석 표시 지연을 피하기 위해 fullScreenCover 사용
             .fullScreenCover(item: $noteTarget) { t in

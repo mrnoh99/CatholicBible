@@ -430,7 +430,7 @@ struct MarkerNoteSheet: View {
             .background(settings.theme.background.ignoresSafeArea())
             .navigationTitle("주석 \(n)")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar { ToolbarItem(placement: .cancellationAction) { Button("닫기") { dismiss() } } }
+            .toolbar { ToolbarItem(placement: .topBarTrailing) { Button("닫기") { dismiss() } } }
             .preferredColorScheme(settings.theme.colorScheme)
             .fullScreenCover(item: $xrefTarget) { t in
                 RefPreviewSheet(target: t)
@@ -617,7 +617,7 @@ struct IntroductionsView: View {
             }
             .navigationTitle("입문")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar { ToolbarItem(placement: .cancellationAction) { Button("닫기") { dismiss() } } }
+            .toolbar { ToolbarItem(placement: .topBarTrailing) { Button("닫기") { dismiss() } } }
             .fullScreenCover(item: $selected) { intro in
                 IntroDetailView(intro: intro)
                     .environment(settings)
@@ -717,7 +717,7 @@ struct IntroDetailView: View {
             .background(settings.theme.background.ignoresSafeArea())
             .navigationTitle(intro.title.isEmpty ? "입문" : intro.title)
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar { ToolbarItem(placement: .cancellationAction) { Button("닫기") { dismiss() } } }
+            .toolbar { ToolbarItem(placement: .topBarTrailing) { Button("닫기") { dismiss() } } }
             .preferredColorScheme(settings.theme.colorScheme)
             // 주석 열(NotesList)의 인용 링크도 여기서 처리하도록 openURL 재정의
             .environment(\.openURL, OpenURLAction { url in handleURL(url); return .handled })

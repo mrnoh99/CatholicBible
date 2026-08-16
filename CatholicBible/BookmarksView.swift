@@ -38,7 +38,7 @@ struct BookmarksView: View {
             .navigationTitle("책갈피")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) { Button("닫기") { dismiss() } }
+                ToolbarItem(placement: .topBarTrailing) { Button("닫기") { dismiss() } }
                 if !annotations.bookmarks.isEmpty {
                     ToolbarItem(placement: .primaryAction) { EditButton() }
                 }

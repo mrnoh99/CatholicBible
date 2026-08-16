@@ -1155,7 +1155,7 @@ struct BookPickerView: View {
         .navigationTitle("\(edition.shortName) · 책 선택")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
-            ToolbarItem(placement: .cancellationAction) { Button("닫기") { dismiss() } }
+            ToolbarItem(placement: .topBarTrailing) { Button("닫기") { dismiss() } }
         }
     }
 
@@ -1301,7 +1301,7 @@ struct ChapterPickerView: View {
             .navigationTitle(book.shortName)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) { Button("닫기") { dismiss() } }
+                ToolbarItem(placement: .topBarTrailing) { Button("닫기") { dismiss() } }
             }
         }
     }

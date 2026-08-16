@@ -48,7 +48,7 @@ struct DictionaryView: View {
             .navigationTitle("사전")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) { Button("닫기") { dismiss() } }
+                ToolbarItem(placement: .topBarTrailing) { Button("닫기") { dismiss() } }
             }
             .onAppear {
                 let t = initialTerm.trimmingCharacters(in: .whitespacesAndNewlines)

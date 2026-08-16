@@ -58,7 +58,7 @@ struct NotesListView: View {
             .navigationTitle("노트")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) { Button("닫기") { dismiss() } }
+                ToolbarItem(placement: .topBarTrailing) { Button("닫기") { dismiss() } }
                 ToolbarItem(placement: .primaryAction) {
                     Menu {
                         Button("파일로 내보내기(백업)", systemImage: "square.and.arrow.up") {

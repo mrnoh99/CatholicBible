@@ -187,7 +187,7 @@ struct SearchView: View {
                 hasSearched = false
             }
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) { Button("닫기") { dismiss() } }
+                ToolbarItem(placement: .topBarTrailing) { Button("닫기") { dismiss() } }
             }
         }
     }
