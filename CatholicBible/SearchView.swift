@@ -159,7 +159,7 @@ struct SearchView: View {
                     }
                 }
             }
-            .navigationTitle("검색")
+            .navigationTitle(results.isEmpty ? "검색" : "검색 (\(results.count)개)")
             .navigationBarTitleDisplayMode(.inline)
             .searchable(text: $query, placement: .navigationBarDrawer(displayMode: .always),
                         prompt: mode == .text ? "말씀 검색 (예: 사랑 OR love)" : "장절 검색 (예: 1코린 13,13)")
