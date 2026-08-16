@@ -34,6 +34,18 @@ enum SearchMode: String, CaseIterable, Identifiable {
     }
 }
 
+enum TextMatchMode: String, CaseIterable, Identifiable {
+    case partial
+    case wholeWord
+    var id: String { rawValue }
+    var label: String {
+        switch self {
+        case .partial: return "부분 일치"
+        case .wholeWord: return "정확한 단어"
+        }
+    }
+}
+
 struct SearchView: View {
     @Environment(BibleStore.self) private var store
     @Environment(ReadingState.self) private var readingState
@@ -43,6 +55,7 @@ struct SearchView: View {
     @State private var query = ""
     @State private var scope: SearchScope = .current
     @State private var mode: SearchMode = .text
+    @State private var matchMode: TextMatchMode = .partial
     @State private var results: [SearchHit] = []
     @State private var previousResults: [SearchHit] = []
     @State private var isSearching = false
@@ -83,6 +96,20 @@ struct SearchView: View {
                     .frame(maxWidth: .infinity)
                 }
                 .padding(.horizontal).padding(.vertical, 8)
+
+                if mode == .text {
+                    HStack {
+                        Spacer()
+                        Picker("일치 방식", selection: $matchMode) {
+                            ForEach(TextMatchMode.allCases) { m in
+                                Text(m.label).tag(m)
+                            }
+                        }
+                        .pickerStyle(.segmented)
+                        .frame(maxWidth: 200)
+                    }
+                    .padding(.horizontal).padding(.vertical, 8)
+                }
 
                 if mode == .reference {
                     let selectedBook = Bible.book(selectedBookID)
@@ -581,6 +608,17 @@ struct SearchView: View {
         return nil
     }
 
+    private func filterByMatchMode(_ hits: [SearchHit], query: String) -> [SearchHit] {
+        guard matchMode == .wholeWord else { return hits }
+
+        return hits.filter { hit in
+            let pattern = "(?<![가-힣])\\(NSRegularExpression.escapedPattern(for: query))"
+            guard let regex = try? NSRegularExpression(pattern: pattern) else { return false }
+            let range = NSRange(hit.text.startIndex..., in: hit.text)
+            return regex.firstMatch(in: hit.text, range: range) != nil
+        }
+    }
+
     private func runSearch() {
         searchTask?.cancel()
 
@@ -593,9 +631,10 @@ struct SearchView: View {
 
             // 검색 결과 내에서 재검색
             if scope == .results {
-                results = previousResults.filter { hit in
+                let filtered = previousResults.filter { hit in
                     hit.text.localizedCaseInsensitiveContains(text)
                 }
+                results = filterByMatchMode(filtered, query: text)
                 hasSearched = true
                 isSearching = false
                 return
@@ -604,6 +643,7 @@ struct SearchView: View {
             let currentEdition = readingState.selectedEdition
             let editionsToSearch = store.loadedEditions
             let scope = scope
+            let matchMode = matchMode
             searchTask = Task {
                 try? await Task.sleep(for: .milliseconds(300))
                 guard !Task.isCancelled else { return }
@@ -616,7 +656,7 @@ struct SearchView: View {
                 }
                 guard !Task.isCancelled else { return }
                 previousResults = hits
-                results = hits
+                results = filterByMatchMode(hits, query: text)
                 hasSearched = true
                 isSearching = false
             }
