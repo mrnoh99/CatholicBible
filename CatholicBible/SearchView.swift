@@ -70,6 +70,20 @@ struct SearchView: View {
     @State private var selectedChapter: Int = 1
     @State private var selectedVerse: Int = 1
 
+    // 말씀 찾기 상태 저장
+    @State private var textQuery = ""
+    @State private var textResults: [SearchHit] = []
+    @State private var textPreviousResults: [SearchHit] = []
+    @State private var textHasSearched = false
+
+    // 장절 찾기 상태 저장
+    @State private var referenceBookID = ""
+    @State private var referenceChapter = 1
+    @State private var referenceVerse = 1
+    @State private var referenceResults: [SearchHit] = []
+    @State private var referencePreviousResults: [SearchHit] = []
+    @State private var referenceHasSearched = false
+
     var body: some View {
         let edition = readingState.selectedEdition
 
@@ -232,14 +246,41 @@ struct SearchView: View {
                 runSearch()
             }
             .onChange(of: mode) { _, newMode in
+                // 현재 mode의 상태 저장
+                if mode == .text {
+                    textQuery = query
+                    textResults = results
+                    textPreviousResults = previousResults
+                    textHasSearched = hasSearched
+                } else {
+                    referenceBookID = selectedBookID
+                    referenceChapter = selectedChapter
+                    referenceVerse = selectedVerse
+                    referenceResults = results
+                    referencePreviousResults = previousResults
+                    referenceHasSearched = hasSearched
+                }
+
+                // 새 mode의 상태 복원
+                if newMode == .text {
+                    query = textQuery
+                    results = textResults
+                    previousResults = textPreviousResults
+                    hasSearched = textHasSearched
+                    selectedBookID = ""
+                    selectedChapter = 1
+                    selectedVerse = 1
+                } else {
+                    selectedBookID = referenceBookID
+                    selectedChapter = referenceChapter
+                    selectedVerse = referenceVerse
+                    results = referenceResults
+                    previousResults = referencePreviousResults
+                    hasSearched = referenceHasSearched
+                    query = ""
+                }
+
                 lastSearchMode = newMode.rawValue
-                query = ""
-                selectedBookID = ""
-                selectedChapter = 1
-                selectedVerse = 1
-                results = []
-                previousResults = []
-                hasSearched = false
             }
             .onChange(of: matchMode) { _, newMatchMode in
                 lastSearchMatchMode = newMatchMode.rawValue
