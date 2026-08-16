@@ -11,11 +11,13 @@ import SwiftUI
 enum SearchScope: String, CaseIterable, Identifiable {
     case current
     case all
+    case results
     var id: String { rawValue }
     var label: String {
         switch self {
         case .current: return "현재 판본"
         case .all:     return "모든 판본"
+        case .results: return "검색 결과"
         }
     }
 }
@@ -42,6 +44,7 @@ struct SearchView: View {
     @State private var scope: SearchScope = .current
     @State private var mode: SearchMode = .text
     @State private var results: [SearchHit] = []
+    @State private var previousResults: [SearchHit] = []
     @State private var isSearching = false
     @State private var hasSearched = false
     @State private var searchTask: Task<Void, Never>?
@@ -56,10 +59,22 @@ struct SearchView: View {
             VStack(spacing: 0) {
                 HStack(spacing: 12) {
                     Picker("검색 범위", selection: $scope) {
-                        ForEach(SearchScope.allCases) { s in Text(s.label).tag(s) }
+                        let availableScopes = SearchScope.allCases.filter { s in
+                            s != .results || !results.isEmpty
+                        }
+                        ForEach(availableScopes) { s in Text(s.label).tag(s) }
+                        // scope가 unavailable이 되면 current로 리셋
+                        if case .results = scope, results.isEmpty {
+                            Text(SearchScope.current.label).tag(SearchScope.current)
+                        }
                     }
                     .pickerStyle(.segmented)
                     .frame(maxWidth: .infinity)
+                    .onChange(of: results) { _, _ in
+                        if case .results = scope, results.isEmpty {
+                            scope = .current
+                        }
+                    }
 
                     Picker("검색 방식", selection: $mode) {
                         ForEach(SearchMode.allCases) { m in Text(m.label).tag(m) }
@@ -184,6 +199,7 @@ struct SearchView: View {
                 selectedChapter = 1
                 selectedVerse = 1
                 results = []
+                previousResults = []
                 hasSearched = false
             }
             .toolbar {
@@ -574,6 +590,17 @@ struct SearchView: View {
                 results = []; hasSearched = false; isSearching = false
                 return
             }
+
+            // 검색 결과 내에서 재검색
+            if scope == .results {
+                results = previousResults.filter { hit in
+                    hit.text.localizedCaseInsensitiveContains(text)
+                }
+                hasSearched = true
+                isSearching = false
+                return
+            }
+
             let currentEdition = readingState.selectedEdition
             let editionsToSearch = store.loadedEditions
             let scope = scope
@@ -588,6 +615,7 @@ struct SearchView: View {
                     hits = await store.search(text, edition: currentEdition, mode: .text)
                 }
                 guard !Task.isCancelled else { return }
+                previousResults = hits
                 results = hits
                 hasSearched = true
                 isSearching = false
