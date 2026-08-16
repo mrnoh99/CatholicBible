@@ -52,6 +52,11 @@ struct SearchView: View {
     @Environment(ReaderNavigation.self) private var navigation
     @Environment(\.dismiss) private var dismiss
 
+    @AppStorage("lastSearchQuery") private var lastSearchQuery = ""
+    @AppStorage("lastSearchScope") private var lastSearchScope = SearchScope.current.rawValue
+    @AppStorage("lastSearchMode") private var lastSearchMode = SearchMode.text.rawValue
+    @AppStorage("lastSearchMatchMode") private var lastSearchMatchMode = TextMatchMode.partial.rawValue
+
     @State private var query = ""
     @State private var scope: SearchScope = .current
     @State private var mode: SearchMode = .text
@@ -212,15 +217,22 @@ struct SearchView: View {
                     runSearch()
                 }
             }
-            .onChange(of: query) {
+            .onChange(of: query) { _, newQuery in
+                if !newQuery.isEmpty {
+                    lastSearchQuery = newQuery
+                }
                 if mode == .reference {
                     parseAndSearch()
                 } else {
                     runSearch()
                 }
             }
-            .onChange(of: scope) { runSearch() }
-            .onChange(of: mode) {
+            .onChange(of: scope) { _, newScope in
+                lastSearchScope = newScope.rawValue
+                runSearch()
+            }
+            .onChange(of: mode) { _, newMode in
+                lastSearchMode = newMode.rawValue
                 query = ""
                 selectedBookID = ""
                 selectedChapter = 1
@@ -228,6 +240,18 @@ struct SearchView: View {
                 results = []
                 previousResults = []
                 hasSearched = false
+            }
+            .onChange(of: matchMode) { _, newMatchMode in
+                lastSearchMatchMode = newMatchMode.rawValue
+                runSearch()
+            }
+            .onAppear {
+                if query.isEmpty && !lastSearchQuery.isEmpty {
+                    query = lastSearchQuery
+                    scope = SearchScope(rawValue: lastSearchScope) ?? .current
+                    mode = SearchMode(rawValue: lastSearchMode) ?? .text
+                    matchMode = TextMatchMode(rawValue: lastSearchMatchMode) ?? .partial
+                }
             }
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) { Button("닫기") { dismiss() } }
