@@ -285,6 +285,8 @@ struct ReaderPane: View {
     /// 지금 맨 위에 보이는 절(연동 스크롤 공유용으로 읽는다).
     @State private var topVerse: Int?
     @State private var showBookPicker = false
+    /// ReaderPane 초기화 완료 후 책 선택 변경만 감지하기 위한 플래그
+    @State private var isInitialized = false
 
     private var edition: Edition { Editions.edition(editionID) ?? Editions.all[0] }
     private var book: BibleBook { Bible.book(bookID) ?? Bible.books[0] }
@@ -313,9 +315,19 @@ struct ReaderPane: View {
             chapterBar
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .onAppear { initChapterIfNeeded() }
+        .onAppear {
+            initChapterIfNeeded()
+            isInitialized = true
+        }
         .onChange(of: bookID) { _, _ in
-            if !isFollower { setChapter(readingState.lastChapter(edition: edition, book: book)) }
+            if !isFollower {
+                let chapter = readingState.lastChapter(edition: edition, book: book)
+                setChapter(chapter)
+                // 처음 로드 이후 책 선택 변경만 히스토리에 추가
+                if isInitialized && role == .primary {
+                    navigation.open(bookID: book.id, chapter: chapter)
+                }
+            }
         }
         .onChange(of: editionID) { _, _ in
             if !isFollower { setChapter(min(max(chapter, 1), book.chapterCount)) }
