@@ -204,7 +204,7 @@ struct SearchView: View {
             .navigationTitle(results.isEmpty ? "검색" : "검색 (\(results.count)개)")
             .navigationBarTitleDisplayMode(.inline)
             .searchable(text: $query, placement: .navigationBarDrawer(displayMode: .always),
-                        prompt: mode == .text ? "말씀 검색 (예: 사랑 OR love)" : "장절 검색 (예: 1코린 13,13)")
+                        prompt: mode == .text ? "말씀 검색 (예: 사랑 OR *사랑)" : "장절 검색 (예: 1코린 13,13)")
             .onSubmit {
                 if mode == .reference {
                     parseAndSearch()
@@ -623,7 +623,10 @@ struct SearchView: View {
         searchTask?.cancel()
 
         if mode == .text {
-            let text = query.trimmingCharacters(in: .whitespacesAndNewlines)
+            let fullQuery = query.trimmingCharacters(in: .whitespacesAndNewlines)
+            let isExplicitPartial = fullQuery.starts(with: "*")
+            let text = isExplicitPartial ? String(fullQuery.dropFirst()) : fullQuery
+
             guard text.count >= 2 else {
                 results = []; hasSearched = false; isSearching = false
                 return
@@ -634,7 +637,7 @@ struct SearchView: View {
                 let filtered = previousResults.filter { hit in
                     hit.text.localizedCaseInsensitiveContains(text)
                 }
-                results = filterByMatchMode(filtered, query: text)
+                results = isExplicitPartial ? filtered : filterByMatchMode(filtered, query: text)
                 hasSearched = true
                 isSearching = false
                 return
@@ -656,7 +659,7 @@ struct SearchView: View {
                 }
                 guard !Task.isCancelled else { return }
                 previousResults = hits
-                results = filterByMatchMode(hits, query: text)
+                results = isExplicitPartial ? hits : filterByMatchMode(hits, query: text)
                 hasSearched = true
                 isSearching = false
             }
