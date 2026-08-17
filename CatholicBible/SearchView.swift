@@ -1094,17 +1094,17 @@ struct SearchView: View {
         }
     }
 
-    private func highlightedText(_ text: String, query: String, mode: SearchMode) -> Text {
+    private func highlightedText(_ text: String, query: String, mode: SearchMode) -> some View {
         guard !query.isEmpty && mode == .text else {
-            return Text(text)
+            return AnyView(Text(text))
         }
 
         let searchTerm = query.trimmingCharacters(in: .whitespacesAndNewlines)
             .replacingOccurrences(of: "*", with: "")
 
-        guard !searchTerm.isEmpty else { return Text(text) }
+        guard !searchTerm.isEmpty else { return AnyView(Text(text)) }
 
-        var result = Text("")
+        var result: [Text] = []
         let lowercaseText = text.lowercased()
         let lowercaseSearch = searchTerm.lowercased()
 
@@ -1114,24 +1114,28 @@ struct SearchView: View {
             let beforeEndIndex = text.index(text.startIndex, offsetBy: text.distance(from: text.startIndex, to: range.lowerBound))
 
             if beforeStartIndex < beforeEndIndex {
-                result = result + Text(String(text[beforeStartIndex..<beforeEndIndex]))
+                result.append(Text(String(text[beforeStartIndex..<beforeEndIndex])))
             }
 
             let matchStartIndex = text.index(text.startIndex, offsetBy: text.distance(from: text.startIndex, to: range.lowerBound))
             let matchEndIndex = text.index(text.startIndex, offsetBy: text.distance(from: text.startIndex, to: range.upperBound))
-            result = result + Text(String(text[matchStartIndex..<matchEndIndex]))
+            result.append(Text(String(text[matchStartIndex..<matchEndIndex]))
                 .foregroundStyle(.white)
-                .background(Color.yellow)
+                .background(Color.yellow))
 
             currentIndex = text.distance(from: text.startIndex, to: range.upperBound)
         }
 
         if currentIndex < text.count {
             let remainingStart = text.index(text.startIndex, offsetBy: currentIndex)
-            result = result + Text(String(text[remainingStart...]))
+            result.append(Text(String(text[remainingStart...])))
         }
 
-        return result
+        if result.isEmpty {
+            return AnyView(Text(text))
+        }
+
+        return AnyView(result.reduce(Text("")) { $0 + $1 })
     }
 
     private func performSearchAction() {
