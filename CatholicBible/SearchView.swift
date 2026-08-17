@@ -138,25 +138,42 @@ struct SearchView: View {
 
                         if !textSearchHistory.isEmpty {
                             VStack(alignment: .leading, spacing: 6) {
-                                Text("최근 검색")
-                                    .font(.caption.weight(.semibold))
+                                HStack {
+                                    Text("최근 검색")
+                                        .font(.caption.weight(.semibold))
+                                        .foregroundStyle(.secondary)
+                                    Spacer()
+                                    Button("전체 지우기") {
+                                        clearTextSearchHistory()
+                                    }
+                                    .font(.caption2)
                                     .foregroundStyle(.secondary)
-                                    .padding(.horizontal)
+                                }
+                                .padding(.horizontal)
 
                                 ScrollView(.horizontal, showsIndicators: false) {
                                     HStack(spacing: 6) {
                                         ForEach(textSearchHistory, id: \.self) { item in
-                                            Button {
-                                                query = item
-                                                runSearch()
-                                            } label: {
-                                                Text(item)
-                                                    .lineLimit(1)
-                                                    .font(.caption)
-                                                    .padding(.horizontal, 10).padding(.vertical, 6)
-                                                    .background(Capsule().fill(Color.accentColor.opacity(0.12)))
-                                                    .foregroundStyle(Color.accentColor)
+                                            HStack(spacing: 4) {
+                                                Button {
+                                                    query = item
+                                                    runSearch()
+                                                } label: {
+                                                    Text(item)
+                                                        .lineLimit(1)
+                                                        .font(.caption)
+                                                }
+
+                                                Button {
+                                                    removeFromTextSearchHistory(item)
+                                                } label: {
+                                                    Image(systemName: "xmark")
+                                                        .font(.caption2.weight(.semibold))
+                                                }
                                             }
+                                            .padding(.horizontal, 10).padding(.vertical, 6)
+                                            .background(Capsule().fill(Color.accentColor.opacity(0.12)))
+                                            .foregroundStyle(Color.accentColor)
                                         }
                                     }
                                     .padding(.horizontal)
@@ -211,28 +228,45 @@ struct SearchView: View {
 
                         if !referenceSearchHistory.isEmpty {
                             VStack(alignment: .leading, spacing: 6) {
-                                Text("최근 검색")
-                                    .font(.caption.weight(.semibold))
+                                HStack {
+                                    Text("최근 검색")
+                                        .font(.caption.weight(.semibold))
+                                        .foregroundStyle(.secondary)
+                                    Spacer()
+                                    Button("전체 지우기") {
+                                        clearReferenceSearchHistory()
+                                    }
+                                    .font(.caption2)
                                     .foregroundStyle(.secondary)
+                                }
 
                                 ScrollView(.horizontal, showsIndicators: false) {
                                     HStack(spacing: 6) {
                                         ForEach(referenceSearchHistory, id: \.self) { item in
-                                            Button {
-                                                if let components = parseReferenceString(item) {
-                                                    selectedBookID = components.0
-                                                    selectedChapter = components.1
-                                                    selectedVerse = components.2
-                                                    runSearch()
+                                            HStack(spacing: 4) {
+                                                Button {
+                                                    if let components = parseReferenceString(item) {
+                                                        selectedBookID = components.0
+                                                        selectedChapter = components.1
+                                                        selectedVerse = components.2
+                                                        runSearch()
+                                                    }
+                                                } label: {
+                                                    Text(item)
+                                                        .lineLimit(1)
+                                                        .font(.caption)
                                                 }
-                                            } label: {
-                                                Text(item)
-                                                    .lineLimit(1)
-                                                    .font(.caption)
-                                                    .padding(.horizontal, 10).padding(.vertical, 6)
-                                                    .background(Capsule().fill(Color.accentColor.opacity(0.12)))
-                                                    .foregroundStyle(Color.accentColor)
+
+                                                Button {
+                                                    removeFromReferenceSearchHistory(item)
+                                                } label: {
+                                                    Image(systemName: "xmark")
+                                                        .font(.caption2.weight(.semibold))
+                                                }
                                             }
+                                            .padding(.horizontal, 10).padding(.vertical, 6)
+                                            .background(Capsule().fill(Color.accentColor.opacity(0.12)))
+                                            .foregroundStyle(Color.accentColor)
                                         }
                                     }
                                 }
@@ -863,6 +897,32 @@ struct SearchView: View {
             }
         }
         return nil
+    }
+
+    private func removeFromTextSearchHistory(_ item: String) {
+        textSearchHistory.removeAll { $0 == item }
+        if let encoded = try? JSONEncoder().encode(textSearchHistory),
+           let json = String(data: encoded, encoding: .utf8) {
+            textSearchHistoryData = json
+        }
+    }
+
+    private func removeFromReferenceSearchHistory(_ item: String) {
+        referenceSearchHistory.removeAll { $0 == item }
+        if let encoded = try? JSONEncoder().encode(referenceSearchHistory),
+           let json = String(data: encoded, encoding: .utf8) {
+            referenceSearchHistoryData = json
+        }
+    }
+
+    private func clearTextSearchHistory() {
+        textSearchHistory.removeAll()
+        textSearchHistoryData = "[]"
+    }
+
+    private func clearReferenceSearchHistory() {
+        referenceSearchHistory.removeAll()
+        referenceSearchHistoryData = "[]"
     }
 
     private func loadSearchHistory() {
