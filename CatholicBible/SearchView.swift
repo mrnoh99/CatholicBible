@@ -95,12 +95,12 @@ struct SearchView: View {
                                 ZStack(alignment: .topTrailing) {
                                     TextField(mode == .text ? "단어 검색 (예: 사랑)" : "장절 검색 (예: 1코린 13,13)",
                                               text: $query)
-                                        .font(.system(size: 48, weight: .bold))
-                                        .padding(.vertical, 40)
-                                        .padding(.horizontal, 30)
+                                        .font(.system(size: 32, weight: .semibold))
+                                        .padding(.vertical, 18)
+                                        .padding(.horizontal, 18)
                                         .submitLabel(.search)
                                         .onSubmit(performSearchAction)
-                                        .frame(minHeight: 280)
+                                        .frame(minHeight: 80)
 
                                     if !query.isEmpty {
                                         Button(action: { query = "" }) {
