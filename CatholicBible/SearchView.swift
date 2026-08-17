@@ -87,25 +87,14 @@ struct SearchView: View {
             VStack(spacing: 0) {
                 HStack(spacing: 12) {
                     Picker("검색 범위", selection: $scope) {
-                        let availableScopes = SearchScope.allCases.filter { s in
-                            s != .results || !results.isEmpty
-                        }
+                        let availableScopes = SearchScope.allCases.filter { s in s != .results }
                         ForEach(availableScopes) { s in Text(s.label).tag(s) }
-                        // scope가 unavailable이 되면 current로 리셋
-                        if case .results = scope, results.isEmpty {
-                            Text(SearchScope.current.label).tag(SearchScope.current)
-                        }
                     }
                     .pickerStyle(.segmented)
                     .frame(maxWidth: .infinity)
                     .onChange(of: scope) { _, _ in
                         if hasSearched {
                             runSearch()
-                        }
-                    }
-                    .onChange(of: results) { _, _ in
-                        if case .results = scope, results.isEmpty {
-                            scope = .current
                         }
                     }
 
@@ -116,6 +105,24 @@ struct SearchView: View {
                     .frame(maxWidth: .infinity)
                 }
                 .padding(.horizontal).padding(.vertical, 8)
+
+                // 결과 내 검색 checkbox
+                if hasSearched && !results.isEmpty {
+                    HStack(spacing: 8) {
+                        Button(action: { scope = scope == .results ? .current : .results }) {
+                            HStack(spacing: 6) {
+                                Image(systemName: scope == .results ? "checkmark.square.fill" : "square")
+                                    .font(.body)
+                                    .foregroundStyle(scope == .results ? .blue : .secondary)
+                                Text("검색 결과 내에서만 검색")
+                                    .font(.caption)
+                            }
+                        }
+                        .buttonStyle(.plain)
+                        Spacer()
+                    }
+                    .padding(.horizontal).padding(.vertical, 4)
+                }
 
                 if mode == .text {
                     VStack(spacing: 8) {
@@ -169,74 +176,41 @@ struct SearchView: View {
 
                 if mode == .reference {
                     let selectedBook = Bible.book(selectedBookID)
-                    let maxVerse: Int = {
-                        guard let book = selectedBook else { return 1 }
-                        return store.verses(edition: readingState.selectedEdition, book: book, chapter: selectedChapter)
-                            .map { $0.number }.max() ?? 1
-                    }()
-
-                    let filteredBooks = bookSearchText.isEmpty ? [] : Bible.books.filter { book in
-                        book.name.localizedCaseInsensitiveContains(bookSearchText) ||
-                        book.shortName.localizedCaseInsensitiveContains(bookSearchText) ||
-                        book.abbrev.localizedCaseInsensitiveContains(bookSearchText)
-                    }
 
                     VStack(spacing: 8) {
-                        HStack {
-                            TextField("책 이름으로 검색", text: $bookSearchText)
-                                .textFieldStyle(.roundedBorder)
-                                .onChange(of: selectedBookID) { _, newValue in
-                                    if let book = Bible.book(newValue) {
-                                        bookSearchText = book.name
-                                        query = book.abbrev + " "
-                                    }
-                                }
+                        Text("책 선택")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(.secondary)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.horizontal)
 
-                            if !bookSearchText.isEmpty {
+                        List {
+                            ForEach(Bible.books) { book in
                                 Button(action: {
-                                    bookSearchText = ""
-                                    query = ""
-                                    selectedBookID = ""
+                                    selectedBookID = book.id
+                                    query = book.abbrev + " "
                                 }) {
-                                    Image(systemName: "xmark.circle.fill")
-                                        .foregroundStyle(.secondary)
-                                }
-                            }
-                        }
-
-                        if !filteredBooks.isEmpty {
-                            VStack(alignment: .leading, spacing: 4) {
-                                ForEach(filteredBooks) { book in
-                                    Button(action: {
-                                        selectedBookID = book.id
-                                        bookSearchText = book.name
-                                        query = book.abbrev + " "
-                                    }) {
-                                        HStack {
-                                            VStack(alignment: .leading, spacing: 2) {
-                                                Text(book.name)
-                                                    .font(.subheadline.weight(.semibold))
-                                                Text(book.abbrev)
-                                                    .font(.caption)
-                                                    .foregroundStyle(.secondary)
-                                            }
-                                            Spacer()
+                                    HStack {
+                                        VStack(alignment: .leading, spacing: 2) {
+                                            Text(book.name)
+                                                .font(.subheadline.weight(.semibold))
+                                            Text(book.abbrev)
+                                                .font(.caption)
+                                                .foregroundStyle(.secondary)
                                         }
-                                        .contentShape(Rectangle())
-                                        .foregroundStyle(.primary)
+                                        Spacer()
+                                        if selectedBookID == book.id {
+                                            Image(systemName: "checkmark")
+                                                .foregroundStyle(.blue)
+                                        }
                                     }
-                                    .padding(.vertical, 8)
-                                    .padding(.horizontal, 12)
-
-                                    if book.id != filteredBooks.last?.id {
-                                        Divider()
-                                    }
+                                    .contentShape(Rectangle())
+                                    .foregroundStyle(.primary)
                                 }
                             }
-                            .background(Color(.systemBackground))
-                            .cornerRadius(8)
-                            .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.gray.opacity(0.2), lineWidth: 1))
                         }
+                        .listStyle(.plain)
+                        .frame(maxHeight: 200)
 
                         if selectedBook != nil {
                             Text("형식: 장,절 또는 범위 (예: 4,4 또는 4 또는 4,5-10)")
@@ -360,10 +334,28 @@ struct SearchView: View {
                         prompt: mode == .text ? "단어 검색 (예: 사랑 OR *사랑)" : "장절 검색 (예: 1코린 13,13)")
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
-                    Button(action: performSearchAction) {
+                    Menu {
+                        Button(action: performSearchAction) {
+                            Label("검색", systemImage: "magnifyingglass")
+                        }
+                        .disabled(query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+
+                        if !results.isEmpty {
+                            Divider()
+                            Button(role: .destructive, action: {
+                                results = []
+                                previousResults = []
+                                hasSearched = false
+                                if scope == .results {
+                                    scope = .current
+                                }
+                            }) {
+                                Label("검색 결과 지우기", systemImage: "trash")
+                            }
+                        }
+                    } label: {
                         Image(systemName: "magnifyingglass")
                     }
-                    .disabled(query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                 }
             }
             .onChange(of: query) { _, newQuery in
