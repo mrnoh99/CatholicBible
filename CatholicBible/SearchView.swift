@@ -134,16 +134,18 @@ struct SearchView: View {
                 .padding(.vertical, 12)
                 .background(Color(.systemBackground))
 
-                HStack(spacing: 12) {
-                    Picker("검색 범위", selection: $scope) {
-                        let availableScopes = SearchScope.allCases.filter { s in s != .results }
-                        ForEach(availableScopes) { s in Text(s.label).tag(s) }
-                    }
-                    .pickerStyle(.segmented)
-                    .frame(maxWidth: .infinity)
-                    .onChange(of: scope) { _, _ in
-                        if hasSearched {
-                            runSearch()
+                VStack(spacing: 8) {
+                    if mode == .text {
+                        Picker("검색 범위", selection: $scope) {
+                            let availableScopes = SearchScope.allCases.filter { s in s != .results }
+                            ForEach(availableScopes) { s in Text(s.label).tag(s) }
+                        }
+                        .pickerStyle(.segmented)
+                        .frame(maxWidth: .infinity)
+                        .onChange(of: scope) { _, _ in
+                            if hasSearched {
+                                runSearch()
+                            }
                         }
                     }
 
