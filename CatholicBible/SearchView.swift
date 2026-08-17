@@ -622,7 +622,7 @@ struct SearchView: View {
         let bookPartRaw = String(input[..<versionPart.lowerBound]).trimmingCharacters(in: .whitespaces)
         guard !bookPartRaw.isEmpty else { return nil }
 
-        // Extract book name (handles both "코린" and "1코린" formats)
+        // Extract book name (handles "코린", "1코린", "사무엘기 상" formats)
         var bookName = ""
         var digitPrefix = ""
 
@@ -635,6 +635,9 @@ struct SearchView: View {
                 }
             } else if ("가"..."힣").contains(char) {
                 bookName.append(char)
+            } else if char.isWhitespace {
+                // Skip whitespace, continue to next char
+                continue
             } else if !bookName.isEmpty {
                 break
             }
