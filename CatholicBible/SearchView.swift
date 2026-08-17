@@ -389,18 +389,17 @@ struct SearchView: View {
                 let input = query.trimmingCharacters(in: .whitespacesAndNewlines)
                 guard !input.isEmpty else { return }
 
-                // Auto-detect format and set mode
-                if parseReferences(input) != nil {
-                    // It's a reference format
+                // Auto-detect format and execute search directly
+                if let references = parseReferences(input) {
+                    // It's a reference format - execute reference search
                     mode = .reference
+                    performReferenceSearch(references)
                 } else {
-                    // It's text search - reset scope to current
+                    // It's text search - reset scope and execute
                     mode = .text
                     scope = .current
+                    performTextSearch(input)
                 }
-
-                // Execute search with current mode and scope
-                runSearch()
             }
             .onChange(of: query) { _, newQuery in
                 // Only save query history, don't search
@@ -1131,6 +1130,92 @@ struct SearchView: View {
                 }
             } else {
                 results = []; hasSearched = false; isSearching = false
+            }
+        }
+    }
+
+    private func performTextSearch(_ text: String) {
+        let fullQuery = text
+        let isExplicitPartial = fullQuery.starts(with: "*")
+        let searchText = isExplicitPartial ? String(fullQuery.dropFirst()) : fullQuery
+
+        guard searchText.count >= 2 else {
+            results = []; hasSearched = false; isSearching = false
+            return
+        }
+
+        // 검색 결과 내에서 재검색
+        if scope == .results {
+            let filtered = previousResults.filter { hit in
+                hit.text.localizedCaseInsensitiveContains(searchText)
+            }
+            results = isExplicitPartial ? filtered : filterByMatchMode(filtered, query: searchText)
+            addToTextSearchHistory(searchText)
+            hasSearched = true
+            isSearching = false
+            return
+        }
+
+        let currentEdition = readingState.selectedEdition
+        let editionsToSearch = store.loadedEditions
+        let matchMode = matchMode
+        searchTask = Task {
+            try? await Task.sleep(for: .milliseconds(300))
+            guard !Task.isCancelled else { return }
+            isSearching = true
+            let hits: [SearchHit]
+            if scope == .all {
+                hits = await store.searchAll(searchText, editions: editionsToSearch, mode: .text)
+            } else {
+                hits = await store.search(searchText, edition: currentEdition, mode: .text)
+            }
+            guard !Task.isCancelled else { return }
+            previousResults = hits
+            results = isExplicitPartial ? hits : filterByMatchMode(hits, query: searchText)
+            addToTextSearchHistory(searchText)
+            hasSearched = true
+            isSearching = false
+        }
+    }
+
+    private func performReferenceSearch(_ references: [(String, Int, Int)]) {
+        searchTask?.cancel()
+
+        let currentEdition = readingState.selectedEdition
+        let editionsToSearch = scope == .all ? store.loadedEditions : [currentEdition]
+
+        searchTask = Task {
+            try? await Task.sleep(for: .milliseconds(300))
+            guard !Task.isCancelled else { return }
+            isSearching = true
+
+            var hits: [SearchHit] = []
+
+            for (bookID, chapter, verse) in references {
+                guard let book = Bible.book(bookID) else { continue }
+                for edition in editionsToSearch {
+                    let verses = store.verses(edition: edition, book: book, chapter: chapter)
+
+                    if verse == 0 {
+                        // verse = 0 means all verses in chapter
+                        for hit in verses {
+                            hits.append(SearchHit(editionID: edition.id, bookID: bookID, chapter: chapter, verse: hit.number,
+                                                 text: hit.text))
+                        }
+                    } else {
+                        // specific verse
+                        if let hit = verses.first(where: { $0.number == verse }) {
+                            hits.append(SearchHit(editionID: edition.id, bookID: bookID, chapter: chapter, verse: verse,
+                                                 text: hit.text))
+                        }
+                    }
+                }
+            }
+
+            await MainActor.run {
+                results = hits
+                hasSearched = true
+                isSearching = false
             }
         }
     }
