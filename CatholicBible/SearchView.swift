@@ -226,6 +226,66 @@ struct SearchView: View {
                             }
                         }
 
+                        if !referenceSearchHistory.isEmpty {
+                            VStack(alignment: .leading, spacing: 6) {
+                                HStack {
+                                    Text("최근 검색")
+                                        .font(.caption.weight(.semibold))
+                                        .foregroundStyle(.secondary)
+                                    Spacer()
+                                    Button("전체 지우기") {
+                                        clearReferenceSearchHistory()
+                                    }
+                                    .font(.caption2)
+                                    .foregroundStyle(.secondary)
+                                }
+                                .padding(.horizontal)
+
+                                ScrollView(.horizontal, showsIndicators: false) {
+                                    HStack(spacing: 6) {
+                                        ForEach(referenceSearchHistory, id: \.self) { item in
+                                            HStack(spacing: 4) {
+                                                Button {
+                                                    if let parts = item.split(separator: " ", maxSplits: 1).map(String.init),
+                                                       parts.count >= 2 {
+                                                        let bookAbbrev = parts[0]
+                                                        let reference = parts[1]
+
+                                                        if let book = Bible.books.first(where: { $0.abbrev == bookAbbrev }) {
+                                                            selectedBookID = book.id
+                                                            if let comma = reference.firstIndex(of: ",") {
+                                                                let chapterStr = String(reference[..<comma])
+                                                                let verseStr = String(reference[reference.index(after: comma)...])
+                                                                if let chapter = Int(chapterStr), let verse = Int(verseStr) {
+                                                                    selectedChapter = chapter
+                                                                    selectedVerse = verse
+                                                                    runSearch()
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                } label: {
+                                                    Text(item)
+                                                        .lineLimit(1)
+                                                        .font(.caption)
+                                                }
+
+                                                Button {
+                                                    removeFromReferenceSearchHistory(item)
+                                                } label: {
+                                                    Image(systemName: "xmark")
+                                                        .font(.caption2.weight(.semibold))
+                                                }
+                                            }
+                                            .padding(.horizontal, 10).padding(.vertical, 6)
+                                            .background(Capsule().fill(Color.accentColor.opacity(0.12)))
+                                            .foregroundStyle(Color.accentColor)
+                                        }
+                                    }
+                                    .padding(.horizontal)
+                                }
+                            }
+                        }
                     }
                     .padding(.horizontal).padding(.vertical, 8)
                 }
@@ -832,13 +892,20 @@ struct SearchView: View {
                 guard let book = Bible.book(selectedBookID) else { return }
                 for edition in editionsToSearch {
                     let verses = store.verses(edition: edition, book: book, chapter: chapter)
-                    if let hit = verses.first(where: { $0.number == verse }) {
+                    if verse == 0 {
+                        // verse = 0 means all verses in chapter
+                        for hit in verses {
+                            hits.append(SearchHit(editionID: edition.id, bookID: selectedBookID, chapter: chapter, verse: hit.number,
+                                                 text: hit.text))
+                        }
+                    } else if let hit = verses.first(where: { $0.number == verse }) {
                         hits.append(SearchHit(editionID: edition.id, bookID: selectedBookID, chapter: chapter, verse: verse,
                                              text: hit.text))
                     }
                 }
 
                 guard !Task.isCancelled else { return }
+                addToReferenceSearchHistory()
                 results = hits
                 hasSearched = true
                 isSearching = false
