@@ -992,7 +992,7 @@ struct SearchView: View {
                 }
                 guard !Task.isCancelled else { return }
                 previousResults = hits
-                results = isExplicitPartial ? hits : filterByMatchMode(hits, query: text)
+                results = hits
                 addToTextSearchHistory(text)
                 hasSearched = true
                 isSearching = false
