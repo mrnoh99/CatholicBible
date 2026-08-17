@@ -226,48 +226,6 @@ struct SearchView: View {
                             }
                         }
 
-                        if !referenceSearchHistory.isEmpty {
-                            VStack(alignment: .leading, spacing: 6) {
-                                HStack {
-                                    Text("최근 검색")
-                                        .font(.caption.weight(.semibold))
-                                        .foregroundStyle(.secondary)
-                                    Spacer()
-                                    Button("전체 지우기") {
-                                        clearReferenceSearchHistory()
-                                    }
-                                    .font(.caption2)
-                                    .foregroundStyle(.secondary)
-                                }
-
-                                ScrollView(.horizontal, showsIndicators: false) {
-                                    HStack(spacing: 6) {
-                                        ForEach(referenceSearchHistory, id: \.self) { item in
-                                            HStack(spacing: 4) {
-                                                Button {
-                                                    query = item
-                                                    parseAndSearch()
-                                                } label: {
-                                                    Text(item)
-                                                        .lineLimit(1)
-                                                        .font(.caption)
-                                                }
-
-                                                Button {
-                                                    removeFromReferenceSearchHistory(item)
-                                                } label: {
-                                                    Image(systemName: "xmark")
-                                                        .font(.caption2.weight(.semibold))
-                                                }
-                                            }
-                                            .padding(.horizontal, 10).padding(.vertical, 6)
-                                            .background(Capsule().fill(Color.accentColor.opacity(0.12)))
-                                            .foregroundStyle(Color.accentColor)
-                                        }
-                                    }
-                                }
-                            }
-                        }
                     }
                     .padding(.horizontal).padding(.vertical, 8)
                 }
@@ -454,17 +412,6 @@ struct SearchView: View {
 
             guard !Task.isCancelled else { return }
             results = hits
-            if !query.isEmpty {
-                referenceSearchHistory.removeAll { $0 == query }
-                referenceSearchHistory.insert(query, at: 0)
-                if referenceSearchHistory.count > 20 {
-                    referenceSearchHistory.removeLast()
-                }
-                if let encoded = try? JSONEncoder().encode(referenceSearchHistory),
-                   let json = String(data: encoded, encoding: .utf8) {
-                    referenceSearchHistoryData = json
-                }
-            }
             hasSearched = true
             isSearching = false
         }
@@ -869,7 +816,6 @@ struct SearchView: View {
 
                 guard !Task.isCancelled else { return }
                 results = hits
-                addToReferenceSearchHistory()
                 hasSearched = true
                 isSearching = false
             }
