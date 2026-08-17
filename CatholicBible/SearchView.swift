@@ -114,7 +114,7 @@ struct SearchView: View {
                                 Image(systemName: scope == .results ? "checkmark.square.fill" : "square")
                                     .font(.body)
                                     .foregroundStyle(scope == .results ? .blue : .secondary)
-                                Text("검색 결과 내에서만 검색")
+                                Text("결과내 검색")
                                     .font(.caption)
                             }
                         }
