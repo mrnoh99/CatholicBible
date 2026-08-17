@@ -195,9 +195,6 @@ struct SearchView: View {
                             .font(.caption)
                             .foregroundStyle(.secondary)
                             .padding(.horizontal)
-                    }
-                    .padding(.vertical, 8)
-                }
 
                         if !referenceSearchHistory.isEmpty {
                             VStack(alignment: .leading, spacing: 6) {
