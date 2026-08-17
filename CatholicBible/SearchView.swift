@@ -85,6 +85,53 @@ struct SearchView: View {
 
         NavigationStack {
             VStack(spacing: 0) {
+                // 전체 화면 크기의 검색 입력 필드
+                VStack(spacing: 12) {
+                    TextField(mode == .text ? "단어 검색 (예: 사랑)" : "장절 검색 (예: 1코린 13,13)",
+                              text: $query)
+                        .font(.system(size: 18, weight: .semibold))
+                        .padding(.vertical, 12)
+                        .padding(.horizontal, 16)
+                        .background(Color(.systemGray6))
+                        .cornerRadius(10)
+                        .submitLabel(.search)
+                        .onSubmit(performSearchAction)
+
+                    Menu {
+                        Button(action: performSearchAction) {
+                            Label("검색", systemImage: "magnifyingglass")
+                        }
+                        .disabled(query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+
+                        if !results.isEmpty {
+                            Divider()
+                            Button(role: .destructive, action: {
+                                results = []
+                                previousResults = []
+                                hasSearched = false
+                                if scope == .results {
+                                    scope = .current
+                                }
+                            }) {
+                                Label("검색 결과 지우기", systemImage: "trash")
+                            }
+                        }
+                    } label: {
+                        HStack {
+                            Image(systemName: "magnifyingglass")
+                            Text("검색")
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 10)
+                        .background(Color.blue)
+                        .foregroundStyle(.white)
+                        .cornerRadius(8)
+                    }
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 12)
+                .background(Color(.systemBackground))
+
                 HStack(spacing: 12) {
                     Picker("검색 범위", selection: $scope) {
                         let availableScopes = SearchScope.allCases.filter { s in s != .results }
@@ -332,34 +379,6 @@ struct SearchView: View {
             }
             .navigationTitle(results.isEmpty ? "검색" : "검색 (\(results.count)개)")
             .navigationBarTitleDisplayMode(.inline)
-            .searchable(text: $query, placement: .navigationBarDrawer(displayMode: .always),
-                        prompt: mode == .text ? "단어 검색 (예: 사랑 OR *사랑)" : "장절 검색 (예: 1코린 13,13)")
-            .toolbar {
-                ToolbarItem(placement: .primaryAction) {
-                    Menu {
-                        Button(action: performSearchAction) {
-                            Label("검색", systemImage: "magnifyingglass")
-                        }
-                        .disabled(query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-
-                        if !results.isEmpty {
-                            Divider()
-                            Button(role: .destructive, action: {
-                                results = []
-                                previousResults = []
-                                hasSearched = false
-                                if scope == .results {
-                                    scope = .current
-                                }
-                            }) {
-                                Label("검색 결과 지우기", systemImage: "trash")
-                            }
-                        }
-                    } label: {
-                        Image(systemName: "magnifyingglass")
-                    }
-                }
-            }
             .onChange(of: query) { _, newQuery in
                 // Only save query history, don't search
                 if !newQuery.isEmpty {
@@ -377,7 +396,6 @@ struct SearchView: View {
                     textResults = results
                     textPreviousResults = previousResults
                     textHasSearched = hasSearched
-                    textMatchMode = matchMode
                     bookSearchText = ""
                     referenceQueryInput = ""
                 } else {
@@ -395,7 +413,6 @@ struct SearchView: View {
                     results = textResults
                     previousResults = textPreviousResults
                     hasSearched = textHasSearched
-                    matchMode = textMatchMode
                     selectedBookID = ""
                     selectedChapter = 1
                     selectedVerse = 1
@@ -416,17 +433,12 @@ struct SearchView: View {
 
                 lastSearchMode = newMode.rawValue
             }
-            .onChange(of: matchMode) { _, newMatchMode in
-                lastSearchMatchMode = newMatchMode.rawValue
-                runSearch()
-            }
             .onAppear {
                 loadSearchHistory()
                 if query.isEmpty && !lastSearchQuery.isEmpty {
                     query = lastSearchQuery
                     scope = SearchScope(rawValue: lastSearchScope) ?? .current
                     mode = SearchMode(rawValue: lastSearchMode) ?? .text
-                    matchMode = TextMatchMode(rawValue: lastSearchMatchMode) ?? .partial
                 }
             }
             .toolbar {
