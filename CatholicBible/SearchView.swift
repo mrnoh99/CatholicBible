@@ -87,15 +87,30 @@ struct SearchView: View {
             VStack(spacing: 0) {
                 // 전체 화면 크기의 검색 입력 필드
                 VStack(spacing: 12) {
-                    TextField(mode == .text ? "단어 검색 (예: 사랑)" : "장절 검색 (예: 1코린 13,13)",
-                              text: $query)
-                        .font(.system(size: 18, weight: .semibold))
-                        .padding(.vertical, 12)
-                        .padding(.horizontal, 16)
-                        .background(Color(.systemGray6))
-                        .cornerRadius(10)
-                        .submitLabel(.search)
-                        .onSubmit(performSearchAction)
+                    HStack(spacing: 12) {
+                        TextField(mode == .text ? "단어 검색 (예: 사랑)" : "장절 검색 (예: 1코린 13,13)",
+                                  text: $query)
+                            .font(.system(size: 18, weight: .semibold))
+                            .padding(.vertical, 12)
+                            .padding(.horizontal, 16)
+                            .submitLabel(.search)
+                            .onSubmit(performSearchAction)
+
+                        if !query.isEmpty {
+                            Button(action: { query = "" }) {
+                                Image(systemName: "xmark.circle.fill")
+                                    .font(.system(size: 18))
+                                    .foregroundStyle(.secondary)
+                            }
+                            .padding(.trailing, 12)
+                        }
+                    }
+                    .background(Color(.systemGray6))
+                    .cornerRadius(10)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 10)
+                            .stroke(Color.blue, lineWidth: 1.5)
+                    )
 
                     HStack(spacing: 12) {
                         Button(action: performSearchAction) {
