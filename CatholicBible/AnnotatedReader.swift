@@ -62,7 +62,8 @@ struct AnnotatedReader: View {
         }
         .onChange(of: chapter) { _, new in
             guard new > 0 else { return }
-            if isInitialized {
+            // 장 네비게이션으로 변경: 첫 절로 (위의 네비게이션 chevron은 scrollTarget을 이미 설정함)
+            if isInitialized && scrollTarget == nil {
                 scrollTarget = 1
             }
             readingState.savePosition(edition: edition, book: book, chapter: new)
