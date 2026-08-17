@@ -385,20 +385,29 @@ struct SearchView: View {
             .searchable(text: $query, placement: .navigationBarDrawer(displayMode: .always),
                         prompt: mode == .text ? "단어 검색 (예: 사랑 OR *사랑)" : "장절 검색 (예: 1코린 13,13)")
             .onSubmit {
-                if mode == .reference {
+                // Only search when user presses enter (complete input)
+                let input = query.trimmingCharacters(in: .whitespacesAndNewlines)
+                guard !input.isEmpty else { return }
+
+                // Auto-detect format and search only on enter
+                if let references = parseReferences(input) {
+                    // It's a reference format
+                    if mode != .reference {
+                        mode = .reference
+                    }
                     parseAndSearch()
                 } else {
+                    // It's text search
+                    if mode != .text {
+                        mode = .text
+                    }
                     runSearch()
                 }
             }
             .onChange(of: query) { _, newQuery in
+                // Only save query history, don't search
                 if !newQuery.isEmpty {
                     lastSearchQuery = newQuery
-                }
-                if mode == .reference {
-                    parseAndSearch()
-                } else {
-                    runSearch()
                 }
             }
             .onChange(of: scope) { _, newScope in
@@ -1032,37 +1041,18 @@ struct SearchView: View {
                 isSearching = false
             }
         } else {
-            // For reference mode, check if input is reference format or text search
+            // Reference mode: search with selected book/chapter/verse or query
             let input = query.trimmingCharacters(in: .whitespacesAndNewlines)
             if !input.isEmpty {
-                // Try to parse as reference - if fails, check if it looks like incomplete reference
-                if parseReferences(input) != nil {
-                    // Valid reference format - continue with reference search
-                    parseAndSearch()
+                // Input exists - parse as reference
+                if let references = parseReferences(input) {
+                    searchMultipleReferences(references, query: input)
                 } else {
-                    // Check if input looks like it could be a reference (starts with Korean or digit)
-                    let firstChar = input.first!
-                    let looksLikeReference = firstChar.isNumber || ("가"..."힣").contains(firstChar)
-
-                    if looksLikeReference {
-                        // Looks like incomplete reference, keep reference mode and don't search
-                        results = []
-                        hasSearched = false
-                        isSearching = false
-                    } else {
-                        // Definitely not a reference format - switch to text mode and search
-                        mode = .text
-                        let isExplicitPartial = input.starts(with: "*")
-                        let text = isExplicitPartial ? String(input.dropFirst()) : input
-
-                        if text.count >= 2 {
-                            query = text
-                            // Recursively call runSearch to execute text search
-                            runSearch()
-                        } else {
-                            results = []; hasSearched = true; isSearching = false
-                        }
-                    }
+                    // Shouldn't reach here if onSubmit handled it correctly
+                    // But as fallback, just clear results
+                    results = []
+                    hasSearched = true
+                    isSearching = false
                 }
             } else if !selectedBookID.isEmpty {
                 // If query is empty but selectedBookID is set, search with current selection
