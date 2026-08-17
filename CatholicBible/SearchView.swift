@@ -1156,13 +1156,15 @@ struct SearchView: View {
             return
         }
 
+        isSearching = true
+        results = []
+
         let currentEdition = readingState.selectedEdition
-        let editionsToSearch = store.loadedEditions
-        let matchMode = matchMode
+        let editionsToSearch = scope == .all ? store.loadedEditions : [currentEdition]
+
         searchTask = Task {
             try? await Task.sleep(for: .milliseconds(300))
             guard !Task.isCancelled else { return }
-            isSearching = true
             let hits: [SearchHit]
             if scope == .all {
                 hits = await store.searchAll(searchText, editions: editionsToSearch, mode: .text)
@@ -1180,6 +1182,8 @@ struct SearchView: View {
 
     private func performReferenceSearch(_ references: [(String, Int, Int)]) {
         searchTask?.cancel()
+        isSearching = true
+        results = []
 
         let currentEdition = readingState.selectedEdition
         let editionsToSearch = scope == .all ? store.loadedEditions : [currentEdition]
@@ -1187,7 +1191,6 @@ struct SearchView: View {
         searchTask = Task {
             try? await Task.sleep(for: .milliseconds(300))
             guard !Task.isCancelled else { return }
-            isSearching = true
 
             var hits: [SearchHit] = []
 
