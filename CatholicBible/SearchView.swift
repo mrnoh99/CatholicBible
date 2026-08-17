@@ -1159,18 +1159,17 @@ struct SearchView: View {
         query.contains("&&") || query.contains("||") || query.contains("!")
     }
 
-    private func splitByOperator(_ expression: String, operator: String) -> [String] {
+    private func splitByOperator(_ expression: String, operator opStr: String) -> [String] {
         var results: [String] = []
         var current = ""
         var i = 0
         let chars = Array(expression)
-        let opChars = Array(operator)
-        let opLen = opChars.count
+        let opLen = opStr.count
 
         while i < chars.count {
             if i <= chars.count - opLen {
                 let slice = String(chars[i..<(i + opLen)])
-                if slice == operator {
+                if slice == opStr {
                     if !current.isEmpty {
                         results.append(current.trimmingCharacters(in: .whitespaces))
                     }
