@@ -454,6 +454,9 @@ struct SearchView: View {
             }
             .onAppear {
                 loadSearchHistory()
+                if selectedEditionIDs.isEmpty {
+                    selectedEditionIDs = Set(store.loadedEditions.map { $0.id })
+                }
                 if query.isEmpty && !lastSearchQuery.isEmpty {
                     query = lastSearchQuery
                     scope = SearchScope(rawValue: lastSearchScope) ?? .current
@@ -1298,7 +1301,12 @@ struct SearchView: View {
         results = []
 
         let currentEdition = readingState.selectedEdition
-        let editionsToSearch = scope == .all ? store.loadedEditions : [currentEdition]
+        let editionsToSearch: [Edition]
+        if scope == .all {
+            editionsToSearch = store.loadedEditions.filter { selectedEditionIDs.contains($0.id) }
+        } else {
+            editionsToSearch = [currentEdition]
+        }
 
         searchTask = Task {
             try? await Task.sleep(for: .milliseconds(300))
@@ -1359,7 +1367,12 @@ struct SearchView: View {
         results = []
 
         let currentEdition = readingState.selectedEdition
-        let editionsToSearch = scope == .all ? store.loadedEditions : [currentEdition]
+        let editionsToSearch: [Edition]
+        if scope == .all {
+            editionsToSearch = store.loadedEditions.filter { selectedEditionIDs.contains($0.id) }
+        } else {
+            editionsToSearch = [currentEdition]
+        }
 
         searchTask = Task {
             try? await Task.sleep(for: .milliseconds(300))
