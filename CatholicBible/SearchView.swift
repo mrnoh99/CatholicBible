@@ -89,31 +89,34 @@ struct SearchView: View {
                 // 전체 화면 크기의 검색 입력 필드
                 ScrollView {
                     VStack(spacing: 20) {
-                        VStack(spacing: 16) {
-                            HStack(spacing: 12) {
-                                TextField(mode == .text ? "단어 검색 (예: 사랑)" : "장절 검색 (예: 1코린 13,13)",
-                                          text: $query)
-                                    .font(.system(size: 28, weight: .bold))
-                                    .padding(.vertical, 20)
-                                    .padding(.horizontal, 20)
-                                    .submitLabel(.search)
-                                    .onSubmit(performSearchAction)
+                        VStack(spacing: 20) {
+                            VStack(spacing: 12) {
+                                ZStack(alignment: .topTrailing) {
+                                    TextField(mode == .text ? "단어 검색 (예: 사랑)" : "장절 검색 (예: 1코린 13,13)",
+                                              text: $query)
+                                        .font(.system(size: 48, weight: .bold))
+                                        .padding(.vertical, 40)
+                                        .padding(.horizontal, 30)
+                                        .submitLabel(.search)
+                                        .onSubmit(performSearchAction)
+                                        .frame(minHeight: 280)
 
-                                if !query.isEmpty {
-                                    Button(action: { query = "" }) {
-                                        Image(systemName: "xmark.circle.fill")
-                                            .font(.system(size: 24))
-                                            .foregroundStyle(.secondary)
+                                    if !query.isEmpty {
+                                        Button(action: { query = "" }) {
+                                            Image(systemName: "xmark.circle.fill")
+                                                .font(.system(size: 32))
+                                                .foregroundStyle(.secondary)
+                                        }
+                                        .padding(.all, 20)
                                     }
-                                    .padding(.trailing, 12)
                                 }
+                                .background(Color(.systemGray6))
+                                .cornerRadius(20)
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 20)
+                                        .stroke(Color.blue, lineWidth: 3)
+                                )
                             }
-                            .background(Color(.systemGray6))
-                            .cornerRadius(15)
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 15)
-                                    .stroke(Color.blue, lineWidth: 2)
-                            )
 
                             HStack(spacing: 16) {
                                 Button(action: performSearchAction) {
@@ -122,11 +125,11 @@ struct SearchView: View {
                                         Text("검색")
                                     }
                                     .frame(maxWidth: .infinity)
-                                    .padding(.vertical, 16)
-                                    .font(.system(size: 18, weight: .semibold))
+                                    .padding(.vertical, 18)
+                                    .font(.system(size: 20, weight: .bold))
                                     .background(Color.blue)
                                     .foregroundStyle(.white)
-                                    .cornerRadius(12)
+                                    .cornerRadius(15)
                                 }
                                 .disabled(query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
 
@@ -140,12 +143,12 @@ struct SearchView: View {
                                         }
                                     }) {
                                         Image(systemName: "trash")
-                                            .font(.system(size: 20))
+                                            .font(.system(size: 22))
                                     }
-                                    .frame(width: 52, height: 52)
+                                    .frame(width: 60, height: 60)
                                     .background(Color(.systemRed))
                                     .foregroundStyle(.white)
-                                    .cornerRadius(12)
+                                    .cornerRadius(15)
                                 }
                             }
                         }
