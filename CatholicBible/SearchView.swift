@@ -1159,7 +1159,7 @@ struct SearchView: View {
         query.contains("&&") || query.contains("||") || query.contains("!")
     }
 
-    private func splitByOperator(_ expression: String, operator opStr: String) -> [String] {
+    private func splitByOperator(_ expression: String, by opStr: String) -> [String] {
         var results: [String] = []
         var current = ""
         var i = 0
@@ -1189,7 +1189,7 @@ struct SearchView: View {
 
     private func evaluateLogicalExpression(_ text: String, expression: String) -> Bool {
         let lowercaseText = text.lowercased()
-        let orParts = splitByOperator(expression, opStr: "||")
+        let orParts = splitByOperator(expression, by: "||")
 
         // Evaluate OR conditions
         for orPart in orParts {
@@ -1201,7 +1201,7 @@ struct SearchView: View {
     }
 
     private func evaluateANDExpression(_ text: String, expression: String) -> Bool {
-        let andParts = splitByOperator(expression, opStr: "&&")
+        let andParts = splitByOperator(expression, by: "&&")
 
         // Evaluate AND conditions
         for andPart in andParts {
@@ -1224,10 +1224,10 @@ struct SearchView: View {
 
     private func extractSearchTerms(from expression: String) -> [String] {
         var terms: [String] = []
-        let components = splitByOperator(expression, opStr: "||")
+        let components = splitByOperator(expression, by: "||")
 
         for component in components {
-            let andTerms = splitByOperator(component, opStr: "&&")
+            let andTerms = splitByOperator(component, by: "&&")
             for term in andTerms {
                 let cleaned = term.trimmingCharacters(in: .whitespaces)
                     .trimmingCharacters(in: CharacterSet(charactersIn: "!"))
