@@ -381,6 +381,7 @@ struct ReaderPane: View {
     private func step(_ delta: Int) {
         let next = chapter + delta
         guard (1...book.chapterCount).contains(next) else { return }
+        scrollTarget = 1
         withAnimation(.easeInOut(duration: 0.2)) { setChapter(next) }
     }
 
