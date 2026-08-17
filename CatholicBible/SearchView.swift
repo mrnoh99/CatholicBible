@@ -214,13 +214,16 @@ struct SearchView: View {
                                 .onChange(of: selectedBookID) { _, newValue in
                                     if let book = Bible.book(newValue) {
                                         bookSearchText = book.name
-                                        selectedChapter = 1
-                                        selectedVerse = 1
+                                        query = book.abbrev + " "
                                     }
                                 }
 
                             if !bookSearchText.isEmpty {
-                                Button(action: { bookSearchText = "" }) {
+                                Button(action: {
+                                    bookSearchText = ""
+                                    query = ""
+                                    selectedBookID = ""
+                                }) {
                                     Image(systemName: "xmark.circle.fill")
                                         .foregroundStyle(.secondary)
                                 }
@@ -233,6 +236,7 @@ struct SearchView: View {
                                     Button(action: {
                                         selectedBookID = book.id
                                         bookSearchText = book.name
+                                        query = book.abbrev + " "
                                     }) {
                                         HStack {
                                             VStack(alignment: .leading, spacing: 2) {
@@ -261,42 +265,10 @@ struct SearchView: View {
                         }
 
                         if selectedBook != nil {
-                            HStack(spacing: 8) {
-                                Picker("장", selection: $selectedChapter) {
-                                    ForEach(1...selectedBook!.chapterCount, id: \.self) { chapter in
-                                        Text("\(chapter)").tag(chapter)
-                                    }
-                                }
-                                .onChange(of: selectedChapter) { _, _ in
-                                    selectedVerse = 1
-                                }
-
-                                Picker("절", selection: $selectedVerse) {
-                                    ForEach(1...max(maxVerse, 1), id: \.self) { verse in
-                                        Text("\(verse)").tag(verse)
-                                    }
-                                }
-                            }
-
-                            HStack {
-                                TextField("또는 범위 (예: 1,5-10)", text: $referenceQueryInput)
-                                    .textFieldStyle(.roundedBorder)
-                                    .font(.caption)
-
-                                Button(action: {
-                                    if !referenceQueryInput.isEmpty {
-                                        if let book = selectedBook {
-                                            query = "\(book.abbrev) \(referenceQueryInput)"
-                                            parseAndSearch()
-                                            referenceQueryInput = ""
-                                        }
-                                    } else {
-                                        runSearch()
-                                    }
-                                }) {
-                                    Image(systemName: "magnifyingglass")
-                                }
-                            }
+                            Text("형식: 장,절 또는 범위 (예: 4,4 또는 4 또는 4,5-10)")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                                .padding(.horizontal)
                         }
 
                         if !referenceSearchHistory.isEmpty {
