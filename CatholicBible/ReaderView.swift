@@ -334,6 +334,9 @@ struct ReaderPane: View {
         }
         .onChange(of: chapter) { _, new in
             guard new > 0, !isFollower else { return }
+            if isInitialized {
+                scrollTarget = 1
+            }
             readingState.savePosition(edition: edition, book: book, chapter: new)
         }
         .modifier(PendingChapterModifier(active: role == .primary, apply: applyPending))

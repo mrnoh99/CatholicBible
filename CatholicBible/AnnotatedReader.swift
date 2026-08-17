@@ -33,6 +33,8 @@ struct AnnotatedReader: View {
     @State private var showBookPicker = false
     @State private var showChapterPicker = false
     @State private var showIntros = false
+    /// AnnotatedReader 초기화 완료 후 장 선택 변경만 감지하기 위한 플래그
+    @State private var isInitialized = false
     /// 주석·상호참조에서 탭한 인용 구절 미리보기 대상
     @State private var xrefTarget: XrefTarget?
     /// 각주 마커 팝업 대상
@@ -51,12 +53,18 @@ struct AnnotatedReader: View {
             chapterBar
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .onAppear { initChapterIfNeeded() }
+        .onAppear {
+            initChapterIfNeeded()
+            isInitialized = true
+        }
         .onChange(of: bookID) { _, _ in
             chapter = readingState.lastChapter(edition: edition, book: book)
         }
         .onChange(of: chapter) { _, new in
             guard new > 0 else { return }
+            if isInitialized {
+                scrollTarget = 1
+            }
             readingState.savePosition(edition: edition, book: book, chapter: new)
         }
         .onChange(of: navigation.pendingChapter) { _, _ in applyPending() }
