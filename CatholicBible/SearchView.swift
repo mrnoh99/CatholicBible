@@ -564,31 +564,28 @@ struct SearchView: View {
         let bookPartRaw = String(input[..<versePart.lowerBound]).trimmingCharacters(in: .whitespaces)
         guard !bookPartRaw.isEmpty else { return nil }
 
-        let bookPattern = try! NSRegularExpression(pattern: "([가-힣]+)\\s*([1-3])", options: [])
-        let bookRange = NSRange(bookPartRaw.startIndex..<bookPartRaw.endIndex, in: bookPartRaw)
+        // Extract book name (handles both "코린" and "1코린" formats)
+        var bookName = ""
+        var digitPrefix = ""
 
-        if let bookMatch = bookPattern.firstMatch(in: bookPartRaw, range: bookRange),
-           let koreanRange = Range(bookMatch.range(at: 1), in: bookPartRaw),
-           let digitRange = Range(bookMatch.range(at: 2), in: bookPartRaw) {
-            let koreanName = String(bookPartRaw[koreanRange])
-            let digitPrefix = String(bookPartRaw[digitRange])
-
-            if let bookID = findBookByAbbrev(koreanName, digitPrefix: digitPrefix) {
-                return (bookID, chapter, verse)
-            }
-        }
-
-        var koreanName = ""
         for char in bookPartRaw {
-            if ("가"..."힣").contains(char) {
-                koreanName.append(char)
-            } else if char.isNumber && "123".contains(char) {
+            if char.isNumber && "123".contains(char) {
+                if bookName.isEmpty {
+                    digitPrefix.append(char)
+                } else {
+                    break
+                }
+            } else if ("가"..."힣").contains(char) {
+                bookName.append(char)
+            } else if !bookName.isEmpty {
                 break
             }
         }
 
-        if !koreanName.isEmpty, let bookID = findBookByAbbrev(koreanName, digitPrefix: "") {
-            return (bookID, chapter, verse)
+        if !bookName.isEmpty {
+            if let bookID = findBookByAbbrev(bookName, digitPrefix: digitPrefix) {
+                return (bookID, chapter, verse)
+            }
         }
 
         return nil
