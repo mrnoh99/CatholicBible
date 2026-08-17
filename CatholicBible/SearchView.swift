@@ -1043,7 +1043,45 @@ struct SearchView: View {
             if !input.isEmpty {
                 // Input exists - parse as reference
                 if let references = parseReferences(input) {
-                    searchMultipleReferences(references, query: input)
+                    // Directly call searchMultipleReferences with proper scope handling
+                    searchTask?.cancel()
+
+                    let currentEdition = readingState.selectedEdition
+                    let editionsToSearch = scope == .all ? store.loadedEditions : [currentEdition]
+
+                    searchTask = Task {
+                        try? await Task.sleep(for: .milliseconds(300))
+                        guard !Task.isCancelled else { return }
+                        isSearching = true
+
+                        var hits: [SearchHit] = []
+
+                        for (bookID, chapter, verse) in references {
+                            guard let book = Bible.book(bookID) else { continue }
+                            for edition in editionsToSearch {
+                                let verses = store.verses(edition: edition, book: book, chapter: chapter)
+
+                                for verseObj in verses {
+                                    if verse == 0 || verseObj.verseNumber == verse {
+                                        hits.append(SearchHit(
+                                            text: verseObj.text,
+                                            bookID: book.id,
+                                            bookName: book.name,
+                                            chapter: chapter,
+                                            verseNumber: verseObj.verseNumber,
+                                            edition: edition
+                                        ))
+                                    }
+                                }
+                            }
+                        }
+
+                        await MainActor.run {
+                            results = hits
+                            hasSearched = true
+                            isSearching = false
+                        }
+                    }
                 } else {
                     // Shouldn't reach here if onSubmit handled it correctly
                     // But as fallback, just clear results
