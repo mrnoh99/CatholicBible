@@ -394,8 +394,9 @@ struct SearchView: View {
                     // It's a reference format
                     mode = .reference
                 } else {
-                    // It's text search
+                    // It's text search - reset scope to current
                     mode = .text
+                    scope = .current
                 }
 
                 // Execute search with current mode and scope
