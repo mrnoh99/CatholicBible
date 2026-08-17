@@ -56,6 +56,8 @@ struct SearchView: View {
     @AppStorage("lastSearchScope") private var lastSearchScope = SearchScope.current.rawValue
     @AppStorage("lastSearchMode") private var lastSearchMode = SearchMode.text.rawValue
     @AppStorage("lastSearchMatchMode") private var lastSearchMatchMode = TextMatchMode.partial.rawValue
+    @AppStorage("textSearchHistory") private var textSearchHistoryData = "[]"
+    @AppStorage("referenceSearchHistory") private var referenceSearchHistoryData = "[]"
 
     @State private var query = ""
     @State private var scope: SearchScope = .current
@@ -84,6 +86,10 @@ struct SearchView: View {
     @State private var referenceResults: [SearchHit] = []
     @State private var referencePreviousResults: [SearchHit] = []
     @State private var referenceHasSearched = false
+
+    // 검색 히스토리
+    @State private var textSearchHistory: [String] = []
+    @State private var referenceSearchHistory: [String] = []
 
     var body: some View {
         let edition = readingState.selectedEdition
@@ -118,17 +124,47 @@ struct SearchView: View {
                 .padding(.horizontal).padding(.vertical, 8)
 
                 if mode == .text {
-                    HStack {
-                        Spacer()
-                        Picker("일치 방식", selection: $matchMode) {
-                            ForEach(TextMatchMode.allCases) { m in
-                                Text(m.label).tag(m)
+                    VStack(spacing: 8) {
+                        HStack {
+                            Spacer()
+                            Picker("일치 방식", selection: $matchMode) {
+                                ForEach(TextMatchMode.allCases) { m in
+                                    Text(m.label).tag(m)
+                                }
+                            }
+                            .pickerStyle(.segmented)
+                            .frame(maxWidth: 200)
+                        }
+
+                        if !textSearchHistory.isEmpty {
+                            VStack(alignment: .leading, spacing: 6) {
+                                Text("최근 검색")
+                                    .font(.caption.weight(.semibold))
+                                    .foregroundStyle(.secondary)
+                                    .padding(.horizontal)
+
+                                ScrollView(.horizontal, showsIndicators: false) {
+                                    HStack(spacing: 6) {
+                                        ForEach(textSearchHistory, id: \.self) { item in
+                                            Button {
+                                                query = item
+                                                runSearch()
+                                            } label: {
+                                                Text(item)
+                                                    .lineLimit(1)
+                                                    .font(.caption)
+                                                    .padding(.horizontal, 10).padding(.vertical, 6)
+                                                    .background(Capsule().fill(Color.accentColor.opacity(0.12)))
+                                                    .foregroundStyle(Color.accentColor)
+                                            }
+                                        }
+                                    }
+                                    .padding(.horizontal)
+                                }
                             }
                         }
-                        .pickerStyle(.segmented)
-                        .frame(maxWidth: 200)
                     }
-                    .padding(.horizontal).padding(.vertical, 8)
+                    .padding(.vertical, 8)
                 }
 
                 if mode == .reference {
@@ -170,6 +206,36 @@ struct SearchView: View {
                                     }
                                 }
                                 .onChange(of: selectedVerse) { runSearch() }
+                            }
+                        }
+
+                        if !referenceSearchHistory.isEmpty {
+                            VStack(alignment: .leading, spacing: 6) {
+                                Text("최근 검색")
+                                    .font(.caption.weight(.semibold))
+                                    .foregroundStyle(.secondary)
+
+                                ScrollView(.horizontal, showsIndicators: false) {
+                                    HStack(spacing: 6) {
+                                        ForEach(referenceSearchHistory, id: \.self) { item in
+                                            Button {
+                                                if let components = parseReferenceString(item) {
+                                                    selectedBookID = components.0
+                                                    selectedChapter = components.1
+                                                    selectedVerse = components.2
+                                                    runSearch()
+                                                }
+                                            } label: {
+                                                Text(item)
+                                                    .lineLimit(1)
+                                                    .font(.caption)
+                                                    .padding(.horizontal, 10).padding(.vertical, 6)
+                                                    .background(Capsule().fill(Color.accentColor.opacity(0.12)))
+                                                    .foregroundStyle(Color.accentColor)
+                                            }
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
@@ -290,6 +356,7 @@ struct SearchView: View {
                 runSearch()
             }
             .onAppear {
+                loadSearchHistory()
                 if query.isEmpty && !lastSearchQuery.isEmpty {
                     query = lastSearchQuery
                     scope = SearchScope(rawValue: lastSearchScope) ?? .current
@@ -325,13 +392,13 @@ struct SearchView: View {
         }
 
         if let references = parseReferences(input) {
-            searchMultipleReferences(references)
+            searchMultipleReferences(references, query: input)
         } else {
             results = []; hasSearched = true; isSearching = false
         }
     }
 
-    private func searchMultipleReferences(_ references: [(bookID: String, chapter: Int, verse: Int)]) {
+    private func searchMultipleReferences(_ references: [(bookID: String, chapter: Int, verse: Int)], query: String = "") {
         searchTask?.cancel()
 
         let currentEdition = readingState.selectedEdition
@@ -357,6 +424,17 @@ struct SearchView: View {
 
             guard !Task.isCancelled else { return }
             results = hits
+            if !query.isEmpty {
+                referenceSearchHistory.removeAll { $0 == query }
+                referenceSearchHistory.insert(query, at: 0)
+                if referenceSearchHistory.count > 20 {
+                    referenceSearchHistory.removeLast()
+                }
+                if let encoded = try? JSONEncoder().encode(referenceSearchHistory),
+                   let json = String(data: encoded, encoding: .utf8) {
+                    referenceSearchHistoryData = json
+                }
+            }
             hasSearched = true
             isSearching = false
         }
@@ -706,6 +784,7 @@ struct SearchView: View {
                     hit.text.localizedCaseInsensitiveContains(text)
                 }
                 results = isExplicitPartial ? filtered : filterByMatchMode(filtered, query: text)
+                addToTextSearchHistory(text)
                 hasSearched = true
                 isSearching = false
                 return
@@ -728,6 +807,7 @@ struct SearchView: View {
                 guard !Task.isCancelled else { return }
                 previousResults = hits
                 results = isExplicitPartial ? hits : filterByMatchMode(hits, query: text)
+                addToTextSearchHistory(text)
                 hasSearched = true
                 isSearching = false
             }
@@ -759,8 +839,69 @@ struct SearchView: View {
 
                 guard !Task.isCancelled else { return }
                 results = hits
+                addToReferenceSearchHistory()
                 hasSearched = true
                 isSearching = false
+            }
+        }
+    }
+
+    private func parseReferenceString(_ ref: String) -> (String, Int, Int)? {
+        let parts = ref.split(separator: " ")
+        guard parts.count >= 2 else { return nil }
+
+        let bookAbbrev = String(parts[0])
+        let versePart = String(parts[1])
+        let versionParts = versePart.split(separator: ",")
+        guard versionParts.count == 2,
+              let chapter = Int(versionParts[0]),
+              let verse = Int(versionParts[1]) else { return nil }
+
+        for book in Bible.books {
+            if book.abbrev == bookAbbrev {
+                return (book.id, chapter, verse)
+            }
+        }
+        return nil
+    }
+
+    private func loadSearchHistory() {
+        if let data = textSearchHistoryData.data(using: .utf8),
+           let decoded = try? JSONDecoder().decode([String].self, from: data) {
+            textSearchHistory = decoded
+        }
+        if let data = referenceSearchHistoryData.data(using: .utf8),
+           let decoded = try? JSONDecoder().decode([String].self, from: data) {
+            referenceSearchHistory = decoded
+        }
+    }
+
+    private func addToTextSearchHistory(_ query: String) {
+        guard !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
+        let trimmed = query.trimmingCharacters(in: .whitespaces)
+        textSearchHistory.removeAll { $0 == trimmed }
+        textSearchHistory.insert(trimmed, at: 0)
+        if textSearchHistory.count > 20 {
+            textSearchHistory.removeLast()
+        }
+        if let encoded = try? JSONEncoder().encode(textSearchHistory),
+           let json = String(data: encoded, encoding: .utf8) {
+            textSearchHistoryData = json
+        }
+    }
+
+    private func addToReferenceSearchHistory() {
+        guard !selectedBookID.isEmpty else { return }
+        if let book = Bible.book(selectedBookID) {
+            let reference = "\(book.abbrev) \(selectedChapter),\(selectedVerse)"
+            referenceSearchHistory.removeAll { $0 == reference }
+            referenceSearchHistory.insert(reference, at: 0)
+            if referenceSearchHistory.count > 20 {
+                referenceSearchHistory.removeLast()
+            }
+            if let encoded = try? JSONEncoder().encode(referenceSearchHistory),
+               let json = String(data: encoded, encoding: .utf8) {
+                referenceSearchHistoryData = json
             }
         }
     }
