@@ -1096,46 +1096,33 @@ struct SearchView: View {
 
     private func highlightedText(_ text: String, query: String, mode: SearchMode) -> some View {
         guard !query.isEmpty && mode == .text else {
-            return AnyView(Text(text))
+            return Text(text)
         }
 
         let searchTerm = query.trimmingCharacters(in: .whitespacesAndNewlines)
             .replacingOccurrences(of: "*", with: "")
 
-        guard !searchTerm.isEmpty else { return AnyView(Text(text)) }
+        guard !searchTerm.isEmpty else { return Text(text) }
 
-        var result: [Text] = []
+        var attributedString = AttributedString(text)
         let lowercaseText = text.lowercased()
         let lowercaseSearch = searchTerm.lowercased()
 
-        var currentIndex = 0
-        while let range = lowercaseText.range(of: lowercaseSearch, range: lowercaseText.index(lowercaseText.startIndex, offsetBy: currentIndex)..<lowercaseText.endIndex) {
-            let beforeStartIndex = text.index(text.startIndex, offsetBy: currentIndex)
-            let beforeEndIndex = text.index(text.startIndex, offsetBy: text.distance(from: text.startIndex, to: range.lowerBound))
+        var searchStartIndex = lowercaseText.startIndex
+        while let range = lowercaseText.range(of: lowercaseSearch, range: searchStartIndex..<lowercaseText.endIndex) {
+            let distance = lowercaseText.distance(from: lowercaseText.startIndex, to: range.lowerBound)
+            let length = lowercaseText.distance(from: range.lowerBound, to: range.upperBound)
 
-            if beforeStartIndex < beforeEndIndex {
-                result.append(Text(String(text[beforeStartIndex..<beforeEndIndex])))
-            }
+            let attrStart = attributedString.index(attributedString.startIndex, offsetBy: distance)
+            let attrEnd = attributedString.index(attrStart, offsetBy: length)
 
-            let matchStartIndex = text.index(text.startIndex, offsetBy: text.distance(from: text.startIndex, to: range.lowerBound))
-            let matchEndIndex = text.index(text.startIndex, offsetBy: text.distance(from: text.startIndex, to: range.upperBound))
-            result.append(Text(String(text[matchStartIndex..<matchEndIndex]))
-                .foregroundStyle(.white)
-                .background(Color.yellow))
+            attributedString[attrStart..<attrEnd].backgroundColor = .yellow
+            attributedString[attrStart..<attrEnd].foregroundColor = .white
 
-            currentIndex = text.distance(from: text.startIndex, to: range.upperBound)
+            searchStartIndex = range.upperBound
         }
 
-        if currentIndex < text.count {
-            let remainingStart = text.index(text.startIndex, offsetBy: currentIndex)
-            result.append(Text(String(text[remainingStart...])))
-        }
-
-        if result.isEmpty {
-            return AnyView(Text(text))
-        }
-
-        return AnyView(result.reduce(Text("")) { $0 + $1 })
+        return Text(attributedString)
     }
 
     private func performSearchAction() {
