@@ -97,15 +97,22 @@ struct SearchView: View {
                         .submitLabel(.search)
                         .onSubmit(performSearchAction)
 
-                    Menu {
+                    HStack(spacing: 12) {
                         Button(action: performSearchAction) {
-                            Label("검색", systemImage: "magnifyingglass")
+                            HStack {
+                                Image(systemName: "magnifyingglass")
+                                Text("검색")
+                            }
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 10)
+                            .background(Color.blue)
+                            .foregroundStyle(.white)
+                            .cornerRadius(8)
                         }
                         .disabled(query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
 
                         if !results.isEmpty {
-                            Divider()
-                            Button(role: .destructive, action: {
+                            Button(action: {
                                 results = []
                                 previousResults = []
                                 hasSearched = false
@@ -113,19 +120,14 @@ struct SearchView: View {
                                     scope = .current
                                 }
                             }) {
-                                Label("검색 결과 지우기", systemImage: "trash")
+                                Image(systemName: "trash")
+                                    .font(.body)
                             }
+                            .frame(width: 44, height: 44)
+                            .background(Color(.systemRed))
+                            .foregroundStyle(.white)
+                            .cornerRadius(8)
                         }
-                    } label: {
-                        HStack {
-                            Image(systemName: "magnifyingglass")
-                            Text("검색")
-                        }
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 10)
-                        .background(Color.blue)
-                        .foregroundStyle(.white)
-                        .cornerRadius(8)
                     }
                 }
                 .padding(.horizontal, 16)
