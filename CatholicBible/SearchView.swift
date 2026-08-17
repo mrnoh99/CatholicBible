@@ -222,7 +222,7 @@ struct SearchView: View {
                                         Text("\(verse)").tag(verse)
                                     }
                                 }
-                                .onChange(of: selectedVerse) { runSearch() }
+                                .onChange(of: selectedVerse) { _, _ in runSearch() }
                             }
                         }
 
