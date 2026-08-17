@@ -756,6 +756,17 @@ struct SearchView: View {
             }
         }
 
+        // Try matching with full name or short name (e.g., "사무엘기 상권")
+        let searchText = abbrev.lowercased()
+        for book in Bible.books {
+            if book.name == abbrev ||
+               book.name.lowercased() == searchText ||
+               book.shortName == abbrev ||
+               book.shortName.lowercased() == searchText {
+                return book.id
+            }
+        }
+
         return nil
     }
 
