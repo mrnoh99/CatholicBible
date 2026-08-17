@@ -75,6 +75,7 @@ struct SearchView: View {
     @State private var textResults: [SearchHit] = []
     @State private var textPreviousResults: [SearchHit] = []
     @State private var textHasSearched = false
+    @State private var textMatchMode: TextMatchMode = .partial
 
     // 장절 찾기 상태 저장
     @State private var referenceBookID = ""
@@ -252,6 +253,7 @@ struct SearchView: View {
                     textResults = results
                     textPreviousResults = previousResults
                     textHasSearched = hasSearched
+                    textMatchMode = matchMode
                 } else {
                     referenceBookID = selectedBookID
                     referenceChapter = selectedChapter
@@ -267,6 +269,7 @@ struct SearchView: View {
                     results = textResults
                     previousResults = textPreviousResults
                     hasSearched = textHasSearched
+                    matchMode = textMatchMode
                     selectedBookID = ""
                     selectedChapter = 1
                     selectedVerse = 1
