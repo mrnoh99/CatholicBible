@@ -1062,16 +1062,17 @@ struct SearchView: View {
                             for edition in editionsToSearch {
                                 let verses = store.verses(edition: edition, book: book, chapter: chapter)
 
-                                for verseObj in verses {
-                                    if verse == 0 || verseObj.verseNumber == verse {
-                                        hits.append(SearchHit(
-                                            text: verseObj.text,
-                                            bookID: book.id,
-                                            bookName: book.name,
-                                            chapter: chapter,
-                                            verseNumber: verseObj.verseNumber,
-                                            edition: edition
-                                        ))
+                                if verse == 0 {
+                                    // verse = 0 means all verses in chapter
+                                    for hit in verses {
+                                        hits.append(SearchHit(editionID: edition.id, bookID: bookID, chapter: chapter, verse: hit.number,
+                                                             text: hit.text))
+                                    }
+                                } else {
+                                    // specific verse
+                                    if let hit = verses.first(where: { $0.number == verse }) {
+                                        hits.append(SearchHit(editionID: edition.id, bookID: bookID, chapter: chapter, verse: verse,
+                                                             text: hit.text))
                                     }
                                 }
                             }
