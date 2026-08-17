@@ -389,20 +389,17 @@ struct SearchView: View {
                 let input = query.trimmingCharacters(in: .whitespacesAndNewlines)
                 guard !input.isEmpty else { return }
 
-                // Auto-detect format and search only on enter
-                if let references = parseReferences(input) {
+                // Auto-detect format and set mode
+                if parseReferences(input) != nil {
                     // It's a reference format
-                    if mode != .reference {
-                        mode = .reference
-                    }
-                    parseAndSearch()
+                    mode = .reference
                 } else {
                     // It's text search
-                    if mode != .text {
-                        mode = .text
-                    }
-                    runSearch()
+                    mode = .text
                 }
+
+                // Execute search with current mode and scope
+                runSearch()
             }
             .onChange(of: query) { _, newQuery in
                 // Only save query history, don't search
