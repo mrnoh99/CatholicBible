@@ -677,7 +677,7 @@ struct SearchView: View {
         guard matchMode == .wholeWord else { return hits }
 
         return hits.filter { hit in
-            let pattern = "(?<![가-힣])\\(NSRegularExpression.escapedPattern(for: query))"
+            let pattern = "(?<![가-힣])" + NSRegularExpression.escapedPattern(for: query)
             guard let regex = try? NSRegularExpression(pattern: pattern) else { return false }
             let range = NSRange(hit.text.startIndex..., in: hit.text)
             return regex.firstMatch(in: hit.text, range: range) != nil
