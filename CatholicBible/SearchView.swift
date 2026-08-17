@@ -34,18 +34,6 @@ enum SearchMode: String, CaseIterable, Identifiable {
     }
 }
 
-enum TextMatchMode: String, CaseIterable, Identifiable {
-    case partial
-    case wholeWord
-    var id: String { rawValue }
-    var label: String {
-        switch self {
-        case .partial: return "부분 일치"
-        case .wholeWord: return "정확한 단어"
-        }
-    }
-}
-
 struct SearchView: View {
     @Environment(BibleStore.self) private var store
     @Environment(ReadingState.self) private var readingState
@@ -55,14 +43,12 @@ struct SearchView: View {
     @AppStorage("lastSearchQuery") private var lastSearchQuery = ""
     @AppStorage("lastSearchScope") private var lastSearchScope = SearchScope.current.rawValue
     @AppStorage("lastSearchMode") private var lastSearchMode = SearchMode.text.rawValue
-    @AppStorage("lastSearchMatchMode") private var lastSearchMatchMode = TextMatchMode.partial.rawValue
     @AppStorage("textSearchHistory") private var textSearchHistoryData = "[]"
     @AppStorage("referenceSearchHistory") private var referenceSearchHistoryData = "[]"
 
     @State private var query = ""
     @State private var scope: SearchScope = .current
     @State private var mode: SearchMode = .text
-    @State private var matchMode: TextMatchMode = .partial
     @State private var results: [SearchHit] = []
     @State private var previousResults: [SearchHit] = []
     @State private var isSearching = false
@@ -77,7 +63,6 @@ struct SearchView: View {
     @State private var textResults: [SearchHit] = []
     @State private var textPreviousResults: [SearchHit] = []
     @State private var textHasSearched = false
-    @State private var textMatchMode: TextMatchMode = .partial
 
     // 장절 찾기 상태 저장
     @State private var referenceBookID = ""
@@ -134,17 +119,6 @@ struct SearchView: View {
 
                 if mode == .text {
                     VStack(spacing: 8) {
-                        HStack {
-                            Spacer()
-                            Picker("일치 방식", selection: $matchMode) {
-                                ForEach(TextMatchMode.allCases) { m in
-                                    Text(m.label).tag(m)
-                                }
-                            }
-                            .pickerStyle(.segmented)
-                            .frame(maxWidth: 200)
-                        }
-
                         if !textSearchHistory.isEmpty {
                             VStack(alignment: .leading, spacing: 6) {
                                 HStack {
@@ -971,16 +945,6 @@ struct SearchView: View {
         return nil
     }
 
-    private func filterByMatchMode(_ hits: [SearchHit], query: String) -> [SearchHit] {
-        guard matchMode == .wholeWord else { return hits }
-
-        return hits.filter { hit in
-            let pattern = "(?<![가-힣])" + NSRegularExpression.escapedPattern(for: query)
-            guard let regex = try? NSRegularExpression(pattern: pattern) else { return false }
-            let range = NSRange(hit.text.startIndex..., in: hit.text)
-            return regex.firstMatch(in: hit.text, range: range) != nil
-        }
-    }
 
     private func runSearch() {
         searchTask?.cancel()
@@ -1000,7 +964,7 @@ struct SearchView: View {
                 let filtered = previousResults.filter { hit in
                     hit.text.localizedCaseInsensitiveContains(text)
                 }
-                results = isExplicitPartial ? filtered : filterByMatchMode(filtered, query: text)
+                results = filtered
                 addToTextSearchHistory(text)
                 hasSearched = true
                 isSearching = false
