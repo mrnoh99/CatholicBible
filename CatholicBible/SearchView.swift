@@ -109,6 +109,11 @@ struct SearchView: View {
                     }
                     .pickerStyle(.segmented)
                     .frame(maxWidth: .infinity)
+                    .onChange(of: scope) { _, _ in
+                        if hasSearched {
+                            runSearch()
+                        }
+                    }
                     .onChange(of: results) { _, _ in
                         if case .results = scope, results.isEmpty {
                             scope = .current
