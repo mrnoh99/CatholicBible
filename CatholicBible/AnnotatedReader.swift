@@ -158,6 +158,7 @@ struct AnnotatedReader: View {
     private func step(_ d: Int) {
         let n = chapter + d
         guard (1...book.chapterCount).contains(n) else { return }
+        scrollTarget = 1
         withAnimation(.easeInOut(duration: 0.2)) { chapter = n }
     }
 
