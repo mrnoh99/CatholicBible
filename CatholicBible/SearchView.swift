@@ -28,7 +28,7 @@ enum SearchMode: String, CaseIterable, Identifiable {
     var id: String { rawValue }
     var label: String {
         switch self {
-        case .text: return "말씀 찾기"
+        case .text: return "단어찾기"
         case .reference: return "장절찾기"
         }
     }
@@ -70,7 +70,7 @@ struct SearchView: View {
     @State private var selectedChapter: Int = 1
     @State private var selectedVerse: Int = 1
 
-    // 말씀 찾기 상태 저장
+    // 단어찾기 상태 저장
     @State private var textQuery = ""
     @State private var textResults: [SearchHit] = []
     @State private var textPreviousResults: [SearchHit] = []
@@ -223,7 +223,7 @@ struct SearchView: View {
             .navigationTitle(results.isEmpty ? "검색" : "검색 (\(results.count)개)")
             .navigationBarTitleDisplayMode(.inline)
             .searchable(text: $query, placement: .navigationBarDrawer(displayMode: .always),
-                        prompt: mode == .text ? "말씀 검색 (예: 사랑 OR *사랑)" : "장절 검색 (예: 1코린 13,13)")
+                        prompt: mode == .text ? "단어 검색 (예: 사랑 OR *사랑)" : "장절 검색 (예: 1코린 13,13)")
             .onSubmit {
                 if mode == .reference {
                     parseAndSearch()
