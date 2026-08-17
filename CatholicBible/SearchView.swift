@@ -684,9 +684,24 @@ struct SearchView: View {
             }
 
             return results.isEmpty ? nil : results
-        }
+        } else {
+            // Handle simple references without range (e.g., "창세 1" or "1사무 10")
+            // Single chapter or single verse reference
+            var results: [(String, Int, Int)] = []
 
-        return nil
+            if verse == 0 {
+                // Chapter only (e.g., "창세 1" means entire chapter 1)
+                // Return all verses in the chapter as individual entries
+                for v in 1...999 {
+                    results.append((bookID, chapter, v))
+                }
+            } else {
+                // Single verse reference
+                results.append((bookID, chapter, verse))
+            }
+
+            return results.isEmpty ? nil : results
+        }
     }
 
     private func parseReference(_ input: String) -> (String, Int, Int)? {
@@ -812,6 +827,13 @@ struct SearchView: View {
             let inputBase = extractBookNameBase(from: abbrev)
 
             if bookNameBase.lowercased() == inputBase.lowercased() &&
+               (digitPrefix.isEmpty || book.abbrev.contains(digitPrefix)) {
+                return book.id
+            }
+
+            // Try partial matching (e.g., "사무" matches "사무엘상")
+            if bookNameBase.lowercased().contains(inputBase.lowercased()) &&
+               !inputBase.isEmpty &&
                (digitPrefix.isEmpty || book.abbrev.contains(digitPrefix)) {
                 return book.id
             }
