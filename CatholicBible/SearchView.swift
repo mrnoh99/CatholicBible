@@ -87,139 +87,165 @@ struct SearchView: View {
         NavigationStack {
             VStack(spacing: 0) {
                 // 전체 화면 크기의 검색 입력 필드
-                VStack(spacing: 16) {
-                    VStack(spacing: 12) {
-                        HStack(spacing: 12) {
-                            TextField(mode == .text ? "단어 검색 (예: 사랑)" : "장절 검색 (예: 1코린 13,13)",
-                                      text: $query)
-                                .font(.system(size: 20, weight: .semibold))
-                                .padding(.vertical, 16)
+                ScrollView {
+                    VStack(spacing: 20) {
+                        VStack(spacing: 16) {
+                            HStack(spacing: 12) {
+                                TextField(mode == .text ? "단어 검색 (예: 사랑)" : "장절 검색 (예: 1코린 13,13)",
+                                          text: $query)
+                                    .font(.system(size: 28, weight: .bold))
+                                    .padding(.vertical, 20)
+                                    .padding(.horizontal, 20)
+                                    .submitLabel(.search)
+                                    .onSubmit(performSearchAction)
+
+                                if !query.isEmpty {
+                                    Button(action: { query = "" }) {
+                                        Image(systemName: "xmark.circle.fill")
+                                            .font(.system(size: 24))
+                                            .foregroundStyle(.secondary)
+                                    }
+                                    .padding(.trailing, 12)
+                                }
+                            }
+                            .background(Color(.systemGray6))
+                            .cornerRadius(15)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 15)
+                                    .stroke(Color.blue, lineWidth: 2)
+                            )
+
+                            HStack(spacing: 16) {
+                                Button(action: performSearchAction) {
+                                    HStack {
+                                        Image(systemName: "magnifyingglass")
+                                        Text("검색")
+                                    }
+                                    .frame(maxWidth: .infinity)
+                                    .padding(.vertical, 16)
+                                    .font(.system(size: 18, weight: .semibold))
+                                    .background(Color.blue)
+                                    .foregroundStyle(.white)
+                                    .cornerRadius(12)
+                                }
+                                .disabled(query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+
+                                if !results.isEmpty {
+                                    Button(action: {
+                                        results = []
+                                        previousResults = []
+                                        hasSearched = false
+                                        if scope == .results {
+                                            scope = .current
+                                        }
+                                    }) {
+                                        Image(systemName: "trash")
+                                            .font(.system(size: 20))
+                                    }
+                                    .frame(width: 52, height: 52)
+                                    .background(Color(.systemRed))
+                                    .foregroundStyle(.white)
+                                    .cornerRadius(12)
+                                }
+                            }
+                        }
+                        .padding(.horizontal, 16)
+                        .padding(.top, 24)
+
+                        Divider().padding(.horizontal, 16)
+
+                        VStack(spacing: 18) {
+                            // 검색 방식 선택
+                            VStack(alignment: .leading, spacing: 10) {
+                                Text("검색 방식")
+                                    .font(.system(size: 16, weight: .semibold))
+                                    .padding(.horizontal, 16)
+                                Picker("검색 방식", selection: $mode) {
+                                    ForEach(SearchMode.allCases) { m in Text(m.label).tag(m) }
+                                }
+                                .pickerStyle(.segmented)
                                 .padding(.horizontal, 16)
-                                .submitLabel(.search)
-                                .onSubmit(performSearchAction)
-
-                            if !query.isEmpty {
-                                Button(action: { query = "" }) {
-                                    Image(systemName: "xmark.circle.fill")
-                                        .font(.system(size: 20))
-                                        .foregroundStyle(.secondary)
-                                }
-                                .padding(.trailing, 12)
                             }
-                        }
-                        .background(Color(.systemGray6))
-                        .cornerRadius(10)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 10)
-                                .stroke(Color.blue, lineWidth: 1.5)
-                        )
 
-                        HStack(spacing: 12) {
-                            Button(action: performSearchAction) {
-                                HStack {
-                                    Image(systemName: "magnifyingglass")
-                                    Text("검색")
-                                }
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, 12)
-                                .background(Color.blue)
-                                .foregroundStyle(.white)
-                                .cornerRadius(8)
-                            }
-                            .disabled(query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-
-                            if !results.isEmpty {
-                                Button(action: {
-                                    results = []
-                                    previousResults = []
-                                    hasSearched = false
-                                    if scope == .results {
-                                        scope = .current
+                            // 범위 선택 (텍스트 검색용) 또는 책 선택 (장절 검색용)
+                            if mode == .text {
+                                VStack(alignment: .leading, spacing: 10) {
+                                    Text("검색 범위")
+                                        .font(.system(size: 16, weight: .semibold))
+                                        .padding(.horizontal, 16)
+                                    Picker("검색 범위", selection: $scope) {
+                                        let availableScopes = SearchScope.allCases.filter { s in s != .results }
+                                        ForEach(availableScopes) { s in Text(s.label).tag(s) }
                                     }
-                                }) {
-                                    Image(systemName: "trash")
-                                        .font(.body)
-                                }
-                                .frame(width: 44, height: 44)
-                                .background(Color(.systemRed))
-                                .foregroundStyle(.white)
-                                .cornerRadius(8)
-                            }
-                        }
-                    }
-
-                    // 검색 방식 선택
-                    Picker("검색 방식", selection: $mode) {
-                        ForEach(SearchMode.allCases) { m in Text(m.label).tag(m) }
-                    }
-                    .pickerStyle(.segmented)
-                    .frame(maxWidth: .infinity)
-
-                    // 범위 선택 (텍스트 검색용) 또는 책 선택 (장절 검색용)
-                    if mode == .text {
-                        Picker("검색 범위", selection: $scope) {
-                            let availableScopes = SearchScope.allCases.filter { s in s != .results }
-                            ForEach(availableScopes) { s in Text(s.label).tag(s) }
-                        }
-                        .pickerStyle(.segmented)
-                        .frame(maxWidth: .infinity)
-                        .onChange(of: scope) { _, _ in
-                            if hasSearched {
-                                runSearch()
-                            }
-                        }
-                    } else if mode == .reference {
-                        Picker("책 선택", selection: $selectedBookID) {
-                            Text("책 선택").tag("")
-                            Divider()
-                            ForEach(Bible.books) { book in
-                                HStack {
-                                    VStack(alignment: .leading, spacing: 2) {
-                                        Text(book.name)
-                                        Text(book.abbrev).font(.caption).foregroundStyle(.secondary)
+                                    .pickerStyle(.segmented)
+                                    .padding(.horizontal, 16)
+                                    .onChange(of: scope) { _, _ in
+                                        if hasSearched {
+                                            runSearch()
+                                        }
                                     }
                                 }
-                                .tag(book.id)
-                            }
-                        }
-                        .frame(maxWidth: .infinity)
-                    }
-
-                    // 판본 선택 체크박스
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("판본 선택")
-                            .font(.caption.weight(.semibold))
-                            .foregroundStyle(.secondary)
-
-                        VStack(spacing: 6) {
-                            ForEach(store.loadedEditions) { ed in
-                                Button(action: {
-                                    if selectedEditionIDs.contains(ed.id) {
-                                        selectedEditionIDs.remove(ed.id)
-                                    } else {
-                                        selectedEditionIDs.insert(ed.id)
+                            } else if mode == .reference {
+                                VStack(alignment: .leading, spacing: 10) {
+                                    Text("책 선택")
+                                        .font(.system(size: 16, weight: .semibold))
+                                        .padding(.horizontal, 16)
+                                    Picker("책 선택", selection: $selectedBookID) {
+                                        Text("책 선택").tag("")
+                                        Divider()
+                                        ForEach(Bible.books) { book in
+                                            HStack {
+                                                VStack(alignment: .leading, spacing: 2) {
+                                                    Text(book.name)
+                                                    Text(book.abbrev).font(.caption).foregroundStyle(.secondary)
+                                                }
+                                            }
+                                            .tag(book.id)
+                                        }
                                     }
-                                }) {
-                                    HStack(spacing: 10) {
-                                        Image(systemName: selectedEditionIDs.contains(ed.id) ? "checkmark.square.fill" : "square")
-                                            .font(.body)
-                                            .foregroundStyle(selectedEditionIDs.contains(ed.id) ? .blue : .secondary)
-                                        Text(ed.shortName)
-                                            .font(.subheadline)
-                                        Spacer()
+                                    .padding(.horizontal, 16)
+                                }
+                            }
+
+                            // 판본 선택 체크박스
+                            VStack(alignment: .leading, spacing: 12) {
+                                Text("판본 선택")
+                                    .font(.system(size: 16, weight: .semibold))
+                                    .padding(.horizontal, 16)
+
+                                VStack(spacing: 10) {
+                                    ForEach(store.loadedEditions) { ed in
+                                        Button(action: {
+                                            if selectedEditionIDs.contains(ed.id) {
+                                                selectedEditionIDs.remove(ed.id)
+                                            } else {
+                                                selectedEditionIDs.insert(ed.id)
+                                            }
+                                        }) {
+                                            HStack(spacing: 12) {
+                                                Image(systemName: selectedEditionIDs.contains(ed.id) ? "checkmark.square.fill" : "square")
+                                                    .font(.system(size: 18))
+                                                    .foregroundStyle(selectedEditionIDs.contains(ed.id) ? .blue : .secondary)
+                                                Text(ed.shortName)
+                                                    .font(.system(size: 16, weight: .medium))
+                                                Spacer()
+                                            }
+                                            .padding(.vertical, 12)
+                                            .padding(.horizontal, 16)
+                                            .background(Color(.systemGray6))
+                                            .cornerRadius(10)
+                                        }
+                                        .buttonStyle(.plain)
+                                        .foregroundStyle(.primary)
                                     }
                                 }
-                                .buttonStyle(.plain)
-                                .foregroundStyle(.primary)
+                                .padding(.horizontal, 16)
                             }
                         }
+                        .padding(.bottom, 24)
                     }
-                    .padding(.horizontal, 8)
                 }
-                .padding(.horizontal, 16)
-                .padding(.vertical, 16)
                 .background(Color(.systemBackground))
-                .frame(maxHeight: .infinity, alignment: .top)
 
                 // 결과 내 검색 checkbox
                 if hasSearched && !results.isEmpty {
