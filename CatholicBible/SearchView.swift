@@ -318,7 +318,9 @@ struct SearchView: View {
                                                 .foregroundStyle(Color.accentColor)
                                         }
                                     }
-                                    Text(hit.text).font(.subheadline).lineLimit(3)
+                                    highlightedText(hit.text, query: query, mode: mode)
+                                        .font(.subheadline)
+                                        .lineLimit(3)
                                 }
                                 .padding(.vertical, 2)
                             }
@@ -1079,6 +1081,46 @@ struct SearchView: View {
                 results = []; hasSearched = false; isSearching = false
             }
         }
+    }
+
+    private func highlightedText(_ text: String, query: String, mode: SearchMode) -> Text {
+        guard !query.isEmpty && mode == .text else {
+            return Text(text)
+        }
+
+        let searchTerm = query.trimmingCharacters(in: .whitespacesAndNewlines)
+            .replacingOccurrences(of: "*", with: "")
+
+        guard !searchTerm.isEmpty else { return Text(text) }
+
+        var result = Text("")
+        let lowercaseText = text.lowercased()
+        let lowercaseSearch = searchTerm.lowercased()
+
+        var currentIndex = 0
+        while let range = lowercaseText.range(of: lowercaseSearch, range: lowercaseText.index(lowercaseText.startIndex, offsetBy: currentIndex)..<lowercaseText.endIndex) {
+            let beforeStartIndex = text.index(text.startIndex, offsetBy: currentIndex)
+            let beforeEndIndex = text.index(text.startIndex, offsetBy: text.distance(from: text.startIndex, to: range.lowerBound))
+
+            if beforeStartIndex < beforeEndIndex {
+                result = result + Text(String(text[beforeStartIndex..<beforeEndIndex]))
+            }
+
+            let matchStartIndex = text.index(text.startIndex, offsetBy: text.distance(from: text.startIndex, to: range.lowerBound))
+            let matchEndIndex = text.index(text.startIndex, offsetBy: text.distance(from: text.startIndex, to: range.upperBound))
+            result = result + Text(String(text[matchStartIndex..<matchEndIndex]))
+                .foregroundStyle(.white)
+                .background(Color.yellow)
+
+            currentIndex = text.distance(from: text.startIndex, to: range.upperBound)
+        }
+
+        if currentIndex < text.count {
+            let remainingStart = text.index(text.startIndex, offsetBy: currentIndex)
+            result = result + Text(String(text[remainingStart...]))
+        }
+
+        return result
     }
 
     private func performSearchAction() {
