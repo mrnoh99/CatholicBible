@@ -245,12 +245,8 @@ struct SearchView: View {
                                         ForEach(referenceSearchHistory, id: \.self) { item in
                                             HStack(spacing: 4) {
                                                 Button {
-                                                    if let components = parseReferenceString(item) {
-                                                        selectedBookID = components.0
-                                                        selectedChapter = components.1
-                                                        selectedVerse = components.2
-                                                        runSearch()
-                                                    }
+                                                    query = item
+                                                    parseAndSearch()
                                                 } label: {
                                                     Text(item)
                                                         .lineLimit(1)
@@ -878,25 +874,6 @@ struct SearchView: View {
                 isSearching = false
             }
         }
-    }
-
-    private func parseReferenceString(_ ref: String) -> (String, Int, Int)? {
-        let parts = ref.split(separator: " ")
-        guard parts.count >= 2 else { return nil }
-
-        let bookAbbrev = String(parts[0])
-        let versePart = String(parts[1])
-        let versionParts = versePart.split(separator: ",")
-        guard versionParts.count == 2,
-              let chapter = Int(versionParts[0]),
-              let verse = Int(versionParts[1]) else { return nil }
-
-        for book in Bible.books {
-            if book.abbrev == bookAbbrev {
-                return (book.id, chapter, verse)
-            }
-        }
-        return nil
     }
 
     private func removeFromTextSearchHistory(_ item: String) {
