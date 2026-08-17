@@ -1106,20 +1106,32 @@ struct SearchView: View {
 
         var attributedString = AttributedString(text)
         let lowercaseText = text.lowercased()
-        let lowercaseSearch = searchTerm.lowercased()
 
-        var searchStartIndex = lowercaseText.startIndex
-        while let range = lowercaseText.range(of: lowercaseSearch, range: searchStartIndex..<lowercaseText.endIndex) {
-            let distance = lowercaseText.distance(from: lowercaseText.startIndex, to: range.lowerBound)
-            let length = lowercaseText.distance(from: range.lowerBound, to: range.upperBound)
+        // Extract search terms from the query (handles logical operators)
+        let hasOperators = containsLogicalOperators(searchTerm)
+        let termsToHighlight: [String]
+        if hasOperators {
+            termsToHighlight = extractSearchTerms(from: searchTerm)
+        } else {
+            termsToHighlight = [searchTerm]
+        }
 
-            let attrStart = attributedString.index(attributedString.startIndex, offsetBy: distance)
-            let attrEnd = attributedString.index(attrStart, offsetBy: length)
+        // Highlight all search terms
+        for term in termsToHighlight {
+            let lowerTerm = term.lowercased()
+            var searchStartIndex = lowercaseText.startIndex
+            while let range = lowercaseText.range(of: lowerTerm, range: searchStartIndex..<lowercaseText.endIndex) {
+                let distance = lowercaseText.distance(from: lowercaseText.startIndex, to: range.lowerBound)
+                let length = lowercaseText.distance(from: range.lowerBound, to: range.upperBound)
 
-            attributedString[attrStart..<attrEnd].backgroundColor = .yellow
-            attributedString[attrStart..<attrEnd].foregroundColor = .white
+                let attrStart = attributedString.index(attributedString.startIndex, offsetBy: distance)
+                let attrEnd = attributedString.index(attrStart, offsetBy: length)
 
-            searchStartIndex = range.upperBound
+                attributedString[attrStart..<attrEnd].backgroundColor = .yellow
+                attributedString[attrStart..<attrEnd].foregroundColor = .white
+
+                searchStartIndex = range.upperBound
+            }
         }
 
         return Text(attributedString)
@@ -1147,12 +1159,107 @@ struct SearchView: View {
         }
     }
 
+    private func containsLogicalOperators(_ query: String) -> Bool {
+        query.contains("&&") || query.contains("||") || query.contains("!")
+    }
+
+    private func splitByOperator(_ expression: String, operator: String) -> [String] {
+        var results: [String] = []
+        var current = ""
+        var i = 0
+        let chars = Array(expression)
+        let opChars = Array(operator)
+        let opLen = opChars.count
+
+        while i < chars.count {
+            if i <= chars.count - opLen {
+                let slice = String(chars[i..<(i + opLen)])
+                if slice == operator {
+                    if !current.isEmpty {
+                        results.append(current.trimmingCharacters(in: .whitespaces))
+                    }
+                    current = ""
+                    i += opLen
+                    continue
+                }
+            }
+            current.append(chars[i])
+            i += 1
+        }
+        if !current.isEmpty {
+            results.append(current.trimmingCharacters(in: .whitespaces))
+        }
+        return results
+    }
+
+    private func evaluateLogicalExpression(_ text: String, expression: String) -> Bool {
+        let lowercaseText = text.lowercased()
+        let orParts = splitByOperator(expression, operator: "||")
+
+        // Evaluate OR conditions
+        for orPart in orParts {
+            if evaluateANDExpression(lowercaseText, expression: orPart) {
+                return true
+            }
+        }
+        return false
+    }
+
+    private func evaluateANDExpression(_ text: String, expression: String) -> Bool {
+        let andParts = splitByOperator(expression, operator: "&&")
+
+        // Evaluate AND conditions
+        for andPart in andParts {
+            if !evaluateNOTExpression(text, expression: andPart) {
+                return false
+            }
+        }
+        return true
+    }
+
+    private func evaluateNOTExpression(_ text: String, expression: String) -> Bool {
+        let trimmed = expression.trimmingCharacters(in: .whitespaces)
+        if trimmed.starts(with: "!") {
+            let term = String(trimmed.dropFirst()).trimmingCharacters(in: .whitespaces)
+            return !text.localizedCaseInsensitiveContains(term)
+        } else {
+            return text.localizedCaseInsensitiveContains(trimmed)
+        }
+    }
+
+    private func extractSearchTerms(from expression: String) -> [String] {
+        var terms: [String] = []
+        let components = splitByOperator(expression, operator: "||")
+
+        for component in components {
+            let andTerms = splitByOperator(component, operator: "&&")
+            for term in andTerms {
+                let cleaned = term.trimmingCharacters(in: .whitespaces)
+                    .trimmingCharacters(in: CharacterSet(charactersIn: "!"))
+                    .trimmingCharacters(in: .whitespaces)
+                if !cleaned.isEmpty {
+                    terms.append(cleaned)
+                }
+            }
+        }
+
+        return Array(Set(terms))
+    }
+
     private func performTextSearch(_ text: String, scope: SearchScope) {
         let fullQuery = text
         let isExplicitPartial = fullQuery.starts(with: "*")
         let searchText = isExplicitPartial ? String(fullQuery.dropFirst()) : fullQuery
 
-        guard searchText.count >= 2 else {
+        guard searchText.count >= 1 else {
+            results = []; hasSearched = false; isSearching = false
+            return
+        }
+
+        let hasOperators = containsLogicalOperators(searchText)
+
+        // Validate minimum length only for non-operator queries
+        if !hasOperators && searchText.count < 2 {
             results = []; hasSearched = false; isSearching = false
             return
         }
@@ -1160,7 +1267,11 @@ struct SearchView: View {
         // 검색 결과 내에서 재검색
         if scope == .results {
             let filtered = previousResults.filter { hit in
-                hit.text.localizedCaseInsensitiveContains(searchText)
+                if hasOperators {
+                    return evaluateLogicalExpression(hit.text, expression: searchText)
+                } else {
+                    return hit.text.localizedCaseInsensitiveContains(searchText)
+                }
             }
             results = filtered
             addToTextSearchHistory(searchText)
@@ -1178,12 +1289,47 @@ struct SearchView: View {
         searchTask = Task {
             try? await Task.sleep(for: .milliseconds(300))
             guard !Task.isCancelled else { return }
-            let hits: [SearchHit]
-            if scope == .all {
-                hits = await store.searchAll(searchText, editions: editionsToSearch, mode: .text)
+
+            var hits: [SearchHit] = []
+            if hasOperators {
+                // For logical operator queries, extract search terms and get combined results
+                let terms = extractSearchTerms(from: searchText)
+                var allHits: [SearchHit] = []
+
+                for term in terms {
+                    if scope == .all {
+                        let termHits = await store.searchAll(term, editions: editionsToSearch, mode: .text)
+                        allHits.append(contentsOf: termHits)
+                    } else {
+                        let termHits = await store.search(term, edition: currentEdition, mode: .text)
+                        allHits.append(contentsOf: termHits)
+                    }
+                }
+
+                // Remove duplicates while preserving order
+                var seen = Set<String>()
+                var uniqueHits: [SearchHit] = []
+                for hit in allHits {
+                    let key = "\(hit.editionID)-\(hit.bookID)-\(hit.chapter)-\(hit.verse)"
+                    if !seen.contains(key) {
+                        seen.insert(key)
+                        uniqueHits.append(hit)
+                    }
+                }
+
+                // Filter using logical expression
+                hits = uniqueHits.filter { hit in
+                    evaluateLogicalExpression(hit.text, expression: searchText)
+                }
             } else {
-                hits = await store.search(searchText, edition: currentEdition, mode: .text)
+                // Original behavior for non-operator queries
+                if scope == .all {
+                    hits = await store.searchAll(searchText, editions: editionsToSearch, mode: .text)
+                } else {
+                    hits = await store.search(searchText, edition: currentEdition, mode: .text)
+                }
             }
+
             guard !Task.isCancelled else { return }
             previousResults = hits
             results = hits
