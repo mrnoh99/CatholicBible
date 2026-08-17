@@ -1121,15 +1121,9 @@ struct SearchView: View {
             let lowerTerm = term.lowercased()
             var searchStartIndex = lowercaseText.startIndex
             while let range = lowercaseText.range(of: lowerTerm, range: searchStartIndex..<lowercaseText.endIndex) {
-                let distance = lowercaseText.distance(from: lowercaseText.startIndex, to: range.lowerBound)
-                let length = lowercaseText.distance(from: range.lowerBound, to: range.upperBound)
-
-                if distance >= 0 && length > 0 && distance + length <= text.count {
-                    let attrStart = attributedString.index(attributedString.startIndex, offsetBy: distance)
-                    let attrEnd = attributedString.index(attrStart, offsetBy: length)
-
-                    attributedString[attrStart..<attrEnd].backgroundColor = .yellow
-                    attributedString[attrStart..<attrEnd].foregroundColor = .white
+                if let attrRange = Range(range, in: attributedString) {
+                    attributedString[attrRange].backgroundColor = .yellow
+                    attributedString[attrRange].foregroundColor = .white
                 }
 
                 searchStartIndex = range.upperBound
