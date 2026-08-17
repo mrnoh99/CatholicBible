@@ -882,6 +882,7 @@ struct SearchView: View {
             let editionsToSearch = scope == .all ? store.loadedEditions : [currentEdition]
             let chapter = selectedChapter
             let verse = selectedVerse
+            let bookID = selectedBookID
 
             searchTask = Task {
                 try? await Task.sleep(for: .milliseconds(300))
@@ -889,26 +890,29 @@ struct SearchView: View {
                 isSearching = true
 
                 var hits: [SearchHit] = []
-                guard let book = Bible.book(selectedBookID) else { return }
+                guard let book = Bible.book(bookID) else { return }
                 for edition in editionsToSearch {
                     let verses = store.verses(edition: edition, book: book, chapter: chapter)
                     if verse == 0 {
                         // verse = 0 means all verses in chapter
                         for hit in verses {
-                            hits.append(SearchHit(editionID: edition.id, bookID: selectedBookID, chapter: chapter, verse: hit.number,
+                            hits.append(SearchHit(editionID: edition.id, bookID: bookID, chapter: chapter, verse: hit.number,
                                                  text: hit.text))
                         }
                     } else if let hit = verses.first(where: { $0.number == verse }) {
-                        hits.append(SearchHit(editionID: edition.id, bookID: selectedBookID, chapter: chapter, verse: verse,
+                        hits.append(SearchHit(editionID: edition.id, bookID: bookID, chapter: chapter, verse: verse,
                                              text: hit.text))
                     }
                 }
 
                 guard !Task.isCancelled else { return }
-                addToReferenceSearchHistory()
                 results = hits
                 hasSearched = true
                 isSearching = false
+
+                await MainActor.run {
+                    addToReferenceSearchHistory(bookID: bookID, chapter: chapter, verse: verse)
+                }
             }
         }
     }
@@ -964,10 +968,14 @@ struct SearchView: View {
         }
     }
 
-    private func addToReferenceSearchHistory() {
-        guard !selectedBookID.isEmpty else { return }
-        if let book = Bible.book(selectedBookID) {
-            let reference = "\(book.abbrev) \(selectedChapter),\(selectedVerse)"
+    private func addToReferenceSearchHistory(bookID: String = "", chapter: Int = 0, verse: Int = 0) {
+        let targetBookID = bookID.isEmpty ? selectedBookID : bookID
+        let targetChapter = chapter == 0 ? selectedChapter : chapter
+        let targetVerse = verse == 0 ? selectedVerse : verse
+
+        guard !targetBookID.isEmpty else { return }
+        if let book = Bible.book(targetBookID) {
+            let reference = "\(book.abbrev) \(targetChapter),\(targetVerse)"
             referenceSearchHistory.removeAll { $0 == reference }
             referenceSearchHistory.insert(reference, at: 0)
             if referenceSearchHistory.count > 20 {
