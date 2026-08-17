@@ -1189,7 +1189,7 @@ struct SearchView: View {
 
     private func evaluateLogicalExpression(_ text: String, expression: String) -> Bool {
         let lowercaseText = text.lowercased()
-        let orParts = splitByOperator(expression, operator: "||")
+        let orParts = splitByOperator(expression, opStr: "||")
 
         // Evaluate OR conditions
         for orPart in orParts {
@@ -1201,7 +1201,7 @@ struct SearchView: View {
     }
 
     private func evaluateANDExpression(_ text: String, expression: String) -> Bool {
-        let andParts = splitByOperator(expression, operator: "&&")
+        let andParts = splitByOperator(expression, opStr: "&&")
 
         // Evaluate AND conditions
         for andPart in andParts {
@@ -1224,10 +1224,10 @@ struct SearchView: View {
 
     private func extractSearchTerms(from expression: String) -> [String] {
         var terms: [String] = []
-        let components = splitByOperator(expression, operator: "||")
+        let components = splitByOperator(expression, opStr: "||")
 
         for component in components {
-            let andTerms = splitByOperator(component, operator: "&&")
+            let andTerms = splitByOperator(component, opStr: "&&")
             for term in andTerms {
                 let cleaned = term.trimmingCharacters(in: .whitespaces)
                     .trimmingCharacters(in: CharacterSet(charactersIn: "!"))
