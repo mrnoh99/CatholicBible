@@ -334,7 +334,6 @@ struct SearchView: View {
                     results = referenceResults
                     previousResults = referencePreviousResults
                     hasSearched = referenceHasSearched
-                    query = ""
                 }
 
                 lastSearchMode = newMode.rawValue
