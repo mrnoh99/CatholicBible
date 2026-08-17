@@ -491,10 +491,28 @@ struct SearchView: View {
             return
         }
 
+        // Try to parse as reference format first
         if let references = parseReferences(input) {
+            // Successfully parsed as reference - switch to reference mode if needed
+            if mode != .reference {
+                mode = .reference
+            }
             searchMultipleReferences(references, query: input)
         } else {
-            results = []; hasSearched = true; isSearching = false
+            // Failed to parse as reference - try as text search
+            if mode != .text {
+                mode = .text
+            }
+            // Remove book name prefix if present (e.g., "1사무 사랑" → "사랑")
+            let searchText = input.split(separator: " ", maxSplits: 1).map(String.init)
+            let textToSearch = searchText.count > 1 ? searchText[1] : input
+
+            if textToSearch.count >= 2 {
+                query = textToSearch
+                runSearch()
+            } else {
+                results = []; hasSearched = true; isSearching = false
+            }
         }
     }
 
@@ -940,10 +958,27 @@ struct SearchView: View {
                 isSearching = false
             }
         } else {
-            // For reference mode, re-parse query and use scope
+            // For reference mode, check if input is reference format or text search
             let input = query.trimmingCharacters(in: .whitespacesAndNewlines)
             if !input.isEmpty {
-                parseAndSearch()
+                // Try to parse as reference - if fails, switch to text mode
+                if parseReferences(input) != nil {
+                    // Valid reference format - continue with reference search
+                    parseAndSearch()
+                } else {
+                    // Not a reference format - switch to text mode and search
+                    mode = .text
+                    let isExplicitPartial = input.starts(with: "*")
+                    let text = isExplicitPartial ? String(input.dropFirst()) : input
+
+                    if text.count >= 2 {
+                        query = text
+                        // Recursively call runSearch to execute text search
+                        runSearch()
+                    } else {
+                        results = []; hasSearched = true; isSearching = false
+                    }
+                }
             } else if !selectedBookID.isEmpty {
                 // If query is empty but selectedBookID is set, search with current selection
                 let currentEdition = readingState.selectedEdition
