@@ -246,8 +246,8 @@ struct SearchView: View {
                                         ForEach(referenceSearchHistory, id: \.self) { item in
                                             HStack(spacing: 4) {
                                                 Button {
-                                                    if let parts = item.split(separator: " ", maxSplits: 1).map(String.init),
-                                                       parts.count >= 2 {
+                                                    let parts = item.split(separator: " ", maxSplits: 1).map(String.init)
+                                                    if parts.count >= 2 {
                                                         let bookAbbrev = parts[0]
                                                         let reference = parts[1]
 
