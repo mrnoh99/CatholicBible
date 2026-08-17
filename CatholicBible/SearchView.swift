@@ -748,6 +748,13 @@ struct SearchView: View {
             if let bookID = findBookByAbbrev(bookName, digitPrefix: digitPrefix) {
                 return (bookID, chapter, verse)
             }
+
+            // Try with common suffixes if not found
+            for suffix in ["기", "서", "편", "복음"] {
+                if let bookID = findBookByAbbrev(bookName + suffix, digitPrefix: digitPrefix) {
+                    return (bookID, chapter, verse)
+                }
+            }
         }
 
         return nil
