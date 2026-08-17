@@ -402,9 +402,19 @@ struct SearchView: View {
                 guard let book = Bible.book(bookID) else { continue }
                 for edition in editionsToSearch {
                     let verses = store.verses(edition: edition, book: book, chapter: chapter)
-                    if let hit = verses.first(where: { $0.number == verse }) {
-                        hits.append(SearchHit(editionID: edition.id, bookID: bookID, chapter: chapter, verse: verse,
-                                             text: hit.text))
+
+                    if verse == 0 {
+                        // verse = 0 means all verses in chapter
+                        for hit in verses {
+                            hits.append(SearchHit(editionID: edition.id, bookID: bookID, chapter: chapter, verse: hit.number,
+                                                 text: hit.text))
+                        }
+                    } else {
+                        // specific verse
+                        if let hit = verses.first(where: { $0.number == verse }) {
+                            hits.append(SearchHit(editionID: edition.id, bookID: bookID, chapter: chapter, verse: verse,
+                                                 text: hit.text))
+                        }
                     }
                 }
             }
@@ -462,7 +472,7 @@ struct SearchView: View {
 
             if let (_, c, v) = parseReference(beforeRange) {
                 startChapter = c
-                startVerse = v
+                startVerse = v == 0 ? 1 : v // verse = 0 means all verses, use 1 as start
             } else if let c = extractChapterNumber(from: beforeRange) {
                 startChapter = c
                 startVerse = 1
@@ -500,13 +510,13 @@ struct SearchView: View {
                 if let parsedChapter = Int(afterRange), parsedChapter > 0 {
                     endChapter = parsedChapter
                     endVerse = 999
-                } else if let (_, c, v) = parseReference(afterRange), c > 0, v > 0 {
+                } else if let (_, c, v) = parseReference(afterRange), c > 0 {
                     endChapter = c
-                    endVerse = v
+                    endVerse = v == 0 ? 999 : v // verse = 0 means all verses, use 999 as end
                 } else if let book = Bible.book(bookID),
-                          let (_, c, v) = parseReference(book.abbrev + " " + afterRange), c > 0, v > 0 {
+                          let (_, c, v) = parseReference(book.abbrev + " " + afterRange), c > 0 {
                     endChapter = c
-                    endVerse = v
+                    endVerse = v == 0 ? 999 : v
                 } else if let c = extractChapterNumber(from: afterRange), c > 0 {
                     endChapter = c
                     endVerse = 999
@@ -550,18 +560,36 @@ struct SearchView: View {
 
     private func parseReference(_ input: String) -> (String, Int, Int)? {
         let versePattern = try! NSRegularExpression(pattern: "(\\d{1,3})\\s*[,:;]\\s*(\\d{1,3})", options: [])
+        let chapterOnlyPattern = try! NSRegularExpression(pattern: "(\\d{1,3})\\s*$", options: [])
         let verseRange = NSRange(input.startIndex..<input.endIndex, in: input)
 
-        guard let verseMatch = versePattern.firstMatch(in: input, range: verseRange),
-              let chapterRange = Range(verseMatch.range(at: 1), in: input),
-              let verseStrRange = Range(verseMatch.range(at: 2), in: input),
-              let chapter = Int(input[chapterRange]),
-              let verse = Int(input[verseStrRange]),
-              let versePart = Range(verseMatch.range, in: input) else {
+        var chapter = 0, verse = 0, versePart: Range<String.Index>?
+
+        // Try to match verse pattern (e.g., "13,13" or "13:13")
+        if let verseMatch = versePattern.firstMatch(in: input, range: verseRange),
+           let chapterRange = Range(verseMatch.range(at: 1), in: input),
+           let verseStrRange = Range(verseMatch.range(at: 2), in: input),
+           let ch = Int(input[chapterRange]),
+           let v = Int(input[verseStrRange]),
+           let vPart = Range(verseMatch.range, in: input) {
+            chapter = ch
+            verse = v
+            versePart = vPart
+        }
+        // Try to match chapter-only pattern (e.g., "13")
+        else if let chapterMatch = chapterOnlyPattern.firstMatch(in: input, range: verseRange),
+                let chapterRange = Range(chapterMatch.range(at: 1), in: input),
+                let ch = Int(input[chapterRange]),
+                let cPart = Range(chapterMatch.range, in: input) {
+            chapter = ch
+            verse = 0 // 0 indicates "all verses in chapter"
+            versePart = cPart
+        } else {
             return nil
         }
 
-        let bookPartRaw = String(input[..<versePart.lowerBound]).trimmingCharacters(in: .whitespaces)
+        guard let versionPart = versePart else { return nil }
+        let bookPartRaw = String(input[..<versionPart.lowerBound]).trimmingCharacters(in: .whitespaces)
         guard !bookPartRaw.isEmpty else { return nil }
 
         // Extract book name (handles both "코린" and "1코린" formats)
