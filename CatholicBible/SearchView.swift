@@ -980,7 +980,6 @@ struct SearchView: View {
             let currentEdition = readingState.selectedEdition
             let editionsToSearch = store.loadedEditions
             let scope = scope
-            let matchMode = matchMode
             searchTask = Task {
                 try? await Task.sleep(for: .milliseconds(300))
                 guard !Task.isCancelled else { return }
