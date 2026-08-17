@@ -91,9 +91,6 @@ struct SearchView: View {
     @State private var textSearchHistory: [String] = []
     @State private var referenceSearchHistory: [String] = []
 
-    // 책 선택을 위한 입력 필드
-    @State private var bookSearchText = ""
-
     var body: some View {
         let edition = readingState.selectedEdition
 
@@ -193,93 +190,14 @@ struct SearchView: View {
                 }
 
                 if mode == .reference {
-                    let selectedBook = Bible.book(selectedBookID)
-                    let maxVerse: Int = {
-                        guard let book = selectedBook else { return 1 }
-                        return store.verses(edition: readingState.selectedEdition, book: book, chapter: selectedChapter)
-                            .map { $0.number }.max() ?? 1
-                    }()
-
-                    let filteredBooks = bookSearchText.isEmpty ? [] : Bible.books.filter { book in
-                        book.name.localizedCaseInsensitiveContains(bookSearchText) ||
-                        book.shortName.localizedCaseInsensitiveContains(bookSearchText) ||
-                        book.abbrev.localizedCaseInsensitiveContains(bookSearchText)
-                    }
-
                     VStack(spacing: 8) {
-                        HStack {
-                            TextField("책 이름으로 검색", text: $bookSearchText)
-                                .textFieldStyle(.roundedBorder)
-                                .onChange(of: selectedBookID) { _, newValue in
-                                    if let book = Bible.book(newValue) {
-                                        bookSearchText = book.name
-                                        selectedChapter = 1
-                                        selectedVerse = 1
-                                        runSearch()
-                                    }
-                                }
-
-                            if !bookSearchText.isEmpty {
-                                Button(action: { bookSearchText = "" }) {
-                                    Image(systemName: "xmark.circle.fill")
-                                        .foregroundStyle(.secondary)
-                                }
-                            }
-                        }
-
-                        if !filteredBooks.isEmpty {
-                            VStack(alignment: .leading, spacing: 4) {
-                                ForEach(filteredBooks) { book in
-                                    Button(action: {
-                                        selectedBookID = book.id
-                                        bookSearchText = book.name
-                                    }) {
-                                        HStack {
-                                            VStack(alignment: .leading, spacing: 2) {
-                                                Text(book.name)
-                                                    .font(.subheadline.weight(.semibold))
-                                                Text(book.abbrev)
-                                                    .font(.caption)
-                                                    .foregroundStyle(.secondary)
-                                            }
-                                            Spacer()
-                                        }
-                                        .contentShape(Rectangle())
-                                        .foregroundStyle(.primary)
-                                    }
-                                    .padding(.vertical, 8)
-                                    .padding(.horizontal, 12)
-
-                                    if book.id != filteredBooks.last?.id {
-                                        Divider()
-                                    }
-                                }
-                            }
-                            .background(Color(.systemBackground))
-                            .cornerRadius(8)
-                            .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.gray.opacity(0.2), lineWidth: 1))
-                        }
-
-                        HStack(spacing: 8) {
-                            if let book = selectedBook {
-                                Picker("장", selection: $selectedChapter) {
-                                    ForEach(1...book.chapterCount, id: \.self) { chapter in
-                                        Text("\(chapter)").tag(chapter)
-                                    }
-                                }
-                                .onChange(of: selectedChapter) { _, _ in
-                                    selectedVerse = 1
-                                    runSearch()
-                                }
-
-                                Picker("절", selection: $selectedVerse) {
-                                    ForEach(1...max(maxVerse, 1), id: \.self) { verse in
-                                        Text("\(verse)").tag(verse)
-                                    }
-                                }
-                                .onChange(of: selectedVerse) { _, _ in runSearch() }
-                            }
-                        }
+                        Text("형식: 책 장,절 (예: 1코린 13,13, 마태 5,7-10)")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .padding(.horizontal)
+                    }
+                    .padding(.vertical, 8)
+                }
 
                         if !referenceSearchHistory.isEmpty {
                             VStack(alignment: .leading, spacing: 6) {
@@ -423,7 +341,6 @@ struct SearchView: View {
                     textPreviousResults = previousResults
                     textHasSearched = hasSearched
                     textMatchMode = matchMode
-                    bookSearchText = ""
                 } else {
                     referenceBookID = selectedBookID
                     referenceChapter = selectedChapter
@@ -450,12 +367,6 @@ struct SearchView: View {
                     results = referenceResults
                     previousResults = referencePreviousResults
                     hasSearched = referenceHasSearched
-                    // reference mode로 들어올 때 bookSearchText 설정
-                    if let book = Bible.book(referenceBookID) {
-                        bookSearchText = book.name
-                    } else {
-                        bookSearchText = ""
-                    }
                 }
 
                 lastSearchMode = newMode.rawValue
