@@ -389,20 +389,21 @@ struct SearchView: View {
                 let input = query.trimmingCharacters(in: .whitespacesAndNewlines)
                 guard !input.isEmpty else { return }
 
-                print("[DEBUG] onSubmit: input='\(input)'")
+                print("[DEBUG] onSubmit: input='\(input)', currentScope=\(scope)")
 
                 // Auto-detect format and execute search directly
                 if let references = parseReferences(input) {
                     print("[DEBUG] parseReferences succeeded: \(references)")
                     // It's a reference format - execute reference search
                     mode = .reference
-                    performReferenceSearch(references)
+                    performReferenceSearch(references, scope: scope)
                 } else {
                     print("[DEBUG] parseReferences failed, treating as text search")
-                    // It's text search - reset scope and execute
+                    // It's text search - reset scope to .current and execute
                     mode = .text
-                    scope = .current
-                    performTextSearch(input)
+                    let textSearchScope = SearchScope.current
+                    performTextSearch(input, scope: textSearchScope)
+                    scope = textSearchScope
                 }
             }
             .onChange(of: query) { _, newQuery in
@@ -1138,7 +1139,7 @@ struct SearchView: View {
         }
     }
 
-    private func performTextSearch(_ text: String) {
+    private func performTextSearch(_ text: String, scope: SearchScope) {
         let fullQuery = text
         let isExplicitPartial = fullQuery.starts(with: "*")
         let searchText = isExplicitPartial ? String(fullQuery.dropFirst()) : fullQuery
@@ -1184,7 +1185,7 @@ struct SearchView: View {
         }
     }
 
-    private func performReferenceSearch(_ references: [(String, Int, Int)]) {
+    private func performReferenceSearch(_ references: [(String, Int, Int)], scope: SearchScope) {
         searchTask?.cancel()
         isSearching = true
         results = []
