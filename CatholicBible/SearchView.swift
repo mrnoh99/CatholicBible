@@ -1175,7 +1175,7 @@ struct SearchView: View {
             let filtered = previousResults.filter { hit in
                 hit.text.localizedCaseInsensitiveContains(searchText)
             }
-            results = isExplicitPartial ? filtered : filterByMatchMode(filtered, query: searchText)
+            results = filtered
             addToTextSearchHistory(searchText)
             hasSearched = true
             isSearching = false
@@ -1199,7 +1199,7 @@ struct SearchView: View {
             }
             guard !Task.isCancelled else { return }
             previousResults = hits
-            results = isExplicitPartial ? hits : filterByMatchMode(hits, query: searchText)
+            results = hits
             addToTextSearchHistory(searchText)
             hasSearched = true
             isSearching = false
