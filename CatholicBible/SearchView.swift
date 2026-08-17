@@ -384,26 +384,12 @@ struct SearchView: View {
             .navigationBarTitleDisplayMode(.inline)
             .searchable(text: $query, placement: .navigationBarDrawer(displayMode: .always),
                         prompt: mode == .text ? "단어 검색 (예: 사랑 OR *사랑)" : "장절 검색 (예: 1코린 13,13)")
-            .onSubmit {
-                // Only search when user presses enter (complete input)
-                let input = query.trimmingCharacters(in: .whitespacesAndNewlines)
-                guard !input.isEmpty else { return }
-
-                print("[DEBUG] onSubmit: input='\(input)', currentScope=\(scope)")
-
-                // Auto-detect format and execute search directly
-                if let references = parseReferences(input) {
-                    print("[DEBUG] parseReferences succeeded: \(references)")
-                    // It's a reference format - execute reference search
-                    mode = .reference
-                    performReferenceSearch(references, scope: scope)
-                } else {
-                    print("[DEBUG] parseReferences failed, treating as text search")
-                    // It's text search - reset scope to .current and execute
-                    mode = .text
-                    let textSearchScope = SearchScope.current
-                    performTextSearch(input, scope: textSearchScope)
-                    scope = textSearchScope
+            .toolbar {
+                ToolbarItem(placement: .primaryAction) {
+                    Button(action: performSearchAction) {
+                        Image(systemName: "magnifyingglass")
+                    }
+                    .disabled(query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                 }
             }
             .onChange(of: query) { _, newQuery in
@@ -1136,6 +1122,28 @@ struct SearchView: View {
             } else {
                 results = []; hasSearched = false; isSearching = false
             }
+        }
+    }
+
+    private func performSearchAction() {
+        let input = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !input.isEmpty else { return }
+
+        print("[DEBUG] performSearchAction: input='\(input)', currentScope=\(scope)")
+
+        // Auto-detect format and execute search directly
+        if let references = parseReferences(input) {
+            print("[DEBUG] parseReferences succeeded: \(references)")
+            // It's a reference format - execute reference search
+            mode = .reference
+            performReferenceSearch(references, scope: scope)
+        } else {
+            print("[DEBUG] parseReferences failed, treating as text search")
+            // It's text search - reset scope to .current and execute
+            mode = .text
+            let textSearchScope = SearchScope.current
+            performTextSearch(input, scope: textSearchScope)
+            scope = textSearchScope
         }
     }
 
