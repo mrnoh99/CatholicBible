@@ -857,46 +857,50 @@ struct SearchView: View {
                 isSearching = false
             }
         } else {
-            guard !selectedBookID.isEmpty else {
-                results = []; hasSearched = false; isSearching = false
-                return
-            }
+            // For reference mode, re-parse query and use scope
+            let input = query.trimmingCharacters(in: .whitespacesAndNewlines)
+            if !input.isEmpty {
+                parseAndSearch()
+            } else if !selectedBookID.isEmpty {
+                // If query is empty but selectedBookID is set, search with current selection
+                let currentEdition = readingState.selectedEdition
+                let editionsToSearch = scope == .all ? store.loadedEditions : [currentEdition]
+                let chapter = selectedChapter
+                let verse = selectedVerse
+                let bookID = selectedBookID
 
-            let currentEdition = readingState.selectedEdition
-            let editionsToSearch = scope == .all ? store.loadedEditions : [currentEdition]
-            let chapter = selectedChapter
-            let verse = selectedVerse
-            let bookID = selectedBookID
+                searchTask = Task {
+                    try? await Task.sleep(for: .milliseconds(300))
+                    guard !Task.isCancelled else { return }
+                    isSearching = true
 
-            searchTask = Task {
-                try? await Task.sleep(for: .milliseconds(300))
-                guard !Task.isCancelled else { return }
-                isSearching = true
-
-                var hits: [SearchHit] = []
-                guard let book = Bible.book(bookID) else { return }
-                for edition in editionsToSearch {
-                    let verses = store.verses(edition: edition, book: book, chapter: chapter)
-                    if verse == 0 {
-                        // verse = 0 means all verses in chapter
-                        for hit in verses {
-                            hits.append(SearchHit(editionID: edition.id, bookID: bookID, chapter: chapter, verse: hit.number,
+                    var hits: [SearchHit] = []
+                    guard let book = Bible.book(bookID) else { return }
+                    for edition in editionsToSearch {
+                        let verses = store.verses(edition: edition, book: book, chapter: chapter)
+                        if verse == 0 {
+                            // verse = 0 means all verses in chapter
+                            for hit in verses {
+                                hits.append(SearchHit(editionID: edition.id, bookID: bookID, chapter: chapter, verse: hit.number,
+                                                     text: hit.text))
+                            }
+                        } else if let hit = verses.first(where: { $0.number == verse }) {
+                            hits.append(SearchHit(editionID: edition.id, bookID: bookID, chapter: chapter, verse: verse,
                                                  text: hit.text))
                         }
-                    } else if let hit = verses.first(where: { $0.number == verse }) {
-                        hits.append(SearchHit(editionID: edition.id, bookID: bookID, chapter: chapter, verse: verse,
-                                             text: hit.text))
+                    }
+
+                    guard !Task.isCancelled else { return }
+                    results = hits
+                    hasSearched = true
+                    isSearching = false
+
+                    await MainActor.run {
+                        addToReferenceSearchHistory(bookID: bookID, chapter: chapter, verse: verse)
                     }
                 }
-
-                guard !Task.isCancelled else { return }
-                results = hits
-                hasSearched = true
-                isSearching = false
-
-                await MainActor.run {
-                    addToReferenceSearchHistory(bookID: bookID, chapter: chapter, verse: verse)
-                }
+            } else {
+                results = []; hasSearched = false; isSearching = false
             }
         }
     }
