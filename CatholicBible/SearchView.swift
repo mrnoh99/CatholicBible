@@ -582,6 +582,51 @@ struct SearchView: View {
                 } else {
                     allReferences.append(single)
                 }
+            } else {
+                // Try direct parsing for formats like "1사무 5,5" or "창세기 1,2"
+                let pattern = try! NSRegularExpression(
+                    pattern: "^(\\d?)([가-힣]+)\\s+(\\d+)[.,;]?(\\d+)?$",
+                    options: []
+                )
+                let nsRange = NSRange(rangeStr.startIndex..<rangeStr.endIndex, in: rangeStr)
+
+                if let match = pattern.firstMatch(in: rangeStr, range: nsRange) {
+                    if let digitRange = Range(match.range(at: 1), in: rangeStr),
+                       let bookRange = Range(match.range(at: 2), in: rangeStr),
+                       let chapterRange = Range(match.range(at: 3), in: rangeStr) {
+
+                        let digit = String(rangeStr[digitRange])
+                        let bookName = String(rangeStr[bookRange])
+                        let chapter = Int(String(rangeStr[chapterRange])) ?? 0
+
+                        var verse = 0
+                        if match.range(at: 4).location != NSNotFound,
+                           let verseRange = Range(match.range(at: 4), in: rangeStr) {
+                            verse = Int(String(rangeStr[verseRange])) ?? 0
+                        }
+
+                        if chapter > 0 {
+                            // Try to find book using findBookByAbbrev
+                            var bookID: String?
+                            if let id = findBookByAbbrev(bookName, digitPrefix: digit) {
+                                bookID = id
+                            } else {
+                                // Try with common suffixes
+                                for suffix in ["기", "서", "편", "복음"] {
+                                    if let id = findBookByAbbrev(bookName + suffix, digitPrefix: digit) {
+                                        bookID = id
+                                        break
+                                    }
+                                }
+                            }
+
+                            if let bookID = bookID {
+                                currentBookID = bookID
+                                allReferences.append((bookID, chapter, verse))
+                            }
+                        }
+                    }
+                }
             }
         }
 
@@ -990,22 +1035,33 @@ struct SearchView: View {
             // For reference mode, check if input is reference format or text search
             let input = query.trimmingCharacters(in: .whitespacesAndNewlines)
             if !input.isEmpty {
-                // Try to parse as reference - if fails, switch to text mode
+                // Try to parse as reference - if fails, check if it looks like incomplete reference
                 if parseReferences(input) != nil {
                     // Valid reference format - continue with reference search
                     parseAndSearch()
                 } else {
-                    // Not a reference format - switch to text mode and search
-                    mode = .text
-                    let isExplicitPartial = input.starts(with: "*")
-                    let text = isExplicitPartial ? String(input.dropFirst()) : input
+                    // Check if input looks like it could be a reference (starts with Korean or digit)
+                    let firstChar = input.first!
+                    let looksLikeReference = firstChar.isNumber || ("가"..."힣").contains(firstChar)
 
-                    if text.count >= 2 {
-                        query = text
-                        // Recursively call runSearch to execute text search
-                        runSearch()
+                    if looksLikeReference {
+                        // Looks like incomplete reference, keep reference mode and don't search
+                        results = []
+                        hasSearched = false
+                        isSearching = false
                     } else {
-                        results = []; hasSearched = true; isSearching = false
+                        // Definitely not a reference format - switch to text mode and search
+                        mode = .text
+                        let isExplicitPartial = input.starts(with: "*")
+                        let text = isExplicitPartial ? String(input.dropFirst()) : input
+
+                        if text.count >= 2 {
+                            query = text
+                            // Recursively call runSearch to execute text search
+                            runSearch()
+                        } else {
+                            results = []; hasSearched = true; isSearching = false
+                        }
                     }
                 }
             } else if !selectedBookID.isEmpty {
