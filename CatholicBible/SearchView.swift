@@ -389,12 +389,16 @@ struct SearchView: View {
                 let input = query.trimmingCharacters(in: .whitespacesAndNewlines)
                 guard !input.isEmpty else { return }
 
+                print("[DEBUG] onSubmit: input='\(input)'")
+
                 // Auto-detect format and execute search directly
                 if let references = parseReferences(input) {
+                    print("[DEBUG] parseReferences succeeded: \(references)")
                     // It's a reference format - execute reference search
                     mode = .reference
                     performReferenceSearch(references)
                 } else {
+                    print("[DEBUG] parseReferences failed, treating as text search")
                     // It's text search - reset scope and execute
                     mode = .text
                     scope = .current
