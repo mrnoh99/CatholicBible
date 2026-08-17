@@ -1124,11 +1124,16 @@ struct SearchView: View {
                 let distance = lowercaseText.distance(from: lowercaseText.startIndex, to: range.lowerBound)
                 let length = lowercaseText.distance(from: range.lowerBound, to: range.upperBound)
 
-                let attrStart = attributedString.index(attributedString.startIndex, offsetBy: distance)
-                let attrEnd = attributedString.index(attrStart, offsetBy: length)
+                if distance >= 0 && length > 0 {
+                    let startIdx = attributedString.startIndex
+                    let attrStart = attributedString.index(startIdx, offsetBy: distance, limitedBy: attributedString.endIndex) ?? attributedString.endIndex
+                    let attrEnd = attributedString.index(attrStart, offsetBy: length, limitedBy: attributedString.endIndex) ?? attributedString.endIndex
 
-                attributedString[attrStart..<attrEnd].backgroundColor = .yellow
-                attributedString[attrStart..<attrEnd].foregroundColor = .white
+                    if attrStart < attrEnd {
+                        attributedString[attrStart..<attrEnd].backgroundColor = .yellow
+                        attributedString[attrStart..<attrEnd].foregroundColor = .white
+                    }
+                }
 
                 searchStartIndex = range.upperBound
             }
