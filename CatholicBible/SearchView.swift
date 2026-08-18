@@ -1439,6 +1439,15 @@ struct SearchView: View {
 
             // 주석 검색
             if scope == .commentary {
+                // 주석 판본이 선택되지 않았으면 자동 선택
+                if selectedAnnotationEditionIDs.isEmpty {
+                    for edition in store.loadedEditions {
+                        if hasAnnotationSupport(edition) {
+                            selectedAnnotationEditionIDs.insert(edition.id)
+                        }
+                    }
+                }
+
                 let editionsToSearch = store.loadedEditions.filter { edition in
                     selectedAnnotationEditionIDs.contains(edition.id)
                 }
