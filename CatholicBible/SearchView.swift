@@ -143,7 +143,7 @@ struct SearchView: View {
                 lastSearchScope = newScope.rawValue
                 runSearch()
             }
-            .onChange(of: mode, handleModeChange)
+            .onChange(of: mode, perform: handleModeChange)
             .onAppear {
                 loadSearchHistory()
                 if query.isEmpty && !lastSearchQuery.isEmpty {
