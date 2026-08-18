@@ -306,7 +306,6 @@ struct SearchView: View {
                                                 }
                                             }
                                         }
-                                    }
                                 }
 
                                 Divider()
