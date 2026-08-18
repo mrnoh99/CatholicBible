@@ -108,6 +108,10 @@ struct SearchView: View {
     @State private var showVersePicker = false
 
     var body: some View {
+        mainContent
+    }
+
+    private var mainContent: some View {
         NavigationStack {
             VStack(spacing: 0) {
                 ScrollView {
@@ -129,7 +133,6 @@ struct SearchView: View {
                 }
             }
             .onChange(of: query) { _, newQuery in
-                // Only save query history, don't search
                 if !newQuery.isEmpty {
                     lastSearchQuery = newQuery
                 }
@@ -138,53 +141,7 @@ struct SearchView: View {
                 lastSearchScope = newScope.rawValue
                 runSearch()
             }
-            .onChange(of: mode) { _, newMode in
-                // 현재 mode의 상태 저장
-                if mode == .text {
-                    textQuery = query
-                    textResults = results
-                    textPreviousResults = previousResults
-                    textHasSearched = hasSearched
-                    bookSearchText = ""
-                    referenceQueryInput = ""
-                } else {
-                    referenceBookID = selectedBookID
-                    referenceChapter = selectedChapter
-                    referenceVerse = selectedVerse
-                    referenceSavedReferenceList = referenceList
-                    referenceResults = results
-                    referencePreviousResults = previousResults
-                    referenceHasSearched = hasSearched
-                }
-
-                // 새 mode의 상태 복원
-                if newMode == .text {
-                    query = textQuery
-                    results = textResults
-                    previousResults = textPreviousResults
-                    hasSearched = textHasSearched
-                    selectedBookID = ""
-                    selectedChapter = 1
-                    selectedVerse = 1
-                    referenceList = []
-                } else {
-                    selectedBookID = referenceBookID
-                    selectedChapter = referenceChapter
-                    selectedVerse = referenceVerse
-                    referenceList = referenceSavedReferenceList
-                    results = referenceResults
-                    previousResults = referencePreviousResults
-                    hasSearched = referenceHasSearched
-                    // Set bookSearchText when entering reference mode
-                    if let book = Bible.book(referenceBookID) {
-                        bookSearchText = book.name
-                    } else {
-                        bookSearchText = ""
-                    }
-                }
-
-                lastSearchMode = newMode.rawValue
-            }
+            .onChange(of: mode, handleModeChange)
             .onAppear {
                 loadSearchHistory()
                 if query.isEmpty && !lastSearchQuery.isEmpty {
@@ -194,51 +151,171 @@ struct SearchView: View {
                 }
             }
             .sheet(isPresented: $showBookPicker) {
-                NavigationStack {
-                    List(Bible.books, id: \.id) { book in
+                bookPickerSheet
+            }
+            .sheet(isPresented: $showChapterPicker) {
+                chapterPickerSheet
+            }
+            .sheet(isPresented: $showVersePicker) {
+                versePickerSheet
+            }
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("닫기") { dismiss() }
+                }
+            }
+        }
+    }
+
+    private func handleModeChange(_ newMode: SearchMode) {
+        if mode == .text {
+            textQuery = query
+            textResults = results
+            textPreviousResults = previousResults
+            textHasSearched = hasSearched
+            bookSearchText = ""
+            referenceQueryInput = ""
+        } else {
+            referenceBookID = selectedBookID
+            referenceChapter = selectedChapter
+            referenceVerse = selectedVerse
+            referenceSavedReferenceList = referenceList
+            referenceResults = results
+            referencePreviousResults = previousResults
+            referenceHasSearched = hasSearched
+        }
+
+        if newMode == .text {
+            query = textQuery
+            results = textResults
+            previousResults = textPreviousResults
+            hasSearched = textHasSearched
+            selectedBookID = ""
+            selectedChapter = 1
+            selectedVerse = 1
+            referenceList = []
+        } else {
+            selectedBookID = referenceBookID
+            selectedChapter = referenceChapter
+            selectedVerse = referenceVerse
+            referenceList = referenceSavedReferenceList
+            results = referenceResults
+            previousResults = referencePreviousResults
+            hasSearched = referenceHasSearched
+            if let book = Bible.book(referenceBookID) {
+                bookSearchText = book.name
+            } else {
+                bookSearchText = ""
+            }
+        }
+
+        lastSearchMode = newMode.rawValue
+    }
+
+    private var bookPickerSheet: some View {
+        NavigationStack {
+            List(Bible.books, id: \.id) { book in
+                Button(action: {
+                    selectedBookID = book.id
+                    selectedChapter = 1
+                    selectedVerse = 1
+                    updateReferenceQuery()
+                    showBookPicker = false
+                }) {
+                    HStack {
+                        Text(book.name)
+                        Spacer()
+                        if book.id == selectedBookID {
+                            Image(systemName: "checkmark")
+                                .foregroundStyle(.blue)
+                        }
+                    }
+                }
+                .foregroundStyle(.primary)
+            }
+            .navigationTitle("책 선택")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("완료") { showBookPicker = false }
+                }
+            }
+        }
+    }
+
+    private var chapterPickerSheet: some View {
+        NavigationStack {
+            let selectedBook = selectedBookID.isEmpty ? nil : Bible.book(selectedBookID)
+            let maxChapters = selectedBook?.chapterCount ?? 0
+
+            if maxChapters > 0 {
+                List(1...maxChapters, id: \.self) { chapter in
+                    Button(action: {
+                        selectedChapter = chapter
+                        updateReferenceQuery()
+                        showChapterPicker = false
+                    }) {
+                        HStack {
+                            Text("\(chapter)장")
+                            Spacer()
+                            if chapter == selectedChapter {
+                                Image(systemName: "checkmark")
+                                    .foregroundStyle(.blue)
+                            }
+                        }
+                    }
+                    .foregroundStyle(.primary)
+                }
+            } else {
+                Text("책을 먼저 선택하세요")
+                    .foregroundStyle(.secondary)
+            }
+
+            .navigationTitle("장 선택")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("완료") { showChapterPicker = false }
+                }
+            }
+        }
+    }
+
+    private var versePickerSheet: some View {
+        NavigationStack {
+            let selectedBook = selectedBookID.isEmpty ? nil : Bible.book(selectedBookID)
+            let versesInChapter = selectedBook.map { store.verses(edition: readingState.selectedEdition, book: $0, chapter: selectedChapter) } ?? []
+            let maxVerses = versesInChapter.count
+
+            Group {
+                if maxVerses > 0 {
+                    List {
                         Button(action: {
-                            selectedBookID = book.id
-                            selectedChapter = 1
-                            selectedVerse = 1
+                            selectedVerse = 0
                             updateReferenceQuery()
-                            showBookPicker = false
+                            showVersePicker = false
                         }) {
                             HStack {
-                                Text(book.name)
+                                Text("전체")
                                 Spacer()
-                                if book.id == selectedBookID {
+                                if selectedVerse == 0 {
                                     Image(systemName: "checkmark")
                                         .foregroundStyle(.blue)
                                 }
                             }
                         }
                         .foregroundStyle(.primary)
-                    }
-                    .navigationTitle("책 선택")
-                    .navigationBarTitleDisplayMode(.inline)
-                    .toolbar {
-                        ToolbarItem(placement: .topBarTrailing) {
-                            Button("완료") { showBookPicker = false }
-                        }
-                    }
-                }
-            }
-            .sheet(isPresented: $showChapterPicker) {
-                NavigationStack {
-                    let selectedBook = selectedBookID.isEmpty ? nil : Bible.book(selectedBookID)
-                    let maxChapters = selectedBook?.chapterCount ?? 0
 
-                    if maxChapters > 0 {
-                        List(1...maxChapters, id: \.self) { chapter in
+                        ForEach(1...maxVerses, id: \.self) { verse in
                             Button(action: {
-                                selectedChapter = chapter
+                                selectedVerse = verse
                                 updateReferenceQuery()
-                                showChapterPicker = false
+                                showVersePicker = false
                             }) {
                                 HStack {
-                                    Text("\(chapter)장")
+                                    Text("\(verse)절")
                                     Spacer()
-                                    if chapter == selectedChapter {
+                                    if verse == selectedVerse {
                                         Image(systemName: "checkmark")
                                             .foregroundStyle(.blue)
                                     }
@@ -246,80 +323,17 @@ struct SearchView: View {
                             }
                             .foregroundStyle(.primary)
                         }
-                    } else {
-                        Text("책을 먼저 선택하세요")
-                            .foregroundStyle(.secondary)
                     }
-
-                    .navigationTitle("장 선택")
-                    .navigationBarTitleDisplayMode(.inline)
-                    .toolbar {
-                        ToolbarItem(placement: .topBarTrailing) {
-                            Button("완료") { showChapterPicker = false }
-                        }
-                    }
+                } else {
+                    Text("책과 장을 먼저 선택하세요")
+                        .foregroundStyle(.secondary)
                 }
             }
-            .sheet(isPresented: $showVersePicker) {
-                NavigationStack {
-                    let selectedBook = selectedBookID.isEmpty ? nil : Bible.book(selectedBookID)
-                    let versesInChapter = selectedBook.map { store.verses(edition: readingState.selectedEdition, book: $0, chapter: selectedChapter) } ?? []
-                    let maxVerses = versesInChapter.count
-
-                    Group {
-                        if maxVerses > 0 {
-                            List {
-                                Button(action: {
-                                    selectedVerse = 0
-                                    updateReferenceQuery()
-                                    showVersePicker = false
-                                }) {
-                                    HStack {
-                                        Text("전체")
-                                        Spacer()
-                                        if selectedVerse == 0 {
-                                            Image(systemName: "checkmark")
-                                                .foregroundStyle(.blue)
-                                        }
-                                    }
-                                }
-                                .foregroundStyle(.primary)
-
-                                ForEach(1...maxVerses, id: \.self) { verse in
-                                    Button(action: {
-                                        selectedVerse = verse
-                                        updateReferenceQuery()
-                                        showVersePicker = false
-                                    }) {
-                                        HStack {
-                                            Text("\(verse)절")
-                                            Spacer()
-                                            if verse == selectedVerse {
-                                                Image(systemName: "checkmark")
-                                                    .foregroundStyle(.blue)
-                                            }
-                                        }
-                                    }
-                                    .foregroundStyle(.primary)
-                                }
-                            }
-                        } else {
-                            Text("책과 장을 먼저 선택하세요")
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-                    .navigationTitle("절 선택")
-                    .navigationBarTitleDisplayMode(.inline)
-                    .toolbar {
-                        ToolbarItem(placement: .topBarTrailing) {
-                            Button("완료") { showVersePicker = false }
-                        }
-                    }
-                }
-            }
+            .navigationTitle("절 선택")
+            .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button("닫기") { dismiss() }
+                    Button("완료") { showVersePicker = false }
                 }
             }
         }
