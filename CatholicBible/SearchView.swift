@@ -221,7 +221,6 @@ struct SearchView: View {
                     selectedBookID = book.id
                     selectedChapter = 1
                     selectedVerse = 1
-                    updateReferenceQuery()
                     showBookPicker = false
                 }) {
                     HStack {
@@ -255,7 +254,6 @@ struct SearchView: View {
                     List(1...maxChapters, id: \.self) { chapter in
                         Button(action: {
                             selectedChapter = chapter
-                            updateReferenceQuery()
                             showChapterPicker = false
                         }) {
                             HStack {
@@ -295,7 +293,6 @@ struct SearchView: View {
                     List {
                         Button(action: {
                             selectedVerse = 0
-                            updateReferenceQuery()
                             showVersePicker = false
                         }) {
                             HStack {
@@ -312,7 +309,6 @@ struct SearchView: View {
                         ForEach(1...maxVerses, id: \.self) { verse in
                             Button(action: {
                                 selectedVerse = verse
-                                updateReferenceQuery()
                                 showVersePicker = false
                             }) {
                                 HStack {
@@ -1923,16 +1919,15 @@ struct SearchView: View {
     private func addReferenceToList() {
         guard !selectedBookID.isEmpty, let book = Bible.book(selectedBookID) else { return }
 
-        let newRef = "\(book.abbrev) \(selectedChapter),\(selectedVerse)"
-
-        // query에 추가
-        if query.isEmpty {
-            query = newRef
-        } else {
-            query += "; " + newRef
+        // 중복 확인 - 같은 책/장/절이 이미 리스트에 있으면 추가하지 않음
+        if referenceList.contains(where: { $0.bookID == selectedBookID && $0.chapter == selectedChapter && $0.verse == selectedVerse }) {
+            return
         }
 
         referenceList.append((bookID: selectedBookID, chapter: selectedChapter, verse: selectedVerse))
+
+        // query 업데이트
+        updateReferenceQueryFromList()
 
         // 선택 초기화하여 새로운 참조 선택 준비
         selectedBookID = ""
