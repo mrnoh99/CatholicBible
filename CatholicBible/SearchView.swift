@@ -1232,8 +1232,8 @@ struct SearchView: View {
                     selectedEditionIDs.contains(edition.id) && selectedAnnotationEditionIDs.contains(edition.id)
                 }
             } else if selectedEditionIDs.isEmpty {
-                // 선택된 판본이 없으면 현재 판본만 사용
-                editionsToSearch = [readingState.selectedEdition]
+                // 선택된 판본이 없으면 검색 결과 없음
+                editionsToSearch = []
             } else {
                 // 선택된 판본들 사용
                 editionsToSearch = store.loadedEditions.filter { selectedEditionIDs.contains($0.id) }
@@ -1282,8 +1282,8 @@ struct SearchView: View {
                             selectedEditionIDs.contains(edition.id) && selectedAnnotationEditionIDs.contains(edition.id)
                         }
                     } else if selectedEditionIDs.isEmpty {
-                        // 선택된 판본이 없으면 현재 판본만 사용
-                        editionsToSearch = [readingState.selectedEdition]
+                        // 선택된 판본이 없으면 검색 결과 없음
+                        editionsToSearch = []
                     } else {
                         // 선택된 판본들 사용
                         editionsToSearch = store.loadedEditions.filter { selectedEditionIDs.contains($0.id) }
@@ -1325,14 +1325,13 @@ struct SearchView: View {
                     }
             } else if !selectedBookID.isEmpty {
                 // If query is empty but selectedBookID is set, search with current selection
-                let currentEdition = readingState.selectedEdition
                 let editionsToSearch: [Edition]
                 if scope == .commentary {
                     editionsToSearch = store.loadedEditions.filter { edition in
                         selectedEditionIDs.contains(edition.id) && selectedAnnotationEditionIDs.contains(edition.id)
                     }
                 } else if selectedEditionIDs.isEmpty {
-                    editionsToSearch = [currentEdition]
+                    editionsToSearch = []
                 } else {
                     editionsToSearch = store.loadedEditions.filter { selectedEditionIDs.contains($0.id) }
                 }
