@@ -365,14 +365,18 @@ struct SearchView: View {
                             hasSearched ? "결과 없음" : "구절 검색",
                             systemImage: "magnifyingglass",
                             description: Text(hasSearched
-                                ? (mode == .text
-                                   ? "'\(query)'이(가) 들어간 구절을 찾지 못했습니다."
-                                   : "해당 장절을 찾지 못했습니다.")
-                                : (mode == .text
-                                   ? (scope == .current
-                                      ? "두 글자 이상 입력하면 「\(edition.shortName)」에서 찾습니다."
-                                      : "두 글자 이상 입력하면 수록된 모든 판본에서 찾습니다.")
-                                   : "책, 장, 절을 지정하세요."))
+                                ? (scope == .commentary
+                                   ? "'\(query)'이(가) 들어간 주석을 찾지 못했습니다."
+                                   : (mode == .text
+                                      ? "'\(query)'이(가) 들어간 구절을 찾지 못했습니다."
+                                      : "해당 장절을 찾지 못했습니다."))
+                                : (scope == .commentary
+                                   ? "주석 판본을 선택하고 두 글자 이상 입력하세요."
+                                   : (mode == .text
+                                      ? (scope == .current
+                                         ? "두 글자 이상 입력하면 「\(edition.shortName)」에서 찾습니다."
+                                         : "두 글자 이상 입력하면 수록된 모든 판본에서 찾습니다.")
+                                      : "책, 장, 절을 지정하세요.")))
                         )
                     } else {
                         VStack(spacing: 0) {
@@ -858,9 +862,8 @@ struct SearchView: View {
     }
 
     private func hasAnnotationSupport(_ edition: Edition) -> Bool {
-        // 주석성경 또는 NABRE 판본만 주석 기능 지원
-        let name = edition.name.lowercased()
-        return name.contains("주석") || name.contains("nabre")
+        // KNB주석, NABRE 판본만 주석 기능 지원
+        return edition.id == "knbnotes" || edition.id == "nabre"
     }
 
     private func open(_ hit: SearchHit) {
