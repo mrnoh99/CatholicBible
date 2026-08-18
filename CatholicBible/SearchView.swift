@@ -492,24 +492,51 @@ struct SearchView: View {
 
                                 // 장절 입력 (책 선택 후)
                                 if !selectedBookID.isEmpty {
-                                    VStack(alignment: .leading, spacing: 8) {
-                                        Text("장")
-                                            .font(.caption.weight(.semibold))
-                                            .foregroundStyle(.secondary)
-                                        Stepper("", value: $selectedChapter, in: 1...200)
-                                            .labelsHidden()
-                                        Text("\(selectedChapter)")
-                                            .font(.body.weight(.semibold))
+                                    VStack(alignment: .center, spacing: 16) {
+                                        if let book = Bible.book(selectedBookID) {
+                                            Text(book.name)
+                                                .font(.system(size: 24, weight: .semibold))
+                                                .foregroundStyle(.primary)
+                                        }
 
-                                        Text("절")
-                                            .font(.caption.weight(.semibold))
-                                            .foregroundStyle(.secondary)
-                                            .padding(.top, 12)
-                                        Stepper("", value: $selectedVerse, in: 0...999)
-                                            .labelsHidden()
-                                        Text("\(selectedVerse == 0 ? "전체" : String(selectedVerse))")
-                                            .font(.body.weight(.semibold))
+                                        HStack(spacing: 40) {
+                                            VStack(spacing: 12) {
+                                                Button(action: { selectedChapter = max(1, selectedChapter - 1) }) {
+                                                    Image(systemName: "chevron.up")
+                                                        .font(.system(size: 18, weight: .semibold))
+                                                        .foregroundStyle(.blue)
+                                                }
+                                                Text("\(selectedChapter)◇")
+                                                    .font(.system(size: 32, weight: .bold))
+                                                    .foregroundStyle(.primary)
+                                                    .frame(minWidth: 60)
+                                                Button(action: { selectedChapter = min(200, selectedChapter + 1) }) {
+                                                    Image(systemName: "chevron.down")
+                                                        .font(.system(size: 18, weight: .semibold))
+                                                        .foregroundStyle(.blue)
+                                                }
+                                            }
+
+                                            VStack(spacing: 12) {
+                                                Button(action: { selectedVerse = max(0, selectedVerse - 1) }) {
+                                                    Image(systemName: "chevron.up")
+                                                        .font(.system(size: 18, weight: .semibold))
+                                                        .foregroundStyle(.blue)
+                                                }
+                                                Text("\(selectedVerse == 0 ? "전체" : String(selectedVerse))◇")
+                                                    .font(.system(size: 32, weight: .bold))
+                                                    .foregroundStyle(.primary)
+                                                    .frame(minWidth: 60)
+                                                Button(action: { selectedVerse = min(999, selectedVerse + 1) }) {
+                                                    Image(systemName: "chevron.down")
+                                                        .font(.system(size: 18, weight: .semibold))
+                                                        .foregroundStyle(.blue)
+                                                }
+                                            }
+                                        }
                                     }
+                                    .frame(maxWidth: .infinity)
+                                    .padding(.vertical, 20)
 
                                     Divider()
                                 }
