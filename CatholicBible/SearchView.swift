@@ -761,47 +761,48 @@ struct SearchView: View {
                     let versesInChapter = selectedBook.map { store.verses(edition: readingState.selectedEdition, book: $0, chapter: selectedChapter) } ?? []
                     let maxVerses = versesInChapter.count
 
-                    if maxVerses > 0 {
-                        List {
-                            Button(action: {
-                                selectedVerse = 0
-                                updateReferenceQuery()
-                                showVersePicker = false
-                            }) {
-                                HStack {
-                                    Text("전체")
-                                    Spacer()
-                                    if selectedVerse == 0 {
-                                        Image(systemName: "checkmark")
-                                            .foregroundStyle(.blue)
-                                    }
-                                }
-                            }
-                            .foregroundStyle(.primary)
-
-                            ForEach(1...maxVerses, id: \.self) { verse in
+                    Group {
+                        if maxVerses > 0 {
+                            List {
                                 Button(action: {
-                                    selectedVerse = verse
+                                    selectedVerse = 0
                                     updateReferenceQuery()
                                     showVersePicker = false
                                 }) {
                                     HStack {
-                                        Text("\(verse)절")
+                                        Text("전체")
                                         Spacer()
-                                        if verse == selectedVerse {
+                                        if selectedVerse == 0 {
                                             Image(systemName: "checkmark")
                                                 .foregroundStyle(.blue)
                                         }
                                     }
                                 }
                                 .foregroundStyle(.primary)
-                            }
-                        }
-                    } else {
-                        Text("책과 장을 먼저 선택하세요")
-                            .foregroundStyle(.secondary)
-                    }
 
+                                ForEach(1...maxVerses, id: \.self) { verse in
+                                    Button(action: {
+                                        selectedVerse = verse
+                                        updateReferenceQuery()
+                                        showVersePicker = false
+                                    }) {
+                                        HStack {
+                                            Text("\(verse)절")
+                                            Spacer()
+                                            if verse == selectedVerse {
+                                                Image(systemName: "checkmark")
+                                                    .foregroundStyle(.blue)
+                                            }
+                                        }
+                                    }
+                                    .foregroundStyle(.primary)
+                                }
+                            }
+                        } else {
+                            Text("책과 장을 먼저 선택하세요")
+                                .foregroundStyle(.secondary)
+                        }
+                    }
                     .navigationTitle("절 선택")
                     .navigationBarTitleDisplayMode(.inline)
                     .toolbar {
