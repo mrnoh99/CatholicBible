@@ -83,6 +83,7 @@ struct SearchView: View {
 
     // 검색 조건 시트
     @State private var showSearchConditions = false
+    @State private var showResults = false
 
     var body: some View {
         let edition = readingState.selectedEdition
@@ -96,12 +97,12 @@ struct SearchView: View {
                             ZStack(alignment: .topTrailing) {
                                 TextField(mode == .text ? "단어 검색 (예: 사랑)" : "장절 검색 (예: 1코린 13,13)",
                                           text: $query)
-                                    .font(.system(size: 32, weight: .semibold))
-                                    .padding(.vertical, 18)
-                                    .padding(.horizontal, 18)
+                                    .font(.system(size: 18, weight: .medium))
+                                    .padding(.vertical, 12)
+                                    .padding(.horizontal, 16)
                                     .submitLabel(.search)
                                     .onSubmit(performSearchAction)
-                                    .frame(minHeight: 80)
+                                    .frame(minHeight: 44)
 
                                 if !query.isEmpty {
                                     Button(action: { query = "" }) {
@@ -124,17 +125,20 @@ struct SearchView: View {
 
                         // 검색 및 삭제 버튼
                         HStack(spacing: 16) {
-                            Button(action: performSearchAction) {
+                            Button(action: {
+                                performSearchAction()
+                                showResults = true
+                            }) {
                                 HStack {
                                     Image(systemName: "magnifyingglass")
                                     Text("검색")
                                 }
                                 .frame(maxWidth: .infinity)
-                                .padding(.vertical, 18)
-                                .font(.system(size: 20, weight: .bold))
+                                .padding(.vertical, 12)
+                                .font(.system(size: 16, weight: .semibold))
                                 .background(Color.blue)
                                 .foregroundStyle(.white)
-                                .cornerRadius(15)
+                                .cornerRadius(12)
                             }
                             .disabled(query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
 
@@ -146,37 +150,20 @@ struct SearchView: View {
                                     if scope == .results {
                                         scope = .current
                                     }
+                                    showResults = false
                                 }) {
                                     Image(systemName: "trash")
-                                        .font(.system(size: 22))
+                                        .font(.system(size: 16))
                                 }
-                                .frame(width: 60, height: 60)
+                                .frame(width: 44, height: 44)
                                 .background(Color(.systemRed))
                                 .foregroundStyle(.white)
-                                .cornerRadius(15)
+                                .cornerRadius(10)
                             }
                         }
                         .padding(.horizontal, 16)
 
                         Divider().padding(.horizontal, 16)
-
-                        // 결과 내 검색 checkbox
-                        if hasSearched && !results.isEmpty {
-                            HStack(spacing: 8) {
-                                Button(action: { scope = scope == .results ? .current : .results }) {
-                                    HStack(spacing: 6) {
-                                        Image(systemName: scope == .results ? "checkmark.square.fill" : "square")
-                                            .font(.body)
-                                            .foregroundStyle(scope == .results ? .blue : .secondary)
-                                        Text("결과내 검색")
-                                            .font(.caption)
-                                    }
-                                }
-                                .buttonStyle(.plain)
-                                Spacer()
-                            }
-                            .padding(.horizontal).padding(.vertical, 4)
-                        }
 
                         // 최근 검색 (텍스트 검색용)
                         if mode == .text && !textSearchHistory.isEmpty {
@@ -201,6 +188,7 @@ struct SearchView: View {
                                                 Button {
                                                     query = item
                                                     runSearch()
+                                                    showResults = true
                                                 } label: {
                                                     Text(item)
                                                         .lineLimit(1)
@@ -260,6 +248,7 @@ struct SearchView: View {
                                                                     selectedChapter = chapter
                                                                     selectedVerse = verse
                                                                     runSearch()
+                                                                    showResults = true
                                                                 }
                                                             }
                                                         }
@@ -287,26 +276,52 @@ struct SearchView: View {
                             }
                             .padding(.vertical, 8)
                         }
+                    }
+                }
+            }
+            .navigationTitle("검색")
+            .navigationBarTitleDisplayMode(.inline)
+            .sheet(isPresented: $showResults) {
+                NavigationStack {
+                    ZStack {
+                        if isSearching {
+                            ProgressView("찾는 중 …")
+                        } else if results.isEmpty {
+                            ContentUnavailableView(
+                                hasSearched ? "결과 없음" : "구절 검색",
+                                systemImage: "magnifyingglass",
+                                description: Text(hasSearched
+                                    ? (mode == .text
+                                       ? "'\(query)'이(가) 들어간 구절을 찾지 못했습니다."
+                                       : "해당 장절을 찾지 못했습니다.")
+                                    : (mode == .text
+                                       ? (scope == .current
+                                          ? "두 글자 이상 입력하면 「\(edition.shortName)」에서 찾습니다."
+                                          : "두 글자 이상 입력하면 수록된 모든 판본에서 찾습니다.")
+                                       : "책, 장, 절을 지정하세요."))
+                            )
+                        } else {
+                            VStack(spacing: 0) {
+                                // 결과 내 검색 checkbox
+                                if hasSearched && !results.isEmpty {
+                                    HStack(spacing: 8) {
+                                        Button(action: { scope = scope == .results ? .current : .results }) {
+                                            HStack(spacing: 6) {
+                                                Image(systemName: scope == .results ? "checkmark.square.fill" : "square")
+                                                    .font(.body)
+                                                    .foregroundStyle(scope == .results ? .blue : .secondary)
+                                                Text("결과내 검색")
+                                                    .font(.caption)
+                                            }
+                                        }
+                                        .buttonStyle(.plain)
+                                        Spacer()
+                                    }
+                                    .padding(.horizontal).padding(.vertical, 8)
 
-                        // 검색 결과
-                        Group {
-                            if isSearching {
-                                ProgressView("찾는 중 …").frame(maxWidth: .infinity, maxHeight: .infinity)
-                            } else if results.isEmpty {
-                                ContentUnavailableView(
-                                    hasSearched ? "결과 없음" : "구절 검색",
-                                    systemImage: "magnifyingglass",
-                                    description: Text(hasSearched
-                                        ? (mode == .text
-                                           ? "’\(query)’이(가) 들어간 구절을 찾지 못했습니다."
-                                           : "해당 장절을 찾지 못했습니다.")
-                                        : (mode == .text
-                                           ? (scope == .current
-                                              ? "두 글자 이상 입력하면 「\(edition.shortName)」에서 찾습니다."
-                                              : "두 글자 이상 입력하면 수록된 모든 판본에서 찾습니다.")
-                                           : "책, 장, 절을 지정하세요."))
-                                )
-                            } else {
+                                    Divider()
+                                }
+
                                 List(results) { hit in
                                     Button {
                                         open(hit)
@@ -336,10 +351,15 @@ struct SearchView: View {
                             }
                         }
                     }
+                    .navigationTitle("검색 결과 (\(results.count)개)")
+                    .navigationBarTitleDisplayMode(.inline)
+                    .toolbar {
+                        ToolbarItem(placement: .topBarTrailing) {
+                            Button("닫기") { showResults = false }
+                        }
+                    }
                 }
             }
-            .navigationTitle(results.isEmpty ? "검색" : "검색 (\(results.count)개)")
-            .navigationBarTitleDisplayMode(.inline)
             .onChange(of: query) { _, newQuery in
                 // Only save query history, don't search
                 if !newQuery.isEmpty {
