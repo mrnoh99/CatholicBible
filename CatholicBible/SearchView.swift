@@ -1097,16 +1097,18 @@ struct SearchView: View {
                 return
             }
 
-            let currentEdition = readingState.selectedEdition
+            // 선택된 판본들로만 검색
             let editionsToSearch: [Edition]
             if scope == .commentary {
                 editionsToSearch = store.loadedEditions.filter { edition in
                     selectedEditionIDs.contains(edition.id) && selectedAnnotationEditionIDs.contains(edition.id)
                 }
-            } else if scope == .all {
-                editionsToSearch = store.loadedEditions.filter { selectedEditionIDs.contains($0.id) }
+            } else if selectedEditionIDs.isEmpty {
+                // 선택된 판본이 없으면 현재 판본만 사용
+                editionsToSearch = [readingState.selectedEdition]
             } else {
-                editionsToSearch = [currentEdition]
+                // 선택된 판본들 사용
+                editionsToSearch = store.loadedEditions.filter { selectedEditionIDs.contains($0.id) }
             }
 
             searchTask = Task {
@@ -1135,16 +1137,18 @@ struct SearchView: View {
                     // Directly call searchMultipleReferences with proper scope handling
                     searchTask?.cancel()
 
-                    let currentEdition = readingState.selectedEdition
+                    // 선택된 판본들로만 검색
                     let editionsToSearch: [Edition]
                     if scope == .commentary {
                         editionsToSearch = store.loadedEditions.filter { edition in
                             selectedEditionIDs.contains(edition.id) && selectedAnnotationEditionIDs.contains(edition.id)
                         }
-                    } else if scope == .all {
-                        editionsToSearch = store.loadedEditions.filter { selectedEditionIDs.contains($0.id) }
+                    } else if selectedEditionIDs.isEmpty {
+                        // 선택된 판본이 없으면 현재 판본만 사용
+                        editionsToSearch = [readingState.selectedEdition]
                     } else {
-                        editionsToSearch = [currentEdition]
+                        // 선택된 판본들 사용
+                        editionsToSearch = store.loadedEditions.filter { selectedEditionIDs.contains($0.id) }
                     }
 
                     searchTask = Task {
