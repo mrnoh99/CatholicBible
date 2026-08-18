@@ -180,60 +180,54 @@ struct SearchView: View {
 
                             // 책 선택 및 장절 입력 (장절 모드일 때만)
                             if mode == .reference {
-                                VStack(alignment: .leading, spacing: 8) {
-                                    Text("장절 찾기")
-                                        .font(.caption.weight(.semibold))
-                                        .foregroundStyle(.secondary)
+                                HStack(spacing: 12) {
+                                    // 책 선택
+                                    Picker("책", selection: $selectedBookID) {
+                                        Text("책 선택").tag("")
+                                        ForEach(Bible.books) { book in
+                                            Text(book.name).tag(book.id)
+                                        }
+                                    }
+                                    .pickerStyle(.menu)
+                                    .frame(maxWidth: .infinity)
 
-                                    HStack(spacing: 12) {
-                                        // 책 선택
-                                        Picker("책", selection: $selectedBookID) {
-                                            Text("책 선택").tag("")
-                                            ForEach(Bible.books) { book in
-                                                Text(book.name).tag(book.id)
+                                    // 장절 휠 (책 선택 후)
+                                    if !selectedBookID.isEmpty {
+                                        // 장 선택
+                                        VStack(spacing: 4) {
+                                            Button(action: { selectedChapter = max(1, selectedChapter - 1) }) {
+                                                Image(systemName: "chevron.up")
+                                                    .font(.system(size: 12, weight: .semibold))
+                                                    .foregroundStyle(.blue)
+                                            }
+                                            Text("\(selectedChapter)")
+                                                .font(.system(size: 16, weight: .semibold))
+                                                .foregroundStyle(.primary)
+                                            Button(action: { selectedChapter = min(200, selectedChapter + 1) }) {
+                                                Image(systemName: "chevron.down")
+                                                    .font(.system(size: 12, weight: .semibold))
+                                                    .foregroundStyle(.blue)
                                             }
                                         }
-                                        .pickerStyle(.menu)
                                         .frame(maxWidth: .infinity)
 
-                                        // 장절 휠 (책 선택 후)
-                                        if !selectedBookID.isEmpty {
-                                            // 장 선택
-                                            VStack(spacing: 4) {
-                                                Button(action: { selectedChapter = max(1, selectedChapter - 1) }) {
-                                                    Image(systemName: "chevron.up")
-                                                        .font(.system(size: 12, weight: .semibold))
-                                                        .foregroundStyle(.blue)
-                                                }
-                                                Text("\(selectedChapter)")
-                                                    .font(.system(size: 16, weight: .semibold))
-                                                    .foregroundStyle(.primary)
-                                                Button(action: { selectedChapter = min(200, selectedChapter + 1) }) {
-                                                    Image(systemName: "chevron.down")
-                                                        .font(.system(size: 12, weight: .semibold))
-                                                        .foregroundStyle(.blue)
-                                                }
+                                        // 절 선택
+                                        VStack(spacing: 4) {
+                                            Button(action: { selectedVerse = max(0, selectedVerse - 1) }) {
+                                                Image(systemName: "chevron.up")
+                                                    .font(.system(size: 12, weight: .semibold))
+                                                    .foregroundStyle(.blue)
                                             }
-                                            .frame(maxWidth: .infinity)
-
-                                            // 절 선택
-                                            VStack(spacing: 4) {
-                                                Button(action: { selectedVerse = max(0, selectedVerse - 1) }) {
-                                                    Image(systemName: "chevron.up")
-                                                        .font(.system(size: 12, weight: .semibold))
-                                                        .foregroundStyle(.blue)
-                                                }
-                                                Text(selectedVerse == 0 ? "전체" : String(selectedVerse))
-                                                    .font(.system(size: 16, weight: .semibold))
-                                                    .foregroundStyle(.primary)
-                                                Button(action: { selectedVerse = min(999, selectedVerse + 1) }) {
-                                                    Image(systemName: "chevron.down")
-                                                        .font(.system(size: 12, weight: .semibold))
-                                                        .foregroundStyle(.blue)
-                                                }
+                                            Text(selectedVerse == 0 ? "전체" : String(selectedVerse))
+                                                .font(.system(size: 16, weight: .semibold))
+                                                .foregroundStyle(.primary)
+                                            Button(action: { selectedVerse = min(999, selectedVerse + 1) }) {
+                                                Image(systemName: "chevron.down")
+                                                    .font(.system(size: 12, weight: .semibold))
+                                                    .foregroundStyle(.blue)
                                             }
-                                            .frame(maxWidth: .infinity)
                                         }
+                                        .frame(maxWidth: .infinity)
                                     }
                                 }
 
