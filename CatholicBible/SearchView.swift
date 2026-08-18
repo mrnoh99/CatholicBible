@@ -675,9 +675,6 @@ struct SearchView: View {
             }
             .onAppear {
                 loadSearchHistory()
-                if selectedEditionIDs.isEmpty {
-                    selectedEditionIDs = Set(store.loadedEditions.map { $0.id })
-                }
                 if query.isEmpty && !lastSearchQuery.isEmpty {
                     query = lastSearchQuery
                     scope = SearchScope(rawValue: lastSearchScope) ?? .current
