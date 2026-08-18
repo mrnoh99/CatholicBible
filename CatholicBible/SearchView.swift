@@ -141,6 +141,14 @@ struct SearchView: View {
             }
             .onChange(of: scope) { _, newScope in
                 lastSearchScope = newScope.rawValue
+                // 주석 스코프 선택 시 자동으로 주석 판본 선택
+                if newScope == .commentary && selectedAnnotationEditionIDs.isEmpty {
+                    for edition in store.loadedEditions {
+                        if hasAnnotationSupport(edition) {
+                            selectedAnnotationEditionIDs.insert(edition.id)
+                        }
+                    }
+                }
                 runSearch()
             }
             .onChange(of: mode, perform: handleModeChange)
