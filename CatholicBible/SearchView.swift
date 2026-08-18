@@ -406,7 +406,7 @@ struct SearchView: View {
                                                     Text(reference(for: hit))
                                                         .font(.caption.weight(.semibold))
                                                         .foregroundStyle(Color.accentColor)
-                                                    if scope == .all, let ed = Editions.edition(hit.editionID) {
+                                                    if let ed = Editions.edition(hit.editionID) {
                                                         Text(ed.shortName)
                                                             .font(.caption2.weight(.semibold))
                                                             .padding(.horizontal, 6).padding(.vertical, 2)
