@@ -1631,20 +1631,24 @@ struct SearchView: View {
             return
         }
 
+        // 판본 선택 확인
+        guard !selectedEditionIDs.isEmpty else {
+            results = []; hasSearched = true; isSearching = false
+            return
+        }
+
         isSearching = true
         results = []
 
-        let currentEdition = readingState.selectedEdition
         let editionsToSearch: [Edition]
         if scope == .commentary {
             // 주석 검색: 주석 포함이 활성화된 판본만 검색
             editionsToSearch = store.loadedEditions.filter { edition in
                 selectedEditionIDs.contains(edition.id) && selectedAnnotationEditionIDs.contains(edition.id)
             }
-        } else if scope == .all {
-            editionsToSearch = store.loadedEditions.filter { selectedEditionIDs.contains($0.id) }
         } else {
-            editionsToSearch = [currentEdition]
+            // scope == .all 또는 .current: 선택된 판본들 사용
+            editionsToSearch = store.loadedEditions.filter { selectedEditionIDs.contains($0.id) }
         }
 
         searchTask = Task {
@@ -1658,11 +1662,11 @@ struct SearchView: View {
                 var allHits: [SearchHit] = []
 
                 for term in terms {
-                    if scope == .all || scope == .commentary {
+                    if editionsToSearch.count > 1 {
                         let termHits = await store.searchAll(term, editions: editionsToSearch, mode: .text)
                         allHits.append(contentsOf: termHits)
-                    } else {
-                        let termHits = await store.search(term, edition: currentEdition, mode: .text)
+                    } else if let edition = editionsToSearch.first {
+                        let termHits = await store.search(term, edition: edition, mode: .text)
                         allHits.append(contentsOf: termHits)
                     }
                 }
@@ -1684,10 +1688,10 @@ struct SearchView: View {
                 }
             } else {
                 // Original behavior for non-operator queries
-                if scope == .all || scope == .commentary {
+                if editionsToSearch.count > 1 {
                     hits = await store.searchAll(searchText, editions: editionsToSearch, mode: .text)
-                } else {
-                    hits = await store.search(searchText, edition: currentEdition, mode: .text)
+                } else if let edition = editionsToSearch.first {
+                    hits = await store.search(searchText, edition: edition, mode: .text)
                 }
             }
 
@@ -1702,20 +1706,25 @@ struct SearchView: View {
 
     private func performReferenceSearch(_ references: [(String, Int, Int)], scope: SearchScope) {
         searchTask?.cancel()
+
+        // 판본 선택 확인
+        guard !selectedEditionIDs.isEmpty else {
+            results = []; hasSearched = true; isSearching = false
+            return
+        }
+
         isSearching = true
         results = []
 
-        let currentEdition = readingState.selectedEdition
         let editionsToSearch: [Edition]
         if scope == .commentary {
             // 주석 검색: 주석 포함이 활성화된 판본만 검색
             editionsToSearch = store.loadedEditions.filter { edition in
                 selectedEditionIDs.contains(edition.id) && selectedAnnotationEditionIDs.contains(edition.id)
             }
-        } else if scope == .all {
-            editionsToSearch = store.loadedEditions.filter { selectedEditionIDs.contains($0.id) }
         } else {
-            editionsToSearch = [currentEdition]
+            // scope == .all 또는 .current: 선택된 판본들 사용
+            editionsToSearch = store.loadedEditions.filter { selectedEditionIDs.contains($0.id) }
         }
 
         searchTask = Task {
