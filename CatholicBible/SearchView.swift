@@ -1420,6 +1420,10 @@ struct SearchView: View {
                 editionsToSearch = store.loadedEditions.filter { edition in
                     selectedEditionIDs.contains(edition.id) && selectedAnnotationEditionIDs.contains(edition.id)
                 }
+            } else if scope == .current {
+                // 현재 판본으로 검색
+                let currentEdition = readingState.selectedEdition
+                editionsToSearch = store.loadedEditions.filter { $0.id == currentEdition.id }
             } else if selectedEditionIDs.isEmpty {
                 // 선택된 판본이 없으면 로드된 모든 판본 사용
                 editionsToSearch = store.loadedEditions
@@ -1492,6 +1496,10 @@ struct SearchView: View {
                         editionsToSearch = store.loadedEditions.filter { edition in
                             selectedEditionIDs.contains(edition.id) && selectedAnnotationEditionIDs.contains(edition.id)
                         }
+                    } else if scope == .current {
+                        // 현재 판본으로 검색
+                        let currentEdition = readingState.selectedEdition
+                        editionsToSearch = store.loadedEditions.filter { $0.id == currentEdition.id }
                     } else if selectedEditionIDs.isEmpty {
                         // 선택된 판본이 없으면 로드된 모든 판본 사용
                         editionsToSearch = store.loadedEditions
@@ -1541,6 +1549,10 @@ struct SearchView: View {
                     editionsToSearch = store.loadedEditions.filter { edition in
                         selectedEditionIDs.contains(edition.id) && selectedAnnotationEditionIDs.contains(edition.id)
                     }
+                } else if scope == .current {
+                    // 현재 판본으로 검색
+                    let currentEdition = readingState.selectedEdition
+                    editionsToSearch = store.loadedEditions.filter { $0.id == currentEdition.id }
                 } else if selectedEditionIDs.isEmpty {
                     editionsToSearch = store.loadedEditions
                 } else {
