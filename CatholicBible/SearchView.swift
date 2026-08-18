@@ -446,7 +446,7 @@ struct SearchView: View {
                         }
                     }
                 }
-                .navigationTitle("검색 결과 (\(resultFilterQuery.isEmpty ? "\(results.count)/\(totalSearchCount)" : "\(results.filter { $0.text.localizedCaseInsensitiveContains(resultFilterQuery) }.count)")개)")
+                .navigationTitle("검색 결과 (\(totalSearchCount)개)")
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
                     ToolbarItem(placement: .topBarTrailing) {
