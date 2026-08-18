@@ -431,6 +431,111 @@ final class BibleStore {
         return count
     }
 
+    // MARK: - 주석 검색
+
+    /// 주석에서 검색 결과 총 개수 파악
+    func searchAnnotationsCount(_ query: String, edition: Edition) async -> Int {
+        guard !query.isEmpty, let text = editions[edition.id] else { return 0 }
+        let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard trimmed.count >= 2 else { return 0 }
+
+        return await Task.detached(priority: .userInitiated) {
+            var count = 0
+            let terms = trimmed.split(separator: " ").filter { !$0.isEmpty }
+            let order = edition.scope.books.map(\.id)
+
+            for bookID in order {
+                guard let chapters = text.annotations[bookID] else { continue }
+                for (_, verses) in chapters {
+                    for (_, annotationText) in verses {
+                        let matches = terms.allSatisfy { annotationText.localizedStandardContains($0) }
+                        if matches {
+                            count += 1
+                        }
+                    }
+                }
+            }
+            return count
+        }.value
+    }
+
+    /// 주석에서 offset과 limit으로 검색 결과 일부 가져오기
+    func searchAnnotationsWithOffset(_ query: String, edition: Edition, offset: Int = 0, limit: Int = 50) async -> [SearchHit] {
+        guard !query.isEmpty, let text = editions[edition.id] else { return [] }
+        let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard trimmed.count >= 2 else { return [] }
+
+        return await Task.detached(priority: .userInitiated) {
+            var hits: [SearchHit] = []
+            var matched = 0
+            let terms = trimmed.split(separator: " ").filter { !$0.isEmpty }
+            let order = edition.scope.books.map(\.id)
+
+            outer: for bookID in order {
+                guard let chapters = text.annotations[bookID] else { continue }
+                let chapterNumbers = chapters.keys.sorted()
+                for chapterNumber in chapterNumbers {
+                    guard let verses = chapters[chapterNumber] else { continue }
+                    let verseNumbers = verses.keys.sorted()
+                    for verseNumber in verseNumbers {
+                        guard let annotationText = verses[verseNumber] else { continue }
+
+                        let matches = terms.allSatisfy { annotationText.localizedStandardContains($0) }
+                        if matches {
+                            if matched >= offset && hits.count < limit {
+                                hits.append(SearchHit(editionID: edition.id, bookID: bookID,
+                                                    chapter: chapterNumber, verse: verseNumber,
+                                                    text: annotationText))
+                            }
+                            matched += 1
+                            if hits.count >= limit { break outer }
+                        }
+                    }
+                }
+            }
+            return hits
+        }.value
+    }
+
+    /// 여러 판본에서 주석 검색 결과 총 개수 파악
+    func searchAllAnnotationsCount(_ query: String, editions searchEditions: [Edition]) async -> Int {
+        let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard trimmed.count >= 2 else { return 0 }
+        var total = 0
+        for edition in searchEditions {
+            guard editions[edition.id] != nil else { continue }
+            let count = await searchAnnotationsCount(trimmed, edition: edition)
+            total += count
+        }
+        return total
+    }
+
+    /// 여러 판본에서 offset과 limit으로 주석 검색 결과 일부 가져오기
+    func searchAllAnnotationsWithOffset(_ query: String, editions searchEditions: [Edition],
+                                       offset: Int = 0, limit: Int = 50) async -> [SearchHit] {
+        let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard trimmed.count >= 2 else { return [] }
+        var all: [SearchHit] = []
+        var currentOffset = offset
+        let perEdition = limit
+
+        for edition in searchEditions {
+            guard editions[edition.id] != nil else { continue }
+            let hits = await searchAnnotationsWithOffset(trimmed, edition: edition, offset: currentOffset, limit: perEdition)
+            all.append(contentsOf: hits)
+            if hits.count < perEdition {
+                currentOffset = 0
+            } else {
+                currentOffset -= hits.count
+                if currentOffset < 0 {
+                    currentOffset = 0
+                }
+            }
+            if all.count >= limit { break }
+        }
+        return Array(all.prefix(limit))
+    }
+
     /// 본문이 로드된 판본만
     var loadedEditions: [Edition] {
         Editions.all.filter { editions[$0.id] != nil }

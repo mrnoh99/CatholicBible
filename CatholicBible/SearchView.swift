@@ -1374,12 +1374,24 @@ struct SearchView: View {
 
             // 다음 50개 로드
             let hits: [SearchHit]
-            if editionsToSearch.count > 1 {
-                hits = await store.searchAllWithOffset(text, editions: editionsToSearch, mode: .text, offset: offset, limit: searchPageSize)
-            } else if let edition = editionsToSearch.first {
-                hits = await store.searchWithOffset(text, edition: edition, mode: .text, offset: offset, limit: searchPageSize)
+            if scope == .commentary {
+                // 주석 검색
+                if editionsToSearch.count > 1 {
+                    hits = await store.searchAllAnnotationsWithOffset(text, editions: editionsToSearch, offset: offset, limit: searchPageSize)
+                } else if let edition = editionsToSearch.first {
+                    hits = await store.searchAnnotationsWithOffset(text, edition: edition, offset: offset, limit: searchPageSize)
+                } else {
+                    hits = []
+                }
             } else {
-                hits = []
+                // 일반 본문 검색
+                if editionsToSearch.count > 1 {
+                    hits = await store.searchAllWithOffset(text, editions: editionsToSearch, mode: .text, offset: offset, limit: searchPageSize)
+                } else if let edition = editionsToSearch.first {
+                    hits = await store.searchWithOffset(text, edition: edition, mode: .text, offset: offset, limit: searchPageSize)
+                } else {
+                    hits = []
+                }
             }
 
             guard !Task.isCancelled else { return }
@@ -1414,13 +1426,58 @@ struct SearchView: View {
                 return
             }
 
+            // 주석 검색
+            if scope == .commentary {
+                let editionsToSearch = store.loadedEditions.filter { edition in
+                    selectedAnnotationEditionIDs.contains(edition.id)
+                }
+
+                currentOffset = 0
+                currentSearchQuery = text
+                currentSearchEditions = editionsToSearch
+
+                searchTask = Task {
+                    try? await Task.sleep(for: .milliseconds(300))
+                    guard !Task.isCancelled else { return }
+                    isSearching = true
+
+                    // 주석 검색 결과 개수 파악
+                    let count: Int
+                    if editionsToSearch.count > 1 {
+                        count = await store.searchAllAnnotationsCount(text, editions: editionsToSearch)
+                    } else if let edition = editionsToSearch.first {
+                        count = await store.searchAnnotationsCount(text, edition: edition)
+                    } else {
+                        count = 0
+                    }
+
+                    guard !Task.isCancelled else { return }
+                    totalSearchCount = count
+
+                    // 초기 결과 로드
+                    let hits: [SearchHit]
+                    if editionsToSearch.count > 1 {
+                        hits = await store.searchAllAnnotationsWithOffset(text, editions: editionsToSearch, offset: 0, limit: searchPageSize)
+                    } else if let edition = editionsToSearch.first {
+                        hits = await store.searchAnnotationsWithOffset(text, edition: edition, offset: 0, limit: searchPageSize)
+                    } else {
+                        hits = []
+                    }
+
+                    guard !Task.isCancelled else { return }
+                    previousResults = hits
+                    results = hits
+                    currentOffset = hits.count
+                    addToTextSearchHistory(text)
+                    hasSearched = true
+                    isSearching = false
+                }
+                return
+            }
+
             // 선택된 판본들로만 검색
             let editionsToSearch: [Edition]
-            if scope == .commentary {
-                editionsToSearch = store.loadedEditions.filter { edition in
-                    selectedEditionIDs.contains(edition.id) && selectedAnnotationEditionIDs.contains(edition.id)
-                }
-            } else if scope == .current {
+            if scope == .current {
                 // 현재 판본으로 검색, 없으면 로드된 모든 판본 사용
                 let currentEdition = readingState.selectedEdition
                 let currentSearchEditions = store.loadedEditions.filter { $0.id == currentEdition.id }
