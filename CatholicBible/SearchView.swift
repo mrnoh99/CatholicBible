@@ -12,12 +12,14 @@ enum SearchScope: String, CaseIterable, Identifiable {
     case current
     case all
     case results
+    case commentary
     var id: String { rawValue }
     var label: String {
         switch self {
         case .current: return "현재 판본"
         case .all:     return "모든 판본"
         case .results: return "검색 결과"
+        case .commentary: return "주석"
         }
     }
 }
@@ -58,6 +60,7 @@ struct SearchView: View {
     @State private var selectedChapter: Int = 1
     @State private var selectedVerse: Int = 1
     @State private var selectedEditionIDs: Set<String> = []
+    @State private var selectedAnnotationEditionIDs: Set<String> = []
 
     // 단어찾기 상태 저장
     @State private var textQuery = ""
@@ -195,6 +198,7 @@ struct SearchView: View {
                                         if hasSearched && !results.isEmpty {
                                             Text(SearchScope.results.label).tag(SearchScope.results)
                                         }
+                                        Text(SearchScope.commentary.label).tag(SearchScope.commentary)
                                     }
                                     .pickerStyle(.segmented)
                                 }
@@ -279,6 +283,7 @@ struct SearchView: View {
                                         if hasSearched && !results.isEmpty {
                                             Text(SearchScope.results.label).tag(SearchScope.results)
                                         }
+                                        Text(SearchScope.commentary.label).tag(SearchScope.commentary)
                                     }
                                     .pickerStyle(.segmented)
                                 }
@@ -308,25 +313,50 @@ struct SearchView: View {
 
                                 VStack(alignment: .leading, spacing: 6) {
                                     ForEach(store.loadedEditions) { edition in
-                                        Button(action: {
-                                            if selectedEditionIDs.contains(edition.id) {
-                                                selectedEditionIDs.remove(edition.id)
-                                            } else {
-                                                selectedEditionIDs.insert(edition.id)
+                                        VStack(alignment: .leading, spacing: 4) {
+                                            Button(action: {
+                                                if selectedEditionIDs.contains(edition.id) {
+                                                    selectedEditionIDs.remove(edition.id)
+                                                } else {
+                                                    selectedEditionIDs.insert(edition.id)
+                                                }
+                                            }) {
+                                                HStack(spacing: 8) {
+                                                    Image(systemName: selectedEditionIDs.contains(edition.id) ? "checkmark.square.fill" : "square")
+                                                        .font(.body)
+                                                        .foregroundStyle(selectedEditionIDs.contains(edition.id) ? .blue : .secondary)
+                                                    Text(edition.name)
+                                                        .font(.caption)
+                                                        .foregroundStyle(.primary)
+                                                        .lineLimit(1)
+                                                    Spacer()
+                                                }
                                             }
-                                        }) {
-                                            HStack(spacing: 8) {
-                                                Image(systemName: selectedEditionIDs.contains(edition.id) ? "checkmark.square.fill" : "square")
-                                                    .font(.body)
-                                                    .foregroundStyle(selectedEditionIDs.contains(edition.id) ? .blue : .secondary)
-                                                Text(edition.name)
-                                                    .font(.caption)
-                                                    .foregroundStyle(.primary)
-                                                    .lineLimit(1)
-                                                Spacer()
+                                            .buttonStyle(.plain)
+
+                                            // 주석 포함 옵션 (주석성경, NABRE 판본만)
+                                            if hasAnnotationSupport(edition) && selectedEditionIDs.contains(edition.id) {
+                                                Button(action: {
+                                                    if selectedAnnotationEditionIDs.contains(edition.id) {
+                                                        selectedAnnotationEditionIDs.remove(edition.id)
+                                                    } else {
+                                                        selectedAnnotationEditionIDs.insert(edition.id)
+                                                    }
+                                                }) {
+                                                    HStack(spacing: 8) {
+                                                        Image(systemName: selectedAnnotationEditionIDs.contains(edition.id) ? "checkmark.square.fill" : "square")
+                                                            .font(.caption)
+                                                            .foregroundStyle(selectedAnnotationEditionIDs.contains(edition.id) ? .blue : .secondary)
+                                                        Text("주석 포함")
+                                                            .font(.caption2)
+                                                            .foregroundStyle(.secondary)
+                                                        Spacer()
+                                                    }
+                                                }
+                                                .buttonStyle(.plain)
+                                                .padding(.leading, 24)
                                             }
                                         }
-                                        .buttonStyle(.plain)
                                     }
                                 }
                             }
@@ -587,6 +617,12 @@ struct SearchView: View {
     private func reference(for hit: SearchHit) -> String {
         guard let book = Bible.book(hit.bookID) else { return "" }
         return "\(book.abbrev) \(hit.chapter),\(hit.verse)"
+    }
+
+    private func hasAnnotationSupport(_ edition: Edition) -> Bool {
+        // 주석성경 또는 NABRE 판본만 주석 기능 지원
+        let name = edition.name.lowercased()
+        return name.contains("주석") || name.contains("nabre")
     }
 
     private func open(_ hit: SearchHit) {
@@ -1114,14 +1150,23 @@ struct SearchView: View {
             }
 
             let currentEdition = readingState.selectedEdition
-            let editionsToSearch = store.loadedEditions
-            let scope = scope
+            let editionsToSearch: [Edition]
+            if scope == .commentary {
+                editionsToSearch = store.loadedEditions.filter { edition in
+                    selectedEditionIDs.contains(edition.id) && selectedAnnotationEditionIDs.contains(edition.id)
+                }
+            } else if scope == .all {
+                editionsToSearch = store.loadedEditions.filter { selectedEditionIDs.contains($0.id) }
+            } else {
+                editionsToSearch = [currentEdition]
+            }
+
             searchTask = Task {
                 try? await Task.sleep(for: .milliseconds(300))
                 guard !Task.isCancelled else { return }
                 isSearching = true
                 let hits: [SearchHit]
-                if scope == .all {
+                if scope == .all || scope == .commentary {
                     hits = await store.searchAll(text, editions: editionsToSearch, mode: .text)
                 } else {
                     hits = await store.search(text, edition: currentEdition, mode: .text)
@@ -1143,7 +1188,16 @@ struct SearchView: View {
                     searchTask?.cancel()
 
                     let currentEdition = readingState.selectedEdition
-                    let editionsToSearch = scope == .all ? store.loadedEditions : [currentEdition]
+                    let editionsToSearch: [Edition]
+                    if scope == .commentary {
+                        editionsToSearch = store.loadedEditions.filter { edition in
+                            selectedEditionIDs.contains(edition.id) && selectedAnnotationEditionIDs.contains(edition.id)
+                        }
+                    } else if scope == .all {
+                        editionsToSearch = store.loadedEditions.filter { selectedEditionIDs.contains($0.id) }
+                    } else {
+                        editionsToSearch = [currentEdition]
+                    }
 
                     searchTask = Task {
                         try? await Task.sleep(for: .milliseconds(300))
@@ -1189,7 +1243,16 @@ struct SearchView: View {
             } else if !selectedBookID.isEmpty {
                 // If query is empty but selectedBookID is set, search with current selection
                 let currentEdition = readingState.selectedEdition
-                let editionsToSearch = scope == .all ? store.loadedEditions : [currentEdition]
+                let editionsToSearch: [Edition]
+                if scope == .commentary {
+                    editionsToSearch = store.loadedEditions.filter { edition in
+                        selectedEditionIDs.contains(edition.id) && selectedAnnotationEditionIDs.contains(edition.id)
+                    }
+                } else if scope == .all {
+                    editionsToSearch = store.loadedEditions.filter { selectedEditionIDs.contains($0.id) }
+                } else {
+                    editionsToSearch = [currentEdition]
+                }
                 let chapter = selectedChapter
                 let verse = selectedVerse
                 let bookID = selectedBookID
@@ -1416,7 +1479,12 @@ struct SearchView: View {
 
         let currentEdition = readingState.selectedEdition
         let editionsToSearch: [Edition]
-        if scope == .all {
+        if scope == .commentary {
+            // 주석 검색: 주석 포함이 활성화된 판본만 검색
+            editionsToSearch = store.loadedEditions.filter { edition in
+                selectedEditionIDs.contains(edition.id) && selectedAnnotationEditionIDs.contains(edition.id)
+            }
+        } else if scope == .all {
             editionsToSearch = store.loadedEditions.filter { selectedEditionIDs.contains($0.id) }
         } else {
             editionsToSearch = [currentEdition]
@@ -1433,7 +1501,7 @@ struct SearchView: View {
                 var allHits: [SearchHit] = []
 
                 for term in terms {
-                    if scope == .all {
+                    if scope == .all || scope == .commentary {
                         let termHits = await store.searchAll(term, editions: editionsToSearch, mode: .text)
                         allHits.append(contentsOf: termHits)
                     } else {
@@ -1459,7 +1527,7 @@ struct SearchView: View {
                 }
             } else {
                 // Original behavior for non-operator queries
-                if scope == .all {
+                if scope == .all || scope == .commentary {
                     hits = await store.searchAll(searchText, editions: editionsToSearch, mode: .text)
                 } else {
                     hits = await store.search(searchText, edition: currentEdition, mode: .text)
@@ -1482,7 +1550,12 @@ struct SearchView: View {
 
         let currentEdition = readingState.selectedEdition
         let editionsToSearch: [Edition]
-        if scope == .all {
+        if scope == .commentary {
+            // 주석 검색: 주석 포함이 활성화된 판본만 검색
+            editionsToSearch = store.loadedEditions.filter { edition in
+                selectedEditionIDs.contains(edition.id) && selectedAnnotationEditionIDs.contains(edition.id)
+            }
+        } else if scope == .all {
             editionsToSearch = store.loadedEditions.filter { selectedEditionIDs.contains($0.id) }
         } else {
             editionsToSearch = [currentEdition]
