@@ -528,7 +528,6 @@ struct SearchView: View {
                                     .buttonStyle(.plain)
                                 }
                                 .listStyle(.plain)
-                            }
                         }
                     }
                     .navigationTitle("검색 결과 (\(results.count)개)")
