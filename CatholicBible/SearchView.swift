@@ -99,12 +99,12 @@ struct SearchView: View {
                             ZStack(alignment: .topTrailing) {
                                 TextField(mode == .text ? "단어 검색 (예: 사랑)" : "장절 검색 (예: 1코린 13,13)",
                                           text: $query)
-                                    .font(.system(size: 18, weight: .medium))
-                                    .padding(.vertical, 12)
-                                    .padding(.horizontal, 16)
+                                    .font(.system(size: 14, weight: .regular))
+                                    .padding(.vertical, 8)
+                                    .padding(.horizontal, 12)
                                     .submitLabel(.search)
                                     .onSubmit(performSearchAction)
-                                    .frame(minHeight: 44)
+                                    .frame(minHeight: 32)
 
                                 if !query.isEmpty {
                                     Button(action: { query = "" }) {
@@ -136,8 +136,8 @@ struct SearchView: View {
                                     Text("검색")
                                 }
                                 .frame(maxWidth: .infinity)
-                                .padding(.vertical, 12)
-                                .font(.system(size: 16, weight: .semibold))
+                                .padding(.vertical, 8)
+                                .font(.system(size: 14, weight: .regular))
                                 .background(Color.blue)
                                 .foregroundStyle(.white)
                                 .cornerRadius(12)
@@ -157,7 +157,7 @@ struct SearchView: View {
                                     Image(systemName: "trash")
                                         .font(.system(size: 16))
                                 }
-                                .frame(width: 44, height: 44)
+                                .frame(width: 40, height: 40)
                                 .background(Color(.systemRed))
                                 .foregroundStyle(.white)
                                 .cornerRadius(10)
@@ -171,121 +171,73 @@ struct SearchView: View {
 
                         // 검색 조건
                         VStack(alignment: .leading, spacing: 16) {
-                            // 검색 방식 (단어찾기 / 장절찾기)
-                            VStack(alignment: .leading, spacing: 8) {
-                                Text("검색 방식")
-                                    .font(.caption.weight(.semibold))
-                                    .foregroundStyle(.secondary)
-                                Picker("검색 방식", selection: $mode) {
-                                    ForEach(SearchMode.allCases) { m in
-                                        Text(m.label).tag(m)
-                                    }
+                            // 검색 방식 선택기 (모드 전환용, 라벨 없음)
+                            Picker("검색 방식", selection: $mode) {
+                                ForEach(SearchMode.allCases) { m in
+                                    Text(m.label).tag(m)
                                 }
-                                .pickerStyle(.segmented)
                             }
+                            .pickerStyle(.segmented)
 
                             Divider()
 
-                            // 검색 범위 (텍스트 모드일 때만)
-                            if mode == .text {
-                                VStack(alignment: .leading, spacing: 8) {
-                                    Text("검색 범위")
-                                        .font(.caption.weight(.semibold))
-                                        .foregroundStyle(.secondary)
-                                    Picker("검색 범위", selection: $scope) {
-                                        Text(SearchScope.current.label).tag(SearchScope.current)
-                                        Text(SearchScope.all.label).tag(SearchScope.all)
-                                        if hasSearched && !results.isEmpty {
-                                            Text(SearchScope.results.label).tag(SearchScope.results)
-                                        }
-                                        Text(SearchScope.commentary.label).tag(SearchScope.commentary)
-                                    }
-                                    .pickerStyle(.segmented)
-                                }
-
-                                Divider()
-                            }
-
-                            // 책 선택 (장절 모드일 때만)
+                            // 책 선택 및 장절 입력 (장절 모드일 때만)
                             if mode == .reference {
                                 VStack(alignment: .leading, spacing: 8) {
-                                    Text("책 선택")
+                                    Text("장절 찾기")
                                         .font(.caption.weight(.semibold))
                                         .foregroundStyle(.secondary)
-                                    Picker("책", selection: $selectedBookID) {
-                                        Text("선택").tag("")
-                                        ForEach(Bible.books) { book in
-                                            Text(book.name).tag(book.id)
+
+                                    HStack(spacing: 12) {
+                                        // 책 선택
+                                        Picker("책", selection: $selectedBookID) {
+                                            Text("책 선택").tag("")
+                                            ForEach(Bible.books) { book in
+                                                Text(book.name).tag(book.id)
+                                            }
                                         }
-                                    }
-                                    .pickerStyle(.menu)
-                                }
+                                        .pickerStyle(.menu)
+                                        .frame(maxWidth: .infinity)
 
-                                Divider()
-
-                                // 장절 입력 (책 선택 후)
-                                if !selectedBookID.isEmpty {
-                                    VStack(alignment: .center, spacing: 16) {
-                                        if let book = Bible.book(selectedBookID) {
-                                            Text(book.name)
-                                                .font(.system(size: 16, weight: .medium))
-                                                .foregroundStyle(.primary)
-                                        }
-
-                                        HStack(spacing: 40) {
-                                            VStack(spacing: 8) {
+                                        // 장절 휠 (책 선택 후)
+                                        if !selectedBookID.isEmpty {
+                                            // 장 선택
+                                            VStack(spacing: 4) {
                                                 Button(action: { selectedChapter = max(1, selectedChapter - 1) }) {
                                                     Image(systemName: "chevron.up")
-                                                        .font(.system(size: 14, weight: .semibold))
+                                                        .font(.system(size: 12, weight: .semibold))
                                                         .foregroundStyle(.blue)
                                                 }
-                                                Text("\(selectedChapter)◇")
-                                                    .font(.system(size: 20, weight: .semibold))
+                                                Text("\(selectedChapter)")
+                                                    .font(.system(size: 16, weight: .semibold))
                                                     .foregroundStyle(.primary)
                                                 Button(action: { selectedChapter = min(200, selectedChapter + 1) }) {
                                                     Image(systemName: "chevron.down")
-                                                        .font(.system(size: 14, weight: .semibold))
+                                                        .font(.system(size: 12, weight: .semibold))
                                                         .foregroundStyle(.blue)
                                                 }
                                             }
+                                            .frame(maxWidth: .infinity)
 
-                                            VStack(spacing: 8) {
+                                            // 절 선택
+                                            VStack(spacing: 4) {
                                                 Button(action: { selectedVerse = max(0, selectedVerse - 1) }) {
                                                     Image(systemName: "chevron.up")
-                                                        .font(.system(size: 14, weight: .semibold))
+                                                        .font(.system(size: 12, weight: .semibold))
                                                         .foregroundStyle(.blue)
                                                 }
-                                                Text("\(selectedVerse == 0 ? "전체" : String(selectedVerse))◇")
-                                                    .font(.system(size: 20, weight: .semibold))
+                                                Text(selectedVerse == 0 ? "전체" : String(selectedVerse))
+                                                    .font(.system(size: 16, weight: .semibold))
                                                     .foregroundStyle(.primary)
                                                 Button(action: { selectedVerse = min(999, selectedVerse + 1) }) {
                                                     Image(systemName: "chevron.down")
-                                                        .font(.system(size: 14, weight: .semibold))
+                                                        .font(.system(size: 12, weight: .semibold))
                                                         .foregroundStyle(.blue)
                                                 }
                                             }
+                                            .frame(maxWidth: .infinity)
                                         }
                                     }
-                                    .frame(maxWidth: .infinity)
-                                    .padding(.vertical, 20)
-
-                                    Divider()
-                                }
-
-                                // 검색 범위 (장절 모드일 때)
-                                VStack(alignment: .leading, spacing: 8) {
-                                    Text("검색 범위")
-                                        .font(.caption.weight(.semibold))
-                                        .foregroundStyle(.secondary)
-                                    Picker("검색 범위", selection: $scope) {
-                                        Text(SearchScope.current.label).tag(SearchScope.current)
-                                        Text(SearchScope.all.label).tag(SearchScope.all)
-                                        if hasSearched && !results.isEmpty {
-                                            Text(SearchScope.results.label).tag(SearchScope.results)
-                                        }
-                                        Text(SearchScope.commentary.label).tag(SearchScope.commentary)
-                                    }
-                                    .pickerStyle(.segmented)
                                 }
 
                                 Divider()
@@ -482,7 +434,7 @@ struct SearchView: View {
             }
             .navigationTitle("검색")
             .navigationBarTitleDisplayMode(.inline)
-            .sheet(isPresented: $showResults) {
+            .fullScreenCover(isPresented: $showResults) {
                 NavigationStack {
                     ZStack {
                         if isSearching {
