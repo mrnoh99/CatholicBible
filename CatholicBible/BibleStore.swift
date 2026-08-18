@@ -148,8 +148,9 @@ final class BibleStore {
     }
 
     nonisolated(unsafe) private func searchByText(_ query: String, snapshot: [String: [String: [String: String]]],
-                             order: [String], editionID: String, limit: Int) -> [SearchHit] {
+                             order: [String], editionID: String, limit: Int, offset: Int = 0) -> [SearchHit] {
         var hits: [SearchHit] = []
+        var matched = 0
         let terms = query.split(separator: " ").filter { !$0.isEmpty }
         let orTerms = terms.count > 1 && query.contains("OR") ? terms.map(String.init) : []
         let andTerms = orTerms.isEmpty ? terms.map(String.init) : []
@@ -171,9 +172,12 @@ final class BibleStore {
                     }
 
                     if matches {
-                        hits.append(SearchHit(editionID: editionID, bookID: bookID,
-                                            chapter: chapterNumber, verse: verseNumber,
-                                            text: verseText))
+                        if matched >= offset && hits.count < limit {
+                            hits.append(SearchHit(editionID: editionID, bookID: bookID,
+                                                chapter: chapterNumber, verse: verseNumber,
+                                                text: verseText))
+                        }
+                        matched += 1
                         if hits.count >= limit { break outer }
                     }
                 }
@@ -183,8 +187,9 @@ final class BibleStore {
     }
 
     nonisolated(unsafe) private func searchByReference(_ query: String, snapshot: [String: [String: [String: String]]],
-                                   order: [String], editionID: String, limit: Int) -> [SearchHit] {
+                                   order: [String], editionID: String, limit: Int, offset: Int = 0) -> [SearchHit] {
         var hits: [SearchHit] = []
+        var matched = 0
         let pattern = "^(\\d+):(\\d+)(?:-(\\d+))?$"
         guard let regex = try? NSRegularExpression(pattern: pattern) else { return hits }
 
@@ -204,9 +209,12 @@ final class BibleStore {
 
                 for v in verse...min(endVerse, verse + 10) {
                     guard let verseText = verses[String(v)] else { continue }
-                    hits.append(SearchHit(editionID: editionID, bookID: bookID,
-                                        chapter: chapter, verse: v,
-                                        text: verseText))
+                    if matched >= offset && hits.count < limit {
+                        hits.append(SearchHit(editionID: editionID, bookID: bookID,
+                                            chapter: chapter, verse: v,
+                                            text: verseText))
+                    }
+                    matched += 1
                     if hits.count >= limit { break }
                 }
                 if !hits.isEmpty { break }
@@ -229,6 +237,147 @@ final class BibleStore {
             if all.count >= limit { break }
         }
         return Array(all.prefix(limit))
+    }
+
+    // MARK: - Lazy Loading 검색 (제한 없음)
+
+    /// 검색 결과 총 개수만 파악 (첫 번째 판본)
+    func searchCount(_ query: String, edition: Edition, mode: SearchMode = .text) async -> Int {
+        let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard trimmed.count >= 2, let text = editions[edition.id] else { return 0 }
+        let snapshot = text.rawBooks
+        let order = edition.scope.books.map(\.id)
+
+        return await Task.detached(priority: .userInitiated) {
+            switch mode {
+            case .text:
+                return self.countSearchByText(trimmed, snapshot: snapshot, order: order)
+            case .reference:
+                return self.countSearchByReference(trimmed, snapshot: snapshot, order: order)
+            }
+        }.value
+    }
+
+    /// Offset과 limit으로 검색 결과 일부 가져오기
+    func searchWithOffset(_ query: String, edition: Edition, mode: SearchMode = .text,
+                        offset: Int = 0, limit: Int = 50) async -> [SearchHit] {
+        let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard trimmed.count >= 2, let text = editions[edition.id] else { return [] }
+        let snapshot = text.rawBooks
+        let order = edition.scope.books.map(\.id)
+        let editionID = edition.id
+
+        return await Task.detached(priority: .userInitiated) {
+            switch mode {
+            case .text:
+                return self.searchByText(trimmed, snapshot: snapshot, order: order, editionID: editionID, limit: limit, offset: offset)
+            case .reference:
+                return self.searchByReference(trimmed, snapshot: snapshot, order: order, editionID: editionID, limit: limit, offset: offset)
+            }
+        }.value
+    }
+
+    /// 여러 판본에서 검색 결과 총 개수만 파악
+    func searchAllCount(_ query: String, editions searchEditions: [Edition], mode: SearchMode = .text) async -> Int {
+        let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard trimmed.count >= 2 else { return 0 }
+        var total = 0
+        for edition in searchEditions {
+            guard editions[edition.id] != nil else { continue }
+            let count = await searchCount(trimmed, edition: edition, mode: mode)
+            total += count
+        }
+        return total
+    }
+
+    /// 여러 판본에서 offset과 limit으로 검색 결과 일부 가져오기
+    func searchAllWithOffset(_ query: String, editions searchEditions: [Edition],
+                           mode: SearchMode = .text, offset: Int = 0, limit: Int = 50) async -> [SearchHit] {
+        let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard trimmed.count >= 2 else { return [] }
+        var all: [SearchHit] = []
+        var currentOffset = offset
+        let perEdition = limit
+
+        for edition in searchEditions {
+            guard editions[edition.id] != nil else { continue }
+            let hits = await searchWithOffset(trimmed, edition: edition, mode: mode, offset: currentOffset, limit: perEdition)
+            all.append(contentsOf: hits)
+            if hits.count < perEdition {
+                currentOffset = 0
+            } else {
+                currentOffset -= hits.count
+                if currentOffset < 0 {
+                    currentOffset = 0
+                }
+            }
+            if all.count >= limit { break }
+        }
+        return Array(all.prefix(limit))
+    }
+
+    // MARK: - 검색 결과 개수 카운팅
+
+    nonisolated(unsafe) private func countSearchByText(_ query: String, snapshot: [String: [String: [String: String]]],
+                                          order: [String]) -> Int {
+        var count = 0
+        let terms = query.split(separator: " ").filter { !$0.isEmpty }
+        let orTerms = terms.count > 1 && query.contains("OR") ? terms.map(String.init) : []
+        let andTerms = orTerms.isEmpty ? terms.map(String.init) : []
+
+        for bookID in order {
+            guard let chapters = snapshot[bookID] else { continue }
+            let chapterNumbers = chapters.keys.compactMap { Int($0) }.sorted()
+            for chapterNumber in chapterNumbers {
+                guard let verses = chapters[String(chapterNumber)] else { continue }
+                let verseNumbers = verses.keys.compactMap { Int($0) }.sorted()
+                for verseNumber in verseNumbers {
+                    guard let verseText = verses[String(verseNumber)] else { continue }
+                    var matches = false
+
+                    if !orTerms.isEmpty {
+                        matches = orTerms.contains { verseText.localizedStandardContains($0) }
+                    } else if !andTerms.isEmpty {
+                        matches = andTerms.allSatisfy { verseText.localizedStandardContains($0) }
+                    }
+
+                    if matches {
+                        count += 1
+                    }
+                }
+            }
+        }
+        return count
+    }
+
+    nonisolated(unsafe) private func countSearchByReference(_ query: String, snapshot: [String: [String: [String: String]]],
+                                              order: [String]) -> Int {
+        let pattern = "^(\\d+):(\\d+)(?:-(\\d+))?$"
+        guard let regex = try? NSRegularExpression(pattern: pattern) else { return 0 }
+
+        let queryNS = query as NSString
+        let range = NSRange(location: 0, length: queryNS.length)
+
+        guard let match = regex.firstMatch(in: query, range: range) else { return 0 }
+
+        let chapter = Int(queryNS.substring(with: match.range(at: 1))) ?? 0
+        let verse = Int(queryNS.substring(with: match.range(at: 2))) ?? 0
+        let endVerse = match.range(at: 3).location != NSNotFound ? Int(queryNS.substring(with: match.range(at: 3))) ?? verse : verse
+
+        guard chapter > 0, verse > 0 else { return 0 }
+
+        var count = 0
+        for bookID in order {
+            guard let chapters = snapshot[bookID] else { continue }
+            guard let verses = chapters[String(chapter)] else { continue }
+
+            for v in verse...min(endVerse, verse + 10) {
+                guard verses[String(v)] != nil else { continue }
+                count += 1
+            }
+            if count > 0 { break }
+        }
+        return count
     }
 
     /// 본문이 로드된 판본만

@@ -94,6 +94,14 @@ struct SearchView: View {
     // 결과 내 검색
     @State private var resultFilterQuery = ""
 
+    // Lazy Loading 관련
+    @State private var totalSearchCount = 0
+    @State private var currentOffset = 0
+    @State private var isLoadingMore = false
+    @State private var searchPageSize = 50
+    @State private var currentSearchQuery = ""
+    @State private var currentSearchEditions: [Edition] = []
+
     var body: some View {
         let edition = readingState.selectedEdition
 
@@ -572,37 +580,55 @@ struct SearchView: View {
                                         Spacer()
                                     }
                                 } else {
-                                    List(filteredResults) { hit in
-                                        Button {
-                                            open(hit)
-                                        } label: {
-                                            VStack(alignment: .leading, spacing: 4) {
-                                                HStack(spacing: 6) {
-                                                    Text(reference(for: hit))
-                                                        .font(.caption.weight(.semibold))
-                                                        .foregroundStyle(Color.accentColor)
-                                                    if scope == .all, let ed = Editions.edition(hit.editionID) {
-                                                        Text(ed.shortName)
-                                                            .font(.caption2.weight(.semibold))
-                                                            .padding(.horizontal, 6).padding(.vertical, 2)
-                                                            .background(Capsule().fill(Color.accentColor.opacity(0.12)))
+                                    List {
+                                        ForEach(Array(filteredResults.enumerated()), id: \.element.id) { index, hit in
+                                            Button {
+                                                open(hit)
+                                            } label: {
+                                                VStack(alignment: .leading, spacing: 4) {
+                                                    HStack(spacing: 6) {
+                                                        Text(reference(for: hit))
+                                                            .font(.caption.weight(.semibold))
                                                             .foregroundStyle(Color.accentColor)
+                                                        if scope == .all, let ed = Editions.edition(hit.editionID) {
+                                                            Text(ed.shortName)
+                                                                .font(.caption2.weight(.semibold))
+                                                                .padding(.horizontal, 6).padding(.vertical, 2)
+                                                                .background(Capsule().fill(Color.accentColor.opacity(0.12)))
+                                                                .foregroundStyle(Color.accentColor)
+                                                        }
                                                     }
+                                                    highlightedText(hit.text, query: resultFilterQuery.isEmpty ? query : resultFilterQuery, mode: mode)
+                                                        .font(.subheadline)
+                                                        .lineLimit(3)
                                                 }
-                                                highlightedText(hit.text, query: resultFilterQuery.isEmpty ? query : resultFilterQuery, mode: mode)
-                                                    .font(.subheadline)
-                                                    .lineLimit(3)
+                                                .padding(.vertical, 2)
                                             }
-                                            .padding(.vertical, 2)
+                                            .buttonStyle(.plain)
+                                            .onAppear {
+                                                // 마지막에서 5개 이전부터 로드 시작
+                                                if index >= filteredResults.count - 5 && currentOffset < totalSearchCount {
+                                                    loadMoreResults()
+                                                }
+                                            }
                                         }
-                                        .buttonStyle(.plain)
+
+                                        // 로딩 중이면 진행 표시
+                                        if isLoadingMore {
+                                            HStack {
+                                                Spacer()
+                                                ProgressView()
+                                                Spacer()
+                                            }
+                                            .padding()
+                                        }
                                     }
                                     .listStyle(.plain)
                                 }
                             }
                         }
                     }
-                    .navigationTitle("검색 결과 (\(results.count)개)")
+                    .navigationTitle("검색 결과 (\(resultFilterQuery.isEmpty ? "\(results.count)/\(totalSearchCount)" : "\(results.filter { $0.text.localizedCaseInsensitiveContains(resultFilterQuery) }.count)")개)")
                     .navigationBarTitleDisplayMode(.inline)
                     .toolbar {
                         ToolbarItem(placement: .topBarTrailing) {
@@ -1200,6 +1226,33 @@ struct SearchView: View {
     }
 
 
+    private func loadMoreResults() {
+        guard !isLoadingMore && currentOffset < totalSearchCount else { return }
+        guard !currentSearchQuery.isEmpty && !currentSearchEditions.isEmpty else { return }
+
+        isLoadingMore = true
+        searchTask = Task {
+            let text = currentSearchQuery
+            let editionsToSearch = currentSearchEditions
+            let offset = currentOffset
+
+            // 다음 50개 로드
+            let hits: [SearchHit]
+            if editionsToSearch.count > 1 {
+                hits = await store.searchAllWithOffset(text, editions: editionsToSearch, mode: .text, offset: offset, limit: searchPageSize)
+            } else if let edition = editionsToSearch.first {
+                hits = await store.searchWithOffset(text, edition: edition, mode: .text, offset: offset, limit: searchPageSize)
+            } else {
+                hits = []
+            }
+
+            guard !Task.isCancelled else { return }
+            results.append(contentsOf: hits)
+            currentOffset += hits.count
+            isLoadingMore = false
+        }
+    }
+
     private func runSearch() {
         searchTask?.cancel()
 
@@ -1239,21 +1292,43 @@ struct SearchView: View {
                 editionsToSearch = store.loadedEditions.filter { selectedEditionIDs.contains($0.id) }
             }
 
+            // 새 검색 시작: offset 초기화
+            currentOffset = 0
+            currentSearchQuery = text
+            currentSearchEditions = editionsToSearch
+
             searchTask = Task {
                 try? await Task.sleep(for: .milliseconds(300))
                 guard !Task.isCancelled else { return }
                 isSearching = true
+
+                // 먼저 검색 결과 개수 파악
+                let count: Int
+                if editionsToSearch.count > 1 {
+                    count = await store.searchAllCount(text, editions: editionsToSearch, mode: .text)
+                } else if let edition = editionsToSearch.first {
+                    count = await store.searchCount(text, edition: edition, mode: .text)
+                } else {
+                    count = 0
+                }
+
+                guard !Task.isCancelled else { return }
+                totalSearchCount = count
+
+                // 초기 결과 로드 (첫 50개)
                 let hits: [SearchHit]
                 if editionsToSearch.count > 1 {
-                    hits = await store.searchAll(text, editions: editionsToSearch, mode: .text)
+                    hits = await store.searchAllWithOffset(text, editions: editionsToSearch, mode: .text, offset: 0, limit: searchPageSize)
                 } else if let edition = editionsToSearch.first {
-                    hits = await store.search(text, edition: edition, mode: .text)
+                    hits = await store.searchWithOffset(text, edition: edition, mode: .text, offset: 0, limit: searchPageSize)
                 } else {
                     hits = []
                 }
+
                 guard !Task.isCancelled else { return }
                 previousResults = hits
                 results = hits
+                currentOffset = hits.count
                 addToTextSearchHistory(text)
                 hasSearched = true
                 isSearching = false
