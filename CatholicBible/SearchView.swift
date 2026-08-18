@@ -192,6 +192,9 @@ struct SearchView: View {
                                     Picker("검색 범위", selection: $scope) {
                                         Text(SearchScope.current.label).tag(SearchScope.current)
                                         Text(SearchScope.all.label).tag(SearchScope.all)
+                                        if hasSearched && !results.isEmpty {
+                                            Text(SearchScope.results.label).tag(SearchScope.results)
+                                        }
                                     }
                                     .pickerStyle(.segmented)
                                 }
@@ -273,6 +276,9 @@ struct SearchView: View {
                                     Picker("검색 범위", selection: $scope) {
                                         Text(SearchScope.current.label).tag(SearchScope.current)
                                         Text(SearchScope.all.label).tag(SearchScope.all)
+                                        if hasSearched && !results.isEmpty {
+                                            Text(SearchScope.results.label).tag(SearchScope.results)
+                                        }
                                     }
                                     .pickerStyle(.segmented)
                                 }
@@ -466,28 +472,7 @@ struct SearchView: View {
                                        : "책, 장, 절을 지정하세요."))
                             )
                         } else {
-                            VStack(spacing: 0) {
-                                // 결과 내 검색 checkbox
-                                if hasSearched && !results.isEmpty {
-                                    HStack(spacing: 8) {
-                                        Button(action: { scope = scope == .results ? .current : .results }) {
-                                            HStack(spacing: 6) {
-                                                Image(systemName: scope == .results ? "checkmark.square.fill" : "square")
-                                                    .font(.body)
-                                                    .foregroundStyle(scope == .results ? .blue : .secondary)
-                                                Text("결과내 검색")
-                                                    .font(.caption)
-                                            }
-                                        }
-                                        .buttonStyle(.plain)
-                                        Spacer()
-                                    }
-                                    .padding(.horizontal).padding(.vertical, 8)
-
-                                    Divider()
-                                }
-
-                                List(results) { hit in
+                            List(results) { hit in
                                     Button {
                                         open(hit)
                                     } label: {
