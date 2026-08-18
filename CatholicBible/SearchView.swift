@@ -62,6 +62,9 @@ struct SearchView: View {
     @State private var selectedEditionIDs: Set<String> = []
     @State private var selectedAnnotationEditionIDs: Set<String> = []
 
+    // 여러 참조 선택을 위한 목록
+    @State private var referenceList: [(bookID: String, chapter: Int, verse: Int)] = []
+
     // 단어찾기 상태 저장
     @State private var textQuery = ""
     @State private var textResults: [SearchHit] = []
@@ -72,6 +75,7 @@ struct SearchView: View {
     @State private var referenceBookID = ""
     @State private var referenceChapter = 1
     @State private var referenceVerse = 1
+    @State private var referenceSavedReferenceList: [(bookID: String, chapter: Int, verse: Int)] = []
     @State private var referenceResults: [SearchHit] = []
     @State private var referencePreviousResults: [SearchHit] = []
     @State private var referenceHasSearched = false
@@ -255,6 +259,60 @@ struct SearchView: View {
                                             Text(maxVerses == 0 ? "0절" : "1-\(maxVerses)절")
                                                 .font(.caption2)
                                                 .foregroundStyle(.secondary)
+
+                                            // 추가 버튼
+                                            Button(action: {
+                                                addReferenceToList()
+                                            }) {
+                                                Image(systemName: "plus.circle.fill")
+                                                    .font(.system(size: 18))
+                                                    .foregroundStyle(.blue)
+                                            }
+                                            .disabled(selectedBookID.isEmpty)
+                                        }
+
+                                        // 추가된 참조 목록 표시
+                                        if !referenceList.isEmpty {
+                                            VStack(alignment: .leading, spacing: 4) {
+                                                HStack {
+                                                    Text("선택된 참조")
+                                                        .font(.caption2.weight(.semibold))
+                                                        .foregroundStyle(.secondary)
+                                                    Spacer()
+                                                    Button("초기화") {
+                                                        referenceList.removeAll()
+                                                        query = ""
+                                                    }
+                                                    .font(.caption2)
+                                                    .foregroundStyle(.red)
+                                                }
+
+                                                ScrollView(.horizontal, showsIndicators: false) {
+                                                    HStack(spacing: 6) {
+                                                        ForEach(referenceList.indices, id: \.self) { idx in
+                                                            let ref = referenceList[idx]
+                                                            if let book = Bible.book(ref.bookID) {
+                                                                HStack(spacing: 4) {
+                                                                    Text("\(book.abbrev) \(ref.chapter),\(ref.verse)")
+                                                                        .font(.caption)
+                                                                        .foregroundStyle(.primary)
+                                                                    Button {
+                                                                        referenceList.remove(at: idx)
+                                                                        updateReferenceQueryFromList()
+                                                                    } label: {
+                                                                        Image(systemName: "xmark")
+                                                                            .font(.caption2)
+                                                                    }
+                                                                }
+                                                                .padding(.horizontal, 8)
+                                                                .padding(.vertical, 4)
+                                                                .background(Color.blue.opacity(0.1))
+                                                                .cornerRadius(6)
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
                                         }
                                     }
                                 }
@@ -533,6 +591,7 @@ struct SearchView: View {
                     referenceBookID = selectedBookID
                     referenceChapter = selectedChapter
                     referenceVerse = selectedVerse
+                    referenceSavedReferenceList = referenceList
                     referenceResults = results
                     referencePreviousResults = previousResults
                     referenceHasSearched = hasSearched
@@ -547,10 +606,12 @@ struct SearchView: View {
                     selectedBookID = ""
                     selectedChapter = 1
                     selectedVerse = 1
+                    referenceList = []
                 } else {
                     selectedBookID = referenceBookID
                     selectedChapter = referenceChapter
                     selectedVerse = referenceVerse
+                    referenceList = referenceSavedReferenceList
                     results = referenceResults
                     previousResults = referencePreviousResults
                     hasSearched = referenceHasSearched
@@ -1151,11 +1212,19 @@ struct SearchView: View {
                 isSearching = false
             }
         } else {
-            // Reference mode: search with selected book/chapter/verse or query
+            // Reference mode: search with referenceList or query
             let input = query.trimmingCharacters(in: .whitespacesAndNewlines)
-            if !input.isEmpty {
-                // Input exists - parse as reference
-                if let references = parseReferences(input) {
+
+            var references: [(bookID: String, chapter: Int, verse: Int)]? = nil
+            if !referenceList.isEmpty {
+                // Use referenceList if available
+                references = referenceList
+            } else if !input.isEmpty {
+                // Otherwise parse from query
+                references = parseReferences(input)
+            }
+
+            if let references = references, !references.isEmpty {
                     // Directly call searchMultipleReferences with proper scope handling
                     searchTask?.cancel()
 
@@ -1207,13 +1276,6 @@ struct SearchView: View {
                             isSearching = false
                         }
                     }
-                } else {
-                    // Shouldn't reach here if onSubmit handled it correctly
-                    // But as fallback, just clear results
-                    results = []
-                    hasSearched = true
-                    isSearching = false
-                }
             } else if !selectedBookID.isEmpty {
                 // If query is empty but selectedBookID is set, search with current selection
                 let currentEdition = readingState.selectedEdition
@@ -1602,6 +1664,24 @@ struct SearchView: View {
             return
         }
         query = "\(book.abbrev) \(selectedChapter),\(selectedVerse)"
+    }
+
+    private func addReferenceToList() {
+        guard !selectedBookID.isEmpty else { return }
+        referenceList.append((bookID: selectedBookID, chapter: selectedChapter, verse: selectedVerse))
+        updateReferenceQueryFromList()
+        // 초기화하여 새로운 참조 선택 준비
+        selectedBookID = ""
+        selectedChapter = 1
+        selectedVerse = 1
+    }
+
+    private func updateReferenceQueryFromList() {
+        let references = referenceList.compactMap { ref -> String? in
+            guard let book = Bible.book(ref.bookID) else { return nil }
+            return "\(book.abbrev) \(ref.chapter),\(ref.verse)"
+        }
+        query = references.joined(separator: "; ")
     }
 
     private func loadSearchHistory() {
