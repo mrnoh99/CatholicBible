@@ -1250,7 +1250,7 @@ struct SearchView: View {
                 if scope == .all || scope == .commentary {
                     hits = await store.searchAll(text, editions: editionsToSearch, mode: .text)
                 } else {
-                    hits = await store.search(text, edition: currentEdition, mode: .text)
+                    hits = await store.search(text, edition: readingState.selectedEdition, mode: .text)
                 }
                 guard !Task.isCancelled else { return }
                 previousResults = hits
