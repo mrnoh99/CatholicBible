@@ -126,7 +126,9 @@ struct SearchView: View {
             }
             .navigationTitle("검색")
             .navigationBarTitleDisplayMode(.inline)
-            .resultsOverlay
+            .fullScreenCover(isPresented: $showResults) {
+                resultsOverlayContent
+            }
             .onChange(of: showResults) { _, newValue in
                 if !newValue {
                     resultFilterQuery = ""
@@ -248,29 +250,30 @@ struct SearchView: View {
             let selectedBook = selectedBookID.isEmpty ? nil : Bible.book(selectedBookID)
             let maxChapters = selectedBook?.chapterCount ?? 0
 
-            if maxChapters > 0 {
-                List(1...maxChapters, id: \.self) { chapter in
-                    Button(action: {
-                        selectedChapter = chapter
-                        updateReferenceQuery()
-                        showChapterPicker = false
-                    }) {
-                        HStack {
-                            Text("\(chapter)장")
-                            Spacer()
-                            if chapter == selectedChapter {
-                                Image(systemName: "checkmark")
-                                    .foregroundStyle(.blue)
+            Group {
+                if maxChapters > 0 {
+                    List(1...maxChapters, id: \.self) { chapter in
+                        Button(action: {
+                            selectedChapter = chapter
+                            updateReferenceQuery()
+                            showChapterPicker = false
+                        }) {
+                            HStack {
+                                Text("\(chapter)장")
+                                Spacer()
+                                if chapter == selectedChapter {
+                                    Image(systemName: "checkmark")
+                                        .foregroundStyle(.blue)
+                                }
                             }
                         }
+                        .foregroundStyle(.primary)
                     }
-                    .foregroundStyle(.primary)
+                } else {
+                    Text("책을 먼저 선택하세요")
+                        .foregroundStyle(.secondary)
                 }
-            } else {
-                Text("책을 먼저 선택하세요")
-                    .foregroundStyle(.secondary)
             }
-
             .navigationTitle("장 선택")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -339,8 +342,7 @@ struct SearchView: View {
         }
     }
 
-    private var resultsOverlay: some View {
-        fullScreenCover(isPresented: $showResults) {
+    private var resultsOverlayContent: some View {
             NavigationStack {
                 ZStack {
                     if isSearching {
@@ -453,7 +455,6 @@ struct SearchView: View {
                 }
             }
         }
-    }
 
     private var searchInputSection: some View {
         ZStack(alignment: .topTrailing) {
