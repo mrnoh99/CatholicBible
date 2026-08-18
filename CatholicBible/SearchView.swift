@@ -91,6 +91,9 @@ struct SearchView: View {
     // 검색 결과 시트
     @State private var showResults = false
 
+    // 결과 내 검색
+    @State private var resultFilterQuery = ""
+
     var body: some View {
         let edition = readingState.selectedEdition
 
@@ -531,32 +534,72 @@ struct SearchView: View {
                                        : "책, 장, 절을 지정하세요."))
                             )
                         } else {
-                            List(results) { hit in
-                                    Button {
-                                        open(hit)
-                                    } label: {
-                                        VStack(alignment: .leading, spacing: 4) {
-                                            HStack(spacing: 6) {
-                                                Text(reference(for: hit))
-                                                    .font(.caption.weight(.semibold))
-                                                    .foregroundStyle(Color.accentColor)
-                                                if scope == .all, let ed = Editions.edition(hit.editionID) {
-                                                    Text(ed.shortName)
-                                                        .font(.caption2.weight(.semibold))
-                                                        .padding(.horizontal, 6).padding(.vertical, 2)
-                                                        .background(Capsule().fill(Color.accentColor.opacity(0.12)))
-                                                        .foregroundStyle(Color.accentColor)
-                                                }
-                                            }
-                                            highlightedText(hit.text, query: query, mode: mode)
-                                                .font(.subheadline)
-                                                .lineLimit(3)
+                            VStack(spacing: 0) {
+                                // 결과 내 검색
+                                HStack(spacing: 8) {
+                                    Image(systemName: "magnifyingglass")
+                                        .font(.system(size: 14))
+                                        .foregroundStyle(.secondary)
+                                    TextField("결과 내 검색", text: $resultFilterQuery)
+                                        .font(.system(size: 14))
+                                        .textFieldStyle(.roundedBorder)
+                                    if !resultFilterQuery.isEmpty {
+                                        Button(action: { resultFilterQuery = "" }) {
+                                            Image(systemName: "xmark.circle.fill")
+                                                .font(.system(size: 16))
+                                                .foregroundStyle(.secondary)
                                         }
-                                        .padding(.vertical, 2)
                                     }
-                                    .buttonStyle(.plain)
                                 }
-                                .listStyle(.plain)
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 8)
+                                .background(Color(.systemGray6))
+
+                                Divider()
+
+                                let filteredResults = resultFilterQuery.isEmpty ? results : results.filter { hit in
+                                    hit.text.localizedCaseInsensitiveContains(resultFilterQuery)
+                                }
+
+                                if filteredResults.isEmpty && !resultFilterQuery.isEmpty {
+                                    VStack {
+                                        Spacer()
+                                        ContentUnavailableView(
+                                            "검색 결과 없음",
+                                            systemImage: "magnifyingglass",
+                                            description: Text("'\(resultFilterQuery)'을(를) 포함하는 결과가 없습니다.")
+                                        )
+                                        Spacer()
+                                    }
+                                } else {
+                                    List(filteredResults) { hit in
+                                        Button {
+                                            open(hit)
+                                        } label: {
+                                            VStack(alignment: .leading, spacing: 4) {
+                                                HStack(spacing: 6) {
+                                                    Text(reference(for: hit))
+                                                        .font(.caption.weight(.semibold))
+                                                        .foregroundStyle(Color.accentColor)
+                                                    if scope == .all, let ed = Editions.edition(hit.editionID) {
+                                                        Text(ed.shortName)
+                                                            .font(.caption2.weight(.semibold))
+                                                            .padding(.horizontal, 6).padding(.vertical, 2)
+                                                            .background(Capsule().fill(Color.accentColor.opacity(0.12)))
+                                                            .foregroundStyle(Color.accentColor)
+                                                    }
+                                                }
+                                                highlightedText(hit.text, query: resultFilterQuery.isEmpty ? query : resultFilterQuery, mode: mode)
+                                                    .font(.subheadline)
+                                                    .lineLimit(3)
+                                            }
+                                            .padding(.vertical, 2)
+                                        }
+                                        .buttonStyle(.plain)
+                                    }
+                                    .listStyle(.plain)
+                                }
+                            }
                         }
                     }
                     .navigationTitle("검색 결과 (\(results.count)개)")
@@ -566,6 +609,11 @@ struct SearchView: View {
                             Button("닫기") { showResults = false }
                         }
                     }
+                }
+            }
+            .onChange(of: showResults) { _, newValue in
+                if !newValue {
+                    resultFilterQuery = ""
                 }
             }
             .onChange(of: query) { _, newQuery in
