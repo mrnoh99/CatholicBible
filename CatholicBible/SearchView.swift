@@ -1405,8 +1405,8 @@ struct SearchView: View {
             var searchStartIndex = lowercaseText.startIndex
             while let range = lowercaseText.range(of: lowerTerm, range: searchStartIndex..<lowercaseText.endIndex) {
                 if let attrRange = Range(range, in: attributedString) {
-                    attributedString[attrRange].backgroundColor = .yellow
-                    attributedString[attrRange].foregroundColor = .white
+                    attributedString[attrRange].backgroundColor = Color.yellow.opacity(0.3)
+                    attributedString[attrRange].foregroundColor = .black
                 }
 
                 searchStartIndex = range.upperBound
