@@ -96,7 +96,7 @@ final class BibleStore {
 
                 // 주석 로드
                 var annotations: [String: [Int: [Int: String]]] = [:]
-                if let annotationURL = Bundle.main.url(forResource: self.annotationFileName(for: editionID), withExtension: "json"),
+                if let annotationURL = Bundle.main.url(forResource: BibleStore.annotationFileName(for: editionID), withExtension: "json"),
                    let annotationData = try? Data(contentsOf: annotationURL),
                    let annotationFile = try? JSONDecoder().decode(AnnotationFile.self, from: annotationData) {
                     for (bookID, chapters) in annotationFile.annotations {
@@ -134,7 +134,7 @@ final class BibleStore {
         isLoaded = true
     }
 
-    private nonisolated func annotationFileName(for editionID: String) -> String {
+    private static nonisolated func annotationFileName(for editionID: String) -> String {
         switch editionID {
         case "knb", "knbnotes":
             return "KnbNotes"
