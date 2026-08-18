@@ -57,8 +57,8 @@ struct SearchView: View {
     @State private var hasSearched = false
     @State private var searchTask: Task<Void, Never>?
     @State private var selectedBookID: String = ""
-    @State private var selectedChapter: Int = 1
-    @State private var selectedVerse: Int = 1
+    @State private var selectedChapter: Int = 0
+    @State private var selectedVerse: Int = 0
     @State private var selectedEditionIDs: Set<String> = []
     @State private var selectedAnnotationEditionIDs: Set<String> = []
 
@@ -144,6 +144,21 @@ struct SearchView: View {
                 runSearch()
             }
             .onChange(of: mode, perform: handleModeChange)
+            .onChange(of: selectedBookID) { _, _ in
+                if mode == .reference {
+                    updateReferenceQueryFromList()
+                }
+            }
+            .onChange(of: selectedChapter) { _, _ in
+                if mode == .reference {
+                    updateReferenceQueryFromList()
+                }
+            }
+            .onChange(of: selectedVerse) { _, _ in
+                if mode == .reference {
+                    updateReferenceQueryFromList()
+                }
+            }
             .onAppear {
                 loadSearchHistory()
                 if query.isEmpty && !lastSearchQuery.isEmpty {
@@ -193,8 +208,8 @@ struct SearchView: View {
             previousResults = textPreviousResults
             hasSearched = textHasSearched
             selectedBookID = ""
-            selectedChapter = 1
-            selectedVerse = 1
+            selectedChapter = 0
+            selectedVerse = 0
             referenceList = []
         } else {
             selectedBookID = referenceBookID
@@ -209,6 +224,7 @@ struct SearchView: View {
             } else {
                 bookSearchText = ""
             }
+            updateReferenceQueryFromList()
         }
 
         lastSearchMode = newMode.rawValue
@@ -219,8 +235,8 @@ struct SearchView: View {
             List(Bible.books, id: \.id) { book in
                 Button(action: {
                     selectedBookID = book.id
-                    selectedChapter = 1
-                    selectedVerse = 1
+                    selectedChapter = 0
+                    selectedVerse = 0
                     showBookPicker = false
                 }) {
                     HStack {
@@ -1917,7 +1933,7 @@ struct SearchView: View {
     }
 
     private func addReferenceToList() {
-        guard !selectedBookID.isEmpty, let book = Bible.book(selectedBookID) else { return }
+        guard !selectedBookID.isEmpty else { return }
 
         // 중복 확인 - 같은 책/장/절이 이미 리스트에 있으면 추가하지 않음
         if referenceList.contains(where: { $0.bookID == selectedBookID && $0.chapter == selectedChapter && $0.verse == selectedVerse }) {
@@ -1926,21 +1942,45 @@ struct SearchView: View {
 
         referenceList.append((bookID: selectedBookID, chapter: selectedChapter, verse: selectedVerse))
 
-        // query 업데이트
-        updateReferenceQueryFromList()
-
         // 선택 초기화하여 새로운 참조 선택 준비
         selectedBookID = ""
-        selectedChapter = 1
-        selectedVerse = 1
+        selectedChapter = 0
+        selectedVerse = 0
+
+        // query 업데이트
+        updateReferenceQueryFromList()
     }
 
     private func updateReferenceQueryFromList() {
+        var allReferences: [String] = []
+
+        // Add references from the list
         let references = referenceList.compactMap { ref -> String? in
             guard let book = Bible.book(ref.bookID) else { return nil }
-            return "\(book.abbrev) \(ref.chapter),\(ref.verse)"
+            if ref.chapter == 0 {
+                return book.abbrev
+            } else if ref.verse == 0 {
+                return "\(book.abbrev) \(ref.chapter)"
+            } else {
+                return "\(book.abbrev) \(ref.chapter),\(ref.verse)"
+            }
         }
-        query = references.joined(separator: "; ")
+        allReferences.append(contentsOf: references)
+
+        // Add current selection if book is selected
+        if !selectedBookID.isEmpty, let book = Bible.book(selectedBookID) {
+            let currentRef: String
+            if selectedChapter == 0 {
+                currentRef = book.abbrev
+            } else if selectedVerse == 0 {
+                currentRef = "\(book.abbrev) \(selectedChapter)"
+            } else {
+                currentRef = "\(book.abbrev) \(selectedChapter),\(selectedVerse)"
+            }
+            allReferences.append(currentRef)
+        }
+
+        query = allReferences.joined(separator: "; ")
     }
 
     private func loadSearchHistory() {
