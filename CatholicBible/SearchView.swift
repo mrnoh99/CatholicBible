@@ -1244,10 +1244,12 @@ struct SearchView: View {
                 guard !Task.isCancelled else { return }
                 isSearching = true
                 let hits: [SearchHit]
-                if scope == .all || scope == .commentary {
+                if editionsToSearch.count > 1 {
                     hits = await store.searchAll(text, editions: editionsToSearch, mode: .text)
+                } else if let edition = editionsToSearch.first {
+                    hits = await store.search(text, edition: edition, mode: .text)
                 } else {
-                    hits = await store.search(text, edition: readingState.selectedEdition, mode: .text)
+                    hits = []
                 }
                 guard !Task.isCancelled else { return }
                 previousResults = hits
@@ -1329,10 +1331,10 @@ struct SearchView: View {
                     editionsToSearch = store.loadedEditions.filter { edition in
                         selectedEditionIDs.contains(edition.id) && selectedAnnotationEditionIDs.contains(edition.id)
                     }
-                } else if scope == .all {
-                    editionsToSearch = store.loadedEditions.filter { selectedEditionIDs.contains($0.id) }
-                } else {
+                } else if selectedEditionIDs.isEmpty {
                     editionsToSearch = [currentEdition]
+                } else {
+                    editionsToSearch = store.loadedEditions.filter { selectedEditionIDs.contains($0.id) }
                 }
                 let chapter = selectedChapter
                 let verse = selectedVerse
