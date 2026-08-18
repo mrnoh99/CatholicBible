@@ -495,41 +495,39 @@ struct SearchView: View {
                                     VStack(alignment: .center, spacing: 16) {
                                         if let book = Bible.book(selectedBookID) {
                                             Text(book.name)
-                                                .font(.system(size: 24, weight: .semibold))
+                                                .font(.system(size: 16, weight: .medium))
                                                 .foregroundStyle(.primary)
                                         }
 
                                         HStack(spacing: 40) {
-                                            VStack(spacing: 12) {
+                                            VStack(spacing: 8) {
                                                 Button(action: { selectedChapter = max(1, selectedChapter - 1) }) {
                                                     Image(systemName: "chevron.up")
-                                                        .font(.system(size: 18, weight: .semibold))
+                                                        .font(.system(size: 14, weight: .semibold))
                                                         .foregroundStyle(.blue)
                                                 }
                                                 Text("\(selectedChapter)◇")
-                                                    .font(.system(size: 32, weight: .bold))
+                                                    .font(.system(size: 20, weight: .semibold))
                                                     .foregroundStyle(.primary)
-                                                    .frame(minWidth: 60)
                                                 Button(action: { selectedChapter = min(200, selectedChapter + 1) }) {
                                                     Image(systemName: "chevron.down")
-                                                        .font(.system(size: 18, weight: .semibold))
+                                                        .font(.system(size: 14, weight: .semibold))
                                                         .foregroundStyle(.blue)
                                                 }
                                             }
 
-                                            VStack(spacing: 12) {
+                                            VStack(spacing: 8) {
                                                 Button(action: { selectedVerse = max(0, selectedVerse - 1) }) {
                                                     Image(systemName: "chevron.up")
-                                                        .font(.system(size: 18, weight: .semibold))
+                                                        .font(.system(size: 14, weight: .semibold))
                                                         .foregroundStyle(.blue)
                                                 }
                                                 Text("\(selectedVerse == 0 ? "전체" : String(selectedVerse))◇")
-                                                    .font(.system(size: 32, weight: .bold))
+                                                    .font(.system(size: 20, weight: .semibold))
                                                     .foregroundStyle(.primary)
-                                                    .frame(minWidth: 60)
                                                 Button(action: { selectedVerse = min(999, selectedVerse + 1) }) {
                                                     Image(systemName: "chevron.down")
-                                                        .font(.system(size: 18, weight: .semibold))
+                                                        .font(.system(size: 14, weight: .semibold))
                                                         .foregroundStyle(.blue)
                                                 }
                                             }
