@@ -100,11 +100,11 @@ struct SearchView: View {
                                 TextField(mode == .text ? "단어 검색 (예: 사랑)" : "장절 검색 (예: 1코린 13,13)",
                                           text: $query)
                                     .font(.system(size: 14, weight: .regular))
-                                    .padding(.vertical, 8)
+                                    .padding(.vertical, 4)
                                     .padding(.horizontal, 12)
                                     .submitLabel(.search)
                                     .onSubmit(performSearchAction)
-                                    .frame(minHeight: 32)
+                                    .frame(minHeight: 24)
 
                                 if !query.isEmpty {
                                     Button(action: { query = "" }) {
