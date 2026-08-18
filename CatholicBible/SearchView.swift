@@ -102,6 +102,10 @@ struct SearchView: View {
     @State private var currentSearchQuery = ""
     @State private var currentSearchEditions: [Edition] = []
 
+    // 책/장/절 선택 Modal
+    @State private var showChapterPicker = false
+    @State private var showVersePicker = false
+
     var body: some View {
         let edition = readingState.selectedEdition
 
@@ -216,70 +220,47 @@ struct SearchView: View {
                                         }
                                     }
 
-                                    // 장절 휠 (책 선택 후)
+                                    // 장절 선택 버튼 (책 선택 후)
                                     if !selectedBookID.isEmpty {
-                                        HStack(spacing: 12) {
-                                            // 장 선택
-                                            VStack(spacing: 4) {
-                                                Button(action: {
-                                                    selectedChapter = max(1, selectedChapter - 1)
-                                                    updateReferenceQuery()
-                                                }) {
-                                                    Image(systemName: "chevron.up")
-                                                        .font(.system(size: 12, weight: .semibold))
-                                                        .foregroundStyle(.blue)
+                                        HStack(spacing: 8) {
+                                            // 장 선택 버튼
+                                            Button(action: { showChapterPicker = true }) {
+                                                VStack(spacing: 2) {
+                                                    Text("\(selectedChapter)")
+                                                        .font(.system(size: 16, weight: .semibold))
+                                                    Text("장선택")
+                                                        .font(.caption2)
                                                 }
-                                                Text("\(selectedChapter)")
-                                                    .font(.system(size: 16, weight: .semibold))
-                                                    .foregroundStyle(.primary)
-                                                Button(action: {
-                                                    selectedChapter = min(maxChapters, selectedChapter + 1)
-                                                    updateReferenceQuery()
-                                                }) {
-                                                    Image(systemName: "chevron.down")
-                                                        .font(.system(size: 12, weight: .semibold))
-                                                        .foregroundStyle(.blue)
-                                                }
+                                                .frame(maxWidth: .infinity)
+                                                .padding(.vertical, 8)
+                                                .background(Color.blue.opacity(0.1))
+                                                .foregroundStyle(.blue)
+                                                .cornerRadius(8)
                                             }
-                                            Text("1-\(maxChapters)장")
-                                                .font(.caption2)
-                                                .foregroundStyle(.secondary)
 
-                                            // 절 선택
-                                            VStack(spacing: 4) {
-                                                Button(action: {
-                                                    selectedVerse = max(0, selectedVerse - 1)
-                                                    updateReferenceQuery()
-                                                }) {
-                                                    Image(systemName: "chevron.up")
-                                                        .font(.system(size: 12, weight: .semibold))
-                                                        .foregroundStyle(.blue)
+                                            // 절 선택 버튼
+                                            Button(action: { showVersePicker = true }) {
+                                                VStack(spacing: 2) {
+                                                    Text(selectedVerse == 0 ? "전체" : String(selectedVerse))
+                                                        .font(.system(size: 16, weight: .semibold))
+                                                    Text("절선택")
+                                                        .font(.caption2)
                                                 }
-                                                Text(selectedVerse == 0 ? "전체" : String(selectedVerse))
-                                                    .font(.system(size: 16, weight: .semibold))
-                                                    .foregroundStyle(.primary)
-                                                Button(action: {
-                                                    selectedVerse = min(maxVerses, selectedVerse + 1)
-                                                    updateReferenceQuery()
-                                                }) {
-                                                    Image(systemName: "chevron.down")
-                                                        .font(.system(size: 12, weight: .semibold))
-                                                        .foregroundStyle(.blue)
-                                                }
+                                                .frame(maxWidth: .infinity)
+                                                .padding(.vertical, 8)
+                                                .background(Color.blue.opacity(0.1))
+                                                .foregroundStyle(.blue)
+                                                .cornerRadius(8)
                                             }
-                                            Text(maxVerses == 0 ? "0절" : "1-\(maxVerses)절")
-                                                .font(.caption2)
-                                                .foregroundStyle(.secondary)
 
                                             // 추가 버튼
                                             Button(action: {
                                                 addReferenceToList()
                                             }) {
                                                 Image(systemName: "plus.circle.fill")
-                                                    .font(.system(size: 18))
+                                                    .font(.system(size: 20))
                                                     .foregroundStyle(.blue)
                                             }
-                                            .disabled(selectedBookID.isEmpty)
                                         }
 
                                         // 추가된 참조 목록 표시
@@ -705,6 +686,99 @@ struct SearchView: View {
                     query = lastSearchQuery
                     scope = SearchScope(rawValue: lastSearchScope) ?? .current
                     mode = SearchMode(rawValue: lastSearchMode) ?? .text
+                }
+            }
+            .sheet(isPresented: $showChapterPicker) {
+                NavigationStack {
+                    let selectedBook = selectedBookID.isEmpty ? nil : Bible.book(selectedBookID)
+                    let maxChapters = selectedBook?.chapterCount ?? 0
+
+                    if maxChapters > 0 {
+                        List(1...maxChapters, id: \.self) { chapter in
+                            Button(action: {
+                                selectedChapter = chapter
+                                updateReferenceQuery()
+                                showChapterPicker = false
+                            }) {
+                                HStack {
+                                    Text("\(chapter)장")
+                                    Spacer()
+                                    if chapter == selectedChapter {
+                                        Image(systemName: "checkmark")
+                                            .foregroundStyle(.blue)
+                                    }
+                                }
+                            }
+                            .foregroundStyle(.primary)
+                        }
+                    } else {
+                        Text("책을 먼저 선택하세요")
+                            .foregroundStyle(.secondary)
+                    }
+
+                    .navigationTitle("장 선택")
+                    .navigationBarTitleDisplayMode(.inline)
+                    .toolbar {
+                        ToolbarItem(placement: .topBarTrailing) {
+                            Button("완료") { showChapterPicker = false }
+                        }
+                    }
+                }
+            }
+            .sheet(isPresented: $showVersePicker) {
+                NavigationStack {
+                    let selectedBook = selectedBookID.isEmpty ? nil : Bible.book(selectedBookID)
+                    let versesInChapter = selectedBook.map { store.verses(edition: readingState.selectedEdition, book: $0, chapter: selectedChapter) } ?? []
+                    let maxVerses = versesInChapter.count
+
+                    if maxVerses > 0 {
+                        List {
+                            Button(action: {
+                                selectedVerse = 0
+                                updateReferenceQuery()
+                                showVersePicker = false
+                            }) {
+                                HStack {
+                                    Text("전체")
+                                    Spacer()
+                                    if selectedVerse == 0 {
+                                        Image(systemName: "checkmark")
+                                            .foregroundStyle(.blue)
+                                    }
+                                }
+                            }
+                            .foregroundStyle(.primary)
+
+                            ForEach(1...maxVerses, id: \.self) { verse in
+                                Button(action: {
+                                    selectedVerse = verse
+                                    updateReferenceQuery()
+                                    showVersePicker = false
+                                }) {
+                                    HStack {
+                                        Text("\(verse)절")
+                                        Spacer()
+                                        if verse == selectedVerse {
+                                            Image(systemName: "checkmark")
+                                                .foregroundStyle(.blue)
+                                        }
+                                    }
+                                }
+                                .foregroundStyle(.primary)
+                            }
+                        }
+                    } else {
+                        Text("책과 장을 먼저 선택하세요")
+                            .foregroundStyle(.secondary)
+                    }
+
+                    .navigationTitle("절 선택")
+                    .navigationBarTitleDisplayMode(.inline)
+                    .toolbar {
+                        ToolbarItem(placement: .topBarTrailing) {
+                            Button("완료") { showVersePicker = false }
+                        }
+                    }
                 }
             }
             .toolbar {
