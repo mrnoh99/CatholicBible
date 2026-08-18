@@ -1405,8 +1405,8 @@ struct SearchView: View {
                     selectedEditionIDs.contains(edition.id) && selectedAnnotationEditionIDs.contains(edition.id)
                 }
             } else if selectedEditionIDs.isEmpty {
-                // 선택된 판본이 없으면 검색 결과 없음
-                editionsToSearch = []
+                // 선택된 판본이 없으면 로드된 모든 판본 사용
+                editionsToSearch = store.loadedEditions
             } else {
                 // 선택된 판본들 사용
                 editionsToSearch = store.loadedEditions.filter { selectedEditionIDs.contains($0.id) }
@@ -1477,8 +1477,8 @@ struct SearchView: View {
                             selectedEditionIDs.contains(edition.id) && selectedAnnotationEditionIDs.contains(edition.id)
                         }
                     } else if selectedEditionIDs.isEmpty {
-                        // 선택된 판본이 없으면 검색 결과 없음
-                        editionsToSearch = []
+                        // 선택된 판본이 없으면 로드된 모든 판본 사용
+                        editionsToSearch = store.loadedEditions
                     } else {
                         // 선택된 판본들 사용
                         editionsToSearch = store.loadedEditions.filter { selectedEditionIDs.contains($0.id) }
@@ -1526,7 +1526,7 @@ struct SearchView: View {
                         selectedEditionIDs.contains(edition.id) && selectedAnnotationEditionIDs.contains(edition.id)
                     }
                 } else if selectedEditionIDs.isEmpty {
-                    editionsToSearch = []
+                    editionsToSearch = store.loadedEditions
                 } else {
                     editionsToSearch = store.loadedEditions.filter { selectedEditionIDs.contains($0.id) }
                 }
