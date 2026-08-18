@@ -296,8 +296,20 @@ struct ReaderPane: View {
     /// 절 번호 → 그 절 앞에 놓일 소제목(각주 마커는 지운다).
     private var titleMap: [Int: String] {
         guard showsTitles, chapter > 0 else { return [:] }
-        return knbNotes.titlesByVerse(edition: edition.id, bookID: book.id, chapter: chapter)
+
+        // KNB Notes의 제목 먼저 확인
+        var titlesByVerse = knbNotes.titlesByVerse(edition: edition.id, bookID: book.id, chapter: chapter)
             .mapValues { AnnotationMarkup.stripMarkers($0) }
+
+        // BibleStore의 제목 추가 (NABRE 등)
+        let storeTitle = store.titles(edition: edition, book: book, chapter: chapter)
+        for title in storeTitle {
+            if titlesByVerse[title.verse] == nil {
+                titlesByVerse[title.verse] = title.text
+            }
+        }
+
+        return titlesByVerse
     }
 
     /// 표시 중인 장. 연동 시 공유 장, 아니면 이 열의 자기 장.
@@ -644,8 +656,20 @@ struct SpreadReader: View {
     private var showsTitles: Bool { edition.id == "knb" || edition.isAnnotated }
     private var titleMap: [Int: String] {
         guard showsTitles, chapter > 0 else { return [:] }
-        return knbNotes.titlesByVerse(edition: edition.id, bookID: book.id, chapter: chapter)
+
+        // KNB Notes의 제목 먼저 확인
+        var titlesByVerse = knbNotes.titlesByVerse(edition: edition.id, bookID: book.id, chapter: chapter)
             .mapValues { AnnotationMarkup.stripMarkers($0) }
+
+        // BibleStore의 제목 추가 (NABRE 등)
+        let storeTitle = store.titles(edition: edition, book: book, chapter: chapter)
+        for title in storeTitle {
+            if titlesByVerse[title.verse] == nil {
+                titlesByVerse[title.verse] = title.text
+            }
+        }
+
+        return titlesByVerse
     }
 
     var body: some View {
