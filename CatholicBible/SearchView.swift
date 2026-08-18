@@ -531,9 +531,23 @@ struct SearchView: View {
 
                             // 판본 선택
                             VStack(alignment: .leading, spacing: 8) {
-                                Text("판본 선택")
-                                    .font(.caption.weight(.semibold))
-                                    .foregroundStyle(.secondary)
+                                HStack {
+                                    Text("판본 선택")
+                                        .font(.caption.weight(.semibold))
+                                        .foregroundStyle(.secondary)
+                                    Spacer()
+                                    Button("전체선택") {
+                                        selectedEditionIDs = Set(store.loadedEditions.map { $0.id })
+                                    }
+                                    .font(.caption2)
+                                    .foregroundStyle(.blue)
+
+                                    Button("선택해지") {
+                                        selectedEditionIDs.removeAll()
+                                    }
+                                    .font(.caption2)
+                                    .foregroundStyle(.red)
+                                }
 
                                 VStack(alignment: .leading, spacing: 6) {
                                     ForEach(store.loadedEditions) { edition in
