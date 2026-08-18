@@ -93,40 +93,38 @@ struct SearchView: View {
         NavigationStack {
             VStack(spacing: 0) {
                 ScrollView {
-                    VStack(spacing: 20) {
+                    VStack(spacing: 8) {
                         // 검색 입력 필드
-                        VStack(spacing: 12) {
-                            ZStack(alignment: .topTrailing) {
-                                TextField(mode == .text ? "단어 검색 (예: 사랑)" : "장절 검색 (예: 1코린 13,13)",
-                                          text: $query)
-                                    .font(.system(size: 14, weight: .regular))
-                                    .padding(.vertical, 4)
-                                    .padding(.horizontal, 12)
-                                    .submitLabel(.search)
-                                    .onSubmit(performSearchAction)
-                                    .frame(minHeight: 24)
+                        ZStack(alignment: .topTrailing) {
+                            TextField(mode == .text ? "단어 검색 (예: 사랑)" : "장절 검색 (예: 1코린 13,13)",
+                                      text: $query)
+                                .font(.system(size: 14, weight: .regular))
+                                .padding(.vertical, 4)
+                                .padding(.horizontal, 12)
+                                .submitLabel(.search)
+                                .onSubmit(performSearchAction)
+                                .frame(minHeight: 24)
 
-                                if !query.isEmpty {
-                                    Button(action: { query = "" }) {
-                                        Image(systemName: "xmark.circle.fill")
-                                            .font(.system(size: 32))
-                                            .foregroundStyle(.secondary)
-                                    }
-                                    .padding(.all, 20)
+                            if !query.isEmpty {
+                                Button(action: { query = "" }) {
+                                    Image(systemName: "xmark.circle.fill")
+                                        .font(.system(size: 20))
+                                        .foregroundStyle(.secondary)
                                 }
+                                .padding(.all, 8)
                             }
-                            .background(Color(.systemGray6))
-                            .cornerRadius(20)
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 20)
-                                    .stroke(Color.blue, lineWidth: 3)
-                            )
                         }
+                        .background(Color(.systemGray6))
+                        .cornerRadius(12)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 12)
+                                .stroke(Color.blue, lineWidth: 2)
+                        )
                         .padding(.horizontal, 16)
-                        .padding(.top, 24)
+                        .padding(.top, 12)
 
                         // 검색 및 삭제 버튼
-                        HStack(spacing: 16) {
+                        HStack(spacing: 12) {
                             Button(action: {
                                 performSearchAction()
                                 showResults = true
@@ -136,11 +134,11 @@ struct SearchView: View {
                                     Text("검색")
                                 }
                                 .frame(maxWidth: .infinity)
-                                .padding(.vertical, 8)
+                                .padding(.vertical, 6)
                                 .font(.system(size: 14, weight: .regular))
                                 .background(Color.blue)
                                 .foregroundStyle(.white)
-                                .cornerRadius(12)
+                                .cornerRadius(10)
                             }
                             .disabled(query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
 
@@ -155,17 +153,16 @@ struct SearchView: View {
                                     showResults = false
                                 }) {
                                     Image(systemName: "trash")
-                                        .font(.system(size: 16))
+                                        .font(.system(size: 14))
                                 }
-                                .frame(width: 40, height: 40)
+                                .frame(width: 36, height: 36)
                                 .background(Color(.systemRed))
                                 .foregroundStyle(.white)
-                                .cornerRadius(10)
+                                .cornerRadius(8)
                             }
                         }
                         .padding(.horizontal, 16)
-
-                        Divider().padding(.horizontal, 16)
+                        .padding(.bottom, 8)
 
                         Divider().padding(.horizontal, 16)
 
