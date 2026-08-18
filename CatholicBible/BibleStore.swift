@@ -159,6 +159,9 @@ final class BibleStore {
                             }
                         }
                     }
+                } else if editionID == "nab" {
+                    // NAB는 notes 파일이 없으므로 verse 데이터에서 제목 추출
+                    titles = Self.extractTitlesFromVerses(file.books)
                 }
 
                 result[editionID] = EditionText(translation: file.translation,
@@ -185,6 +188,88 @@ final class BibleStore {
         default:
             return ""
         }
+    }
+
+    /// NAB 같이 titles 파일이 없는 판본에서 verse 데이터를 분석해 제목 추출
+    private static nonisolated func extractTitlesFromVerses(
+        _ books: [String: [String: [String: String]]]
+    ) -> [String: [Int: [Int: String]]] {
+        var result: [String: [Int: [Int: String]]] = [:]
+
+        for (bookID, chapters) in books {
+            var bookTitles: [Int: [Int: String]] = [:]
+
+            for (chapterKey, verses) in chapters {
+                guard let chapterNumber = Int(chapterKey) else { continue }
+                var chapterTitles: [Int: String] = [:]
+
+                for (verseKey, verseText) in verses {
+                    guard let verseNumber = Int(verseKey) else { continue }
+
+                    // 제목 판별 기준
+                    if Self.isLikelyTitle(verseText) {
+                        chapterTitles[verseNumber] = verseText
+                    }
+                }
+
+                if !chapterTitles.isEmpty {
+                    bookTitles[chapterNumber] = chapterTitles
+                }
+            }
+
+            if !bookTitles.isEmpty {
+                result[bookID] = bookTitles
+            }
+        }
+
+        return result
+    }
+
+    /// Verse 텍스트가 제목인지 판별
+    private static nonisolated func isLikelyTitle(_ text: String) -> Bool {
+        let trimmed = text.trimmingCharacters(in: .whitespaces)
+
+        // 기본 길이 체크 (제목은 보통 짧음)
+        guard trimmed.count > 3 && trimmed.count < 150 else { return false }
+
+        // 마침표로 끝나야 함
+        guard trimmed.hasSuffix(".") else { return false }
+
+        // 숫자가 많으면 제목이 아님
+        let digitCount = trimmed.filter { $0.isNumber }.count
+        guard digitCount < trimmed.count / 5 else { return false }
+
+        let lowerText = trimmed.lowercased()
+
+        // 제목처럼 보이는 시작 패턴
+        let titlePatterns = [
+            "the ", "teaching ", "parable ", "vision ", "prayer ", "psalm ",
+            "blessed ", "produce ", "proclamation ", "song "
+        ]
+        let startsWithPattern = titlePatterns.contains { lowerText.hasPrefix($0) }
+
+        // 일반 문장의 동사로 시작하면 제목이 아님
+        let commonVerbStarts = [
+            "when ", "then ", "said ", "behold ", "and ", "now ", "also ", "but ",
+            "so ", "as ", "he ", "she ", "they ", "jesus ", "god ", "the lord "
+        ]
+        let startsWithVerb = commonVerbStarts.contains { lowerText.hasPrefix($0) }
+
+        // 제목은 동사로 시작하지 않거나, 특정 제목 패턴을 가짐
+        if startsWithPattern {
+            return true
+        }
+
+        if startsWithVerb {
+            return false
+        }
+
+        // 대문자로 시작하는 짧은 구문 중 쉼표가 없고 마침표로 끝남
+        guard trimmed.first?.isUppercase == true else { return false }
+        let hasComma = trimmed.filter { $0 == "," }.count > 0
+        guard !hasComma || trimmed.filter({ $0 == "," }).count <= 1 else { return false }
+
+        return true
     }
 
     // MARK: - 조회
