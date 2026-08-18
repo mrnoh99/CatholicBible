@@ -101,6 +101,7 @@ struct SearchView: View {
     @State private var searchPageSize = 50
     @State private var currentSearchQuery = ""
     @State private var currentSearchEditions: [Edition] = []
+    @State private var isExactMatchMode = false
 
     // 책/장/절 선택 Modal
     @State private var showBookPicker = false
@@ -1406,8 +1407,12 @@ struct SearchView: View {
             }
 
             guard !Task.isCancelled else { return }
-            results.append(contentsOf: hits)
-            currentOffset += hits.count
+            var filteredHits = hits
+            if isExactMatchMode {
+                filteredHits = hits.filter { findExactMatches($0.text, term: text) }
+            }
+            results.append(contentsOf: filteredHits)
+            currentOffset += filteredHits.count
             isLoadingMore = false
         }
     }
@@ -1418,7 +1423,8 @@ struct SearchView: View {
         if mode == .text {
             let fullQuery = query.trimmingCharacters(in: .whitespacesAndNewlines)
             let isExplicitPartial = fullQuery.starts(with: "*")
-            let text = isExplicitPartial ? String(fullQuery.dropFirst()) : fullQuery
+            let (parsedText, isExactMatch) = parseExactMatchQuery(isExplicitPartial ? String(fullQuery.dropFirst()) : fullQuery)
+            let text = parsedText
 
             guard text.count >= 2 else {
                 results = []; hasSearched = false; isSearching = false
@@ -1428,7 +1434,11 @@ struct SearchView: View {
             // 검색 결과 내에서 재검색
             if scope == .results {
                 let filtered = previousResults.filter { hit in
-                    hit.text.localizedCaseInsensitiveContains(text)
+                    if isExactMatch {
+                        return findExactMatches(hit.text, term: text)
+                    } else {
+                        return hit.text.localizedCaseInsensitiveContains(text)
+                    }
                 }
                 results = filtered
                 addToTextSearchHistory(text)
@@ -1455,6 +1465,7 @@ struct SearchView: View {
                 currentOffset = 0
                 currentSearchQuery = text
                 currentSearchEditions = editionsToSearch
+                isExactMatchMode = isExactMatch
 
                 searchTask = Task {
                     try? await Task.sleep(for: .milliseconds(300))
@@ -1485,9 +1496,13 @@ struct SearchView: View {
                     }
 
                     guard !Task.isCancelled else { return }
-                    previousResults = hits
-                    results = hits
-                    currentOffset = hits.count
+                    var filteredHits = hits
+                    if isExactMatch {
+                        filteredHits = hits.filter { findExactMatches($0.text, term: text) }
+                    }
+                    previousResults = filteredHits
+                    results = filteredHits
+                    currentOffset = filteredHits.count
                     addToTextSearchHistory(text)
                     hasSearched = true
                     isSearching = false
@@ -1514,6 +1529,7 @@ struct SearchView: View {
             currentOffset = 0
             currentSearchQuery = text
             currentSearchEditions = editionsToSearch
+            isExactMatchMode = isExactMatch
 
             searchTask = Task {
                 try? await Task.sleep(for: .milliseconds(300))
@@ -1544,9 +1560,13 @@ struct SearchView: View {
                 }
 
                 guard !Task.isCancelled else { return }
-                previousResults = hits
-                results = hits
-                currentOffset = hits.count
+                var filteredHits = hits
+                if isExactMatch {
+                    filteredHits = hits.filter { findExactMatches($0.text, term: text) }
+                }
+                previousResults = filteredHits
+                results = filteredHits
+                currentOffset = filteredHits.count
                 addToTextSearchHistory(text)
                 hasSearched = true
                 isSearching = false
@@ -1823,6 +1843,39 @@ struct SearchView: View {
         }
 
         return Array(Set(terms))
+    }
+
+    private func parseExactMatchQuery(_ input: String) -> (query: String, isExactMatch: Bool) {
+        let trimmed = input.trimmingCharacters(in: .whitespacesAndNewlines)
+        if (trimmed.starts(with: "\"") && trimmed.hasSuffix("\"")) ||
+           (trimmed.starts(with: "'") && trimmed.hasSuffix("'")) {
+            let extracted = String(trimmed.dropFirst().dropLast()).trimmingCharacters(in: .whitespacesAndNewlines)
+            return (extracted, true)
+        }
+        return (trimmed, false)
+    }
+
+    private func containsWordBoundary(_ text: String, around range: Range<String.Index>) -> Bool {
+        let beforeChar = range.lowerBound > text.startIndex ? text[text.index(before: range.lowerBound)] : Character(" ")
+        let afterChar = range.upperBound < text.endIndex ? text[range.upperBound] : Character(" ")
+
+        let isBeforeBoundary = !beforeChar.isLetter && !beforeChar.isNumber && beforeChar != "_"
+        let isAfterBoundary = !afterChar.isLetter && !afterChar.isNumber && afterChar != "_"
+        return isBeforeBoundary && isAfterBoundary
+    }
+
+    private func findExactMatches(_ text: String, term: String) -> Bool {
+        let lowercaseText = text.lowercased()
+        let lowercaseTerm = term.lowercased()
+        var searchStart = lowercaseText.startIndex
+
+        while let range = lowercaseText.range(of: lowercaseTerm, range: searchStart..<lowercaseText.endIndex) {
+            if containsWordBoundary(lowercaseText, around: range) {
+                return true
+            }
+            searchStart = range.upperBound
+        }
+        return false
     }
 
     private func performTextSearch(_ text: String, scope: SearchScope) {
