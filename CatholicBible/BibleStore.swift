@@ -20,6 +20,16 @@ private nonisolated struct BibleTextFile: Decodable, Sendable {
     let books: [String: [String: [String: String]]]
 }
 
+/// 주석 JSON 파일 구조
+private nonisolated struct AnnotationFile: Decodable, Sendable {
+    struct Annotation: Decodable, Sendable {
+        let n: String  // 절 번호
+        let text: String  // 주석 내용
+    }
+
+    let annotations: [String: [String: [Annotation]]]  // 책 id → 장 → [주석]
+}
+
 nonisolated struct Verse: Identifiable, Hashable, Sendable {
     let number: Int
     let text: String
@@ -46,6 +56,8 @@ nonisolated struct EditionText: Sendable {
     var books: [String: [Int: [Verse]]]
     /// 검색용 원본
     var rawBooks: [String: [String: [String: String]]]
+    /// 주석 데이터 (책 id → 장 → 절 → 주석 텍스트)
+    var annotations: [String: [Int: [Int: String]]] = [:]
 }
 
 @Observable
@@ -81,17 +93,56 @@ final class BibleStore {
                     }
                     if !chapterMap.isEmpty { indexed[bookID] = chapterMap }
                 }
+
+                // 주석 로드
+                var annotations: [String: [Int: [Int: String]]] = [:]
+                if let annotationURL = Bundle.main.url(forResource: self.annotationFileName(for: editionID), withExtension: "json"),
+                   let annotationData = try? Data(contentsOf: annotationURL),
+                   let annotationFile = try? JSONDecoder().decode(AnnotationFile.self, from: annotationData) {
+                    for (bookID, chapters) in annotationFile.annotations {
+                        var bookAnnotations: [Int: [Int: String]] = [:]
+                        for (chapterKey, annots) in chapters {
+                            if let chapterNumber = Int(chapterKey) {
+                                var verseAnnotations: [Int: String] = [:]
+                                for annot in annots {
+                                    if let verseNumber = Int(annot.n) {
+                                        verseAnnotations[verseNumber] = annot.text
+                                    }
+                                }
+                                if !verseAnnotations.isEmpty {
+                                    bookAnnotations[chapterNumber] = verseAnnotations
+                                }
+                            }
+                        }
+                        if !bookAnnotations.isEmpty {
+                            annotations[bookID] = bookAnnotations
+                        }
+                    }
+                }
+
                 result[editionID] = EditionText(translation: file.translation,
                                                 source: file.source,
                                                 bookNames: file.bookNames ?? [:],
                                                 books: indexed,
-                                                rawBooks: file.books)
+                                                rawBooks: file.books,
+                                                annotations: annotations)
             }
             return result
         }.value
 
         editions = loaded
         isLoaded = true
+    }
+
+    private nonisolated func annotationFileName(for editionID: String) -> String {
+        switch editionID {
+        case "knb", "knbnotes":
+            return "KnbNotes"
+        case "nabre":
+            return "NabreNotes"
+        default:
+            return ""
+        }
     }
 
     // MARK: - 조회

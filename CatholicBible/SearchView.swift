@@ -1421,9 +1421,10 @@ struct SearchView: View {
                     selectedEditionIDs.contains(edition.id) && selectedAnnotationEditionIDs.contains(edition.id)
                 }
             } else if scope == .current {
-                // 현재 판본으로 검색
+                // 현재 판본으로 검색, 없으면 로드된 모든 판본 사용
                 let currentEdition = readingState.selectedEdition
-                editionsToSearch = store.loadedEditions.filter { $0.id == currentEdition.id }
+                let currentSearchEditions = store.loadedEditions.filter { $0.id == currentEdition.id }
+                editionsToSearch = currentSearchEditions.isEmpty ? store.loadedEditions : currentSearchEditions
             } else if selectedEditionIDs.isEmpty {
                 // 선택된 판본이 없으면 로드된 모든 판본 사용
                 editionsToSearch = store.loadedEditions
@@ -1497,9 +1498,10 @@ struct SearchView: View {
                             selectedEditionIDs.contains(edition.id) && selectedAnnotationEditionIDs.contains(edition.id)
                         }
                     } else if scope == .current {
-                        // 현재 판본으로 검색
+                        // 현재 판본으로 검색, 없으면 로드된 모든 판본 사용
                         let currentEdition = readingState.selectedEdition
-                        editionsToSearch = store.loadedEditions.filter { $0.id == currentEdition.id }
+                        let currentSearchEditions = store.loadedEditions.filter { $0.id == currentEdition.id }
+                        editionsToSearch = currentSearchEditions.isEmpty ? store.loadedEditions : currentSearchEditions
                     } else if selectedEditionIDs.isEmpty {
                         // 선택된 판본이 없으면 로드된 모든 판본 사용
                         editionsToSearch = store.loadedEditions
@@ -1550,9 +1552,10 @@ struct SearchView: View {
                         selectedEditionIDs.contains(edition.id) && selectedAnnotationEditionIDs.contains(edition.id)
                     }
                 } else if scope == .current {
-                    // 현재 판본으로 검색
+                    // 현재 판본으로 검색, 없으면 로드된 모든 판본 사용
                     let currentEdition = readingState.selectedEdition
-                    editionsToSearch = store.loadedEditions.filter { $0.id == currentEdition.id }
+                    let currentSearchEditions = store.loadedEditions.filter { $0.id == currentEdition.id }
+                    editionsToSearch = currentSearchEditions.isEmpty ? store.loadedEditions : currentSearchEditions
                 } else if selectedEditionIDs.isEmpty {
                     editionsToSearch = store.loadedEditions
                 } else {
