@@ -9,7 +9,7 @@
 //    3. 주석 성경          /Knbnotes/Bible  73권 (TOB 기반 주석)
 //    4. 공동번역 성서       /Ncb             73권
 //    5. 200주년 신약성서    /200             신약 27권
-//    6. NAB(NABRE)        /Nab             73권 (영어)
+//    6. NABRE(본문+주석)   /                73권 (영어)
 //    7. 최민순 역 시편      /Pscms           시편 150편
 //    8. Nova Vulgata      /Vulgata         73권 (라틴어)
 //    9. 전례 시편          /Pslitur         시편 150편
@@ -89,11 +89,6 @@ enum Editions {
                 copyright: "「200주년 신약성서」 ⓒ 분도출판사",
                 summary: "한국 천주교 200주년 기념 신약 번역",
                 scope: .newTestament, language: "ko"),
-        Edition(id: "nab", urlPath: "Nab",
-                name: "NAB (New American Bible)", shortName: "NAB",
-                copyright: "New American Bible ⓒ Confraternity of Christian Doctrine",
-                summary: "미국 가톨릭 공용 영어 성경",
-                scope: .full, language: "en"),
         Edition(id: "nabre", urlPath: "",
                 name: "NABRE (본문+주석)", shortName: "NABRE 주석",
                 copyright: "New American Bible, revised edition ⓒ Confraternity of Christian Doctrine (USCCB)",

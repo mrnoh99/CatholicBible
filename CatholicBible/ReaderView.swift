@@ -291,14 +291,14 @@ struct ReaderPane: View {
     private var edition: Edition { Editions.edition(editionID) ?? Editions.all[0] }
     private var book: BibleBook { Bible.book(bookID) ?? Bible.books[0] }
 
-    /// 한국어 성경(「성경」·「한국어 NAB」·「주석 성경」)이나 영어 성경(NAB, NABRE)은 절 앞에 소제목을 보여 준다.
+    /// 한국어 성경(「성경」·「한국어 NAB」·「주석 성경」)이나 영어 성경(NABRE)은 절 앞에 소제목을 보여 준다.
     private var showsTitles: Bool {
         // 한국어 성경
         if (edition.id == "knb" || edition.id == "knab" || edition.isAnnotated) && edition.language == "ko" {
             return true
         }
-        // 영어 성경 (NAB, NABRE)
-        if edition.id == "nab" || edition.id == "nabre" {
+        // 영어 성경 (NABRE)
+        if edition.id == "nabre" {
             return true
         }
         return false
@@ -323,8 +323,8 @@ struct ReaderPane: View {
                     titlesByVerse[title.verse] = title.text
                 }
             }
-        } else if edition.id == "nab" || edition.id == "nabre" {
-            // 영어 성경 (NAB, NABRE)의 경우 BibleStore의 제목 사용
+        } else if edition.id == "nabre" {
+            // 영어 성경 (NABRE)의 경우 BibleStore의 제목 사용
             let storeTitle = store.titles(edition: edition, book: book, chapter: chapter)
             for title in storeTitle {
                 titlesByVerse[title.verse] = title.text
