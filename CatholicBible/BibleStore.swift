@@ -18,6 +18,8 @@ private nonisolated struct BibleTextFile: Decodable, Sendable {
     let bookNames: [String: String]?
     /// 책 id → 장 번호(문자열) → 절 번호(문자열) → 본문
     let books: [String: [String: [String: String]]]
+    /// 소제목 데이터 (책 id → 장 번호(문자열) → 절 번호(문자열) → 제목)
+    let headings: [String: [String: [String: String]]]?
 }
 
 /// 주석 JSON 파일 구조
@@ -159,8 +161,31 @@ final class BibleStore {
                             }
                         }
                     }
+                }
+
+                // BibleTextFile의 headings 로드 (NAB, NABRE에서 사용)
+                if let headingsData = file.headings {
+                    for (bookID, chapters) in headingsData {
+                        var bookTitles: [Int: [Int: String]] = [:]
+                        for (chapterKey, verseTitles) in chapters {
+                            if let chapterNumber = Int(chapterKey) {
+                                var titleMap: [Int: String] = [:]
+                                for (verseKey, titleText) in verseTitles {
+                                    if let verseNumber = Int(verseKey) {
+                                        titleMap[verseNumber] = titleText
+                                    }
+                                }
+                                if !titleMap.isEmpty {
+                                    bookTitles[chapterNumber] = titleMap
+                                }
+                            }
+                        }
+                        if !bookTitles.isEmpty {
+                            titles[bookID] = bookTitles
+                        }
+                    }
                 } else if editionID == "nab" {
-                    // NAB는 notes 파일이 없으므로 verse 데이터에서 제목 추출
+                    // NAB는 headings이 없으면 verse 데이터에서 제목 추출
                     titles = Self.extractTitlesFromVerses(file.books)
                 }
 

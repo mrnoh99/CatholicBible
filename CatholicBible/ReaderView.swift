@@ -291,24 +291,42 @@ struct ReaderPane: View {
     private var edition: Edition { Editions.edition(editionID) ?? Editions.all[0] }
     private var book: BibleBook { Bible.book(bookID) ?? Bible.books[0] }
 
-    /// 한국어 성경(「성경」·「한국어 NAB」·「주석 성경」)은 절 앞에 소제목을 보여 준다.
+    /// 한국어 성경(「성경」·「한국어 NAB」·「주석 성경」)이나 영어 성경(NAB, NABRE)은 절 앞에 소제목을 보여 준다.
     private var showsTitles: Bool {
-        (edition.id == "knb" || edition.id == "knab" || edition.isAnnotated) && edition.language == "ko"
+        // 한국어 성경
+        if (edition.id == "knb" || edition.id == "knab" || edition.isAnnotated) && edition.language == "ko" {
+            return true
+        }
+        // 영어 성경 (NAB, NABRE)
+        if edition.id == "nab" || edition.id == "nabre" {
+            return true
+        }
+        return false
     }
     /// 절 번호 → 그 절 앞에 놓일 소제목(각주 마커는 지운다).
     private var titleMap: [Int: String] {
         guard showsTitles, chapter > 0 else { return [:] }
 
-        // 한국어 성경의 경우 KnbNotes의 제목 사용
-        // KNAB은 knbnotes의 소제목을 재사용
-        let titleEdition = edition.id == "knab" ? "knbnotes" : edition.id
-        var titlesByVerse = knbNotes.titlesByVerse(edition: titleEdition, bookID: book.id, chapter: chapter)
-            .mapValues { AnnotationMarkup.stripMarkers($0) }
+        var titlesByVerse: [Int: String] = [:]
 
-        // BibleStore의 제목 추가 (NABRE 등)
-        let storeTitle = store.titles(edition: edition, book: book, chapter: chapter)
-        for title in storeTitle {
-            if titlesByVerse[title.verse] == nil {
+        // 한국어 성경의 경우 KnbNotes의 제목 사용
+        if (edition.id == "knb" || edition.id == "knab" || edition.isAnnotated) && edition.language == "ko" {
+            // KNAB은 knbnotes의 소제목을 재사용
+            let titleEdition = edition.id == "knab" ? "knbnotes" : edition.id
+            titlesByVerse = knbNotes.titlesByVerse(edition: titleEdition, bookID: book.id, chapter: chapter)
+                .mapValues { AnnotationMarkup.stripMarkers($0) }
+
+            // BibleStore의 제목 추가 (NABRE 등)
+            let storeTitle = store.titles(edition: edition, book: book, chapter: chapter)
+            for title in storeTitle {
+                if titlesByVerse[title.verse] == nil {
+                    titlesByVerse[title.verse] = title.text
+                }
+            }
+        } else if edition.id == "nab" || edition.id == "nabre" {
+            // 영어 성경 (NAB, NABRE)의 경우 BibleStore의 제목 사용
+            let storeTitle = store.titles(edition: edition, book: book, chapter: chapter)
+            for title in storeTitle {
                 titlesByVerse[title.verse] = title.text
             }
         }
