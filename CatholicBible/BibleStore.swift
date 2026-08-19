@@ -163,10 +163,12 @@ final class BibleStore {
                     }
                 }
 
-                // BibleTextFile의 headings 로드 (NAB, NABRE에서 사용)
-                if let headingsData = file.headings {
+                // BibleTextFile의 headings 로드 (NABRE에서 사용)
+                if editionID == "nabre", let headingsData = file.headings {
                     for (bookID, chapters) in headingsData {
-                        var bookTitles: [Int: [Int: String]] = [:]
+                        if titles[bookID] == nil {
+                            titles[bookID] = [:]
+                        }
                         for (chapterKey, verseTitles) in chapters {
                             if let chapterNumber = Int(chapterKey) {
                                 var titleMap: [Int: String] = [:]
@@ -176,17 +178,16 @@ final class BibleStore {
                                     }
                                 }
                                 if !titleMap.isEmpty {
-                                    bookTitles[chapterNumber] = titleMap
+                                    if titles[bookID]?[chapterNumber] == nil {
+                                        titles[bookID]?[chapterNumber] = titleMap
+                                    } else {
+                                        // 기존 titles과 병합
+                                        titles[bookID]?[chapterNumber]?.merge(titleMap) { (_, new) in new }
+                                    }
                                 }
                             }
                         }
-                        if !bookTitles.isEmpty {
-                            titles[bookID] = bookTitles
-                        }
                     }
-                } else if editionID == "nab" {
-                    // NAB는 headings이 없으면 verse 데이터에서 제목 추출
-                    titles = Self.extractTitlesFromVerses(file.books)
                 }
 
                 result[editionID] = EditionText(translation: file.translation,
