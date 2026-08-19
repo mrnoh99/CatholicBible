@@ -2,16 +2,17 @@
 //  Edition.swift
 //  CatholicBible
 //
-//  천주교회의 아홉가지 책(판본). 각 판본이 서재의 ebook 한 권이다.
+//  천주교회의 열가지 책(판본). 각 판본이 서재의 ebook 한 권이다.
 //
 //    1. 성경(새 번역)      /Knb             73권
-//    2. 주석 성경          /Knbnotes/Bible  73권 (TOB 기반 주석)
-//    3. 공동번역 성서       /Ncb             73권
-//    4. 200주년 신약성서    /200             신약 27권
-//    5. NAB(NABRE)        /Nab             73권 (영어)
-//    6. 최민순 역 시편      /Pscms           시편 150편
-//    7. Nova Vulgata      /Vulgata         73권 (라틴어)
-//    8. 전례 시편          /Pslitur         시편 150편
+//    2. 한국어 NAB 성경    /Knab            73권
+//    3. 주석 성경          /Knbnotes/Bible  73권 (TOB 기반 주석)
+//    4. 공동번역 성서       /Ncb             73권
+//    5. 200주년 신약성서    /200             신약 27권
+//    6. NAB(NABRE)        /Nab             73권 (영어)
+//    7. 최민순 역 시편      /Pscms           시편 150편
+//    8. Nova Vulgata      /Vulgata         73권 (라틴어)
+//    9. 전례 시편          /Pslitur         시편 150편
 //
 
 import Foundation
@@ -67,6 +68,11 @@ enum Editions {
                 name: "성경", shortName: "성경",
                 copyright: "「성경」 ⓒ 한국천주교주교회의",
                 summary: "한국 천주교 공용 새 번역 성경 (2005)",
+                scope: .full, language: "ko"),
+        Edition(id: "knab", urlPath: "Knab",
+                name: "한국어 NAB 성경", shortName: "한국어 NAB",
+                copyright: "한국어 NAB ⓒ 한국천주교주교회의",
+                summary: "New American Bible 한국어 번역",
                 scope: .full, language: "ko"),
         Edition(id: "knbnotes", urlPath: "Knbnotes/Bible",
                 name: "주석 성경", shortName: "주석 성경",

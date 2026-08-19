@@ -291,14 +291,18 @@ struct ReaderPane: View {
     private var edition: Edition { Editions.edition(editionID) ?? Editions.all[0] }
     private var book: BibleBook { Bible.book(bookID) ?? Bible.books[0] }
 
-    /// 「성경」·「주석 성경」(같은 주교회의 번역)은 절 앞에 소제목을 보여 준다.
-    private var showsTitles: Bool { edition.id == "knb" || edition.isAnnotated }
+    /// 한국어 성경(「성경」·「한국어 NAB」·「주석 성경」)은 절 앞에 소제목을 보여 준다.
+    private var showsTitles: Bool {
+        (edition.id == "knb" || edition.id == "knab" || edition.isAnnotated) && edition.language == "ko"
+    }
     /// 절 번호 → 그 절 앞에 놓일 소제목(각주 마커는 지운다).
     private var titleMap: [Int: String] {
         guard showsTitles, chapter > 0 else { return [:] }
 
-        // KNB Notes의 제목 먼저 확인
-        var titlesByVerse = knbNotes.titlesByVerse(edition: edition.id, bookID: book.id, chapter: chapter)
+        // 한국어 성경의 경우 KnbNotes의 제목 사용
+        // KNAB은 knbnotes의 소제목을 재사용
+        let titleEdition = edition.id == "knab" ? "knbnotes" : edition.id
+        var titlesByVerse = knbNotes.titlesByVerse(edition: titleEdition, bookID: book.id, chapter: chapter)
             .mapValues { AnnotationMarkup.stripMarkers($0) }
 
         // BibleStore의 제목 추가 (NABRE 등)
