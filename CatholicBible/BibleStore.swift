@@ -179,11 +179,11 @@ final class BibleStore {
                                     }
                                 }
                                 if !titleMap.isEmpty {
-                                    if titles[bookID]?[chapterNumber] == nil {
-                                        titles[bookID]?[chapterNumber] = titleMap
+                                    if titles[bookID]![chapterNumber] == nil {
+                                        titles[bookID]![chapterNumber] = titleMap
                                     } else {
                                         // 기존 titles과 병합
-                                        titles[bookID]?[chapterNumber]?.merge(titleMap) { (_, new) in new }
+                                        titles[bookID]![chapterNumber]?.merge(titleMap) { (_, new) in new }
                                     }
                                 }
                             }
