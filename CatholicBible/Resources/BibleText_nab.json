@@ -23472,7 +23472,7 @@
       },
       "10": {
         "1": "“Amen, amen, I say to you, whoever does not enter a sheepfold through the gate but climbs over elsewhere is a thief and a robber.",
-        "10": "The Good Shepherd.",
+        "10": "A thief comes only to steal and slaughter and destroy; I came so that they might have life and have it more abundantly.",
         "11": "I am the good shepherd. A good shepherd lays down his life for the sheep.",
         "12": "A hired man, who is not a shepherd and whose sheep are not his own, sees a wolf coming and leaves the sheep and runs away, and the wolf catches and scatters them.",
         "13": "This is because he works for pay and has no concern for the sheep.",
@@ -23512,12 +23512,13 @@
         "7": "So Jesus said again, “Amen, amen, I say to you, I am the gate for the sheep.",
         "8": "All who came [before me] are thieves and robbers, but the sheep did not listen to them.",
         "9": "I am the gate. Whoever enters through me will be saved, and will come in and go out and find pasture.",
-        "21": "Others said, “These are not the words of one possessed; surely a demon cannot open the eyes of the blind, can he?” Feast of the Dedication."
+        "21": "Others said, “These are not the words of one possessed; surely a demon cannot open the eyes of the blind, can he?” Feast of the Dedication.",
+        "10_heading": "The Good Shepherd."
       },
       "11": {
         "1": "Now a man was ill, Lazarus from Bethany, the village of Mary and her sister Martha.",
         "10": "But if one walks at night, he stumbles, because the light is not in him.”",
-        "11": "The Raising of Lazarus.",
+        "11": "He said this, and then told them, “Our friend Lazarus is asleep, but I am going to awaken him.”",
         "12": "So the disciples said to him, “Master, if he is asleep, he will be saved.”",
         "13": "But Jesus was talking about his death, while they thought that he meant ordinary sleep.",
         "14": "So then Jesus said to them clearly, “Lazarus has died.",
@@ -23572,13 +23573,15 @@
         "8": "The disciples said to him, “Rabbi, the Jews were just trying to stone you, and you want to go back there?”",
         "9": "Jesus answered, “Are there not twelve hours in a day? If one walks during the day, he does not stumble, because he sees the light of this world.",
         "21": "Martha said to Jesus, “Lord, if you had been here, my brother would not have died.",
-        "54h": "The Last Passover."
+        "54h": "The Last Passover.",
+        "11_heading": "The Raising of Lazarus.",
+        "35_heading": "And Jesus wept."
       },
       "12": {
         "1": "Six days before Passover Jesus came to Bethany, where Lazarus was, whom Jesus had raised from the dead.",
         "10": "And the chief priests plotted to kill Lazarus too,",
         "11": "because many of the Jews were turning away and believing in Jesus because of him.",
-        "12": "The Anointing at Bethany.",
+        "12": "On the next day, when the great crowd that had come to the feast heard that Jesus was coming to Jerusalem,",
         "13": "they took palm branches and went out to meet him, and cried out: “Hosanna! Blessed is he who comes in the name of the Lord, [even] the king of Israel.”",
         "14": "Jesus found an ass and sat upon it, as is written:",
         "15": "“Fear no more, O daughter Zion; see, your king comes, seated upon an ass’s colt.”",
@@ -23627,14 +23630,15 @@
         "21": "They came to Philip, who was from Bethsaida in Galilee, and asked him, “Sir, we would like to see Jesus.”",
         "11h": "The Entry into Jerusalem.",
         "26h": "The Father will honor whoever serves me.",
-        "43h": "Recapitulation."
+        "43h": "Recapitulation.",
+        "12_heading": "The Anointing at Bethany."
       },
       "13": {
         "1": "Before the feast of Passover, Jesus knew that his hour had come to pass from this world to the Father. He loved his own in the world and he loved them to the end.",
         "10": "Jesus said to him, “Whoever has bathed has no need except to have his feet washed, for he is clean all over; so you are clean, but not all.”",
         "11": "For he knew who would betray him; for this reason, he said, “Not all of you are clean.”",
         "12": "So when he had washed their feet [and] put his garments back on and reclined at table again, he said to them, “Do you realize what I have done for you?",
-        "13": "The Washing of the Disciples’ Feet.",
+        "13": "You call me ‘teacher’ and ‘master,’ and rightly so, for indeed I am.",
         "14": "If I, therefore, the master and teacher, have washed your feet, you ought to wash one another’s feet.",
         "15": "I have given you a model to follow, so that as I have done for you, you should also do.",
         "16": "Amen, amen, I say to you, no slave is greater than his master nor any messenger greater than the one who sent him.",
@@ -23668,7 +23672,8 @@
         "8": "Peter said to him, “You will never wash my feet.” Jesus answered him, “Unless I wash you, you will have no inheritance with me.”",
         "9": "Simon Peter said to him, “Master, then not only my feet, but my hands and head as well.”",
         "21": "When he had said this, Jesus was deeply troubled and testified, “Amen, amen, I say to you, one of you will betray me.”",
-        "30h": "The New Commandment."
+        "30h": "The New Commandment.",
+        "13_heading": "The Washing of the Disciples’ Feet."
       },
       "14": {
         "1": "“Do not let your hearts be troubled. You have faith in God; have faith also in me.",
@@ -23676,7 +23681,7 @@
         "11": "Believe me that I am in the Father and the Father is in me, or else, believe because of the works themselves.",
         "12": "Amen, amen, I say to you, whoever believes in me will do the works that I do, and will do greater ones than these, because I am going to the Father.",
         "13": "And whatever you ask in my name, I will do, so that the Father may be glorified in the Son.",
-        "14": "Last Supper Discourses.",
+        "14": "If you ask anything of me in my name, I will do it. The Advocate.",
         "15": "“If you love me, you will keep my commandments.",
         "16": "And I will ask the Father, and he will give you another Advocate to be with you always,",
         "17": "the Spirit of truth, which the world cannot accept, because it neither sees nor knows it. But you know it, because it remains with you, and will be in you.",
@@ -23701,7 +23706,8 @@
         "7": "If you know me, then you will also know my Father. From now on you do know him and have seen him.”",
         "8": "Philip said to him, “Master, show us the Father, and that will be enough for us.”",
         "9": "Jesus said to him, “Have I been with you for so long a time and you still do not know me, Philip? Whoever has seen me has seen the Father. How can you say, ‘Show us the Father’?",
-        "21": "Whoever has my commandments and observes them is the one who loves me. And whoever loves me will be loved by my Father, and I will love him and reveal myself to him.”"
+        "21": "Whoever has my commandments and observes them is the one who loves me. And whoever loves me will be loved by my Father, and I will love him and reveal myself to him.”",
+        "14_heading": "Last Supper Discourses."
       },
       "15": {
         "1": "“I am the true vine, and my Father is the vine grower.",
@@ -23710,7 +23716,7 @@
         "12": "This is my commandment: love one another as I love you.",
         "13": "No one has greater love than this, to lay down one’s life for one’s friends.",
         "14": "You are my friends if you do what I command you.",
-        "15": "The Vine and the Branches.",
+        "15": "I no longer call you slaves, because a slave does not know what his master is doing. I have called you friends, because I have told you everything I have heard from my Father.",
         "16": "It was not you who chose me, but I who chose you and appointed you to go and bear fruit that will remain, so that whatever you ask the Father in my name he may give you.",
         "17": "This I command you: love one another.",
         "18": "“If the world hates you, realize that it hated me first.",
@@ -23731,7 +23737,8 @@
         "8": "By this is my Father glorified, that you bear much fruit and become my disciples.",
         "9": "As the Father loves me, so I also love you. Remain in my love.",
         "21": "And they will do all these things to you on account of my name, because they do not know the one who sent me.",
-        "17h": "The World’s Hatred."
+        "17h": "The World’s Hatred.",
+        "15_heading": "The Vine and the Branches."
       },
       "16": {
         "1": "“I have told you this so that you may not fall away.",
@@ -23777,7 +23784,7 @@
         "14": "I gave them your word, and the world hated them, because they do not belong to the world any more than I belong to the world.",
         "15": "I do not ask that you take them out of the world but that you keep them from the evil one.",
         "16": "They do not belong to the world any more than I belong to the world.",
-        "17": "The Prayer of Jesus.",
+        "17": "Consecrate them in the truth. Your word is truth.",
         "18": "As you sent me into the world, so I sent them into the world.",
         "19": "And I consecrate myself for them, so that they also may be consecrated in truth.",
         "2": "just as you gave him authority over all people, so that he may give eternal life to all you gave him.",
@@ -23794,7 +23801,8 @@
         "7": "Now they know that everything you gave me is from you,",
         "8": "because the words you gave to me I have given to them, and they accepted them and truly understood that I came from you, and they have believed that you sent me.",
         "9": "I pray for them. I do not pray for the world but for the ones you have given me, because they are yours,",
-        "21": "so that they may all be one, as you, Father, are in me and I in you, that they also may be in us, that the world may believe that you sent me."
+        "21": "so that they may all be one, as you, Father, are in me and I in you, that they also may be in us, that the world may believe that you sent me.",
+        "17_heading": "The Prayer of Jesus."
       },
       "18": {
         "1": "When he had said this, Jesus went out with his disciples across the Kidron valley to where there was a garden, into which he and his disciples entered.",
@@ -23806,7 +23814,7 @@
         "15": "Simon Peter and another disciple followed Jesus. Now the other disciple was known to the high priest, and he entered the courtyard of the high priest with Jesus.",
         "16": "But Peter stood at the gate outside. So the other disciple, the acquaintance of the high priest, went out and spoke to the gatekeeper and brought Peter in.",
         "17": "Then the maid who was the gatekeeper said to Peter, “You are not one of this man’s disciples, are you?” He said, “I am not.”",
-        "18": "Jesus Arrested.",
+        "18": "Now the slaves and the guards were standing around a charcoal fire that they had made, because it was cold, and were warming themselves. Peter was also standing there keeping warm. The Inquiry before Annas.",
         "19": "The high priest questioned Jesus about his disciples and about his doctrine.",
         "2": "Judas his betrayer also knew the place, because Jesus had often met there with his disciples.",
         "20": "Jesus answered him, “I have spoken publicly to the world. I have always taught in a synagogue or in the temple area where all the Jews gather, and in secret I have said nothing.",
@@ -23838,7 +23846,8 @@
         "9": "This was to fulfill what he had said, “I have not lost any of those you gave me.”",
         "21": "Why ask me? Ask those who heard me what I said to them. They know what I said.”",
         "24h": "Peter Denies Jesus Again.",
-        "27h": "The Trial before Pilate."
+        "27h": "The Trial before Pilate.",
+        "18_heading": "Jesus Arrested."
       },
       "19": {
         "1": "Then Pilate took Jesus and had him scourged.",
@@ -23898,7 +23907,7 @@
         "17": "His disciples recalled the words of scripture, “Zeal for your house will consume me.”",
         "18": "At this the Jews answered and said to him, “What sign can you show us for doing this?”",
         "19": "Jesus answered and said to them, “Destroy this temple and in three days I will raise it up.”",
-        "2": "The Wedding at Cana.",
+        "2": "Jesus and his disciples were also invited to the wedding.",
         "20": "The Jews said, “This temple has been under construction for forty-six years, and you will raise it up in three days?”",
         "22": "Therefore, when he was raised from the dead, his disciples remembered that he had said this, and they came to believe the scripture and the word Jesus had spoken.",
         "23": "While he was in Jerusalem for the feast of Passover, many began to believe in his name when they saw the signs he was doing.",
@@ -23911,7 +23920,8 @@
         "7": "Jesus told them, “Fill the jars with water.” So they filled them to the brim.",
         "8": "Then he told them, “Draw some out now and take it to the headwaiter.” So they took it.",
         "9": "And when the headwaiter tasted the water that had become wine, without knowing where it came from (although the servers who had drawn the water knew), the headwaiter called the bridegroom",
-        "21": "But he was speaking about the temple of his body."
+        "21": "But he was speaking about the temple of his body.",
+        "2_heading": "The Wedding at Cana."
       },
       "20": {
         "1": "On the first day of the week, Mary of Magdala came to the tomb early in the morning, while it was still dark, and saw the stone removed from the tomb.",
@@ -23926,7 +23936,7 @@
         "18": "Mary of Magdala went and announced to the disciples, “I have seen the Lord,” and what he told her. Appearance to the Disciples.",
         "19": "On the evening of that first day of the week, when the doors were locked, where the disciples were, for fear of the Jews, Jesus came and stood in their midst and said to them, “Peace be with you.”",
         "2": "So she ran and went to Simon Peter and to the other disciple whom Jesus loved, and told them, “They have taken the Lord from the tomb, and we don’t know where they put him.”",
-        "20": "The Empty Tomb.",
+        "20": "When he had said this, he showed them his hands and his side. The disciples rejoiced when they saw the Lord.",
         "22": "And when he had said this, he breathed on them and said to them, “Receive the holy Spirit.",
         "23": "Whose sins you forgive are forgiven them, and whose sins you retain are retained.” Thomas.",
         "24": "Thomas, called Didymus, one of the Twelve, was not with them when Jesus came.",
@@ -23945,7 +23955,8 @@
         "8": "Then the other disciple also went in, the one who had arrived at the tomb first, and he saw and believed.",
         "9": "For they did not yet understand the scripture that he had to rise from the dead.",
         "21": "[Jesus] said to them again, “Peace be with you. As the Father has sent me, so I send you.”",
-        "10h": "The Appearance to Mary of Magdala."
+        "10h": "The Appearance to Mary of Magdala.",
+        "20_heading": "The Empty Tomb."
       },
       "21": {
         "1": "After this, Jesus revealed himself again to his disciples at the Sea of Tiberias. He revealed himself in this way.",
@@ -23996,7 +24007,7 @@
         "27": "John answered and said, “No one can receive anything except what has been given him from heaven.",
         "28": "You yourselves can testify that I said [that] I am not the Messiah, but that I was sent before him.",
         "29": "The one who has the bride is the bridegroom; the best man, who stands and listens to him, rejoices greatly at the bridegroom’s voice. So this joy of mine has been made complete.",
-        "3": "Nicodemus.",
+        "3": "Jesus answered and said to him, “Amen, amen, I say to you, no one can see the kingdom of God without being born from above.”",
         "30": "He must increase; I must decrease.” The One from Heaven.",
         "31": "The one who comes from above is above all. The one who is of the earth is earthly and speaks of earthly things. But the one who comes from heaven [is above all].",
         "32": "He testifies to what he has seen and heard, but no one accepts his testimony.",
@@ -24010,7 +24021,8 @@
         "7": "Do not be amazed that I told you, ‘You must be born from above.’",
         "8": "The wind blows where it wills, and you can hear the sound it makes, but you do not know where it comes from or where it goes; so it is with everyone who is born of the Spirit.”",
         "9": "Nicodemus answered and said to him, “How can this happen?”",
-        "21": "But whoever lives the truth comes to the light, so that his works may be clearly seen as done in God. Final Witness of the Baptist."
+        "21": "But whoever lives the truth comes to the light, so that his works may be clearly seen as done in God. Final Witness of the Baptist.",
+        "3_heading": "Nicodemus."
       },
       "4": {
         "1": "Now when",
@@ -24245,11 +24257,12 @@
         "52": "They answered and said to him, “You are not from Galilee also, are you? Look and see that no prophet arises from Galilee.” A Woman Caught in Adultery.",
         "53": "[Then each went to his own house,",
         "6": "So Jesus said to them, “My time is not yet here, but the time is always right for you.",
-        "7": "The Feast of Tabernacles.",
+        "7": "The world cannot hate you, but it hates me, because I testify to it that its works are evil.",
         "8": "You go up to the feast. I am not going up to this feast, because my time has not yet been fulfilled.”",
         "9": "After he had said this, he stayed on in Galilee.",
         "21": "Jesus answered and said to them, “I performed one work and all of you are amazed",
-        "13h": "The First Dialogue."
+        "13h": "The First Dialogue.",
+        "7_heading": "The Feast of Tabernacles."
       },
       "8": {
         "1": "while Jesus went to the Mount of Olives.",
@@ -24352,8 +24365,9 @@
         "6": "When he had said this, he spat on the ground and made clay with the saliva, and smeared the clay on his eyes,",
         "7": "and said to him, “Go wash in the Pool of Siloam” (which means Sent). So he went and washed, and came back able to see.",
         "8": "His neighbors and those who had seen him earlier as a beggar said, “Isn’t this the one who used to sit and beg?”",
-        "9": "The Man Born Blind.",
-        "21": "We do not know how he sees now, nor do we know who opened his eyes. Ask him, he is of age; he can speak for him self.”"
+        "9": "Some said, “It is,” but others said, “No, he just looks like him.” He said, “I am.”",
+        "21": "We do not know how he sees now, nor do we know who opened his eyes. Ask him, he is of age; he can speak for him self.”",
+        "9_heading": "The Man Born Blind."
       }
     },
     "jon": {
@@ -25447,7 +25461,7 @@
       },
       "10": {
         "1": "After this the Lord appointed seventy[-two] others whom he sent ahead of him in pairs to every town and place he intended to visit.",
-        "10": "The Mission of the Seventy-two.",
+        "10": "Whatever town you enter and they do not receive you, go out into the streets and say,",
         "11": "‘The dust of your town that clings to our feet, even that we shake off against you.’ Yet know this: the kingdom of God is at hand.",
         "12": "I tell you, it will be more tolerable for Sodom on that day than for that town. Reproaches to Unrepentant Towns.",
         "13": "“Woe to you, Chorazin! Woe to you, Bethsaida! For if the mighty deeds done in your midst had been done in Tyre and Sidon, they would long ago have repented, sitting in sackcloth and ashes.",
@@ -25487,12 +25501,13 @@
         "7": "Stay in the same house and eat and drink what is offered to you, for the laborer deserves his payment. Do not move about from one house to another.",
         "8": "Whatever town you enter and they welcome you, eat what is set before you,",
         "9": "cure the sick in it and say to them, ‘The kingdom of God is at hand for you.’",
-        "24": "For I say to you, many prophets and kings desired to see what you see, but did not see it, and to hear what you hear, but did not hear it.” The Greatest Commandment."
+        "24": "For I say to you, many prophets and kings desired to see what you see, but did not see it, and to hear what you hear, but did not hear it.” The Greatest Commandment.",
+        "10_heading": "The Mission of the Seventy-two."
       },
       "11": {
         "1": "He was praying in a certain place, and when he had finished, one of his disciples said to him, “Lord, teach us to pray just as John taught his disciples.”",
         "10": "For everyone who asks, receives; and the one who seeks, finds; and to the one who knocks, the door will be opened.",
-        "11": "The Lord’s Prayer.",
+        "11": "What father among you would hand his son a snake when he asks for a fish?",
         "12": "Or hand him a scorpion when he asks for an egg?",
         "13": "If you then, who are wicked, know how to give good gifts to your children, how much more will the Father in heaven give the holy Spirit to those who ask him?” Jesus and Beelzebul.",
         "14": "He was driving out a demon [that was] mute, and when the demon had gone out, the mute person spoke and the crowds were amazed.",
@@ -25546,13 +25561,14 @@
         "24": "“When an unclean spirit goes out of someone, it roams through arid regions searching for rest but, finding none, it says, ‘I shall return to my home from which I came.’",
         "23h": "The Return of the Unclean Spirit.",
         "32h": "The Simile of Light.",
-        "8h": "The Answer to Prayer."
+        "8h": "The Answer to Prayer.",
+        "11_heading": "The Lord’s Prayer."
       },
       "12": {
         "1": "Meanwhile, so many people were crowding together that they were trampling one another underfoot. He began to speak, first to his disciples, “Beware of the leaven―that is, the hypocrisy―of the Pharisees.",
         "10": "“Everyone who speaks a word against the Son of Man will be forgiven, but the one who blasphemes against the holy Spirit will not be forgiven.",
         "11": "When they take you before synagogues and before rulers and authorities, do not worry about how or what your defense will be or about what you are to say.",
-        "12": "The Leaven of the Pharisees.",
+        "12": "For the holy Spirit will teach you at that moment what you should say.” Saying Against Greed.",
         "13": "Someone in the crowd said to him, “Teacher, tell my brother to share the inheritance with me.”",
         "14": "He replied to him, “Friend, who appointed me as your judge and arbitrator?”",
         "15": "Then he said to the crowd, “Take care to guard against all greed, for though one may be rich, one’s life does not consist of possessions.” Parable of the Rich Fool.",
@@ -25609,14 +25625,15 @@
         "9": "But whoever denies me before others will be denied before the angels of God. Sayings About the Holy Spirit.",
         "24": "Notice the ravens: they do not sow or reap; they have neither storehouse nor barn, yet God feeds them. How much more important are you than birds!",
         "1h": "Courage Under Persecution.",
-        "18_heading": "There I shall store all my grain and other goods"
+        "18_heading": "There I shall store all my grain and other goods",
+        "12_heading": "The Leaven of the Pharisees."
       },
       "13": {
         "1": "At that time some people who were present there told him about the Galileans whose blood Pilate had mingled with the blood of their sacrifices.",
         "10": "He was teaching in a synagogue on the sabbath.",
         "11": "And a woman was there who for eighteen years had been crippled by a spirit; she was bent over, completely incapable of standing erect.",
         "12": "When Jesus saw her, he called to her and said, “Woman, you are set free of your infirmity.”",
-        "13": "A Call to Repentance.",
+        "13": "He laid his hands on her, and she at once stood up straight and glorified God.",
         "14": "But the leader of the synagogue, indignant that Jesus had cured on the sabbath, said to the crowd in reply, “There are six days when work should be done. Come on those days to be cured, not on the sabbath day.”",
         "15": "The Lord said to him in reply, “Hypocrites! Does not each one of you on the sabbath untie his ox or his ass from the manger and lead it out for watering?",
         "16": "This daughter of Abraham, whom Satan has bound for eighteen years now, ought she not to have been set free on the sabbath day from this bondage?”",
@@ -25647,7 +25664,8 @@
         "8": "He said to him in reply, ‘Sir, leave it for this year also, and I shall cultivate the ground around it and fertilize it;",
         "9": "it may bear fruit in the future. If not you can cut it down.’” Cure of a Crippled Woman on the Sabbath.",
         "24": "“Strive to enter through the narrow door, for many, I tell you, will attempt to enter but will not be strong enough.",
-        "17h": "The Parable of the Mustard Seed."
+        "17h": "The Parable of the Mustard Seed.",
+        "13_heading": "A Call to Repentance."
       },
       "14": {
         "1": "On a sabbath he went to dine at the home of one of the leading Pharisees, and the people there were observing him carefully.",
@@ -25694,7 +25712,7 @@
         "12": "and the younger son said to his father, ‘Father, give me the share of your estate that should come to me.’ So the father divided the property between them.",
         "13": "After a few days, the younger son collected all his belongings and set off to a distant country where he squandered his inheritance on a life of dissipation.",
         "14": "When he had freely spent everything, a severe famine struck that country, and he found himself in dire need.",
-        "15": "The Parable of the Lost Sheep.",
+        "15": "So he hired himself out to one of the local citizens who sent him to his farm to tend the swine.",
         "16": "And he longed to eat his fill of the pods on which the swine fed, but nobody gave him any.",
         "17": "Coming to his senses he thought, ‘How many of my father’s hired workers have more than enough food to eat, but here am I, dying from hunger.",
         "18": "I shall get up and go to my father and I shall say to him, “Father, I have sinned against heaven and against you.",
@@ -25720,7 +25738,8 @@
         "8": "“Or what woman having ten coins and losing one would not light a lamp and sweep the house, searching carefully until she finds it?",
         "9": "And when she does find it, she calls together her friends and neighbors and says to them, ‘Rejoice with me because I have found the coin that I lost.’",
         "24": "because this son of mine was dead, and has come to life again; he was lost, and has been found.’ Then the celebration began.",
-        "7h": "The Parable of the Lost Coin."
+        "7h": "The Parable of the Lost Coin.",
+        "15_heading": "The Parable of the Lost Sheep."
       },
       "16": {
         "1": "Then he also said to his disciples, “A rich man had a steward who was reported to him for squandering his property.",
@@ -25730,7 +25749,7 @@
         "13": "No servant can serve two masters. He will either hate one and love the other, or be devoted to one and despise the other. You cannot serve God and mammon.” A Saying Against the Pharisees.",
         "14": "The Pharisees, who loved money, heard all these things and sneered at him.",
         "15": "And he said to them, “You justify yourselves in the sight of others, but God knows your hearts; for what is of human esteem is an abomination in the sight of God. Sayings About the Law.",
-        "16": "The Parable of the Dishonest Steward.",
+        "16": "“The law and the prophets lasted until John; but from then on the kingdom of God is proclaimed, and everyone who enters does so with violence.",
         "17": "It is easier for heaven and earth to pass away than for the smallest part of a letter of the law to become invalid.",
         "18": "“Everyone who divorces his wife and marries another commits adultery, and the one who marries a woman divorced from her husband commits adultery.",
         "19": "“There was a rich man who dressed in purple garments and fine linen and dined sumptuously each day.",
@@ -25755,7 +25774,8 @@
         "9": "I tell you, make friends for yourselves with dishonest wealth, so that when it fails, you will be welcomed into eternal dwellings.",
         "24": "And he cried out, ‘Father Abraham, have pity on me. Send Lazarus to dip the tip of his finger in water and cool my tongue, for I am suffering torment in these flames.’",
         "17h": "Sayings About Divorce.",
-        "18h": "The Parable of the Rich Man and Lazarus."
+        "18h": "The Parable of the Rich Man and Lazarus.",
+        "16_heading": "The Parable of the Dishonest Steward."
       },
       "17": {
         "1": "He said to his disciples, “Things that cause sin will inevitably occur, but woe to the person through whom they occur.",
@@ -25766,7 +25786,7 @@
         "14": "And when he saw them, he said, “Go show yourselves to the priests.” As they were going they were cleansed.",
         "15": "And one of them, realizing he had been healed, returned, glorifying God in a loud voice;",
         "16": "and he fell at the feet of Jesus and thanked him. He was a Samaritan.",
-        "17": "Temptations to Sin.",
+        "17": "Jesus said in reply, “Ten were cleansed, were they not? Where are the other nine?",
         "18": "Has none but this foreigner returned to give thanks to God?”",
         "19": "Then he said to him, “Stand up and go; your faith has saved you.” The Coming of the Kingdom of God.",
         "2": "It would be better for him if a millstone were put around his neck and he be thrown into the sea than for him to cause one of these little ones to sin.",
@@ -25795,7 +25815,8 @@
         "9": "Is he grateful to that servant because he did what was commanded?",
         "24": "For just as lightning flashes and lights up the sky from one side to the other, so will the Son of Man be [in his day].",
         "37": "They said to him in reply, “Where, Lord?” He said to them, “Where the body is, there also the vultures will gather.”",
-        "12_heading": "They stood at a distance from him"
+        "12_heading": "They stood at a distance from him",
+        "17_heading": "Temptations to Sin."
       },
       "18": {
         "1": "Then he told them a parable about the necessity for them to pray always without becoming weary. He said,",
@@ -25807,7 +25828,7 @@
         "15": "People were bringing even infants to him that he might touch them, and when the disciples saw this, they rebuked them.",
         "16": "Jesus, however, called the children to himself and said, “Let the children come to me and do not prevent them; for the kingdom of God belongs to such as these.",
         "17": "Amen, I say to you, whoever does not accept the kingdom of God like a child will not enter it.” The Rich Official.",
-        "18": "The Parable of the Persistent Widow.",
+        "18": "An official asked him this question, “Good teacher, what must I do to inherit eternal life?”",
         "19": "Jesus answered him, “Why do you call me good? No one is good but God alone.",
         "2": "“There was a judge in a certain town who neither feared God nor respected any human being.",
         "20": "You know the commandments, ‘You shall not commit adultery; you shall not kill; you shall not steal; you shall not bear false witness; honor your father and your mother.’”",
@@ -25842,7 +25863,8 @@
         "9": "He then addressed this parable to those who were convinced of their own righteousness and despised everyone else.",
         "24": "Jesus looked at him [now sad] and said, “How hard it is for those who have wealth to enter the kingdom of God!",
         "34h": "The Healing of the Blind Beggar.",
-        "29_heading": "God"
+        "29_heading": "God",
+        "18_heading": "The Parable of the Persistent Widow."
       },
       "19": {
         "1": "He came to Jericho and intended to pass through the town.",
@@ -25855,7 +25877,7 @@
         "16": "The first came forward and said, ‘Sir, your gold coin has earned ten additional ones.’",
         "17": "He replied, ‘Well done, good servant! You have been faithful in this very small matter; take charge of ten cities.’",
         "18": "Then the second came and reported, ‘Your gold coin, sir, has earned five more.’",
-        "19": "Zacchaeus the Tax Collector.",
+        "19": "And to this servant too he said, ‘You, take charge of five cities.’",
         "2": "Now a man there named Zacchaeus, who was a chief tax collector and also a wealthy man,",
         "20": "Then the other servant came and said, ‘Sir, here is your gold coin; I kept it stored away in a handkerchief,",
         "21": "for I was afraid of you, because you are a demanding person; you take up what you did not lay down and you harvest what you did not plant.’",
@@ -25892,7 +25914,8 @@
         "7": "When they all saw this, they began to grumble, saying, “He has gone to stay at the house of a sinner.”",
         "8": "But Zacchaeus stood there and said to the Lord, “Behold, half of my possessions, Lord, I shall give to the poor, and if I have extorted anything from anyone I shall repay it four times over.”",
         "9": "And Jesus said to him, “Today salvation has come to this house because this man too is a descendant of Abraham.",
-        "24": "And to those standing by he said, ‘Take the gold coin from him and give it to the servant who has ten.’"
+        "24": "And to those standing by he said, ‘Take the gold coin from him and give it to the servant who has ten.’",
+        "19_heading": "Zacchaeus the Tax Collector."
       },
       "2": {
         "1": "In those days a decree went out from Caesar Augustus that the whole world should be enrolled.",
@@ -25906,7 +25929,7 @@
         "17": "When they saw this, they made known the message that had been told them about this child.",
         "18": "All who heard it were amazed by what had been told them by the shepherds.",
         "19": "And Mary kept all these things, reflecting on them in her heart.",
-        "2": "The Birth of Jesus.",
+        "2": "This was the first enrollment, when Quirinius was governor of Syria.",
         "20": "Then the shepherds returned, glorifying and praising God for all they had heard and seen, just as it had been told to them.",
         "21": "When eight days were completed for his circumcision, he was named Jesus, the name given him by the angel before he was conceived in the womb.",
         "22": "When the days were completed for their purification according to the law of Moses, they took him up to Jerusalem to present him to the Lord,",
@@ -25950,7 +25973,8 @@
         "20h": "The Circumcision and Naming of Jesus.",
         "21h": "The Presentation in the Temple.",
         "38h": "The Return to Nazareth.",
-        "40h": "The Boy Jesus in the Temple."
+        "40h": "The Boy Jesus in the Temple.",
+        "2_heading": "The Birth of Jesus."
       },
       "20": {
         "1": "One day as he was teaching the people in the temple area and proclaiming the good news, the chief priests and scribes, together with the elders, approached him",
@@ -25965,7 +25989,7 @@
         "18": "Everyone who falls on that stone will be dashed to pieces; and it will crush anyone on whom it falls.”",
         "19": "The scribes and chief priests sought to lay their hands on him at that very hour, but they feared the people, for they knew that he had addressed this parable to them. Paying Taxes to the Emperor.",
         "2": "and said to him, “Tell us, by what authority are you doing these things? Or who is the one who gave you this authority?”",
-        "20": "The Authority of Jesus Questioned.",
+        "20": "They watched him closely and sent agents pretending to be righteous who were to trap him in speech, in order to hand him over to the authority and power of the governor.",
         "21": "They posed this question to him, “Teacher, we know that what you say and teach is correct, and you show no partiality, but teach the way of God in accordance with the truth.",
         "22": "Is it lawful for us to pay tribute to Caesar or not?”",
         "23": "Recognizing their craftiness he said to them,",
@@ -26001,7 +26025,8 @@
         "9": "Then he proceeded to tell the people this parable. “[A] man planted a vineyard, leased it to tenant farmers, and then went on a journey for a long time.",
         "24": "“Show me a denarius; whose image and name does it bear?” They replied, “Caesar’s.”",
         "26h": "The Question About the Resurrection.",
-        "40h": "The Question About David’s Son."
+        "40h": "The Question About David’s Son.",
+        "20_heading": "The Authority of Jesus Questioned."
       },
       "21": {
         "1": "When he looked up he saw some wealthy people putting their offerings into the treasury",
@@ -26017,7 +26042,7 @@
         "19": "By your perseverance you will secure your lives.",
         "2": "and he noticed a poor widow putting in two small coins.",
         "20": "“When you see Jerusalem surrounded by armies, know that its desolation is at hand.",
-        "21": "The Poor Widow’s Contribution.",
+        "21": "Then those in Judea must flee to the mountains. Let those within the city escape from it, and let those in the countryside not enter the city,",
         "22": "for these days are the time of punishment when all the scriptures are fulfilled.",
         "23": "Woe to pregnant women and nursing mothers in those days, for a terrible calamity will come upon the earth and a wrathful judgment upon this people.",
         "25": "“There will be signs in the sun, the moon, and the stars, and on earth nations will be in dismay, perplexed by the roaring of the sea and the waves.",
@@ -26044,7 +26069,8 @@
         "24": "They will fall by the edge of the sword and be taken as captives to all the Gentiles; and Jerusalem will be trampled underfoot by the Gentiles until the times of the Gentiles are fulfilled.",
         "11h": "The Coming Persecution.",
         "19h": "The Great Tribulation.",
-        "24h": "The Coming of the Son of Man."
+        "24h": "The Coming of the Son of Man.",
+        "21_heading": "The Poor Widow’s Contribution."
       },
       "22": {
         "1": "Now the feast of Unleavened Bread, called the Passover, was drawing near,",
@@ -26061,7 +26087,7 @@
         "2": "and the chief priests and the scribes were seeking a way to put him to death, for they were afraid of the people.",
         "20": "And likewise the cup after they had eaten, saying, “This cup is the new covenant in my blood, which will be shed for you.",
         "21": "“And yet behold, the hand of the one who is to betray me is with me on the table;",
-        "22": "The Conspiracy Against Jesus.",
+        "22": "for the Son of Man indeed goes as it has been determined; but woe to that man by whom he is betrayed.”",
         "23": "And they began to debate among themselves who among them would do such a deed.",
         "25": "He said to them, “The kings of the Gentiles lord it over them and those in authority over them are addressed as ‘Benefactors’;",
         "26": "but among you it shall not be so. Rather, let the greatest among you be as the youngest, and the leader as the servant.",
@@ -26121,7 +26147,8 @@
         "13h": "The Last Supper.",
         "20h": "The Betrayal Foretold.",
         "23h": "The Role of the Disciples.",
-        "10_heading": "Follow him into the house that he enters"
+        "10_heading": "Follow him into the house that he enters",
+        "22_heading": "The Conspiracy Against Jesus."
       },
       "23": {
         "1": "Then the whole assembly of them arose and brought him before Pilate.",
@@ -26132,14 +26159,14 @@
         "14": "and said to them, “You brought this man to me and accused him of inciting the people to revolt. I have conducted my investigation in your presence and have not found this man guilty of the charges you have brought against him,",
         "15": "nor did Herod, for he sent him back to us. So no capital crime has been committed by him.",
         "16": "Therefore I shall have him flogged and then release him.”",
-        "17": "The Sentence of Death.",
+        "17": "",
         "18": "But all together they shouted out, “Away with this man! Release Barabbas to us.”",
         "19": "(Now Barabbas had been imprisoned for a rebellion that had taken place in the city and for murder.)",
         "2": "They brought charges against him, saying, “We found this man misleading our people; he opposes the payment of taxes to Caesar and maintains that he is the Messiah, a king.”",
         "20": "Again Pilate addressed them, still wishing to release Jesus,",
         "21": "but they continued their shouting, “Crucify him! Crucify him!”",
         "22": "Pilate addressed them a third time, “What evil has this man done? I found him guilty of no capital crime. Therefore I shall have him flogged and then release him.”",
-        "23": "Jesus Before Pilate.",
+        "23": "With loud shouts, however, they persisted in calling for his crucifixion, and their voices prevailed.",
         "25": "So he released the man who had been imprisoned for rebellion and murder, for whom they asked, and he handed Jesus over to them to deal with as they wished.",
         "26": "As they led him away they took hold of a certain Simon, a Cyrenian, who was coming in from the country; and after laying the cross on him, they made him carry it behind Jesus.",
         "27": "A large crowd of people followed Jesus, including many women who mourned and lamented him.",
@@ -26183,7 +26210,10 @@
         "25h": "The Way of the Cross.",
         "32h": "The Crucifixion.",
         "49h": "The Burial of Jesus.",
-        "36_heading": "As they approached to offer him wine"
+        "36_heading": "As they approached to offer him wine",
+        "17_heading": "The Sentence of Death.",
+        "19_heading": "(Now Barabbas had been imprisoned for a rebellion that had taken place in the city and for murder.)",
+        "23_heading": "Jesus Before Pilate."
       },
       "24": {
         "1": "But at daybreak on the first day of the week they took the spices they had prepared and went to the tomb.",
@@ -26266,7 +26296,7 @@
         "27": "the son of Joanan, the son of Rhesa, the son of Zerubbabel, the son of Shealtiel, the son of Neri,",
         "28": "the son of Melchi, the son of Addi, the son of Cosam, the son of Elmadam, the son of Er,",
         "29": "the son of Joshua, the son of Eliezer, the son of Jorim, the son of Matthat, the son of Levi,",
-        "3": "The Preaching of John the Baptist.",
+        "3": "He went throughout [the] whole region of the Jordan, proclaiming a baptism of repentance for the forgiveness of sins,",
         "30": "the son of Simeon, the son of Judah, the son of Joseph, the son of Jonam, the son of Eliakim,",
         "31": "the son of Melea, the son of Menna, the son of Mattatha, the son of Nathan, the son of David,",
         "32": "the son of Jesse, the son of Obed, the son of Boaz, the son of Sala, the son of Nahshon,",
@@ -26283,7 +26313,8 @@
         "8": "Produce good fruits as evidence of your repentance; and do not begin to say to yourselves, ‘We have Abraham as our father,’ for I tell you, God can raise up children to Abraham from these stones.",
         "9": "Even now the ax lies at the root of the trees. Therefore every tree that does not produce good fruit will be cut down and thrown into the fire.”",
         "24": "the son of Matthat, the son of Levi, the son of Melchi, the son of Jannai, the son of Joseph,",
-        "20h": "The Baptism of Jesus."
+        "20h": "The Baptism of Jesus.",
+        "3_heading": "The Preaching of John the Baptist."
       },
       "4": {
         "1": "Filled with the holy Spirit,",
@@ -26318,7 +26349,7 @@
         "37": "And news of him spread everywhere in the surrounding region.",
         "38": "After he left the synagogue, he entered the house of Simon. Simon’s mother-in-law was afflicted with a severe fever, and they interceded with him about her.",
         "39": "He stood over her, rebuked the fever, and it left her. She got up immediately and waited on them.",
-        "4": "The Temptation of Jesus.",
+        "4": "Jesus answered him, “It is written, ‘One does not live by bread alone.’”",
         "40": "At sunset, all who had people sick with various diseases brought them to him. He laid his hands on each of them and cured them.",
         "41": "And demons also came out from many, shouting, “You are the Son of God.” But he rebuked them and did not allow them to speak because they knew that he was the Messiah.",
         "42": "At daybreak, Jesus left and went to a deserted place. The crowds went looking for him, and when they came to him, they tried to prevent him from leaving them.",
@@ -26337,7 +26368,8 @@
         "39h": "Other Healings.",
         "41h": "Jesus Leaves Capernaum.",
         "1_heading": "Jesus returned from the Jordan and was led by the Spirit into the desert",
-        "16_heading": "He stood up to read"
+        "16_heading": "He stood up to read",
+        "4_heading": "The Temptation of Jesus."
       },
       "5": {
         "1": "While the crowd was pressing in on Jesus and listening to the word of God, he was standing by the Lake of Gennesaret.",
@@ -26373,14 +26405,15 @@
         "38": "Rather, new wine must be poured into fresh wineskins.",
         "39": "[And] no one who has been drinking old wine desires new, for he says, ‘The old is good.’”",
         "4": "After he had finished speaking, he said to Simon, “Put out into deep water and lower your nets for a catch.”",
-        "5": "The Call of Simon the Fisherman.",
+        "5": "Simon said in reply, “Master, we have worked hard all night and have caught nothing, but at your command I will lower the nets.”",
         "6": "When they had done this, they caught a great number of fish and their nets were tearing.",
         "7": "They signaled to their partners in the other boat to come to help them. They came and filled both boats so that they were in danger of sinking.",
         "8": "When Simon Peter saw this, he fell at the knees of Jesus and said, “Depart from me, Lord, for I am a sinful man.”",
         "9": "For astonishment at the catch of fish they had made seized him and all those with him,",
         "24": "But that you may know that the Son of Man has authority on earth to forgive sins”—he said to the man who was paralyzed, “I say to you, rise, pick up your stretcher, and go home.”",
         "11h": "The Cleansing of a Leper.",
-        "16h": "The Healing of a Paralytic."
+        "16h": "The Healing of a Paralytic.",
+        "5_heading": "The Call of Simon the Fisherman."
       },
       "6": {
         "1": "While he was going through a field of grain on a sabbath, his disciples were picking the heads of grain, rubbing them in their hands, and eating them.",
@@ -26427,7 +26460,7 @@
         "48": "That one is like a person building a house, who dug deeply and laid the foundation on rock; when the flood came, the river burst against that house but could not shake it because it had been well built.",
         "49": "But the one who listens and does not act is like a person who built a house on the ground without a foundation. When the river burst against it, it collapsed at once and was completely destroyed.”",
         "5": "Then he said to them, “The Son of Man is lord of the sabbath.”",
-        "6": "Debates About the Sabbath.",
+        "6": "On another sabbath he went into the synagogue and taught, and there was a man there whose right hand was withered.",
         "7": "The scribes and the Pharisees watched him closely to see if he would cure on the sabbath so that they might discover a reason to accuse him.",
         "8": "But he realized their intentions and said to the man with the withered hand, “Come up and stand before us.” And he rose and stood there.",
         "9": "Then Jesus said to them, “I ask you, is it lawful to do good on the sabbath rather than to do evil, to save life rather than to destroy it?”",
@@ -26435,7 +26468,8 @@
         "11h": "The Mission of the Twelve.",
         "36h": "Judging Others.",
         "45h": "The Two Foundations.",
-        "17_heading": "A great crowd of his disciples and a large number of the people from all Judea and Jerusalem and the coastal region of Tyre and Sidon"
+        "17_heading": "A great crowd of his disciples and a large number of the people from all Judea and Jerusalem and the coastal region of Tyre and Sidon",
+        "6_heading": "Debates About the Sabbath."
       },
       "7": {
         "1": "When he had finished all his words to the people, he entered Capernaum.",
@@ -26484,12 +26518,13 @@
         "5": "for he loves our nation and he built the synagogue for us.”",
         "50": "But he said to the woman, “Your faith has saved you; go in peace.”",
         "6": "And Jesus went with them, but when he was only a short distance from the house, the centurion sent friends to tell him, “Lord, do not trouble yourself, for I am not worthy to have you enter under my roof.",
-        "7": "The Healing of a Centurion’s Slave.",
+        "7": "Therefore, I did not consider myself worthy to come to you; but say the word and let my servant be healed.",
         "8": "For I too am a person subject to authority, with soldiers subject to me. And I say to one, ‘Go,’ and he goes; and to another, ‘Come here,’ and he comes; and to my slave, ‘Do this,’ and he does it.”",
         "9": "When Jesus heard this he was amazed at him and, turning, said to the crowd following him, “I tell you, not even in Israel have I found such faith.”",
         "24": "When the messengers of John had left, Jesus began to speak to the crowds about John. “What did you go out to the desert to see—a reed swayed by the wind?",
         "17h": "The Messengers from John the Baptist.",
-        "18_heading": "John summoned two of his disciples"
+        "18_heading": "John summoned two of his disciples",
+        "7_heading": "The Healing of a Centurion’s Slave."
       },
       "8": {
         "1": "Afterward he journeyed from one town and village to another, preaching and proclaiming the good news of the kingdom of God.",
@@ -26545,12 +26580,13 @@
         "56": "Her parents were astounded, and he instructed them to tell no one what had happened.",
         "6": "Some seed fell on rocky ground, and when it grew, it withered for lack of moisture.",
         "7": "Some seed fell among thorns, and the thorns grew with it and choked it.",
-        "8": "Galilean Women Follow Jesus.",
+        "8": "And some seed fell on good soil, and when it grew, it produced fruit a hundredfold.” After saying this, he called out, “Whoever has ears to hear ought to hear.”",
         "9": "Then his disciples asked him what the meaning of this parable might be.",
         "24": "They came and woke him saying, “Master, master, we are perishing!” He awakened, rebuked the wind and the waves, and they subsided and there was a calm.",
         "15h": "The Parable of the Lamp.",
         "3h": "The Parable of the Sower.",
-        "1_heading": "Accompanying him were the Twelve"
+        "1_heading": "Accompanying him were the Twelve",
+        "8_heading": "Galilean Women Follow Jesus."
       },
       "9": {
         "1": "He summoned the Twelve and gave them power and authority over all demons and to cure diseases,",
@@ -26613,13 +26649,14 @@
         "62": "[To him] Jesus said, “No one who sets a hand to the plow and looks to what was left behind is fit for the kingdom of God.”",
         "7": "Herod the tetrarch heard about all that was happening, and he was greatly perplexed because some were saying, “John has been raised from the dead”;",
         "8": "others were saying, “Elijah has appeared”; still others, “One of the ancient prophets has arisen.”",
-        "9": "The Mission of the Twelve.",
+        "9": "But Herod said, “John I beheaded. Who then is this about whom I hear such things?” And he kept trying to see him. The Return of the Twelve and the Feeding of the Five Thousand.",
         "24": "For whoever wishes to save his life will lose it, but whoever loses his life for my sake will save it.",
         "21h": "The First Prediction of the Passion.",
         "36h": "The Healing of a Boy with a Demon.",
         "43h": "The Second Prediction of the Passion.",
         "45h": "The Greatest in the Kingdom.",
-        "56h": "The Would-be Followers of Jesus."
+        "56h": "The Would-be Followers of Jesus.",
+        "9_heading": "The Mission of the Twelve."
       }
     },
     "lv": {
@@ -27810,7 +27847,7 @@
       },
       "10": {
         "1": "He set out from there and went into the district of Judea [and] across the Jordan. Again crowds gathered around him and, as was his custom, he again taught them.",
-        "10": "Marriage and Divorce.",
+        "10": "In the house the disciples again questioned him about this.",
         "11": "He said to them, “Whoever divorces his wife and marries another commits adultery against her;",
         "12": "and if she divorces her husband and marries another, she commits adultery.” Blessing of the Children.",
         "13": "And people were bringing children to him that he might touch them, but the disciples rebuked them.",
@@ -27862,12 +27899,13 @@
         "9": "Therefore what God has joined together, no human being must separate.”",
         "16": "Then he embraced them and blessed them, placing his hands on them.",
         "16h": "The Rich Man.",
-        "33_heading": "Gentiles"
+        "33_heading": "Gentiles",
+        "10_heading": "Marriage and Divorce."
       },
       "11": {
         "1": "When they drew near to Jerusalem, to Bethphage and Bethany at the Mount of Olives, he sent two of his disciples",
         "10": "Blessed is the kingdom of our father David that is to come! Hosanna in the highest!”",
-        "11": "The Entry into Jerusalem.",
+        "11": "He entered Jerusalem and went into the temple area. He looked around at everything and, since it was already late, went out to Bethany with the Twelve. Jesus Curses a Fig Tree.",
         "12": "The next day as they were leaving Bethany he was hungry.",
         "13": "Seeing from a distance a fig tree in leaf, he went over to see if he could find anything on it. When he reached it he found nothing but leaves; it was not the time for figs.",
         "14": "And he said to it in reply, “May no one ever eat of your fruit again!” And his disciples heard it. Cleansing of the Temple.",
@@ -27882,7 +27920,7 @@
         "23": "Amen, I say to you, whoever says to this mountain, ‘Be lifted up and thrown into the sea,’ and does not doubt in his heart but believes that what he says will happen, it shall be done for him.",
         "24": "Therefore I tell you, all that you ask for in prayer, believe that you will receive it and it shall be yours.",
         "25": "When you stand to pray, forgive anyone against whom you have a grievance, so that your heavenly Father may in turn forgive you your transgressions.”",
-        "26": "The Authority of Jesus Questioned.",
+        "26": "",
         "27": "They returned once more to Jerusalem. As he was walking in the temple area, the chief priests, the scribes, and the elders approached him",
         "28": "and said to him, “By what authority are you doing these things? Or who gave you this authority to do them?”",
         "29": "Jesus said to them, “I shall ask you one question. Answer me, and I will tell you by what authority I do these things.",
@@ -27898,7 +27936,9 @@
         "8": "Many people spread their cloaks on the road, and others spread leafy branches that they had cut from the fields.",
         "9": "Those preceding him as well as those following kept crying out: “Hosanna! Blessed is he who comes in the name of the Lord!",
         "16": "He did not permit anyone to carry anything through the temple area.",
-        "19h": "The Withered Fig Tree."
+        "19h": "The Withered Fig Tree.",
+        "11_heading": "The Entry into Jerusalem.",
+        "26_heading": "The Authority of Jesus Questioned."
       },
       "12": {
         "1": "He began to speak to them in parables. “A man planted a vineyard, put a hedge around it, dug a wine press, and built a tower. Then he leased it to tenant farmers and left on a journey.",
@@ -27953,7 +27993,7 @@
         "10": "But the gospel must first be preached to all nations.",
         "11": "When they lead you away and hand you over, do not worry beforehand about what you are to say. But say whatever will be given to you at that hour. For it will not be you who are speaking but the holy Spirit.",
         "12": "Brother will hand over brother to death, and the father his child; children will rise up against parents and have them put to death.",
-        "13": "The Destruction of the Temple Foretold.",
+        "13": "You will be hated by all because of my name. But the one who perseveres to the end will be saved. The Great Tribulation.",
         "14": "“When you see the desolating abomination standing where he should not (let the reader understand), then those in Judea must flee to the mountains,",
         "15": "[and] a person on a housetop must not go down or enter to get anything out of his house,",
         "17": "Woe to pregnant women and nursing mothers in those days.",
@@ -27988,7 +28028,8 @@
         "16": "and a person in a field must not return to get his cloak.",
         "23h": "The Coming of the Son of Man.",
         "27h": "The Lesson of the Fig Tree.",
-        "8h": "The Coming Persecution."
+        "8h": "The Coming Persecution.",
+        "13_heading": "The Destruction of the Temple Foretold."
       },
       "14": {
         "1": "The Passover and the Feast of Unleavened Bread were to take place in two days’ time. So the chief priests and the scribes were seeking a way to arrest him by treachery and put him to death.",
@@ -27996,7 +28037,7 @@
         "11": "When they heard him they were pleased and promised to pay him money. Then he looked for an opportunity to hand him over. Preparations for the Passover.",
         "12": "On the first day of the Feast of Unleavened Bread, when they sacrificed the Passover lamb, his disciples said to him, “Where do you want us to go and prepare for you to eat the Passover?”",
         "13": "He sent two of his disciples and said to them, “Go into the city and a man will meet you, carrying a jar of water. Follow him.",
-        "14": "The Conspiracy Against Jesus.",
+        "14": "Wherever he enters, say to the master of the house, ‘The Teacher says, “Where is my guest room where I may eat the Passover with my disciples?”’",
         "15": "Then he will show you a large upper room furnished and ready. Make the preparations for us there.”",
         "17": "When it was evening, he came with the Twelve.",
         "18": "And as they reclined at table and were eating, Jesus said, “Amen, I say to you, one of you will betray me, one who is eating with me.”",
@@ -28063,7 +28104,8 @@
         "8": "She has done what she could. She has anticipated anointing my body for burial.",
         "9": "Amen, I say to you, wherever the gospel is proclaimed to the whole world, what she has done will be told in memory of her.” The Betrayal by Judas.",
         "16": "The disciples then went off, entered the city, and found it just as he had told them; and they prepared the Passover.",
-        "31h": "The Agony in the Garden."
+        "31h": "The Agony in the Garden.",
+        "14_heading": "The Conspiracy Against Jesus."
       },
       "15": {
         "1": "As soon as morning came, the chief priests with the elders and the scribes, that is, the whole Sanhedrin, held a council. They bound Jesus, led him away, and handed him over to Pilate.",
@@ -28072,7 +28114,7 @@
         "12": "Pilate again said to them in reply, “Then what [do you want] me to do with [the man you call] the king of the Jews?”",
         "13": "They shouted again, “Crucify him.”",
         "14": "Pilate said to them, “Why? What evil has he done?” They only shouted the louder, “Crucify him.”",
-        "15": "Jesus Before Pilate.",
+        "15": "So Pilate, wishing to satisfy the crowd, released Barabbas to them and, after he had Jesus scourged, handed him over to be crucified. Mockery by the Soldiers.",
         "17": "They clothed him in purple and, weaving a crown of thorns, placed it on him.",
         "18": "They began to salute him with, “Hail, King of the Jews!”",
         "19": "and kept striking his head with a reed and spitting upon him. They knelt before him in homage.",
@@ -28117,7 +28159,8 @@
         "21h": "The Crucifixion.",
         "31h": "The Death of Jesus.",
         "40h": "The Burial of Jesus.",
-        "5h": "The Sentence of Death."
+        "5h": "The Sentence of Death.",
+        "15_heading": "Jesus Before Pilate."
       },
       "16": {
         "1": "When the sabbath was over, Mary Magdalene, Mary, the mother of James, and Salome bought spices so that they might go and anoint him.",
@@ -28155,7 +28198,7 @@
         "17": "Jesus heard this and said to them [that], “Those who are well do not need a physician, but the sick do. I did not come to call the righteous but sinners.” The Question About Fasting.",
         "18": "The disciples of John and of the Pharisees were accustomed to fast. People came to him and objected, “Why do the disciples of John and the disciples of the Pharisees fast, but your disciples do not fast?”",
         "19": "Jesus answered them, “Can the wedding guests fast while the bridegroom is with them? As long as they have the bridegroom with them they cannot fast.",
-        "2": "The Healing of a Paralytic.",
+        "2": "Many gathered together so that there was no longer room for them, not even around the door, and he preached the word to them.",
         "20": "But the days will come when the bridegroom is taken away from them, and then they will fast on that day.",
         "21": "No one sews a piece of unshrunken cloth on an old cloak. If he does, its fullness pulls away, the new from the old, and the tear gets worse.",
         "22": "Likewise, no one pours new wine into old wineskins. Otherwise, the wine will burst the skins, and both the wine and the skins are ruined. Rather, new wine is poured into fresh wineskins.” The Disciples and the Sabbath.",
@@ -28172,7 +28215,8 @@
         "7": "“Why does this man speak that way? He is blaspheming. Who but God alone can forgive sins?”",
         "8": "Jesus immediately knew in his mind what they were thinking to themselves, so he said, “Why are you thinking such things in your hearts?",
         "9": "Which is easier, to say to the paralytic, ‘Your sins are forgiven,’ or to say, ‘Rise, pick up your mat and walk’?",
-        "16": "Some scribes who were Pharisees saw that he was eating with sinners and tax collectors and said to his disciples, “Why does he eat with tax collectors and sinners?”"
+        "16": "Some scribes who were Pharisees saw that he was eating with sinners and tax collectors and said to his disciples, “Why does he eat with tax collectors and sinners?”",
+        "2_heading": "The Healing of a Paralytic."
       },
       "3": {
         "1": "Again he entered the synagogue. There was a man there who had a withered hand.",
@@ -28196,7 +28240,7 @@
         "27": "But no one can enter a strong man’s house to plunder his property unless he first ties up the strong man. Then he can plunder his house.",
         "28": "Amen, I say to you, all sins and all blasphemies that people utter will be forgiven them.",
         "29": "But whoever blasphemes against the holy Spirit will never have forgiveness, but is guilty of an everlasting sin.”",
-        "3": "A Man with a Withered Hand.",
+        "3": "He said to the man with the withered hand, “Come up here before us.”",
         "30": "For they had said, “He has an unclean spirit.” Jesus and His Family.",
         "31": "His mother and his brothers arrived. Standing outside they sent word to him and called him.",
         "32": "A crowd seated around him told him, “Your mother and your brothers [and your sisters] are outside asking for you.”",
@@ -28211,7 +28255,8 @@
         "9": "He told his disciples to have a boat ready for him because of the crowd, so that they would not crush him.",
         "16": "[he appointed the twelve:] Simon, whom he named Peter;",
         "12h": "The Mission of the Twelve.",
-        "6h": "The Mercy of Jesus."
+        "6h": "The Mercy of Jesus.",
+        "3_heading": "A Man with a Withered Hand."
       },
       "4": {
         "1": "On another occasion he began to teach by the sea. A very large crowd gathered around him so that he got into a boat on the sea and sat down. And the whole crowd was beside the sea on land.",
@@ -28246,7 +28291,7 @@
         "37": "A violent squall came up and waves were breaking over the boat, so that it was already filling up.",
         "38": "Jesus was in the stern, asleep on a cushion. They woke him and said to him, “Teacher, do you not care that we are perishing?”",
         "39": "He woke up, rebuked the wind, and said to the sea, “Quiet! Be still!” The wind ceased and there was great calm.",
-        "4": "The Parable of the Sower.",
+        "4": "And as he sowed, some seed fell on the path, and the birds came and ate it up.",
         "40": "Then he asked them, “Why are you terrified? Do you not yet have faith?”",
         "41": "They were filled with great awe and said to one another, “Who then is this whom even wind and sea obey?”",
         "5": "Other seed fell on rocky ground where it had little soil. It sprang up at once because the soil was not deep.",
@@ -28255,7 +28300,8 @@
         "8": "And some seed fell on rich soil and produced fruit. It came up and grew and yielded thirty, sixty, and a hundredfold.”",
         "9": "He added, “Whoever has ears to hear ought to hear.” The Purpose of the Parables.",
         "16": "And these are the ones sown on rocky ground who, when they hear the word, receive it at once with joy.",
-        "34h": "The Calming of a Storm at Sea."
+        "34h": "The Calming of a Storm at Sea.",
+        "4_heading": "The Parable of the Sower."
       },
       "5": {
         "1": "They came to the other side of the sea, to the territory of the Gerasenes.",
@@ -28295,13 +28341,15 @@
         "41": "He took the child by the hand and said to her, “Talitha koum,” which means, “Little girl, I say to you, arise!”",
         "42": "The girl, a child of twelve, arose immediately and walked around. [At that] they were utterly astounded.",
         "43": "He gave strict orders that no one should know this and said that she should be given something to eat.",
-        "5": "The Healing of the Gerasene Demoniac.",
+        "5": "Night and day among the tombs and on the hillsides he was always crying out and bruising himself with stones.",
         "6": "Catching sight of Jesus from a distance, he ran up and prostrated himself before him,",
         "7": "crying out in a loud voice, “What have you to do with me, Jesus, Son of the Most High God? I adjure you by God, do not torment me!”",
         "8": "(He had been saying to him, “Unclean spirit, come out of the man!”)",
         "9": "He asked him, “What is your name?” He replied, “Legion is my name. There are many of us.”",
         "16": "Those who witnessed the incident explained to them what had happened to the possessed man and to the swine.",
-        "22_heading": "Seeing him he fell at his feet"
+        "22_heading": "Seeing him he fell at his feet",
+        "5_heading": "The Healing of the Gerasene Demoniac.",
+        "8_heading": "(He had been saying to him, “Unclean spirit, come out of the man!”)"
       },
       "6": {
         "1": "He departed from there and came to his native place, accompanied by his disciples.",
@@ -28355,7 +28403,7 @@
         "54": "As they were leaving the boat, people immediately recognized him.",
         "55": "They scurried about the surrounding country and began to bring in the sick on mats to wherever they heard he was.",
         "56": "Whatever villages or towns or countryside he entered, they laid the sick in the marketplaces and begged him that they might touch only the tassel on his cloak; and as many as touched it were healed.",
-        "6": "The Rejection at Nazareth.",
+        "6": "He was amazed at their lack of faith. The Mission of the Twelve. He went around to the villages in the vicinity teaching.",
         "7": "He summoned the Twelve and began to send them out two by two and gave them authority over unclean spirits.",
         "8": "He instructed them to take nothing for the journey but a walking stick―no food, no sack, no money in their belts.",
         "9": "They were, however, to wear sandals but not a second tunic.",
@@ -28363,7 +28411,8 @@
         "29h": "The Return of the Twelve.",
         "33h": "The Feeding of the Five Thousand.",
         "44h": "The Walking on the Water.",
-        "52h": "The Healings at Gennesaret."
+        "52h": "The Healings at Gennesaret.",
+        "6_heading": "The Rejection at Nazareth."
       },
       "7": {
         "1": "Now when the Pharisees with some scribes who had come from Jerusalem gathered around him,",
@@ -28399,10 +28448,11 @@
         "4": "And on coming from the marketplace they do not eat without purifying themselves. And there are many other things that they have traditionally observed, the purification of cups and jugs and kettles [and beds].)",
         "5": "So the Pharisees and scribes questioned him, “Why do your disciples not follow the tradition of the elders but instead eat a meal with unclean hands?”",
         "6": "He responded, “Well did Isaiah prophesy about you hypocrites, as it is written: ‘This people honors me with their lips, but their hearts are far from me;",
-        "7": "The Tradition of the Elders.",
+        "7": "In vain do they worship me, teaching as doctrines human precepts.’",
         "8": "You disregard God’s commandment but cling to human tradition.”",
         "9": "He went on to say, “How well you have set aside the commandment of God in order to uphold your tradition!",
-        "30h": "The Healing of a Deaf Man."
+        "30h": "The Healing of a Deaf Man.",
+        "7_heading": "The Tradition of the Elders."
       },
       "8": {
         "1": "In those days when there again was a great crowd without anything to eat, he summoned the disciples and said,",
@@ -28440,13 +28490,14 @@
         "5": "Still he asked them, “How many loaves do you have?” “Seven,” they replied.",
         "6": "He ordered the crowd to sit down on the ground. Then, taking the seven loaves he gave thanks, broke them, and gave them to his disciples to distribute, and they distributed them to the crowd.",
         "7": "They also had a few fish. He said the blessing over them and ordered them distributed also.",
-        "8": "The Feeding of the Four Thousand.",
+        "8": "They ate and were satisfied. They picked up the fragments left over—seven baskets.",
         "9": "There were about four thousand people.",
         "16": "They concluded among themselves that it was because they had no bread.",
         "10h": "The Demand for a Sign.",
         "13h": "The Leaven of the Pharisees.",
         "30h": "The First Prediction of the Passion.",
-        "9_heading": "He dismissed them"
+        "9_heading": "He dismissed them",
+        "8_heading": "The Feeding of the Four Thousand."
       },
       "9": {
         "1": "He also said to them, “Amen, I say to you, there are some standing here who will not taste death until they see that the kingdom of God has come in power.” The Transfiguration of Jesus.",
@@ -28505,7 +28556,7 @@
     },
     "mt": {
       "1": {
-        "1": "The Genealogy of Jesus.",
+        "1": "The book of the genealogy of Jesus Christ, the son of David, the son of Abraham.",
         "10": "Hezekiah became the father of Manasseh, Manasseh the father of Amos, Amos the father of Josiah.",
         "11": "Josiah became the father of Jechoniah and his brothers at the time of the Babylonian exile.",
         "12": "After the Babylonian exile, Jechoniah became the father of Shealtiel, Shealtiel the father of Zerubbabel,",
@@ -28530,11 +28581,12 @@
         "7": "Solomon became the father of Rehoboam, Rehoboam the father of Abijah, Abijah the father of Asaph.",
         "8": "Asaph became the father of Jehoshaphat, Jehoshaphat the father of Joram, Joram the father of Uzziah.",
         "9": "Uzziah became the father of Jotham, Jotham the father of Ahaz, Ahaz the father of Hezekiah.",
-        "17h": "The Birth of Jesus."
+        "17h": "The Birth of Jesus.",
+        "1_heading": "The Genealogy of Jesus."
       },
       "10": {
         "1": "Then he summoned his twelve disciples and gave them authority over unclean spirits to drive them out and to cure every disease and every illness.",
-        "10": "The Mission of the Twelve.",
+        "10": "no sack for the journey, or a second tunic, or sandals, or walking stick. The laborer deserves his keep.",
         "11": "Whatever town or village you enter, look for a worthy person in it, and stay there until you leave.",
         "12": "As you enter a house, wish it peace.",
         "13": "If the house is worthy, let your peace come upon it; if not, let your peace return to you.",
@@ -28577,7 +28629,8 @@
         "28": "And do not be afraid of those who kill the body but cannot kill the soul; rather, be afraid of the one who can destroy both soul and body in Gehenna.",
         "15h": "Coming Persecutions.",
         "39h": "Rewards.",
-        "4h": "The Commissioning of the Twelve."
+        "4h": "The Commissioning of the Twelve.",
+        "10_heading": "The Mission of the Twelve."
       },
       "11": {
         "1": "When Jesus finished giving these commands to his twelve disciples, he went away from that place to teach and to preach in their towns.",
@@ -28617,7 +28670,7 @@
         "1": "At that time Jesus was going through a field of grain on the sabbath. His disciples were hungry and began to pick the heads of grain and eat them.",
         "10": "And behold, there was a man there who had a withered hand. They questioned him, “Is it lawful to cure on the sabbath?” so that they might accuse him.",
         "11": "He said to them, “Which one of you who has a sheep that falls into a pit on the sabbath will not take hold of it and lift it out?",
-        "12": "Picking Grain on the Sabbath.",
+        "12": "How much more valuable a person is than a sheep. So it is lawful to do good on the sabbath.”",
         "13": "Then he said to the man, “Stretch out your hand.” He stretched it out, and it was restored as sound as the other.",
         "14": "But the Pharisees went out and took counsel against him to put him to death.",
         "15": "When Jesus realized this, he withdrew from that place. Many [people] followed him, and he cured them all,",
@@ -28665,14 +28718,15 @@
         "9": "Moving on from there, he went into their synagogue.",
         "28": "But if it is by the Spirit of God that I drive out demons, then the kingdom of God has come upon you.",
         "14h": "The Chosen Servant.",
-        "42h": "The Return of the Unclean Spirit."
+        "42h": "The Return of the Unclean Spirit.",
+        "12_heading": "Picking Grain on the Sabbath."
       },
       "13": {
         "1": "On that day, Jesus went out of the house and sat down by the sea.",
         "10": "The disciples approached him and said, “Why do you speak to them in parables?”",
         "11": "He said to them in reply, “Because knowledge of the mysteries of the kingdom of heaven has been granted to you, but to them it has not been granted.",
         "12": "To anyone who has, more will be given and he will grow rich; from anyone who has not, even what he has will be taken away.",
-        "13": "The Parable of the Sower.",
+        "13": "This is why I speak to them in parables, because ‘they look but do not see and hear but do not listen or understand.’",
         "14": "Isaiah’s prophecy is fulfilled in them, which says: ‘You shall indeed hear but not understand, you shall indeed look but never see.",
         "15": "Gross is the heart of this people, they will hardly hear with their ears, they have closed their eyes, lest they see with their eyes and hear with their ears and understand with their heart and be converted, and I heal them.’ The Privilege of Discipleship.",
         "16": "“But blessed are your eyes, because they see, and your ears, because they hear.",
@@ -28729,7 +28783,8 @@
         "17h": "The Explanation of the Parable of the Sower.",
         "43h": "More Parables.",
         "53h": "The Rejection at Nazareth.",
-        "49_heading": "The angels will go out and separate the wicked from the righteous"
+        "49_heading": "The angels will go out and separate the wicked from the righteous",
+        "13_heading": "The Parable of the Sower."
       },
       "14": {
         "1": "At that time",
@@ -28737,7 +28792,7 @@
         "11": "His head was brought in on a platter and given to the girl, who took it to her mother.",
         "12": "His disciples came and took away the corpse and buried him; and they went and told Jesus. The Return of the Twelve and the Feeding of the Five Thousand.",
         "13": "When Jesus heard of it, he withdrew in a boat to a deserted place by himself. The crowds heard of this and followed him on foot from their towns.",
-        "14": "Herod’s Opinion of Jesus.",
+        "14": "When he disembarked and saw the vast crowd, his heart was moved with pity for them, and he cured their sick.",
         "15": "When it was evening, the disciples approached him and said, “This is a deserted place and it is already late; dismiss the crowds so that they can go to the villages and buy food for themselves.”",
         "16": "[Jesus] said to them, “There is no need for them to go away; give them some food yourselves.”",
         "17": "But they said to him, “Five loaves and two fish are all we have here.”",
@@ -28771,7 +28826,8 @@
         "21h": "The Walking on the Water.",
         "1_heading": "Herod the tetrarch heard of the reputation of Jesus",
         "35_heading": "People brought to him all those who were sick",
-        "6_heading": "Herodias performed a dance before the guests and delighted Herod"
+        "6_heading": "Herodias performed a dance before the guests and delighted Herod",
+        "14_heading": "Herod’s Opinion of Jesus."
       },
       "15": {
         "1": "Then Pharisees and scribes came to Jesus from Jerusalem and said,",
@@ -28780,7 +28836,7 @@
         "12": "Then his disciples approached and said to him, “Do you know that the Pharisees took offense when they heard what you said?”",
         "13": "He said in reply, “Every plant that my heavenly Father has not planted will be uprooted.",
         "14": "Let them alone; they are blind guides [of the blind]. If a blind person leads a blind person, both will fall into a pit.”",
-        "15": "The Tradition of the Elders.",
+        "15": "Then Peter said to him in reply, “Explain [this] parable to us.”",
         "16": "He said to them, “Are even you still without understanding?",
         "17": "Do you not realize that everything that enters the mouth passes into the stomach and is expelled into the latrine?",
         "18": "But the things that come out of the mouth come from the heart, and they defile.",
@@ -28814,7 +28870,8 @@
         "9": "in vain do they worship me, teaching as doctrines human precepts.’”",
         "28": "Then Jesus said to her in reply, “O woman, great is your faith! Let it be done for you as you wish.” And her daughter was healed from that hour.",
         "31h": "The Feeding of the Four Thousand.",
-        "28h": "The Healing of Many People."
+        "28h": "The Healing of Many People.",
+        "15_heading": "The Tradition of the Elders."
       },
       "16": {
         "1": "The Pharisees and Sadducees came and, to test him, asked him to show them a sign from heaven.",
@@ -28824,7 +28881,7 @@
         "13": "When Jesus went into the region of Caesarea Philippi he asked his disciples, “Who do people say that the Son of Man is?”",
         "14": "They replied, “Some say John the Baptist, others Elijah, still others Jeremiah or one of the prophets.”",
         "15": "He said to them, “But who do you say that I am?”",
-        "16": "The Demand for a Sign.",
+        "16": "Simon Peter said in reply, “You are the Messiah, the Son of the living God.”",
         "17": "Jesus said to him in reply, “Blessed are you, Simon son of Jonah. For flesh and blood has not revealed this to you, but my heavenly Father.",
         "18": "And so I say to you, you are Peter, and upon this rock I will build my church,and the gates of the netherworld shall not prevail against it.",
         "19": "I will give you the keys to the kingdom of heaven. Whatever you bind on earth shall be bound in heaven; and whatever you loose on earth shall be loosed in heaven.”",
@@ -28846,7 +28903,8 @@
         "9": "Do you not yet understand, and do you not remember the five loaves for the five thousand, and how many wicker baskets you took up?",
         "28": "Amen, I say to you, there are some standing here who will not taste death until they see the Son of Man coming in his kingdom.\"",
         "20h": "The First Prediction of the Passion.",
-        "4h": "The Leaven of the Pharisees and Sadducees."
+        "4h": "The Leaven of the Pharisees and Sadducees.",
+        "16_heading": "The Demand for a Sign."
       },
       "17": {
         "1": "After six days Jesus took Peter, James, and John his brother, and led them up a high mountain by themselves.",
@@ -28857,12 +28915,12 @@
         "14": "When they came to the crowd a man approached, knelt down before him,",
         "15": "and said, “Lord, have pity on my son, for he is a lunatic and suffers severely; often he falls into fire, and often into water.",
         "16": "I brought him to your disciples, but they could not cure him.”",
-        "17": "The Transfiguration of Jesus.",
+        "17": "Jesus said in reply, “O faithless and perverse generation, how long will I be with you? How long will I endure you? Bring him here to me.”",
         "18": "Jesus rebuked him and the demon came out of him, and from that hour the boy was cured.",
         "19": "Then the disciples approached Jesus in private and said, “Why could we not drive it out?”",
         "2": "And he was transfigured before them; his face shone like the sun and his clothes became white as light.",
         "20": "He said to them, “Because of your little faith. Amen, I say to you, if you have faith the size of a mustard seed, you will say to this mountain, ‘Move from here to there,’ and it will move. Nothing will be impossible for you.”",
-        "21": "The Second Prediction of the Passion.",
+        "21": "] The Second Prediction of the Passion.",
         "22": "As they were gathering in Galilee, Jesus said to them, “The Son of Man is to be handed over to men,",
         "23": "and they will kill him, and he will be raised on the third day.” And they were overwhelmed with grief. Payment of the Temple Tax.",
         "24": "When they came to Capernaum, the collectors of the temple tax approached Peter and said, “Doesn’t your teacher pay the temple tax?”",
@@ -28877,7 +28935,9 @@
         "8": "And when the disciples raised their eyes, they saw no one else but Jesus alone.",
         "9": "As they were coming down from the mountain, Jesus charged them, “Do not tell the vision to anyone until the Son of Man has been raised from the dead.”",
         "13h": "The Healing of a Boy with a Demon.",
-        "8h": "The Coming of Elijah."
+        "8h": "The Coming of Elijah.",
+        "17_heading": "The Transfiguration of Jesus.",
+        "21_heading": "The Second Prediction of the Passion."
       },
       "18": {
         "1": "At that time the disciples approached Jesus and said, “Who is the greatest in the kingdom of heaven?”",
@@ -28888,7 +28948,7 @@
         "14": "“If your brother sins [against you], go and tell him his fault between you and him alone. If he listens to you, you have won over your brother.",
         "15": "If he does not listen, take one or two others along with you, so that ‘every fact may be established on the testimony of two or three witnesses.’",
         "16": "If he refuses to listen to them, tell the church. If he refuses to listen even to the church, then treat him as you would a Gentile or a tax collector.",
-        "17": "The Greatest in the Kingdom.",
+        "17": "If he refuses to listen to them, tell the church. If he refuses to listen even to the church, then treat him as you would a Gentile or a tax collector.",
         "18": "Again, [amen,] I say to you, if two of you agree on earth about anything for which they are to pray, it shall be granted to them by my heavenly Father.",
         "19": "For where two or three are gathered together in my name, there am I in the midst of them.” The Parable of the Unforgiving Servant.",
         "2": "He called a child over, placed it in their midst,",
@@ -28916,7 +28976,8 @@
         "27": "Moved with compassion the master of that servant let him go and forgave him the loan.",
         "35": "So will my heavenly Father do to you, unless each of you forgives his brother from his heart.”",
         "13h": "A Brother Who Sins.",
-        "9h": "The Parable of the Lost Sheep."
+        "9h": "The Parable of the Lost Sheep.",
+        "17_heading": "The Greatest in the Kingdom."
       },
       "19": {
         "1": "When Jesus finished these words, he left Galilee and went to the district of Judea across the Jordan.",
@@ -28929,7 +28990,7 @@
         "16": "Now someone approached him and said, “Teacher, what good must I do to gain eternal life?”",
         "17": "He answered him, “Why do you ask me about the good? There is only One who is good. If you wish to enter into life, keep the commandments.”",
         "18": "He asked him, “Which ones?” And Jesus replied, “ ‘You shall not kill; you shall not commit adultery; you shall not steal; you shall not bear false witness;",
-        "19": "Marriage and Divorce.",
+        "19": "honor your father and your mother’; and ‘you shall love your neighbor as yourself.’”",
         "2": "Great crowds followed him, and he cured them there.",
         "20": "The young man said to him, “All of these I have observed. What do I still lack?”",
         "21": "Jesus said to him, “If you wish to be perfect, go, sell what you have and give to [the] poor, and you will have treasure in heaven. Then come, follow me.”",
@@ -28949,7 +29010,8 @@
         "8": "He said to them, “Because of the hardness of your hearts Moses allowed you to divorce your wives, but from the beginning it was not so.",
         "9": "I say to you, whoever divorces his wife (unless the marriage is unlawful) and marries another commits adultery.”",
         "28": "Jesus said to them, “Amen, I say to you that you who have followed me, in the new age, when the Son of Man is seated on his throne of glory, will yourselves sit on twelve thrones, judging the twelve tribes of Israel.",
-        "15h": "The Rich Young Man."
+        "15h": "The Rich Young Man.",
+        "19_heading": "Marriage and Divorce."
       },
       "2": {
         "1": "When Jesus was born in Bethlehem of Judea, in the days of King Herod, behold, magi from the east arrived in Jerusalem,",
@@ -28963,7 +29025,7 @@
         "17": "Then was fulfilled what had been said through Jeremiah the prophet:",
         "18": "“A voice was heard in Ramah, sobbing and loud lamentation; Rachel weeping for her children, and she would not be consoled, since they were no more.” The Return from Egypt.",
         "19": "When Herod had died, behold, the angel of the",
-        "2": "The Visit of the Magi.",
+        "2": "saying, “Where is the newborn king of the Jews? We saw his star at its rising and have come to do him homage.”",
         "20": "and said, “Rise, take the child and his mother and go to the land of Israel, for those who sought the child’s life are dead.”",
         "21": "He rose, took the child and his mother, and went to the land of Israel.",
         "22": "But when he heard that Archelaus was ruling over Judea in place of his father Herod, he was afraid to go back there. And because he had been warned in a dream, he departed for the region of Galilee.",
@@ -28976,7 +29038,8 @@
         "8": "He sent them to Bethlehem and said, “Go and search diligently for the child. When you have found him, bring me word, that I too may go and do him homage.”",
         "9": "After their audience with the king they set out. And behold, the star that they had seen at its rising preceded them, until it came and stopped over the place where the child was.",
         "12h": "The Flight to Egypt.",
-        "19_heading": "Lord appeared in a dream to Joseph in Egypt"
+        "19_heading": "Lord appeared in a dream to Joseph in Egypt",
+        "2_heading": "The Visit of the Magi."
       },
       "20": {
         "1": "“The kingdom of heaven is like a landowner who went out at dawn to hire laborers for his vineyard.",
@@ -28991,7 +29054,7 @@
         "18": "“Behold, we are going up to Jerusalem, and the Son of Man will be handed over to the chief priests and the scribes, and they will condemn him to death,",
         "19": "and hand him over to the Gentiles to be mocked and scourged and crucified, and he will be raised on the third day.” The Request of James and John.",
         "2": "After agreeing with them for the usual daily wage, he sent them into his vineyard.",
-        "20": "The Workers in the Vineyard.",
+        "20": "Then the mother of the sons of Zebedee approached him with her sons and did him homage, wishing to ask him for something.",
         "21": "He said to her, “What do you wish?” She answered him, “Command that these two sons of mine sit, one at your right and the other at your left, in your kingdom.”",
         "22": "Jesus said in reply, “You do not know what you are asking. Can you drink the cup that I am going to drink?” They said to him, “We can.”",
         "23": "He replied, “My cup you will indeed drink, but to sit at my right and at my left [, this] is not mine to give but is for those for whom it has been prepared by my Father.”",
@@ -29012,7 +29075,8 @@
         "7": "They answered, ‘Because no one has hired us.’ He said to them, ‘You too go into my vineyard.’",
         "8": "When it was evening the owner of the vineyard said to his foreman, ‘Summon the laborers and give them their pay, beginning with the last and ending with the first.’",
         "9": "When those who had started about five o’clock came, each received the usual daily wage.",
-        "28": "Just so, the Son of Man did not come to be served but to serve and to give his life as a ransom for many.” The Healing of Two Blind Men."
+        "28": "Just so, the Son of Man did not come to be served but to serve and to give his life as a ransom for many.” The Healing of Two Blind Men.",
+        "20_heading": "The Workers in the Vineyard."
       },
       "21": {
         "1": "When they drew near Jerusalem and came to Bethphage on the Mount of Olives, Jesus sent two disciples,",
@@ -29028,7 +29092,7 @@
         "19": "Seeing a fig tree by the road, he went over to it, but found nothing on it except leaves. And he said to it, “May no fruit ever come from you again.” And immediately the fig tree withered.",
         "2": "saying to them, “Go into the village opposite you, and immediately you will find an ass tethered, and a colt with her. Untie them and bring them here to me.",
         "20": "When the disciples saw this, they were amazed and said, “How was it that the fig tree withered immediately?”",
-        "21": "The Entry into Jerusalem.",
+        "21": "Jesus said to them in reply, “Amen, I say to you, if you have faith and do not waver, not only will you do what has been done to the fig tree, but even if you say to this mountain, ‘Be lifted up and thrown into the sea,’ it will be done.",
         "22": "Whatever you ask for in prayer with faith, you will receive.” The Authority of Jesus Questioned.",
         "23": "When he had come into the temple area, the chief priests and the elders of the people approached him as he was teaching and said, “By what authority are you doing these things? And who gave you this authority?”",
         "24": "Jesus said to them in reply, “I shall ask you one question, and if you answer it for me, then I shall tell you by what authority I do these things.",
@@ -29063,7 +29127,8 @@
         "28": "“What is your opinion? A man had two sons. He came to the first and said, ‘Son, go out and work in the vineyard today.’",
         "17h": "The Cursing of the Fig Tree.",
         "27h": "The Parable of the Two Sons.",
-        "32h": "The Parable of the Tenants."
+        "32h": "The Parable of the Tenants.",
+        "21_heading": "The Entry into Jerusalem."
       },
       "22": {
         "1": "Jesus again in reply spoke to them in parables, saying,",
@@ -29080,7 +29145,7 @@
         "2": "“The kingdom of heaven may be likened to a king who gave a wedding feast for his son.",
         "20": "He said to them, “Whose image is this and whose inscription?”",
         "21": "They replied, “Caesar’s.” At that he said to them, “Then repay to Caesar what belongs to Caesar and to God what belongs to God.”",
-        "22": "The Parable of the Wedding Feast.",
+        "22": "When they heard this they were amazed, and leaving him they went away. The Question About the Resurrection.",
         "23": "On that day Sadducees approached him, saying that there is no resurrection. They put this question to him,",
         "24": "saying, “Teacher, Moses said, ‘If a man dies without children, his brother shall marry his wife and raise up descendants for his brother.’",
         "25": "Now there were seven brothers among us. The first married and died and, having no descendants, left his wife to his brother.",
@@ -29112,7 +29177,8 @@
         "8": "Then he said to his servants, ‘The feast is ready, but those who were invited were not worthy to come.",
         "9": "Go out, therefore, into the main roads and invite to the feast whomever you find.’",
         "28": "Now at the resurrection, of the seven, whose wife will she be? For they all had been married to her.”",
-        "33h": "The Greatest Commandment."
+        "33h": "The Greatest Commandment.",
+        "22_heading": "The Parable of the Wedding Feast."
       },
       "23": {
         "1": "Then Jesus spoke to the crowds and to his disciples,",
@@ -29173,7 +29239,7 @@
         "21": "for at that time there will be great tribulation, such as has not been since the beginning of the world until now, nor ever will be.",
         "22": "And if those days had not been shortened, no one would be saved; but for the sake of the elect they will be shortened.",
         "23": "If anyone says to you then, ‘Look, here is the Messiah!’ or, ‘There he is!’ do not believe it.",
-        "24": "The Destruction of the Temple Foretold.",
+        "24": "False messiahs and false prophets will arise, and they will perform signs and wonders so great as to deceive, if that were possible, even the elect.",
         "25": "Behold, I have told it to you beforehand.",
         "26": "So if they say to you, ‘He is in the desert,’ do not go out there; if they say, ‘He is in the inner rooms,’ do not believe it.",
         "27": "For just as lightning comes from the east and is seen as far as the west, so will the coming of the Son of Man be.",
@@ -29212,7 +29278,8 @@
         "31h": "The Lesson of the Fig Tree.",
         "35h": "The Unknown Day and Hour.",
         "44h": "The Faithful or the Unfaithful Servant.",
-        "28h": "The Coming of the Son of Man."
+        "28h": "The Coming of the Son of Man.",
+        "24_heading": "The Destruction of the Temple Foretold."
       },
       "25": {
         "1": "“Then the kingdom of heaven will be like ten virgins who took their lamps and went out to meet the bridegroom.",
@@ -29232,7 +29299,7 @@
         "22": "[Then] the one who had received two talents also came forward and said, ‘Master, you gave me two talents. See, I have made two more.’",
         "23": "His master said to him, ‘Well done, my good and faithful servant. Since you were faithful in small matters, I will give you great responsibilities. Come, share your master’s joy.’",
         "24": "Then the one who had received the one talent came forward and said, ‘Master, I knew you were a demanding person, harvesting where you did not plant and gathering where you did not scatter;",
-        "25": "The Parable of the Ten Virgins.",
+        "25": "so out of fear I went off and buried your talent in the ground. Here it is back.’",
         "26": "His master said to him in reply, ‘You wicked, lazy servant! So you knew that I harvest where I did not plant and gather where I did not scatter?",
         "27": "Should you not then have put my money in the bank so that I could have got it back with interest on my return?",
         "29": "For to everyone who has, more will be given and he will grow rich; but from the one who has not, even what he has will be taken away.",
@@ -29262,7 +29329,8 @@
         "9": "But the wise ones replied, ‘No, for there may not be enough for us and you. Go instead to the merchants and buy some for yourselves.’",
         "28": "Now then! Take the talent from him and give it to the one with ten.",
         "13h": "The Parable of the Talents.",
-        "15_heading": "Immediately"
+        "15_heading": "Immediately",
+        "25_heading": "The Parable of the Ten Virgins."
       },
       "26": {
         "1": "When Jesus finished all these words, he said to his disciples,",
@@ -29283,7 +29351,7 @@
         "23": "He said in reply, “He who has dipped his hand into the dish with me is the one who will betray me.",
         "24": "The Son of Man indeed goes, as it is written of him, but woe to that man by whom the Son of Man is betrayed. It would be better for that man if he had never been born.”",
         "25": "Then Judas, his betrayer, said in reply, “Surely it is not I, Rabbi?” He answered, “You have said so.” The Lord’s Supper.",
-        "26": "The Conspiracy Against Jesus.",
+        "26": "While they were eating, Jesus took bread, said the blessing, broke it, and giving it to his disciples said, “Take and eat; this is my body.”",
         "27": "Then he took a cup, gave thanks, and gave it to them, saying, “Drink from it, all of you,",
         "29": "I tell you, from now on I shall not drink this fruit of the vine until the day when I drink it with you new in the kingdom of my Father.”",
         "3": "Then the chief priests and the elders of the people assembled in the palace of the high priest, who was called Caiaphas,",
@@ -29342,7 +29410,8 @@
         "28": "for this is my blood of the covenant, which will be shed on behalf of many for the forgiveness of sins.",
         "19h": "The Betrayer.",
         "35h": "The Agony in the Garden.",
-        "60_heading": "Finally two came forward"
+        "60_heading": "Finally two came forward",
+        "26_heading": "The Conspiracy Against Jesus."
       },
       "27": {
         "1": "When it was morning, all the chief priests and the elders of the people took counsel against Jesus to put him to death.",
@@ -29364,7 +29433,7 @@
         "24": "When Pilate saw that he was not succeeding at all, but that a riot was breaking out instead, he took water and washed his hands in the sight of the crowd, saying, “I am innocent of this man’s blood. Look to it yourselves.”",
         "25": "And the whole people said in reply, “His blood be upon us and upon our children.”",
         "26": "Then he released Barabbas to them, but after he had Jesus scourged, he handed him over to be crucified. Mockery by the Soldiers.",
-        "27": "Jesus Before Pilate.",
+        "27": "Then the soldiers of the governor took Jesus inside the praetorium and gathered the whole cohort around him.",
         "29": "Weaving a crown out of thorns, they placed it on his head, and a reed in his right hand. And kneeling before him, they mocked him, saying, “Hail, King of the Jews!”",
         "3": "Then Judas, his betrayer, seeing that Jesus had been condemned, deeply regretted what he had done. He returned the thirty pieces of silver to the chief priests and elders,",
         "30": "They spat upon him and took the reed and kept striking him on the head.",
@@ -29418,7 +29487,8 @@
         "44h": "The Death of Jesus.",
         "56h": "The Burial of Jesus.",
         "61h": "The Guard at the Tomb.",
-        "62_heading": "Pharisees gathered before Pilate"
+        "62_heading": "Pharisees gathered before Pilate",
+        "27_heading": "Jesus Before Pilate."
       },
       "28": {
         "1": "After the sabbath, as the first day of the week was dawning, Mary Magdalene and the other Mary came to see the tomb.",
@@ -29454,7 +29524,7 @@
         "16": "After Jesus was baptized, he came up from the water and behold, the heavens were opened [for him], and he saw the Spirit of God descending like a dove [and] coming upon him.",
         "17": "And a voice came from the heavens, saying, “This is my beloved Son, with whom I am well pleased.”",
         "2": "[and] saying, “Repent, for the kingdom of heaven is at hand!”",
-        "3": "The Preaching of John the Baptist.",
+        "3": "It was of him that the prophet Isaiah had spoken when he said: “A voice of one crying out in the desert, ‘Prepare the way of the Lord, make straight his paths.’”",
         "4": "John wore clothing made of camel’s hair and had a leather belt around his waist. His food was locusts and wild honey.",
         "5": "At that time Jerusalem, all Judea, and the whole region around the",
         "6": "and were being baptized by him in the Jordan River as they acknowledged their sins.",
@@ -29462,7 +29532,8 @@
         "8": "Produce good fruit as evidence of your repentance.",
         "9": "And do not presume to say to yourselves, ‘We have Abraham as our father.’ For I tell you, God can raise up children to Abraham from these stones.",
         "1_heading": "Judea",
-        "5_heading": "Jordan were going out to him"
+        "5_heading": "Jordan were going out to him",
+        "3_heading": "The Preaching of John the Baptist."
       },
       "4": {
         "1": "Then Jesus was led by the Spirit into the desert to be tempted by the devil.",
@@ -29484,13 +29555,14 @@
         "24": "His fame spread to all of Syria, and they brought to him all who were sick with various diseases and racked with pain, those who were possessed, lunatics, and paralytics, and he cured them.",
         "25": "And great crowds from Galilee, the Decapolis, Jerusalem, and Judea, and from beyond the Jordan followed him.",
         "3": "The tempter approached and said to him, “If you are the Son of God, command that these stones become loaves of bread.”",
-        "4": "The Temptation of Jesus.",
+        "4": "He said in reply, “It is written: ‘One does not live by bread alone, but by every word that comes forth from the mouth of God.’”",
         "5": "Then the devil took him to the holy city, and made him stand on the parapet of the temple,",
         "6": "and said to him, “If you are the Son of God, throw yourself down. For it is written: ‘He will command his angels concerning you’ and ‘with their hands they will support you, lest you dash your foot against a stone.’”",
         "7": "Jesus answered him, “Again it is written, ‘You shall not put the Lord, your God, to the test.’”",
         "8": "Then the devil took him up to a very high mountain, and showed him all the kingdoms of the world in their magnificence,",
         "9": "and he said to him, “All these I shall give to you, if you will prostrate yourself and worship me.”",
-        "11h": "The Beginning of the Galilean Ministry."
+        "11h": "The Beginning of the Galilean Ministry.",
+        "4_heading": "The Temptation of Jesus."
       },
       "5": {
         "1": "When he saw the crowds, he went up the mountain, and after he had sat down, his disciples came to him.",
@@ -29535,7 +29607,7 @@
         "46": "For if you love those who love you, what recompense will you have? Do not the tax collectors do the same?",
         "47": "And if you greet your brothers only, what is unusual about that? Do not the pagans do the same?",
         "48": "So be perfect, just as your heavenly Father is perfect.",
-        "5": "The Sermon on the Mount.",
+        "5": "Blessed are the meek, for they will inherit the land.",
         "6": "Blessed are they who hunger and thirst for righteousness, for they will be satisfied.",
         "7": "Blessed are the merciful, for they will be shown mercy.",
         "8": "Blessed are the clean of heart, for they will see God.",
@@ -29547,7 +29619,8 @@
         "30h": "Teaching About Divorce.",
         "32h": "Teaching About Oaths.",
         "37h": "Teaching About Retaliation.",
-        "2_heading": "THE BEATITUDES"
+        "2_heading": "THE BEATITUDES",
+        "5_heading": "The Sermon on the Mount."
       },
       "6": {
         "1": "“[But] take care not to perform righteous deeds in order that people may see them; otherwise, you will have no recompense from your heavenly Father.",
@@ -29579,7 +29652,7 @@
         "34": "Do not worry about tomorrow; tomorrow will take care of itself. Sufficient for a day is its own evil.",
         "4": "so that your almsgiving may be secret. And your Father who sees in secret will repay you.",
         "5": "“When you pray, do not be like the hypocrites, who love to stand and pray in the synagogues and on street corners so that others may see them. Amen, I say to you, they have received their reward.",
-        "6": "Teaching About Almsgiving.",
+        "6": "But when you pray, go to your inner room, close the door, and pray to your Father in secret. And your Father who sees in secret will repay you.",
         "7": "In praying, do not babble like the pagans, who think that they will be heard because of their many words.",
         "8": "Do not be like them. Your Father knows what you need before you ask him.",
         "9": "“This is how you are to pray: Our Father in heaven, hallowed be your name,",
@@ -29587,7 +29660,8 @@
         "15h": "Teaching About Fasting.",
         "21h": "The Light of the Body.",
         "4h": "Teaching About Prayer.",
-        "8h": "The Lord’s Prayer."
+        "8h": "The Lord’s Prayer.",
+        "6_heading": "Teaching About Almsgiving."
       },
       "7": {
         "1": "“Stop judging, that you may not be judged.",
@@ -29615,7 +29689,7 @@
         "4": "How can you say to your brother, ‘Let me remove that splinter from your eye,’ while the wooden beam is in your eye?",
         "5": "You hypocrite, remove the wooden beam from your eye first; then you will see clearly to remove the splinter from your brother’s eye.",
         "6": "“Do not give what is holy to dogs, or throw your pearls before swine, lest they trample them underfoot, and turn and tear you to pieces.",
-        "7": "Judging Others.",
+        "7": "“Ask and it will be given to you; seek and you will find; knock and the door will be opened to you.",
         "8": "For everyone who asks, receives; and the one who seeks, finds; and to the one who knocks, the door will be opened.",
         "9": "Which one of you would hand his son a stone when he asks for a loaf of bread,",
         "28": "When Jesus finished these words, the crowds were astonished at his teaching,",
@@ -29624,7 +29698,8 @@
         "14h": "False Prophets.",
         "20h": "The True Disciple.",
         "5h": "Pearls Before Swine.",
-        "6h": "The Answer to Prayers."
+        "6h": "The Answer to Prayers.",
+        "7_heading": "Judging Others."
       },
       "8": {
         "1": "When Jesus came down from the mountain, great crowds followed him.",
@@ -29658,11 +29733,12 @@
         "5": "When he entered Capernaum, a centurion approached him and appealed to him,",
         "6": "saying, “Lord, my servant is lying at home paralyzed, suffering dreadfully.”",
         "7": "He said to him, “I will come and cure him.”",
-        "8": "The Cleansing of a Leper.",
+        "8": "The centurion said in reply, “Lord, I am not worthy to have you enter under my roof; only say the word and my servant will be healed.",
         "9": "For I too am a person subject to authority, with soldiers subject to me. And I say to one, ‘Go,’ and he goes; and to another, ‘Come here,’ and he comes; and to my slave, ‘Do this,’ and he does it.”",
         "28": "When he came to the other side, to the territory of the Gadarenes, two demoniacs who were coming from the tombs met him. They were so savage that no one could travel by that road.",
         "13h": "The Cure of Peter’s Mother-in-Law.",
-        "15h": "Other Healings."
+        "15h": "Other Healings.",
+        "8_heading": "The Cleansing of a Leper."
       },
       "9": {
         "1": "He entered a boat, made the crossing, and came into his own town.",
@@ -29701,11 +29777,12 @@
         "6": "But that you may know that the Son of Man has authority on earth to forgive sins”―he then said to the paralytic, “Rise, pick up your stretcher, and go home.”",
         "7": "He rose and went home.",
         "8": "When the crowds saw this they were struck with awe and glorified God who had given such authority to human beings.",
-        "9": "The Healing of a Paralytic.",
+        "9": "As Jesus passed on from there, he saw a man named Matthew sitting at the customs post. He said to him, “Follow me.” And he got up and followed him.",
         "28": "When he entered the house, the blind men approached him and Jesus said to them, “Do you believe that I can do this?” “Yes, Lord,” they said to him.",
         "26h": "The Healing of Two Blind Men.",
         "31h": "The Healing of a Mute Person.",
-        "8h": "The Call of Matthew."
+        "8h": "The Call of Matthew.",
+        "9_heading": "The Healing of a Paralytic."
       }
     },
     "na": {
