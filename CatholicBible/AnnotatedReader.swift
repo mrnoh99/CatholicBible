@@ -179,7 +179,7 @@ struct AnnotatedReader: View {
                 Picker("판본", selection: $editionID) {
                     ForEach(Editions.all) { ed in Text(ed.name).tag(ed.id) }
                 }
-            } label: { chip(edition.shortName) }
+            } label: { chip(edition.id) }
             Button { showBookPicker = true } label: {
                 chip(store.bookShortName(edition: edition, book: book))
             }
