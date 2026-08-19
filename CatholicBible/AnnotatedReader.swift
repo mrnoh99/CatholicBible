@@ -347,8 +347,8 @@ struct SectionTitleView: View {
     private var titleUIFont: UIFont {
         let size = settings.fontSize * 1.05
         switch settings.fontChoice {
-        case .myeongjo: return UIFont(name: "NanumMyeongjo-Bold", size: size) ?? .systemFont(ofSize: size, weight: .bold)
-        case .gothic:   return .systemFont(ofSize: size, weight: .bold)
+        case .myeongjo: return UIFont(name: "NanumMyeongjo", size: size) ?? .systemFont(ofSize: size, weight: .regular)
+        case .gothic:   return .systemFont(ofSize: size, weight: .semibold)
         }
     }
 
@@ -366,7 +366,7 @@ struct SectionTitleView: View {
         } else {
             // 다른 판본: 단순 텍스트만 표시
             Text(text)
-                .font(settings.fontChoice.font(size: settings.fontSize * 1.05, relativeTo: .headline, bold: true))
+                .font(settings.fontChoice.font(size: settings.fontSize * 1.05, relativeTo: .headline, bold: false))
                 .foregroundStyle(settings.theme.text)
                 .textSelection(.enabled)
                 .frame(maxWidth: .infinity, alignment: .leading)
