@@ -347,8 +347,8 @@ struct SectionTitleView: View {
     private var titleUIFont: UIFont {
         let size = settings.fontSize * 1.05
         switch settings.fontChoice {
-        case .myeongjo: return UIFont(name: "NanumMyeongjo", size: size) ?? .systemFont(ofSize: size)
-        case .gothic:   return .systemFont(ofSize: size, weight: .semibold)
+        case .myeongjo: return UIFont(name: "NanumMyeongjo-Bold", size: size) ?? .systemFont(ofSize: size, weight: .bold)
+        case .gothic:   return .systemFont(ofSize: size, weight: .bold)
         }
     }
 

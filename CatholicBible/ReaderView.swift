@@ -481,7 +481,7 @@ struct ReaderPane: View {
                                 VStack(alignment: .leading, spacing: settings.lineSpacing * 0.9) {
                                     if let title = titleMap[verse.number] {
                                         SectionTitleView(text: title, bookID: book.id, chapter: chapter,
-                                                         linkable: edition.id == "knbnotes")
+                                                         linkable: edition.id == "knbnotes" || edition.id == "nabre")
                                     }
                                     VerseRowView(edition: edition, book: book, chapter: chapter,
                                                  verse: verse,
