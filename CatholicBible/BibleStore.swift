@@ -164,7 +164,8 @@ final class BibleStore {
                 }
 
                 // BibleTextFile의 headings 로드 (NABRE에서 사용)
-                if editionID == "nabre", let headingsData = file.headings {
+                if editionID == "nabre" && file.headings != nil {
+                    let headingsData = file.headings!
                     for (bookID, chapters) in headingsData {
                         if titles[bookID] == nil {
                             titles[bookID] = [:]
