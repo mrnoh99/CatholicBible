@@ -339,38 +339,45 @@ struct SectionTitleView: View {
     let text: String
     let bookID: String
     let chapter: Int
-    /// 각주 마커('N)')를 링크로 만들지 — 정수 마커를 쓰는 주석성경만 true.
     var linkable: Bool = true
+
     @Environment(ReaderSettings.self) private var settings
     @Environment(\.openURL) private var openURL
 
-    private var titleUIFont: UIFont {
-        let size = settings.fontSize * 1.05
-        switch settings.fontChoice {
-        case .myeongjo: return UIFont(name: "NanumMyeongjo", size: size) ?? .systemFont(ofSize: size, weight: .regular)
-        case .gothic:   return .systemFont(ofSize: size, weight: .semibold)
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            if linkable {
+                // 링크 활성화 (주석성경, NABRE)
+                SelectableNoteText(
+                    text: text,
+                    currentBook: bookID,
+                    chapter: chapter,
+                    font: titleFont,
+                    color: UIColor(settings.theme.text),
+                    linkColor: UIColor(Color.accentColor),
+                    lineSpacing: settings.lineSpacing,
+                    onOpenURL: { openURL($0) }
+                )
+            } else {
+                // 단순 텍스트
+                Text(text)
+                    .font(.system(size: settings.fontSize * 1.05, weight: .semibold, design: .default))
+                    .foregroundStyle(settings.theme.text)
+                    .textSelection(.enabled)
+                    .lineLimit(nil)
+            }
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.vertical, max(4, settings.lineSpacing * 0.5))
     }
 
-    var body: some View {
-        if linkable {
-            // 주석성경: 소제목의 성경 인용과 각주 마커를 모두 링크로 활성화
-            SelectableNoteText(text: text, currentBook: bookID, chapter: chapter,
-                              font: titleUIFont,
-                              color: UIColor(settings.theme.text),
-                              linkColor: UIColor(Color.accentColor),
-                              lineSpacing: settings.lineSpacing,
-                              onOpenURL: { openURL($0) })
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.top, settings.lineSpacing)
-        } else {
-            // 다른 판본: 단순 텍스트만 표시
-            Text(text)
-                .font(settings.fontChoice.font(size: settings.fontSize * 1.05, relativeTo: .headline, bold: false))
-                .foregroundStyle(settings.theme.text)
-                .textSelection(.enabled)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.top, settings.lineSpacing)
+    private var titleFont: UIFont {
+        let size = settings.fontSize * 1.05
+        switch settings.fontChoice {
+        case .myeongjo:
+            return UIFont(name: "NanumMyeongjo", size: size) ?? .systemFont(ofSize: size)
+        case .gothic:
+            return .systemFont(ofSize: size, weight: .semibold)
         }
     }
 }

@@ -291,47 +291,42 @@ struct ReaderPane: View {
     private var edition: Edition { Editions.edition(editionID) ?? Editions.all[0] }
     private var book: BibleBook { Bible.book(bookID) ?? Bible.books[0] }
 
-    /// 한국어 성경(「성경」·「한국어 NAB」·「주석 성경」)이나 영어 성경(NABRE)은 절 앞에 소제목을 보여 준다.
+    /// 소제목 표시 여부 판단
     private var showsTitles: Bool {
-        // 한국어 성경
-        if (edition.id == "knb" || edition.id == "knab" || edition.isAnnotated) && edition.language == "ko" {
+        if edition.id == "nabre" {
             return true
         }
-        // 영어 성경 (NABRE)
-        if edition.id == "nabre" {
+        if (edition.id == "knb" || edition.id == "knab" || edition.isAnnotated) && edition.language == "ko" {
             return true
         }
         return false
     }
-    /// 절 번호 → 그 절 앞에 놓일 소제목(각주 마커는 지운다).
+
+    /// 절 번호 → 소제목 맵
     private var titleMap: [Int: String] {
         guard showsTitles, chapter > 0 else { return [:] }
 
-        var titlesByVerse: [Int: String] = [:]
+        if edition.id == "nabre" {
+            // NABRE: BibleStore에서 직접 로드
+            return Dictionary(uniqueKeysWithValues:
+                store.titles(edition: edition, book: book, chapter: chapter)
+                    .map { ($0.verse, $0.text) }
+            )
+        }
 
-        // 한국어 성경의 경우 KnbNotes의 제목 사용
-        if (edition.id == "knb" || edition.id == "knab" || edition.isAnnotated) && edition.language == "ko" {
-            // KNAB은 knbnotes의 소제목을 재사용
-            let titleEdition = edition.id == "knab" ? "knbnotes" : edition.id
-            titlesByVerse = knbNotes.titlesByVerse(edition: titleEdition, bookID: book.id, chapter: chapter)
-                .mapValues { AnnotationMarkup.stripMarkers($0) }
+        // 한국어 성경: KnbNotes + BibleStore 병합
+        let titleEdition = edition.id == "knab" ? "knbnotes" : edition.id
+        var titles = knbNotes.titlesByVerse(edition: titleEdition, bookID: book.id, chapter: chapter)
+            .mapValues { AnnotationMarkup.stripMarkers($0) }
 
-            // BibleStore의 제목 추가 (NABRE 등)
-            let storeTitle = store.titles(edition: edition, book: book, chapter: chapter)
-            for title in storeTitle {
-                if titlesByVerse[title.verse] == nil {
-                    titlesByVerse[title.verse] = title.text
-                }
-            }
-        } else if edition.id == "nabre" {
-            // 영어 성경 (NABRE)의 경우 BibleStore의 제목 사용
-            let storeTitle = store.titles(edition: edition, book: book, chapter: chapter)
-            for title in storeTitle {
-                titlesByVerse[title.verse] = title.text
+        // BibleStore의 제목 추가
+        for sectionTitle in store.titles(edition: edition, book: book, chapter: chapter) {
+            if titles[sectionTitle.verse] == nil {
+                titles[sectionTitle.verse] = sectionTitle.text
             }
         }
 
-        return titlesByVerse
+        return titles
     }
 
     /// 표시 중인 장. 연동 시 공유 장, 아니면 이 열의 자기 장.
