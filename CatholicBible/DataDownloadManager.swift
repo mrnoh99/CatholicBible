@@ -20,8 +20,6 @@ class DataDownloadManager: NSObject, ObservableObject {
         }
     }
 
-    // MARK: - Public Methods
-
     func downloadHeadings() {
         guard !isDownloading else { return }
 
@@ -31,8 +29,7 @@ class DataDownloadManager: NSObject, ObservableObject {
 
         Task {
             do {
-                try await downloadNABREHeadings()
-                try await downloadNCBHeadings()
+                try await copyBundleHeadingsToDocuments()
 
                 await MainActor.run {
                     self.lastUpdateTime = Date()
@@ -49,94 +46,33 @@ class DataDownloadManager: NSObject, ObservableObject {
         }
     }
 
-    // MARK: - Private Methods
-
-    private func downloadNABREHeadings() async throws {
-        let urlString = "https://bible.usccb.org/bible/genesis/1"
-        guard let url = URL(string: urlString) else {
-            throw DownloadError.invalidURL
-        }
-
-        let (data, response) = try await URLSession.shared.data(from: url)
-        guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
-            throw DownloadError.invalidResponse
-        }
-
-        // Parse HTML to extract headings
-        let headingsData = try parseNABREHeadings(from: data)
-        try saveHeadings(headingsData, forEdition: "nabre")
-
-        await MainActor.run {
-            self.downloadProgress = 0.5
-        }
-    }
-
-    private func downloadNCBHeadings() async throws {
-        // NCB headings from a web source or local file
-        // For now, using a placeholder URL - replace with actual source
-        let urlString = "https://example.com/ncb-headings.json"
-        guard let url = URL(string: urlString) else {
-            throw DownloadError.invalidURL
-        }
-
-        do {
-            let (data, response) = try await URLSession.shared.data(from: url)
-            guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
-                throw DownloadError.invalidResponse
-            }
-
-            try saveHeadings(data, forEdition: "ncb")
-        } catch {
-            print("Warning: NCB headings download failed: \(error)")
-        }
-
-        await MainActor.run {
-            self.downloadProgress = 1.0
-        }
-    }
-
-    private func parseNABREHeadings(from htmlData: Data) throws -> Data {
-        guard let htmlString = String(data: htmlData, encoding: .utf8) else {
-            throw DownloadError.invalidData
-        }
-
-        var headingsDict: [String: Any] = [:]
-        var bookHeadings: [String: [String: String]] = [:]
-        var chapterHeadings: [String: String] = [:]
-
-        // Simple HTML parsing for section headings
-        let pattern = #"<h[2-3][^>]*>([^<]+)</h[2-3]>"#
-        let regex = try NSRegularExpression(pattern: pattern)
-        let nsString = htmlString as NSString
-        let matches = regex.matches(in: htmlString, range: NSRange(location: 0, length: nsString.length))
-
-        for (index, match) in matches.enumerated() {
-            if let range = Range(match.range(at: 1), in: htmlString) {
-                let heading = String(htmlString[range]).trimmingCharacters(in: .whitespaces)
-                chapterHeadings["\(index + 1)"] = heading
-            }
-        }
-
-        if !chapterHeadings.isEmpty {
-            bookHeadings["1"] = chapterHeadings
-            headingsDict["gn"] = bookHeadings
-        }
-
-        let result: [String: Any] = ["headings": headingsDict]
-        return try JSONSerialization.data(withJSONObject: result)
-    }
-
-    private func saveHeadings(_ data: Data, forEdition edition: String) throws {
+    private func copyBundleHeadingsToDocuments() async throws {
         let fileManager = FileManager.default
         let documentsPath = fileManager.urls(for: .documentDirectory, in: .userDomainMask)[0]
         let headingsDir = documentsPath.appendingPathComponent("BibleHeadings")
 
         try fileManager.createDirectory(at: headingsDir, withIntermediateDirectories: true)
 
-        let fileName = edition == "nabre" ? "NabreHeadings.json" : "NcbHeadings.json"
-        let filePath = headingsDir.appendingPathComponent(fileName)
+        // NABRE 헤딩 복사
+        if let nabreURL = Bundle.main.url(forResource: "BibleText_nabre", withExtension: "json"),
+           let nabreData = try? Data(contentsOf: nabreURL) {
+            let nabreDestination = headingsDir.appendingPathComponent("NabreHeadings.json")
+            try nabreData.write(to: nabreDestination)
+            await MainActor.run {
+                self.downloadProgress = 0.5
+            }
+        }
 
-        try data.write(to: filePath)
+        // NCB 헤딩 복사
+        if let ncbURL = Bundle.main.url(forResource: "NcbHeadings", withExtension: "json"),
+           let ncbData = try? Data(contentsOf: ncbURL) {
+            let ncbDestination = headingsDir.appendingPathComponent("NcbHeadings.json")
+            try ncbData.write(to: ncbDestination)
+        }
+
+        await MainActor.run {
+            self.downloadProgress = 1.0
+        }
     }
 
     static func getHeadingsPath(forEdition edition: String) -> URL? {
@@ -156,6 +92,7 @@ enum DownloadError: LocalizedError {
     case invalidResponse
     case invalidData
     case networkError(String)
+    case copyFailed
 
     var errorDescription: String? {
         switch self {
@@ -167,6 +104,8 @@ enum DownloadError: LocalizedError {
             return "데이터를 처리할 수 없습니다."
         case .networkError(let message):
             return "네트워크 오류: \(message)"
+        case .copyFailed:
+            return "파일 복사 실패"
         }
     }
 }
