@@ -629,7 +629,7 @@ struct ChapterNavBar: View {
     private func move(to n: Int) {
         guard n != chapter else { return }
         onChange()
-        chapter = n
+        setChapter(n)
     }
 }
 
@@ -720,11 +720,11 @@ struct SpreadReader: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .onAppear { initChapterIfNeeded() }
         .onChange(of: bookID) { _, _ in
-            chapter = readingState.lastChapter(edition: edition, book: book)
+            setChapter(readingState.lastChapter(edition: edition, book: book))
             spreadIndex = 0
         }
         .onChange(of: editionID) { _, _ in
-            chapter = min(max(chapter, 1), book.chapterCount); spreadIndex = 0
+            setChapter(min(max(chapter, 1), book.chapterCount)); spreadIndex = 0
         }
         .onChange(of: chapter) { _, new in
             guard new > 0 else { return }
@@ -741,7 +741,7 @@ struct SpreadReader: View {
         }
         .sheet(isPresented: $showChapterPicker) {
             ChapterPickerView(book: book, current: max(chapter, 1)) { picked in
-                chapter = picked; spreadIndex = 0; showChapterPicker = false
+                setChapter(picked); spreadIndex = 0; showChapterPicker = false
             }
         }
     }
@@ -751,16 +751,16 @@ struct SpreadReader: View {
     private func initChapterIfNeeded() {
         guard chapter == 0 else { return }
         if navigation.hasPending(forBook: ownerBookID), let p = navigation.pendingChapter {
-            chapter = clampChapter(p); navigation.pendingChapter = nil
+            setChapter(clampChapter(p)); navigation.pendingChapter = nil
             scrollTarget = navigation.consumePending(forBook: ownerBookID)
         } else {
-            chapter = readingState.lastChapter(edition: edition, book: book)
+            setChapter(readingState.lastChapter(edition: edition, book: book))
         }
     }
 
     private func applyPending() {
         guard navigation.hasPending(forBook: ownerBookID), let p = navigation.pendingChapter else { return }
-        chapter = clampChapter(p); navigation.pendingChapter = nil
+        setChapter(clampChapter(p)); navigation.pendingChapter = nil
         scrollTarget = navigation.consumePending(forBook: ownerBookID)
         spreadIndex = 0
     }
@@ -794,7 +794,7 @@ struct SpreadReader: View {
         let n = chapter + delta
         guard (1...book.chapterCount).contains(n) else { wantLastSpread = false; return }
         spreadIndex = 0
-        chapter = n
+        setChapter(n)
     }
 
     private var atFirst: Bool { spreadIndex == 0 && chapter <= 1 }
@@ -957,7 +957,7 @@ struct SpreadReader: View {
         let components = picked.split(separator: "-", maxSplits: 1).map(String.init)
         if components.count == 2, let chapterNum = Int(components[1]) {
             bookID = components[0]
-            chapter = chapterNum
+            setChapter(chapterNum)
         } else {
             bookID = picked
         }
