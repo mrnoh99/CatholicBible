@@ -578,8 +578,11 @@ final class BibleStore {
         guard trimmed.count >= 2 else { return 0 }
 
         return await Task.detached(priority: .userInitiated) {
-            let terms = trimmed.split(separator: " ").map(String.init).filter { !$0.isEmpty }
-            guard !terms.isEmpty else { return 0 }
+            // 정확한 구문 검색 (큰따옴표로 감싸진 경우)
+            let isPhrase = trimmed.starts(with: "\"") && trimmed.hasSuffix("\"")
+            let searchQuery = isPhrase ? String(trimmed.dropFirst().dropLast()) : trimmed
+
+            guard !searchQuery.isEmpty else { return 0 }
 
             var count = 0
             let order = edition.scope.books.map(\.id)
@@ -588,7 +591,15 @@ final class BibleStore {
                 guard let chapters = text.annotations[bookID] else { continue }
                 for (_, verses) in chapters {
                     for (_, annotationText) in verses {
-                        let matches = terms.allSatisfy { annotationText.range(of: $0, options: [.caseInsensitive, .diacriticInsensitive]) != nil }
+                        let matches: Bool
+                        if isPhrase {
+                            // 정확한 문구 검색
+                            matches = annotationText.range(of: searchQuery, options: [.caseInsensitive, .diacriticInsensitive]) != nil
+                        } else {
+                            // AND 검색 (모든 단어 포함)
+                            let terms = searchQuery.split(separator: " ").map(String.init).filter { !$0.isEmpty }
+                            matches = terms.allSatisfy { annotationText.range(of: $0, options: [.caseInsensitive, .diacriticInsensitive]) != nil }
+                        }
                         if matches {
                             count += 1
                         }
@@ -606,8 +617,11 @@ final class BibleStore {
         guard trimmed.count >= 2 else { return [] }
 
         return await Task.detached(priority: .userInitiated) {
-            let terms = trimmed.split(separator: " ").map(String.init).filter { !$0.isEmpty }
-            guard !terms.isEmpty else { return [] }
+            // 정확한 구문 검색 (큰따옴표로 감싸진 경우)
+            let isPhrase = trimmed.starts(with: "\"") && trimmed.hasSuffix("\"")
+            let searchQuery = isPhrase ? String(trimmed.dropFirst().dropLast()) : trimmed
+
+            guard !searchQuery.isEmpty else { return [] }
 
             var hits: [SearchHit] = []
             var matched = 0
@@ -622,7 +636,15 @@ final class BibleStore {
                     for verseNumber in verseNumbers {
                         guard let annotationText = verses[verseNumber] else { continue }
 
-                        let matches = terms.allSatisfy { annotationText.range(of: $0, options: [.caseInsensitive, .diacriticInsensitive]) != nil }
+                        let matches: Bool
+                        if isPhrase {
+                            // 정확한 문구 검색
+                            matches = annotationText.range(of: searchQuery, options: [.caseInsensitive, .diacriticInsensitive]) != nil
+                        } else {
+                            // AND 검색 (모든 단어 포함)
+                            let terms = searchQuery.split(separator: " ").map(String.init).filter { !$0.isEmpty }
+                            matches = terms.allSatisfy { annotationText.range(of: $0, options: [.caseInsensitive, .diacriticInsensitive]) != nil }
+                        }
                         if matches {
                             if matched >= offset && hits.count < limit {
                                 hits.append(SearchHit(editionID: edition.id, bookID: bookID,

@@ -378,12 +378,12 @@ struct SearchView: View {
                             systemImage: "magnifyingglass",
                             description: Text(hasSearched
                                 ? (scope == .commentary
-                                   ? "'\(query)'이(가) 들어간 주석을 찾지 못했습니다."
+                                   ? "'\(query)'이(가) 들어간 주석을 찾지 못했습니다.\n정확한 문구를 찾으려면 큰따옴표로 감싸세요. 예: \"주님께서 좋게 여기시는\""
                                    : (mode == .text
                                       ? "'\(query)'이(가) 들어간 구절을 찾지 못했습니다."
                                       : "해당 장절을 찾지 못했습니다."))
                                 : (scope == .commentary
-                                   ? "주석 판본을 선택하고 두 글자 이상 입력하세요."
+                                   ? "주석 판본을 선택하고 두 글자 이상 입력하세요.\n정확한 문구는 큰따옴표로 감싸세요."
                                    : (mode == .text
                                       ? (scope == .current
                                          ? "두 글자 이상 입력하면 「\(edition.shortName)」에서 찾습니다."
