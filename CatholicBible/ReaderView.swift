@@ -620,6 +620,10 @@ struct ChapterNavBar: View {
         }
     }
 
+    private func setChapter(_ value: Int) {
+        chapter = value
+    }
+
     private func step(_ delta: Int) {
         let n = chapter + delta
         guard (1...book.chapterCount).contains(n) else { return }
