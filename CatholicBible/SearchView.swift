@@ -1733,8 +1733,7 @@ struct SearchView: View {
             termsToHighlight = [searchTerm]
         }
 
-        let isDarkMode = appSettings.themeMode == .dark ||
-                         (appSettings.themeMode == .auto && colorScheme == .dark)
+        let isDarkMode = colorScheme == .dark
         let (bgColor, textColor) = isDarkMode
             ? (Color.black.opacity(0.5), Color.yellow)
             : (Color.yellow, Color.black)

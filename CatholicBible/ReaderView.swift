@@ -1370,21 +1370,11 @@ struct ChapterPickerView: View {
 
 struct AppearanceControls: View {
     @Environment(ReaderSettings.self) private var settings
-    @Environment(AppSettings.self) private var appSettings
 
     var body: some View {
         @Bindable var settings = settings
-        @Bindable var appSettings = appSettings
         NavigationStack {
             Form {
-                Section("테마") {
-                    Picker("테마 모드", selection: $appSettings.themeMode) {
-                        ForEach(AppThemeMode.allCases) { mode in
-                            Text(mode.label).tag(mode)
-                        }
-                    }
-                    .pickerStyle(.segmented)
-                }
                 Section("글자") {
                     VStack(alignment: .leading, spacing: 6) {
                         Text("글자 크기").font(.caption).foregroundStyle(.secondary)

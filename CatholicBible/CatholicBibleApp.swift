@@ -25,7 +25,6 @@ struct CatholicBibleApp: App {
                 .environment(knbNotes)
                 .environment(liturgy)
                 .environment(appSettings)
-                .preferredColorScheme(appSettings.themeMode.colorScheme)
                 .task {
                     await store.load()
                     await knbNotes.load()
