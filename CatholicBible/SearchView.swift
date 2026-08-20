@@ -714,53 +714,15 @@ struct SearchView: View {
             .padding(.top, 12)
 
             VStack(alignment: .leading, spacing: 8) {
-                ForEach(store.loadedEditions) { edition in
-                    VStack(alignment: .leading, spacing: 6) {
-                        Button(action: {
-                            if selectedEditionIDs.contains(edition.id) {
-                                selectedEditionIDs.remove(edition.id)
-                            } else {
-                                selectedEditionIDs.insert(edition.id)
-                            }
-                        }) {
-                            HStack(spacing: 8) {
-                                Image(systemName: selectedEditionIDs.contains(edition.id) ? "checkmark.square.fill" : "square")
-                                    .font(.body)
-                                    .foregroundStyle(selectedEditionIDs.contains(edition.id) ? .blue : .secondary)
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text(edition.name)
-                                        .font(.body)
-                                        .foregroundStyle(.primary)
-                                        .lineLimit(2)
-                                    Text(edition.shortName)
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
-                                }
-                                Spacer()
-                            }
-                        }
-                        .buttonStyle(.plain)
+                ForEach(Array(store.loadedEditions.enumerated()), id: \.element.id) { index, edition in
+                    if index % 2 == 0 {
+                        HStack(spacing: 12) {
+                            editionItem(edition: edition)
 
-                        if hasAnnotationSupport(edition) && selectedEditionIDs.contains(edition.id) {
-                            Button(action: {
-                                if selectedAnnotationEditionIDs.contains(edition.id) {
-                                    selectedAnnotationEditionIDs.remove(edition.id)
-                                } else {
-                                    selectedAnnotationEditionIDs.insert(edition.id)
-                                }
-                            }) {
-                                HStack(spacing: 8) {
-                                    Image(systemName: selectedAnnotationEditionIDs.contains(edition.id) ? "checkmark.square.fill" : "square")
-                                        .font(.caption)
-                                        .foregroundStyle(selectedAnnotationEditionIDs.contains(edition.id) ? .blue : .secondary)
-                                    Text("주석 포함")
-                                        .font(.caption2)
-                                        .foregroundStyle(.secondary)
-                                    Spacer()
-                                }
+                            if index + 1 < store.loadedEditions.count {
+                                editionItem(edition: store.loadedEditions[index + 1])
                             }
-                            .buttonStyle(.plain)
-                            .padding(.leading, 24)
+                            Spacer()
                         }
                     }
                 }
@@ -771,6 +733,55 @@ struct SearchView: View {
         .background(Color(.systemGray6))
         .cornerRadius(12)
         .padding(.horizontal, 16)
+    }
+
+    private func editionItem(edition: Edition) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Button(action: {
+                if selectedEditionIDs.contains(edition.id) {
+                    selectedEditionIDs.remove(edition.id)
+                } else {
+                    selectedEditionIDs.insert(edition.id)
+                }
+            }) {
+                HStack(spacing: 6) {
+                    Image(systemName: selectedEditionIDs.contains(edition.id) ? "checkmark.square.fill" : "square")
+                        .font(.system(size: 14))
+                        .foregroundStyle(selectedEditionIDs.contains(edition.id) ? .blue : .secondary)
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text(edition.shortName)
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(.primary)
+                            .lineLimit(1)
+                    }
+                    Spacer()
+                }
+            }
+            .buttonStyle(.plain)
+
+            if hasAnnotationSupport(edition) && selectedEditionIDs.contains(edition.id) {
+                Button(action: {
+                    if selectedAnnotationEditionIDs.contains(edition.id) {
+                        selectedAnnotationEditionIDs.remove(edition.id)
+                    } else {
+                        selectedAnnotationEditionIDs.insert(edition.id)
+                    }
+                }) {
+                    HStack(spacing: 6) {
+                        Image(systemName: selectedAnnotationEditionIDs.contains(edition.id) ? "checkmark.square.fill" : "square")
+                            .font(.system(size: 12))
+                            .foregroundStyle(selectedAnnotationEditionIDs.contains(edition.id) ? .blue : .secondary)
+                        Text("주석")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                        Spacer()
+                    }
+                }
+                .buttonStyle(.plain)
+                .padding(.leading, 20)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private var searchHistorySection: some View {
