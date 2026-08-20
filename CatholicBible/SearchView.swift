@@ -41,6 +41,7 @@ struct SearchView: View {
     @Environment(ReadingState.self) private var readingState
     @Environment(ReaderNavigation.self) private var navigation
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.colorScheme) private var colorScheme
 
     @AppStorage("lastSearchQuery") private var lastSearchQuery = ""
     @AppStorage("lastSearchScope") private var lastSearchScope = SearchScope.current.rawValue
@@ -1720,14 +1721,18 @@ struct SearchView: View {
             termsToHighlight = [searchTerm]
         }
 
+        let (bgColor, textColor) = colorScheme == .dark
+            ? (Color.orange, Color.black)
+            : (Color.yellow, Color.black)
+
         // Highlight all search terms
         for term in termsToHighlight {
             let lowerTerm = term.lowercased()
             var searchStartIndex = lowercaseText.startIndex
             while let range = lowercaseText.range(of: lowerTerm, range: searchStartIndex..<lowercaseText.endIndex) {
                 if let attrRange = Range(range, in: attributedString) {
-                    attributedString[attrRange].backgroundColor = Color.yellow
-                    attributedString[attrRange].foregroundColor = .black
+                    attributedString[attrRange].backgroundColor = bgColor
+                    attributedString[attrRange].foregroundColor = textColor
                 }
 
                 searchStartIndex = range.upperBound
