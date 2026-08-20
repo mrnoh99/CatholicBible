@@ -1,7 +1,7 @@
 import Foundation
 import Combine
 
-class DataDownloadManager: NSObject, ObservableObject, URLSessionDownloadDelegate {
+class DataDownloadManager: NSObject, ObservableObject {
     @Published var isDownloading = false
     @Published var downloadProgress: Double = 0
     @Published var lastError: String?
@@ -12,16 +12,9 @@ class DataDownloadManager: NSObject, ObservableObject, URLSessionDownloadDelegat
     }
 
     static let shared = DataDownloadManager()
-    private let downloadSession: URLSession
 
     override init() {
-        let config = URLSessionConfiguration.default
-        config.timeoutIntervalForRequest = 30
-        config.timeoutIntervalForResource = 300
-        self.downloadSession = URLSession(configuration: config)
         super.init()
-        self.downloadSession.delegateQueue.maxConcurrentOperationCount = 1
-
         if let savedDate = UserDefaults.standard.object(forKey: "lastHeadingsUpdateTime") as? Date {
             self.lastUpdateTime = savedDate
         }
