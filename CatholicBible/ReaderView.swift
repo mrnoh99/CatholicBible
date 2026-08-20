@@ -301,7 +301,7 @@ struct ReaderPane: View {
         if edition.id == "nabre" {
             return true
         }
-        if (edition.id == "knb" || edition.isAnnotated) && edition.language == "ko" {
+        if (edition.id == "knb" || edition.id == "ncb" || edition.isAnnotated) && edition.language == "ko" {
             return true
         }
         return false
@@ -311,21 +311,19 @@ struct ReaderPane: View {
     private var titleMap: [Int: String] {
         guard showsTitles, chapter > 0 else { return [:] }
 
-        if edition.id == "nabre" {
-            // NABRE: BibleStore에서 직접 로드
+        if edition.id == "nabre" || edition.id == "ncb" {
+            // NABRE, 공동번역: BibleStore에서 직접 로드
             let result = Dictionary(uniqueKeysWithValues:
                 store.titles(edition: edition, book: book, chapter: chapter)
                     .map { ($0.verse, $0.text) }
             )
-            print("[titleMap] NABRE \(book.id) Ch\(chapter): \(result.count) titles")
             return result
         }
 
-        // 한국어 성경: KnbNotes + BibleStore 병합
+        // 한국어 성경(KNB/주석성경): KnbNotes + BibleStore 병합
         let titleEdition = edition.id == "knb" ? "knbnotes" : edition.id
         var titles = knbNotes.titlesByVerse(edition: titleEdition, bookID: book.id, chapter: chapter)
             .mapValues { AnnotationMarkup.stripMarkers($0) }
-        print("[titleMap] Korean \(edition.id)->[\(titleEdition)] \(book.id) Ch\(chapter): \(titles.count) titles from KnbNotes")
 
         // BibleStore의 제목 추가
         for sectionTitle in store.titles(edition: edition, book: book, chapter: chapter) {
