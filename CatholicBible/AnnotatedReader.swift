@@ -364,9 +364,6 @@ struct SectionTitleView: View {
         VStack(alignment: .leading, spacing: 0) {
             if linkable {
                 // 링크 활성화 (주석성경, NABRE)
-                if bookID == "gn" && chapter == 1 {
-                    print("[SectionTitleView] Rendering linkable title for \(bookID) Ch\(chapter): \(text)")
-                }
                 SelectableNoteText(
                     text: text,
                     currentBook: bookID,
@@ -377,6 +374,11 @@ struct SectionTitleView: View {
                     lineSpacing: settings.lineSpacing,
                     onOpenURL: { openURL($0) }
                 )
+                .onAppear {
+                    if bookID == "gn" && chapter == 1 {
+                        print("[SectionTitleView] Rendering linkable title for \(bookID) Ch\(chapter): \(text)")
+                    }
+                }
             } else {
                 // 단순 텍스트
                 Text(text)

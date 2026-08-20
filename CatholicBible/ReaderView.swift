@@ -489,14 +489,12 @@ struct ReaderPane: View {
                             ForEach(verses) { verse in
                                 VStack(alignment: .leading, spacing: settings.lineSpacing * 0.9) {
                                     if let title = titleMap[verse.number] {
-                                        if edition.id == "nabre" && book.id == "gn" && chapter == 1 && (verse.number == 1 || verse.number == 4) {
-                                            print("[ReaderPane] Rendering NABRE Genesis Ch1 V\(verse.number) title: \(title)")
-                                        }
                                         SectionTitleView(text: title, bookID: book.id, chapter: chapter,
                                                          linkable: true)
-                                    } else {
-                                        if edition.id == "nabre" && book.id == "gn" && chapter == 1 && (verse.number == 1 || verse.number == 4) {
-                                            print("[ReaderPane] NO title for NABRE Genesis Ch1 V\(verse.number)")
+                                        .onAppear {
+                                            if edition.id == "nabre" && book.id == "gn" && chapter == 1 && (verse.number == 1 || verse.number == 4) {
+                                                print("[ReaderPane] Rendering NABRE Genesis Ch1 V\(verse.number) title: \(title)")
+                                            }
                                         }
                                     }
                                     VerseRowView(edition: edition, book: book, chapter: chapter,
