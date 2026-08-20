@@ -952,7 +952,8 @@ struct SearchView: View {
     }
 
     private func open(_ hit: SearchHit) {
-        if scope == .all, Editions.edition(hit.editionID) != nil {
+        // 여러 판본 검색 또는 주석 검색 시 해당 판본으로 자동 전환
+        if (scope == .all || scope == .commentary), Editions.edition(hit.editionID) != nil {
             readingState.selectedEditionID = hit.editionID
         }
         navigation.open(bookID: hit.bookID, chapter: hit.chapter, verse: hit.verse)
