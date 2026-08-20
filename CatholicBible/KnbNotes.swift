@@ -186,7 +186,15 @@ final class KnbNotesStore {
                 guard let url = Bundle.main.url(forResource: file, withExtension: "json"),
                       let data = try? Data(contentsOf: url),
                       let f = try? JSONDecoder().decode(KnbNotesFile.self, from: data)
-                else { continue }
+                else {
+                    print("[KnbNotesStore] Failed to load \(file).json for edition \(edition)")
+                    continue
+                }
+                print("[KnbNotesStore] Loaded \(file).json for edition \(edition)")
+                print("  - Intros: \(f.intros?.count ?? 0)")
+                print("  - Annotations: \(f.annotations?.count ?? 0) books")
+                print("  - Crossrefs: \(f.crossrefs?.count ?? 0) books")
+                print("  - Titles: \(f.titles?.count ?? 0) books")
                 introsByEd[edition] = f.intros ?? []
                 annoByEd[edition] = byIntCh(f.annotations)
                 xrefByEd[edition] = byIntCh(f.crossrefs)
