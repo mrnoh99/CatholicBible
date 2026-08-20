@@ -166,6 +166,7 @@ final class BibleStore {
                 // BibleTextFile의 headings 로드 (NABRE에서 사용)
                 if editionID == "nabre" && file.headings != nil {
                     let headingsData = file.headings!
+                    var nabreHeadingCount = 0
                     for (bookID, chapters) in headingsData {
                         if titles[bookID] == nil {
                             titles[bookID] = [:]
@@ -176,6 +177,7 @@ final class BibleStore {
                                 for (verseKey, titleText) in verseTitles {
                                     if let verseNumber = Int(verseKey) {
                                         titleMap[verseNumber] = titleText
+                                        nabreHeadingCount += 1
                                     }
                                 }
                                 if !titleMap.isEmpty {

@@ -6,8 +6,44 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
 /* Begin PBXFileReference section */
 		CB0000012FB4000000000001 /* CatholicBible.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = CatholicBible.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		CB001F2FB4000000001F /* BibleText_b200.json in Resources */ = {isa = PBXBuildFile; fileRef = CB000E2FB4000000000E /* BibleText_b200.json */; };
+		CB00202FB40000000020 /* BibleText_knab.json in Resources */ = {isa = PBXBuildFile; fileRef = CB000F2FB4000000000F /* BibleText_knab.json */; };
+		CB00212FB40000000021 /* BibleText_knb.json in Resources */ = {isa = PBXBuildFile; fileRef = CB00102FB40000000010 /* BibleText_knb.json */; };
+		CB00222FB40000000022 /* BibleText_knbnotes.json in Resources */ = {isa = PBXBuildFile; fileRef = CB00112FB40000000011 /* BibleText_knbnotes.json */; };
+		CB00232FB40000000023 /* BibleText_nab_with_headings.json in Resources */ = {isa = PBXBuildFile; fileRef = CB00122FB40000000012 /* BibleText_nab_with_headings.json */; };
+		CB00242FB40000000024 /* BibleText_nabre.json in Resources */ = {isa = PBXBuildFile; fileRef = CB00132FB40000000013 /* BibleText_nabre.json */; };
+		CB00252FB40000000025 /* BibleText_ncb.json in Resources */ = {isa = PBXBuildFile; fileRef = CB00142FB40000000014 /* BibleText_ncb.json */; };
+		CB00262FB40000000026 /* BibleText_pscms.json in Resources */ = {isa = PBXBuildFile; fileRef = CB00152FB40000000015 /* BibleText_pscms.json */; };
+		CB00272FB40000000027 /* BibleText_pslitur.json in Resources */ = {isa = PBXBuildFile; fileRef = CB00162FB40000000016 /* BibleText_pslitur.json */; };
+		CB00282FB40000000028 /* BibleText_vulgata.json in Resources */ = {isa = PBXBuildFile; fileRef = CB00172FB40000000017 /* BibleText_vulgata.json */; };
+		CB00292FB40000000029 /* DailyReadings_2022.json in Resources */ = {isa = PBXBuildFile; fileRef = CB00182FB40000000018 /* DailyReadings_2022.json */; };
+		CB002A2FB4000000002A /* DailyReadings_2023.json in Resources */ = {isa = PBXBuildFile; fileRef = CB00192FB40000000019 /* DailyReadings_2023.json */; };
+		CB002B2FB4000000002B /* DailyReadings_2024.json in Resources */ = {isa = PBXBuildFile; fileRef = CB001A2FB4000000001A /* DailyReadings_2024.json */; };
+		CB002C2FB4000000002C /* DailyReadings_2025.json in Resources */ = {isa = PBXBuildFile; fileRef = CB001B2FB4000000001B /* DailyReadings_2025.json */; };
+		CB002D2FB4000000002D /* DailyReadings_2026.json in Resources */ = {isa = PBXBuildFile; fileRef = CB001C2FB4000000001C /* DailyReadings_2026.json */; };
+		CB002E2FB4000000002E /* KnbNotes.json in Resources */ = {isa = PBXBuildFile; fileRef = CB001D2FB4000000001D /* KnbNotes.json */; };
+		CB002F2FB4000000002F /* NabreNotes.json in Resources */ = {isa = PBXBuildFile; fileRef = CB001E2FB4000000001E /* NabreNotes.json */; };
+/* End PBXBuildFile section */
+		CB000E2FB4000000000E /* BibleText_b200.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "Resources/BibleText_b200.json"; sourceTree = SOURCE_ROOT; };
+		CB000F2FB4000000000F /* BibleText_knab.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "Resources/BibleText_knab.json"; sourceTree = SOURCE_ROOT; };
+		CB00102FB40000000010 /* BibleText_knb.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "Resources/BibleText_knb.json"; sourceTree = SOURCE_ROOT; };
+		CB00112FB40000000011 /* BibleText_knbnotes.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "Resources/BibleText_knbnotes.json"; sourceTree = SOURCE_ROOT; };
+		CB00122FB40000000012 /* BibleText_nab_with_headings.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "Resources/BibleText_nab_with_headings.json"; sourceTree = SOURCE_ROOT; };
+		CB00132FB40000000013 /* BibleText_nabre.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "Resources/BibleText_nabre.json"; sourceTree = SOURCE_ROOT; };
+		CB00142FB40000000014 /* BibleText_ncb.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "Resources/BibleText_ncb.json"; sourceTree = SOURCE_ROOT; };
+		CB00152FB40000000015 /* BibleText_pscms.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "Resources/BibleText_pscms.json"; sourceTree = SOURCE_ROOT; };
+		CB00162FB40000000016 /* BibleText_pslitur.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "Resources/BibleText_pslitur.json"; sourceTree = SOURCE_ROOT; };
+		CB00172FB40000000017 /* BibleText_vulgata.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "Resources/BibleText_vulgata.json"; sourceTree = SOURCE_ROOT; };
+		CB00182FB40000000018 /* DailyReadings_2022.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "Resources/DailyReadings_2022.json"; sourceTree = SOURCE_ROOT; };
+		CB00192FB40000000019 /* DailyReadings_2023.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "Resources/DailyReadings_2023.json"; sourceTree = SOURCE_ROOT; };
+		CB001A2FB4000000001A /* DailyReadings_2024.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "Resources/DailyReadings_2024.json"; sourceTree = SOURCE_ROOT; };
+		CB001B2FB4000000001B /* DailyReadings_2025.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "Resources/DailyReadings_2025.json"; sourceTree = SOURCE_ROOT; };
+		CB001C2FB4000000001C /* DailyReadings_2026.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "Resources/DailyReadings_2026.json"; sourceTree = SOURCE_ROOT; };
+		CB001D2FB4000000001D /* KnbNotes.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "Resources/KnbNotes.json"; sourceTree = SOURCE_ROOT; };
+		CB001E2FB4000000001E /* NabreNotes.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "Resources/NabreNotes.json"; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -109,6 +145,23 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				CB001F2FB4000000001F /* BibleText_b200.json in Resources */,
+				CB00202FB40000000020 /* BibleText_knab.json in Resources */,
+				CB00212FB40000000021 /* BibleText_knb.json in Resources */,
+				CB00222FB40000000022 /* BibleText_knbnotes.json in Resources */,
+				CB00232FB40000000023 /* BibleText_nab_with_headings.json in Resources */,
+				CB00242FB40000000024 /* BibleText_nabre.json in Resources */,
+				CB00252FB40000000025 /* BibleText_ncb.json in Resources */,
+				CB00262FB40000000026 /* BibleText_pscms.json in Resources */,
+				CB00272FB40000000027 /* BibleText_pslitur.json in Resources */,
+				CB00282FB40000000028 /* BibleText_vulgata.json in Resources */,
+				CB00292FB40000000029 /* DailyReadings_2022.json in Resources */,
+				CB002A2FB4000000002A /* DailyReadings_2023.json in Resources */,
+				CB002B2FB4000000002B /* DailyReadings_2024.json in Resources */,
+				CB002C2FB4000000002C /* DailyReadings_2025.json in Resources */,
+				CB002D2FB4000000002D /* DailyReadings_2026.json in Resources */,
+				CB002E2FB4000000002E /* KnbNotes.json in Resources */,
+				CB002F2FB4000000002F /* NabreNotes.json in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
