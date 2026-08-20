@@ -436,7 +436,7 @@ struct SearchView: View {
                                             VStack(alignment: .leading, spacing: 4) {
                                                 HStack(spacing: 6) {
                                                     Text(reference(for: hit))
-                                                        .font(.caption.weight(.semibold))
+                                                        .font(.body.weight(.semibold))
                                                         .foregroundStyle(Color.accentColor)
                                                     if let ed = Editions.edition(hit.editionID) {
                                                         Text(ed.shortName)
@@ -669,7 +669,7 @@ struct SearchView: View {
                         if let book = Bible.book(ref.bookID) {
                             HStack(spacing: 4) {
                                 Text("\(book.abbrev) \(ref.chapter),\(ref.verse)")
-                                    .font(.caption)
+                                    .font(.body)
                                     .foregroundStyle(.primary)
                                 Button {
                                     referenceList.remove(at: idx)
@@ -700,13 +700,13 @@ struct SearchView: View {
                     Button("전체선택") {
                         selectedEditionIDs = Set(store.loadedEditions.map { $0.id })
                     }
-                    .font(.caption.weight(.semibold))
+                    .font(.body.weight(.semibold))
                     .foregroundStyle(.blue)
 
                     Button("선택해지") {
                         selectedEditionIDs.removeAll()
                     }
-                    .font(.caption.weight(.semibold))
+                    .font(.body.weight(.semibold))
                     .foregroundStyle(.red)
                 }
             }
@@ -799,7 +799,7 @@ struct SearchView: View {
                                     } label: {
                                         Text(item)
                                             .lineLimit(1)
-                                            .font(.caption)
+                                            .font(.body)
                                     }
 
                                     Button {
@@ -860,7 +860,7 @@ struct SearchView: View {
                                     } label: {
                                         Text(item)
                                             .lineLimit(1)
-                                            .font(.caption)
+                                            .font(.body)
                                     }
 
                                     Button {
