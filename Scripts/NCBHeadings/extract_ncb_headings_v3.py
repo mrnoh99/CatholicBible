@@ -101,9 +101,12 @@ class NCBHeadingExtractorV3:
                         verse_num = self.last_verse
                         heading_text = next_line
 
-                        # 동일 절에 헤딩이 없으면 추가
-                        if verse_num not in self.headings[self.current_book][self.current_chapter]:
-                            self.headings[self.current_book][self.current_chapter][verse_num] = heading_text
+                        # 동일 절에 헤딩이 없으면 추가 (안전성 검사 추가)
+                        if (self.current_book and self.current_chapter is not None and
+                            self.current_book in self.headings and
+                            self.current_chapter in self.headings[self.current_book]):
+                            if verse_num not in self.headings[self.current_book][self.current_chapter]:
+                                self.headings[self.current_book][self.current_chapter][verse_num] = heading_text
 
             i += 1
 
