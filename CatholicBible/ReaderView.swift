@@ -298,7 +298,7 @@ struct ReaderPane: View {
 
     /// 소제목 표시 여부 판단
     private var showsTitles: Bool {
-        if edition.id == "nabre" {
+        if edition.id == "nabre" || edition.id == "ncb" {
             return true
         }
         if (edition.id == "knb" || edition.isAnnotated) && edition.language == "ko" {
@@ -314,8 +314,8 @@ struct ReaderPane: View {
             return [:]
         }
 
-        if edition.id == "nabre" {
-            // NABRE: BibleStore에서 직접 로드
+        if edition.id == "nabre" || edition.id == "ncb" {
+            // NABRE, 공동번역: BibleStore에서 직접 로드
             let result = Dictionary(uniqueKeysWithValues:
                 store.titles(edition: edition, book: book, chapter: chapter)
                     .map { ($0.verse, AnnotationMarkup.stripMarkers($0.text)) }

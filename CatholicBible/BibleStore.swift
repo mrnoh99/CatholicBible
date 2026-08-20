@@ -197,6 +197,38 @@ final class BibleStore {
                     print("[NABRE] Headings loaded successfully: \(totalHeadings) total titles")
                 }
 
+                // NCB 소제목 로드 (공동번역)
+                if editionID == "ncb",
+                   let ncbHeadingsURL = Bundle.main.url(forResource: "NcbHeadings", withExtension: "json"),
+                   let ncbHeadingsData = try? Data(contentsOf: ncbHeadingsURL),
+                   let ncbHeadings = try? JSONDecoder().decode([String: [String: [String: String]]].self, from: ncbHeadingsData) {
+                    if let headingsData = ncbHeadings["headings"] {
+                        var totalHeadings = 0
+                        for (bookID, chapters) in headingsData {
+                            if titles[bookID] == nil {
+                                titles[bookID] = [:]
+                            }
+                            for (chapterKey, verseTitles) in chapters {
+                                if let chapterNumber = Int(chapterKey) {
+                                    var chapterTitles = titles[bookID]![chapterNumber] ?? [:]
+                                    let countBefore = chapterTitles.count
+                                    for (verseKey, titleText) in verseTitles {
+                                        if let verseNumber = Int(verseKey) {
+                                            chapterTitles[verseNumber] = titleText
+                                        }
+                                    }
+                                    let countAfter = chapterTitles.count
+                                    if !chapterTitles.isEmpty {
+                                        titles[bookID]![chapterNumber] = chapterTitles
+                                    }
+                                    totalHeadings += countAfter
+                                }
+                            }
+                        }
+                        print("[NCB] Headings loaded successfully: \(totalHeadings) total titles")
+                    }
+                }
+
                 let titleCount = titles.values.reduce(0) { $0 + $1.values.reduce(0) { $0 + $1.count } }
                 if titleCount > 0 {
                     print("[BibleStore] Edition '\(editionID)' has \(titleCount) titles from annotations")
