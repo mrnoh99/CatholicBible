@@ -382,9 +382,9 @@ final class BibleStore {
                     var matches = false
 
                     if !orTerms.isEmpty {
-                        matches = orTerms.contains { verseText.localizedStandardContains($0) }
+                        matches = orTerms.contains { verseText.range(of: $0, options: [.caseInsensitive, .diacriticInsensitive]) != nil }
                     } else if !andTerms.isEmpty {
-                        matches = andTerms.allSatisfy { verseText.localizedStandardContains($0) }
+                        matches = andTerms.allSatisfy { verseText.range(of: $0, options: [.caseInsensitive, .diacriticInsensitive]) != nil }
                     }
 
                     if matches {
@@ -552,9 +552,9 @@ final class BibleStore {
                     var matches = false
 
                     if !orTerms.isEmpty {
-                        matches = orTerms.contains { verseText.localizedStandardContains($0) }
+                        matches = orTerms.contains { verseText.range(of: $0, options: [.caseInsensitive, .diacriticInsensitive]) != nil }
                     } else if !andTerms.isEmpty {
-                        matches = andTerms.allSatisfy { verseText.localizedStandardContains($0) }
+                        matches = andTerms.allSatisfy { verseText.range(of: $0, options: [.caseInsensitive, .diacriticInsensitive]) != nil }
                     }
 
                     if matches {
