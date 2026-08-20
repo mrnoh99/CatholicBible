@@ -198,7 +198,20 @@ final class KnbNotesStore {
                 introsByEd[edition] = f.intros ?? []
                 annoByEd[edition] = byIntCh(f.annotations)
                 xrefByEd[edition] = byIntCh(f.crossrefs)
-                titlesByEd[edition] = byIntCh(f.titles)
+                let convertedTitles = byIntCh(f.titles)
+                titlesByEd[edition] = convertedTitles
+                if edition == "nabre" {
+                    print("[KnbNotesStore] NABRE titles after byIntCh conversion:")
+                    if let gnTitles = convertedTitles["gn"]?[1] {
+                        print("  - Genesis Ch1: \(gnTitles.count) titles")
+                        for title in gnTitles.prefix(3) {
+                            print("    - Verse \(title.v): \(title.text)")
+                        }
+                    } else {
+                        print("  - Genesis Ch1: NO TITLES FOUND")
+                        print("  - Available books: \(convertedTitles.keys.sorted())")
+                    }
+                }
             }
             return (introsByEd, annoByEd, xrefByEd, titlesByEd)
         }.value
@@ -227,6 +240,10 @@ final class KnbNotesStore {
     func titlesByVerse(edition: String = "knbnotes", bookID: String, chapter: Int) -> [Int: String] {
         var map: [Int: String] = [:]
         for item in titlesByEd[edition]?[bookID]?[chapter] ?? [] { map[item.v] = item.text }
+        if edition == "nabre" && bookID == "gn" && chapter == 1 {
+            print("[KnbNotesStore.titlesByVerse] NABRE gn ch1: titlesByEd[\(edition)]?[\(bookID)]?[\(chapter)] = \(titlesByEd[edition]?[bookID]?[chapter] ?? [])")
+            print("[KnbNotesStore.titlesByVerse] Returning map with \(map.count) titles: \(map)")
+        }
         return map
     }
 
