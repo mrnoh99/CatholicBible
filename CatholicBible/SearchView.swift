@@ -118,14 +118,15 @@ struct SearchView: View {
         NavigationStack {
             VStack(spacing: 0) {
                 ScrollView {
-                    VStack(spacing: 8) {
+                    VStack(spacing: 16) {
                         searchInputSection
                         searchButtonsSection
                         searchConditionsSection
-                        Divider().padding(.horizontal, 16)
                         searchHistorySection
                     }
+                    .padding(.bottom, 20)
                 }
+                .background(Color(.systemBackground))
             }
             .navigationTitle("검색")
             .navigationBarTitleDisplayMode(.inline)
@@ -484,33 +485,46 @@ struct SearchView: View {
         }
 
     private var searchInputSection: some View {
-        ZStack(alignment: .topTrailing) {
-            TextField(mode == .text ? "단어 검색 (예: 사랑)" : "장절 검색 (예: 1코린 13,13)",
-                      text: $query)
-                .font(.system(size: 14, weight: .regular))
-                .padding(.vertical, 4)
-                .padding(.horizontal, 12)
-                .submitLabel(.search)
-                .onSubmit(performSearchAction)
-                .frame(minHeight: 24)
-
-            if !query.isEmpty {
-                Button(action: { query = "" }) {
-                    Image(systemName: "xmark.circle.fill")
-                        .font(.system(size: 20))
-                        .foregroundStyle(.secondary)
-                }
-                .padding(.all, 8)
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Image(systemName: "magnifyingglass")
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundStyle(.blue)
+                Text("검색어 입력")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(.secondary)
             }
+            .padding(.horizontal, 16)
+
+            ZStack(alignment: .topTrailing) {
+                TextField(mode == .text ? "단어 검색 (예: 사랑)" : "장절 검색 (예: 1코린 13,13)",
+                          text: $query)
+                    .font(.system(size: 16, weight: .regular))
+                    .padding(.vertical, 12)
+                    .padding(.horizontal, 12)
+                    .submitLabel(.search)
+                    .onSubmit(performSearchAction)
+                    .frame(minHeight: 40)
+
+                if !query.isEmpty {
+                    Button(action: { query = "" }) {
+                        Image(systemName: "xmark.circle.fill")
+                            .font(.system(size: 18))
+                            .foregroundStyle(.secondary)
+                    }
+                    .padding(.all, 10)
+                }
+            }
+            .background(Color(.systemBackground))
+            .cornerRadius(10)
+            .overlay(
+                RoundedRectangle(cornerRadius: 10)
+                    .stroke(Color.blue.opacity(0.3), lineWidth: 1.5)
+            )
+            .padding(.horizontal, 16)
         }
-        .background(Color(.systemGray6))
-        .cornerRadius(12)
-        .overlay(
-            RoundedRectangle(cornerRadius: 12)
-                .stroke(Color.blue, lineWidth: 2)
-        )
-        .padding(.horizontal, 16)
         .padding(.top, 12)
+        .padding(.bottom, 8)
     }
 
     private var searchButtonsSection: some View {
@@ -556,24 +570,35 @@ struct SearchView: View {
 
     private var searchConditionsSection: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Picker("검색 방식", selection: $mode) {
-                ForEach(SearchMode.allCases) { m in
-                    Text(m.label).tag(m)
+            VStack(alignment: .leading, spacing: 12) {
+                HStack {
+                    Image(systemName: "slider.horizontal.3")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(.blue)
+                    Text("검색 조건")
+                        .font(.system(size: 16, weight: .semibold))
+                }
+
+                Picker("검색 방식", selection: $mode) {
+                    ForEach(SearchMode.allCases) { m in
+                        Text(m.label).tag(m)
+                    }
+                }
+                .pickerStyle(.segmented)
+
+                if mode == .reference {
+                    Divider()
+                    referenceSearchSection
                 }
             }
-            .pickerStyle(.segmented)
-
-            Divider()
-
-            if mode == .reference {
-                referenceSearchSection
-                Divider()
-            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 12)
+            .background(Color(.systemGray6))
+            .cornerRadius(12)
 
             editionSelectionSection
         }
         .padding(.horizontal, 16)
-        .padding(.vertical, 12)
     }
 
     private var referenceSearchSection: some View {
@@ -684,24 +709,32 @@ struct SearchView: View {
     }
 
     private var editionSelectionSection: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 12) {
             HStack {
-                Text("판본 선택")
-                    .font(.body.weight(.semibold))
-                    .foregroundStyle(.primary)
+                HStack {
+                    Image(systemName: "book.circle")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundStyle(.green)
+                    Text("판본 선택")
+                        .font(.system(size: 16, weight: .semibold))
+                }
                 Spacer()
-                Button("전체선택") {
-                    selectedEditionIDs = Set(store.loadedEditions.map { $0.id })
-                }
-                .font(.caption)
-                .foregroundStyle(.blue)
+                HStack(spacing: 8) {
+                    Button("전체선택") {
+                        selectedEditionIDs = Set(store.loadedEditions.map { $0.id })
+                    }
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.blue)
 
-                Button("선택해지") {
-                    selectedEditionIDs.removeAll()
+                    Button("선택해지") {
+                        selectedEditionIDs.removeAll()
+                    }
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.red)
                 }
-                .font(.caption)
-                .foregroundStyle(.red)
             }
+            .padding(.horizontal, 12)
+            .padding(.top, 12)
 
             VStack(alignment: .leading, spacing: 8) {
                 ForEach(store.loadedEditions) { edition in
@@ -755,17 +788,24 @@ struct SearchView: View {
                     }
                 }
             }
+            .padding(.horizontal, 12)
+            .padding(.bottom, 12)
         }
+        .background(Color(.systemGray6))
+        .cornerRadius(12)
+        .padding(.horizontal, 16)
     }
 
     private var searchHistorySection: some View {
         VStack {
             if mode == .text && !textSearchHistory.isEmpty {
-                VStack(alignment: .leading, spacing: 6) {
+                VStack(alignment: .leading, spacing: 12) {
                     HStack {
+                        Image(systemName: "clock.arrow.circlepath")
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundStyle(.orange)
                         Text("최근 검색")
-                            .font(.caption.weight(.semibold))
-                            .foregroundStyle(.secondary)
+                            .font(.system(size: 16, weight: .semibold))
                         Spacer()
                         Button("전체 지우기") {
                             clearTextSearchHistory()
@@ -808,11 +848,13 @@ struct SearchView: View {
             }
 
             if mode == .reference && !referenceSearchHistory.isEmpty {
-                VStack(alignment: .leading, spacing: 6) {
+                VStack(alignment: .leading, spacing: 12) {
                     HStack {
+                        Image(systemName: "clock.arrow.circlepath")
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundStyle(.orange)
                         Text("최근 검색")
-                            .font(.caption.weight(.semibold))
-                            .foregroundStyle(.secondary)
+                            .font(.system(size: 16, weight: .semibold))
                         Spacer()
                         Button("전체 지우기") {
                             clearReferenceSearchHistory()
