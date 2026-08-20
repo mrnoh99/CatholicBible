@@ -55,6 +55,10 @@ struct AnnotatedReader: View {
         }
     }
 
+    private func setChapter(_ value: Int) {
+        if let sharedChapter { sharedChapter.wrappedValue = value } else { localChapter = value }
+    }
+
     var body: some View {
         VStack(spacing: 0) {
             if showHeader { header }
