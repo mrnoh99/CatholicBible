@@ -549,17 +549,6 @@ struct ReaderPane: View {
         }
     }
 
-    private func parseBookSelection(_ picked: String) {
-        let components = picked.split(separator: "-", maxSplits: 1).map(String.init)
-        if components.count == 2, let chapterNum = Int(components[1]) {
-            setChapter(chapterNum)
-            skipChapterRestore = true
-            bookID = components[0]
-        } else {
-            bookID = picked
-        }
-    }
-
     // MARK: 하단 장 이동 바
 
     @ViewBuilder
