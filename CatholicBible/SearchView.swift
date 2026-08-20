@@ -806,17 +806,6 @@ struct SearchView: View {
                                 HStack(spacing: 4) {
                                     Button {
                                         query = item
-                                        runSearch()
-                                        showResults = false
-                                        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-                                            if hasSearched && !isSearching {
-                                                showResults = true
-                                            } else {
-                                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                                                    showResults = true
-                                                }
-                                            }
-                                        }
                                     } label: {
                                         Text(item)
                                             .lineLimit(1)
@@ -860,34 +849,7 @@ struct SearchView: View {
                             ForEach(referenceSearchHistory, id: \.self) { item in
                                 HStack(spacing: 4) {
                                     Button {
-                                        let parts = item.split(separator: " ", maxSplits: 1).map(String.init)
-                                        if parts.count >= 2 {
-                                            let bookAbbrev = parts[0]
-                                            let reference = parts[1]
-
-                                            if let book = Bible.books.first(where: { $0.abbrev == bookAbbrev }) {
-                                                selectedBookID = book.id
-                                                if let comma = reference.firstIndex(of: ",") {
-                                                    let chapterStr = String(reference[..<comma])
-                                                    let verseStr = String(reference[reference.index(after: comma)...])
-                                                    if let chapter = Int(chapterStr), let verse = Int(verseStr) {
-                                                        selectedChapter = chapter
-                                                        selectedVerse = verse
-                                                        runSearch()
-                                                        showResults = false
-                                                        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-                                                            if hasSearched && !isSearching {
-                                                                showResults = true
-                                                            } else {
-                                                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                                                                    showResults = true
-                                                                }
-                                                            }
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                        }
+                                        query = item
                                     } label: {
                                         Text(item)
                                             .lineLimit(1)
