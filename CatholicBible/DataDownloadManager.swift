@@ -100,31 +100,30 @@ class DataDownloadManager: NSObject, ObservableObject {
             throw DownloadError.invalidData
         }
 
-        var headings: [String: [String: [String: String]]] = [:]
+        var headingsDict: [String: Any] = [:]
+        var bookHeadings: [String: [String: String]] = [:]
+        var chapterHeadings: [String: String] = [:]
 
         // Simple HTML parsing for section headings
-        // This is a basic implementation - enhance as needed
         let pattern = #"<h[2-3][^>]*>([^<]+)</h[2-3]>"#
         let regex = try NSRegularExpression(pattern: pattern)
         let nsString = htmlString as NSString
         let matches = regex.matches(in: htmlString, range: NSRange(location: 0, length: nsString.length))
 
-        var headingsList: [[String: String]] = []
-        for match in matches {
+        for (index, match) in matches.enumerated() {
             if let range = Range(match.range(at: 1), in: htmlString) {
-                let heading = String(htmlString[range])
-                headingsList.append(["title": heading])
+                let heading = String(htmlString[range]).trimmingCharacters(in: .whitespaces)
+                chapterHeadings["\(index + 1)"] = heading
             }
         }
 
-        // Convert to expected format
-        headings["headings"] = [
-            "gn": [
-                "1": headingsList.count > 0 ? ["1": headingsList[0]["title"] ?? ""] : [:]
-            ]
-        ]
+        if !chapterHeadings.isEmpty {
+            bookHeadings["1"] = chapterHeadings
+            headingsDict["gn"] = bookHeadings
+        }
 
-        return try JSONSerialization.data(withJSONObject: headings)
+        let result: [String: Any] = ["headings": headingsDict]
+        return try JSONSerialization.data(withJSONObject: result)
     }
 
     private func saveHeadings(_ data: Data, forEdition edition: String) throws {
