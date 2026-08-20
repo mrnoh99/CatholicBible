@@ -83,6 +83,8 @@ final class BibleStore {
     /// 판본 id → 본문 (파일이 없는 판본은 항목 자체가 없음)
     private(set) var editions: [String: EditionText] = [:]
 
+    private let referenceRegex = try! NSRegularExpression(pattern: "^(\\d+):(\\d+)(?:-(\\d+))?$")
+
     func load() async {
         guard !isLoaded else { return }
 
@@ -365,11 +367,11 @@ final class BibleStore {
 
     nonisolated(unsafe) private func searchByText(_ query: String, snapshot: [String: [String: [String: String]]],
                              order: [String], editionID: String, limit: Int, offset: Int = 0) -> [SearchHit] {
+        let (orTerms, andTerms) = parseSearchTerms(query)
+        guard !orTerms.isEmpty || !andTerms.isEmpty else { return [] }
+
         var hits: [SearchHit] = []
         var matched = 0
-        let terms = query.split(separator: " ").filter { !$0.isEmpty }
-        let orTerms = terms.count > 1 && query.contains("OR") ? terms.map(String.init) : []
-        let andTerms = orTerms.isEmpty ? terms.map(String.init) : []
 
         outer: for bookID in order {
             guard let chapters = snapshot[bookID] else { continue }
@@ -379,13 +381,9 @@ final class BibleStore {
                 let verseNumbers = verses.keys.compactMap { Int($0) }.sorted()
                 for verseNumber in verseNumbers {
                     guard let verseText = verses[String(verseNumber)] else { continue }
-                    var matches = false
-
-                    if !orTerms.isEmpty {
-                        matches = orTerms.contains { verseText.range(of: $0, options: [.caseInsensitive, .diacriticInsensitive]) != nil }
-                    } else if !andTerms.isEmpty {
-                        matches = andTerms.allSatisfy { verseText.range(of: $0, options: [.caseInsensitive, .diacriticInsensitive]) != nil }
-                    }
+                    let matches = !orTerms.isEmpty
+                        ? orTerms.contains { verseText.range(of: $0, options: [.caseInsensitive, .diacriticInsensitive]) != nil }
+                        : andTerms.allSatisfy { verseText.range(of: $0, options: [.caseInsensitive, .diacriticInsensitive]) != nil }
 
                     if matches {
                         if matched >= offset && hits.count < limit {
@@ -404,39 +402,48 @@ final class BibleStore {
 
     nonisolated(unsafe) private func searchByReference(_ query: String, snapshot: [String: [String: [String: String]]],
                                    order: [String], editionID: String, limit: Int, offset: Int = 0) -> [SearchHit] {
+        guard let (chapter, verse, endVerse) = parseReference(query) else { return [] }
+
         var hits: [SearchHit] = []
         var matched = 0
-        let pattern = "^(\\d+):(\\d+)(?:-(\\d+))?$"
-        guard let regex = try? NSRegularExpression(pattern: pattern) else { return hits }
 
-        let queryNS = query as NSString
-        let range = NSRange(location: 0, length: queryNS.length)
+        for bookID in order {
+            guard let chapters = snapshot[bookID] else { continue }
+            guard let verses = chapters[String(chapter)] else { continue }
 
-        if let match = regex.firstMatch(in: query, range: range) {
-            let chapter = Int(queryNS.substring(with: match.range(at: 1))) ?? 0
-            let verse = Int(queryNS.substring(with: match.range(at: 2))) ?? 0
-            let endVerse = match.range(at: 3).location != NSNotFound ? Int(queryNS.substring(with: match.range(at: 3))) ?? verse : verse
-
-            guard chapter > 0, verse > 0 else { return hits }
-
-            for bookID in order {
-                guard let chapters = snapshot[bookID] else { continue }
-                guard let verses = chapters[String(chapter)] else { continue }
-
-                for v in verse...min(endVerse, verse + 10) {
-                    guard let verseText = verses[String(v)] else { continue }
-                    if matched >= offset && hits.count < limit {
-                        hits.append(SearchHit(editionID: editionID, bookID: bookID,
-                                            chapter: chapter, verse: v,
-                                            text: verseText))
-                    }
-                    matched += 1
-                    if hits.count >= limit { break }
+            for v in verse...min(endVerse, verse + 10) {
+                guard let verseText = verses[String(v)] else { continue }
+                if matched >= offset && hits.count < limit {
+                    hits.append(SearchHit(editionID: editionID, bookID: bookID,
+                                        chapter: chapter, verse: v,
+                                        text: verseText))
                 }
-                if !hits.isEmpty { break }
+                matched += 1
+                if hits.count >= limit { break }
             }
+            if !hits.isEmpty { break }
         }
         return hits
+    }
+
+    nonisolated private func parseSearchTerms(_ query: String) -> (orTerms: [String], andTerms: [String]) {
+        let terms = query.split(separator: " ").filter { !$0.isEmpty }
+        let orTerms = terms.count > 1 && query.contains("OR") ? terms.map(String.init) : []
+        let andTerms = orTerms.isEmpty ? terms.map(String.init) : []
+        return (orTerms, andTerms)
+    }
+
+    nonisolated private func parseReference(_ query: String) -> (chapter: Int, verse: Int, endVerse: Int)? {
+        let queryNS = query as NSString
+        let range = NSRange(location: 0, length: queryNS.length)
+        guard let match = referenceRegex.firstMatch(in: query, range: range) else { return nil }
+
+        let chapter = Int(queryNS.substring(with: match.range(at: 1))) ?? 0
+        let verse = Int(queryNS.substring(with: match.range(at: 2))) ?? 0
+        let endVerse = match.range(at: 3).location != NSNotFound ? Int(queryNS.substring(with: match.range(at: 3))) ?? verse : verse
+
+        guard chapter > 0, verse > 0 else { return nil }
+        return (chapter, verse, endVerse)
     }
 
     /// 여러 판본에서 한꺼번에 검색한다(판본 순서대로, 판본별 상한 적용).
@@ -536,10 +543,10 @@ final class BibleStore {
 
     nonisolated(unsafe) private func countSearchByText(_ query: String, snapshot: [String: [String: [String: String]]],
                                           order: [String]) -> Int {
+        let (orTerms, andTerms) = parseSearchTerms(query)
+        guard !orTerms.isEmpty || !andTerms.isEmpty else { return 0 }
+
         var count = 0
-        let terms = query.split(separator: " ").filter { !$0.isEmpty }
-        let orTerms = terms.count > 1 && query.contains("OR") ? terms.map(String.init) : []
-        let andTerms = orTerms.isEmpty ? terms.map(String.init) : []
 
         for bookID in order {
             guard let chapters = snapshot[bookID] else { continue }
@@ -549,13 +556,9 @@ final class BibleStore {
                 let verseNumbers = verses.keys.compactMap { Int($0) }.sorted()
                 for verseNumber in verseNumbers {
                     guard let verseText = verses[String(verseNumber)] else { continue }
-                    var matches = false
-
-                    if !orTerms.isEmpty {
-                        matches = orTerms.contains { verseText.range(of: $0, options: [.caseInsensitive, .diacriticInsensitive]) != nil }
-                    } else if !andTerms.isEmpty {
-                        matches = andTerms.allSatisfy { verseText.range(of: $0, options: [.caseInsensitive, .diacriticInsensitive]) != nil }
-                    }
+                    let matches = !orTerms.isEmpty
+                        ? orTerms.contains { verseText.range(of: $0, options: [.caseInsensitive, .diacriticInsensitive]) != nil }
+                        : andTerms.allSatisfy { verseText.range(of: $0, options: [.caseInsensitive, .diacriticInsensitive]) != nil }
 
                     if matches {
                         count += 1
@@ -568,19 +571,7 @@ final class BibleStore {
 
     nonisolated(unsafe) private func countSearchByReference(_ query: String, snapshot: [String: [String: [String: String]]],
                                               order: [String]) -> Int {
-        let pattern = "^(\\d+):(\\d+)(?:-(\\d+))?$"
-        guard let regex = try? NSRegularExpression(pattern: pattern) else { return 0 }
-
-        let queryNS = query as NSString
-        let range = NSRange(location: 0, length: queryNS.length)
-
-        guard let match = regex.firstMatch(in: query, range: range) else { return 0 }
-
-        let chapter = Int(queryNS.substring(with: match.range(at: 1))) ?? 0
-        let verse = Int(queryNS.substring(with: match.range(at: 2))) ?? 0
-        let endVerse = match.range(at: 3).location != NSNotFound ? Int(queryNS.substring(with: match.range(at: 3))) ?? verse : verse
-
-        guard chapter > 0, verse > 0 else { return 0 }
+        guard let (chapter, verse, endVerse) = parseReference(query) else { return 0 }
 
         var count = 0
         for bookID in order {
@@ -605,15 +596,17 @@ final class BibleStore {
         guard trimmed.count >= 2 else { return 0 }
 
         return await Task.detached(priority: .userInitiated) {
+            let terms = trimmed.split(separator: " ").map(String.init).filter { !$0.isEmpty }
+            guard !terms.isEmpty else { return 0 }
+
             var count = 0
-            let terms = trimmed.split(separator: " ").filter { !$0.isEmpty }
             let order = edition.scope.books.map(\.id)
 
             for bookID in order {
                 guard let chapters = text.annotations[bookID] else { continue }
                 for (_, verses) in chapters {
                     for (_, annotationText) in verses {
-                        let matches = terms.allSatisfy { annotationText.localizedStandardContains(String($0)) }
+                        let matches = terms.allSatisfy { annotationText.range(of: $0, options: [.caseInsensitive, .diacriticInsensitive]) != nil }
                         if matches {
                             count += 1
                         }
@@ -631,9 +624,11 @@ final class BibleStore {
         guard trimmed.count >= 2 else { return [] }
 
         return await Task.detached(priority: .userInitiated) {
+            let terms = trimmed.split(separator: " ").map(String.init).filter { !$0.isEmpty }
+            guard !terms.isEmpty else { return [] }
+
             var hits: [SearchHit] = []
             var matched = 0
-            let terms = trimmed.split(separator: " ").filter { !$0.isEmpty }
             let order = edition.scope.books.map(\.id)
 
             outer: for bookID in order {
@@ -645,7 +640,7 @@ final class BibleStore {
                     for verseNumber in verseNumbers {
                         guard let annotationText = verses[verseNumber] else { continue }
 
-                        let matches = terms.allSatisfy { annotationText.localizedStandardContains(String($0)) }
+                        let matches = terms.allSatisfy { annotationText.range(of: $0, options: [.caseInsensitive, .diacriticInsensitive]) != nil }
                         if matches {
                             if matched >= offset && hits.count < limit {
                                 hits.append(SearchHit(editionID: edition.id, bookID: bookID,
