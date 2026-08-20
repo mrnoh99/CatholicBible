@@ -192,6 +192,7 @@ struct ContentView: View {
     @State private var showBookmarks = false
     @State private var showNotes = false
     @State private var showMass = false
+    @State private var showSettings = false
 
     var body: some View {
         @Bindable var nav = navigation
@@ -205,6 +206,7 @@ struct ContentView: View {
                         Button("사전", systemImage: "character.book.closed") { navigation.lookUp() }
                         Button("책갈피", systemImage: "bookmark") { showBookmarks = true }
                         Button("노트", systemImage: "note.text") { showNotes = true }
+                        Button("설정", systemImage: "gear") { showSettings = true }
                     }
                 }
         } detail: {
@@ -233,6 +235,8 @@ struct ContentView: View {
                                 .help("책갈피")
                             Button("", systemImage: "note.text") { showNotes = true }
                                 .help("노트")
+                            Button("", systemImage: "gear") { showSettings = true }
+                                .help("설정")
                         }
                         .padding(.horizontal, 16)
                         .padding(.vertical, 2)
@@ -253,6 +257,9 @@ struct ContentView: View {
         }
         .sheet(isPresented: $showNotes) {
             injectShared(NotesListView().environment(navigation))
+        }
+        .sheet(isPresented: $showSettings) {
+            injectShared(SettingsView())
         }
         .fullScreenCover(isPresented: $showMass) {
             injectShared(DailyMassView().environment(navigation))
