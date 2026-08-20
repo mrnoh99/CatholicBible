@@ -230,10 +230,12 @@ enum ScriptureRef {
                 ? Int(s.substring(with: m.range(at: 4))) : nil
             let d2 = m.range(at: 5).location != NSNotFound
                 ? Int(s.substring(with: m.range(at: 5))) : nil
-            let d2_dot = m.numberOfRanges > 7 && m.range(at: 7).location != NSNotFound
+            let d2_dot = m.numberOfRanges > 6 && m.range(at: 6).location != NSNotFound
+                ? Int(s.substring(with: m.range(at: 6))) : nil
+            let d2_dot_range = m.numberOfRanges > 7 && m.range(at: 7).location != NSNotFound
                 ? Int(s.substring(with: m.range(at: 7))) : nil
             let ec = d2 != nil ? (d1 ?? c) : c
-            let ev = d2 ?? d2_dot ?? d1 ?? v
+            let ev = d2 ?? (d2_dot_range ?? d2_dot) ?? d1 ?? v
             if let url = URL(string:
                 "catholicbible://xref?b=\(bID)&c=\(c)&v=\(v)&ec=\(ec)&ev=\(ev)") {
                 attr.addAttributes([.link: url,
@@ -262,7 +264,7 @@ enum ScriptureRef {
             pattern: "\\([^)]*;[^)]*\\)") else { return }
 
         guard let versePattern = try? NSRegularExpression(
-            pattern: "([가-힣]*)?\\s*(\\d{1,3})[,:]\\s?(\\d{1,3})(?:[–-](\\d{1,3}))?") else { return }
+            pattern: "([가-힣]*)?\\s*(\\d{1,3})[,:]\\s?(\\d{1,3})(?:\\)?[–-](\\d{1,3}))?(?:\\.(\\d{1,3})(?:[–-](\\d{1,3}))?)?") else { return }
 
         for m in semiPattern.matches(in: attr.string, range: NSRange(location: 0, length: s.length)) {
             // 이미 처리된 범위인지 확인
@@ -300,9 +302,13 @@ enum ScriptureRef {
                        let c = Int((part as NSString).substring(with: verseMatch.range(at: 2))),
                        let v = Int((part as NSString).substring(with: verseMatch.range(at: 3))) {
 
-                        let endVerse = verseMatch.range(at: 4).location != NSNotFound
-                            ? Int((part as NSString).substring(with: verseMatch.range(at: 4))) ?? v
-                            : v
+                        let dashVerse = verseMatch.range(at: 4).location != NSNotFound
+                            ? Int((part as NSString).substring(with: verseMatch.range(at: 4))) : nil
+                        let dotVerse = verseMatch.numberOfRanges > 5 && verseMatch.range(at: 5).location != NSNotFound
+                            ? Int((part as NSString).substring(with: verseMatch.range(at: 5))) : nil
+                        let dotRangeVerse = verseMatch.numberOfRanges > 6 && verseMatch.range(at: 6).location != NSNotFound
+                            ? Int((part as NSString).substring(with: verseMatch.range(at: 6))) : nil
+                        let endVerse = dashVerse ?? (dotRangeVerse ?? dotVerse) ?? v
 
                         if let url = URL(string: "catholicbible://xref?b=\(bID)&c=\(c)&v=\(v)&ec=\(c)&ev=\(endVerse)") {
                             // 이 부분을 텍스트에서 찾아 링크 추가
