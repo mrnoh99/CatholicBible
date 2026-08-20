@@ -432,7 +432,7 @@ struct ReaderPane: View {
                     ForEach(Editions.all) { ed in Text(ed.name).tag(ed.id) }
                 }
             } label: {
-                labelChip(edition.id)
+                labelChip(edition.name)
             }
 
             Button { showBookPicker = true } label: {
