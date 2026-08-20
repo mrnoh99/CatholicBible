@@ -296,7 +296,7 @@ struct ReaderPane: View {
         if edition.id == "nabre" {
             return true
         }
-        if (edition.id == "knb" || edition.id == "knab" || edition.isAnnotated) && edition.language == "ko" {
+        if (edition.id == "knb" || edition.isAnnotated) && edition.language == "ko" {
             return true
         }
         return false
@@ -315,7 +315,7 @@ struct ReaderPane: View {
         }
 
         // 한국어 성경: KnbNotes + BibleStore 병합
-        let titleEdition = edition.id == "knab" ? "knbnotes" : edition.id
+        let titleEdition = edition.id
         var titles = knbNotes.titlesByVerse(edition: titleEdition, bookID: book.id, chapter: chapter)
             .mapValues { AnnotationMarkup.stripMarkers($0) }
 
