@@ -108,4 +108,9 @@ final class ReaderSettings {
     func bodyFont(bold: Bool = false) -> Font {
         fontChoice.font(size: fontSize, bold: bold)
     }
+
+    /// 영문 폰트 (명조체 선택 시 Georgia, 고딕체 선택 시 San Francisco)
+    func bodyEnglishFont(bold: Bool = false) -> Font {
+        fontChoice.englishFont(size: fontSize, bold: bold)
+    }
 }
