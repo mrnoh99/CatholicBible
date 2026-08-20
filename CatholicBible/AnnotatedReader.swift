@@ -288,19 +288,7 @@ struct AnnotatedReader: View {
         if verses.isEmpty {
             MissingTextView(edition: edition, book: book).padding(.top, 32)
         } else {
-            // Load titles: NABRE/NCB from BibleStore, others from KnbNotes
-            let titleMap: [Int: String]
-            if editionID == "nabre" || editionID == "ncb" {
-                let titles = store.titles(edition: edition, book: book, chapter: max(chapter, 1))
-                titleMap = Dictionary(uniqueKeysWithValues:
-                    titles.map { ($0.verse, $0.text) }
-                )
-                let _ = print("[AnnotatedReader] \(editionID) \(book.id) Ch\(max(chapter, 1)): \(titleMap.count) titles from BibleStore")
-            } else {
-                let knbEditionID = editionID == "knb" ? "knbnotes" : editionID
-                titleMap = knb.titlesByVerse(edition: knbEditionID, bookID: book.id, chapter: max(chapter, 1))
-                let _ = print("[AnnotatedReader] \(editionID)->[\(knbEditionID)] \(book.id) Ch\(max(chapter, 1)): \(titleMap.count) titles from KnbNotes")
-            }
+            let titleMap = getTitleMap()
             LazyVStack(alignment: .leading, spacing: settings.lineSpacing * 0.9) {
                 ForEach(verses) { verse in
                     VStack(alignment: .leading, spacing: settings.lineSpacing * 0.9) {
@@ -318,6 +306,22 @@ struct AnnotatedReader: View {
             }
             .scrollTargetLayout()
             .padding(.top, 20)
+        }
+    }
+
+    private func getTitleMap() -> [Int: String] {
+        if editionID == "nabre" || editionID == "ncb" {
+            let titles = store.titles(edition: edition, book: book, chapter: max(chapter, 1))
+            let result = Dictionary(uniqueKeysWithValues:
+                titles.map { ($0.verse, $0.text) }
+            )
+            print("[AnnotatedReader] \(editionID) \(book.id) Ch\(max(chapter, 1)): \(result.count) titles from BibleStore")
+            return result
+        } else {
+            let knbEditionID = editionID == "knb" ? "knbnotes" : editionID
+            let titleMap = knb.titlesByVerse(edition: knbEditionID, bookID: book.id, chapter: max(chapter, 1))
+            print("[AnnotatedReader] \(editionID)->[\(knbEditionID)] \(book.id) Ch\(max(chapter, 1)): \(titleMap.count) titles from KnbNotes")
+            return titleMap
         }
     }
 
