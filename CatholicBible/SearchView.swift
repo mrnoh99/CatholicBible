@@ -63,6 +63,7 @@ struct SearchView: View {
     @State private var selectedVerse: Int = 0
     @State private var selectedEditionIDs: Set<String> = ["knb"]
     @State private var selectedAnnotationEditionIDs: Set<String> = []
+    @State private var isCommentarySearchEnabled = false
 
     // 여러 참조 선택을 위한 목록
     @State private var referenceList: [(bookID: String, chapter: Int, verse: Int)] = []
@@ -147,6 +148,18 @@ struct SearchView: View {
                 lastSearchScope = newScope.rawValue
                 // 주석 스코프 선택 시 자동으로 주석 판본 선택
                 if newScope == .commentary && selectedAnnotationEditionIDs.isEmpty {
+                    for edition in store.loadedEditions {
+                        if hasAnnotationSupport(edition) {
+                            selectedAnnotationEditionIDs.insert(edition.id)
+                        }
+                    }
+                }
+                runSearch()
+            }
+            .onChange(of: isCommentarySearchEnabled) { _, newValue in
+                scope = newValue ? .commentary : .current
+                // 주석 스코프 선택 시 자동으로 주석 판본 선택
+                if newValue && selectedAnnotationEditionIDs.isEmpty {
                     for edition in store.loadedEditions {
                         if hasAnnotationSupport(edition) {
                             selectedAnnotationEditionIDs.insert(edition.id)
@@ -570,6 +583,29 @@ struct SearchView: View {
                 }
                 .pickerStyle(.segmented)
 
+                Divider()
+
+                HStack(spacing: 8) {
+                    Image(systemName: isCommentarySearchEnabled ? "checkmark.square.fill" : "square")
+                        .font(.system(size: 16))
+                        .foregroundStyle(isCommentarySearchEnabled ? .blue : .secondary)
+
+                    Button(action: {
+                        isCommentarySearchEnabled.toggle()
+                    }) {
+                        Text("주석 검색")
+                            .font(.system(size: 14))
+                            .foregroundStyle(.primary)
+                    }
+                    .buttonStyle(.plain)
+
+                    Spacer()
+                }
+                .contentShape(Rectangle())
+                .onTapGesture {
+                    isCommentarySearchEnabled.toggle()
+                }
+
                 if mode == .reference {
                     Divider()
                     referenceSearchSection
@@ -695,36 +731,63 @@ struct SearchView: View {
     private var editionSelectionSection: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
-                Text("판본 선택")
+                Text(isCommentarySearchEnabled ? "주석 판본 선택" : "판본 선택")
                     .font(.system(size: 16, weight: .semibold))
                 Spacer()
-                HStack(spacing: 8) {
-                    Button("전체선택") {
-                        selectedEditionIDs = Set(store.loadedEditions.map { $0.id })
-                    }
-                    .font(.body.weight(.semibold))
-                    .foregroundStyle(.blue)
+                if !isCommentarySearchEnabled {
+                    HStack(spacing: 8) {
+                        Button("전체선택") {
+                            selectedEditionIDs = Set(store.loadedEditions.map { $0.id })
+                        }
+                        .font(.body.weight(.semibold))
+                        .foregroundStyle(.blue)
 
-                    Button("선택해지") {
-                        selectedEditionIDs.removeAll()
+                        Button("선택해지") {
+                            selectedEditionIDs.removeAll()
+                        }
+                        .font(.body.weight(.semibold))
+                        .foregroundStyle(.red)
                     }
-                    .font(.body.weight(.semibold))
-                    .foregroundStyle(.red)
                 }
             }
             .padding(.horizontal, 12)
             .padding(.top, 12)
 
             VStack(alignment: .leading, spacing: 8) {
-                ForEach(Array(store.loadedEditions.enumerated()), id: \.element.id) { index, edition in
-                    if index % 2 == 0 {
-                        HStack(spacing: 12) {
-                            editionItem(edition: edition)
-
-                            if index + 1 < store.loadedEditions.count {
-                                editionItem(edition: store.loadedEditions[index + 1])
+                if isCommentarySearchEnabled {
+                    // 주석 판본만 표시
+                    ForEach(store.loadedEditions.filter { hasAnnotationSupport($0) }, id: \.id) { edition in
+                        Button(action: {
+                            if selectedAnnotationEditionIDs.contains(edition.id) {
+                                selectedAnnotationEditionIDs.remove(edition.id)
+                            } else {
+                                selectedAnnotationEditionIDs.insert(edition.id)
                             }
-                            Spacer()
+                        }) {
+                            HStack(spacing: 6) {
+                                Image(systemName: selectedAnnotationEditionIDs.contains(edition.id) ? "checkmark.square.fill" : "square")
+                                    .font(.system(size: 14))
+                                    .foregroundStyle(selectedAnnotationEditionIDs.contains(edition.id) ? .blue : .secondary)
+                                Text(edition.shortName)
+                                    .font(.body)
+                                    .foregroundStyle(.primary)
+                                Spacer()
+                            }
+                        }
+                        .buttonStyle(.plain)
+                    }
+                } else {
+                    // 일반 판본 표시 (기존 로직)
+                    ForEach(Array(store.loadedEditions.enumerated()), id: \.element.id) { index, edition in
+                        if index % 2 == 0 {
+                            HStack(spacing: 12) {
+                                editionItem(edition: edition)
+
+                                if index + 1 < store.loadedEditions.count {
+                                    editionItem(edition: store.loadedEditions[index + 1])
+                                }
+                                Spacer()
+                            }
                         }
                     }
                 }
