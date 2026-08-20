@@ -411,7 +411,7 @@ final class BibleStore {
             guard let chapters = snapshot[bookID] else { continue }
             guard let verses = chapters[String(chapter)] else { continue }
 
-            for v in verse...min(endVerse, verse + 10) {
+            for v in verse...min(endVerse, verse + 100) {
                 guard let verseText = verses[String(v)] else { continue }
                 if matched >= offset && hits.count < limit {
                     hits.append(SearchHit(editionID: editionID, bookID: bookID,
@@ -578,7 +578,7 @@ final class BibleStore {
             guard let chapters = snapshot[bookID] else { continue }
             guard let verses = chapters[String(chapter)] else { continue }
 
-            for v in verse...min(endVerse, verse + 10) {
+            for v in verse...min(endVerse, verse + 100) {
                 guard verses[String(v)] != nil else { continue }
                 count += 1
             }
