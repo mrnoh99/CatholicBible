@@ -289,9 +289,11 @@ struct AnnotatedReader: View {
             MissingTextView(edition: edition, book: book).padding(.top, 32)
         } else {
             let titleMap = knb.titlesByVerse(edition: editionID, bookID: book.id, chapter: max(chapter, 1))
-            if editionID == "nabre" && book.id == "gn" && chapter == 1 {
-                print("[AnnotatedReader] NABRE Genesis Ch1 titleMap: \(titleMap)")
-            }
+            let _ = {
+                if editionID == "nabre" && book.id == "gn" && chapter == 1 {
+                    print("[AnnotatedReader] NABRE Genesis Ch1 titleMap: \(titleMap)")
+                }
+            }()
             LazyVStack(alignment: .leading, spacing: settings.lineSpacing * 0.9) {
                 ForEach(verses) { verse in
                     VStack(alignment: .leading, spacing: settings.lineSpacing * 0.9) {
