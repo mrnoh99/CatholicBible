@@ -60,47 +60,65 @@ struct AnnotatedReader: View {
     }
 
     var body: some View {
-        VStack(spacing: 0) {
-            if showHeader { header }
-            content
-            chapterBar
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .onAppear {
-            initChapterIfNeeded()
-            isInitialized = true
-        }
-        .onChange(of: bookID) { _, _ in
-            setChapter(readingState.lastChapter(edition: edition, book: book))
-        }
-        .onChange(of: chapter) { _, new in
-            guard new > 0 else { return }
-            // 장 네비게이션으로 변경: 첫 절로 (위의 네비게이션 chevron은 scrollTarget을 이미 설정함)
-            if isInitialized && scrollTarget == nil {
-                scrollTarget = 1
+        Group {
+            VStack(spacing: 0) {
+                if showHeader { header }
+                content
+                chapterBar
             }
-            readingState.savePosition(edition: edition, book: book, chapter: new)
-        }
-        .onChange(of: navigation.pendingChapter) { _, _ in applyPending() }
-        .sheet(isPresented: $showBookPicker) {
-            BookPickerView(edition: edition, current: bookID) { picked in
-                parseBookSelection(picked)
-                showBookPicker = false
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .onAppear {
+                initChapterIfNeeded()
+                isInitialized = true
             }
-            .environment(store)   // Mac Catalyst: 모달 환경 전파 대비
-        }
-        .fullScreenCover(isPresented: $showChapterPicker) {
-            ChapterPickerView(book: book, current: max(chapter, 1)) { picked in
-                setChapter(picked); showChapterPicker = false
+            .onChange(of: bookID) { _, _ in
+                setChapter(readingState.lastChapter(edition: edition, book: book))
             }
-        }
-        .fullScreenCover(isPresented: $showIntros) {
-            IntroductionsView(currentBookID: bookID, editionID: editionID)
-                .environment(knb)
-                .environment(settings)
-                .environment(store)
-                .environment(annotations)
-                .environment(navigation)
+            .onChange(of: chapter) { _, new in
+                guard new > 0 else { return }
+                // 장 네비게이션으로 변경: 첫 절로 (위의 네비게이션 chevron은 scrollTarget을 이미 설정함)
+                if isInitialized && scrollTarget == nil {
+                    scrollTarget = 1
+                }
+                readingState.savePosition(edition: edition, book: book, chapter: new)
+            }
+            .onChange(of: navigation.pendingChapter) { _, _ in applyPending() }
+            .sheet(isPresented: $showBookPicker) {
+                BookPickerView(edition: edition, current: bookID) { picked in
+                    parseBookSelection(picked)
+                    showBookPicker = false
+                }
+                .environment(store)   // Mac Catalyst: 모달 환경 전파 대비
+            }
+            .fullScreenCover(isPresented: $showChapterPicker) {
+                ChapterPickerView(book: book, current: max(chapter, 1)) { picked in
+                    setChapter(picked); showChapterPicker = false
+                }
+            }
+            .fullScreenCover(isPresented: $showIntros) {
+                IntroductionsView(currentBookID: bookID, editionID: editionID)
+                    .environment(knb)
+                    .environment(settings)
+                    .environment(store)
+                    .environment(annotations)
+                    .environment(navigation)
+            }
+            .fullScreenCover(item: $xrefTarget) { t in
+                RefPreviewSheet(target: t)
+                    .environment(store)
+                    .environment(settings)
+                    .environment(annotations)
+                    .environment(navigation)
+                    .environment(knb)
+            }
+            .fullScreenCover(item: $noteTarget) { t in
+                MarkerNoteSheet(n: t.n, text: t.text, bookID: t.bookID, chapter: t.chapter)
+                    .environment(store)
+                    .environment(settings)
+                    .environment(annotations)
+                    .environment(navigation)
+                    .environment(knb)
+            }
         }
         // 주석·상호참조의 성경 인용(catholicbible://xref)과 각주 마커(catholicbible://note)는
         // 여기서 중첩 미리보기로 처리하고, 나머지는 부모 처리에 위임한다.
@@ -129,22 +147,6 @@ struct AnnotatedReader: View {
             parentOpenURL(url)          // 나머지는 부모(ReaderView)가 처리
             return .handled
         })
-        .fullScreenCover(item: $xrefTarget) { t in
-            RefPreviewSheet(target: t)
-                .environment(store)
-                .environment(settings)
-                .environment(annotations)
-                .environment(navigation)
-                .environment(knb)
-        }
-        .fullScreenCover(item: $noteTarget) { t in
-            MarkerNoteSheet(n: t.n, text: t.text, bookID: t.bookID, chapter: t.chapter)
-                .environment(store)
-                .environment(settings)
-                .environment(annotations)
-                .environment(navigation)
-                .environment(knb)
-        }
     }
 
     // MARK: 위치
