@@ -13,6 +13,7 @@ struct CatholicBibleApp: App {
     @State private var annotations = AnnotationStore()
     @State private var knbNotes = KnbNotesStore()
     @State private var liturgy = LiturgyStore()
+    @State private var appSettings = AppSettings.shared
 
     var body: some Scene {
         WindowGroup {
@@ -23,6 +24,8 @@ struct CatholicBibleApp: App {
                 .environment(annotations)
                 .environment(knbNotes)
                 .environment(liturgy)
+                .environment(appSettings)
+                .preferredColorScheme(appSettings.themeMode.colorScheme)
                 .task {
                     await store.load()
                     await knbNotes.load()
