@@ -218,6 +218,8 @@ final class BibleStore {
             return "KnbNotes"
         case "nabre":
             return "NabreNotes"
+        case "ncb":
+            return "NcbNotes"
         default:
             return ""
         }
