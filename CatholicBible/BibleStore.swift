@@ -201,32 +201,29 @@ final class BibleStore {
                 if editionID == "ncb",
                    let ncbHeadingsURL = Bundle.main.url(forResource: "NcbHeadings", withExtension: "json"),
                    let ncbHeadingsData = try? Data(contentsOf: ncbHeadingsURL),
-                   let ncbHeadings = try? JSONDecoder().decode([String: [String: [String: String]]].self, from: ncbHeadingsData) {
-                    if let headingsData = ncbHeadings["headings"] {
-                        var totalHeadings = 0
-                        for (bookID, chapters) in headingsData {
-                            if titles[bookID] == nil {
-                                titles[bookID] = [:]
-                            }
-                            for (chapterKey, verseTitles) in chapters {
-                                if let chapterNumber = Int(chapterKey) {
-                                    var chapterTitles = titles[bookID]![chapterNumber] ?? [:]
-                                    let countBefore = chapterTitles.count
-                                    for (verseKey, titleText) in verseTitles {
-                                        if let verseNumber = Int(verseKey) {
-                                            chapterTitles[verseNumber] = titleText
-                                        }
+                   let ncbHeadingsDict = try? JSONSerialization.jsonObject(with: ncbHeadingsData) as? [String: Any],
+                   let headingsData = ncbHeadingsDict["headings"] as? [String: [String: [String: String]]] {
+                    var totalHeadings = 0
+                    for (bookID, chapters) in headingsData {
+                        if titles[bookID] == nil {
+                            titles[bookID] = [:]
+                        }
+                        for (chapterKey, verseTitles) in chapters {
+                            if let chapterNumber = Int(chapterKey) {
+                                var chapterTitles = titles[bookID]![chapterNumber] ?? [:]
+                                for (verseKey, titleText) in verseTitles {
+                                    if let verseNumber = Int(verseKey) {
+                                        chapterTitles[verseNumber] = titleText
                                     }
-                                    let countAfter = chapterTitles.count
-                                    if !chapterTitles.isEmpty {
-                                        titles[bookID]![chapterNumber] = chapterTitles
-                                    }
-                                    totalHeadings += countAfter
                                 }
+                                if !chapterTitles.isEmpty {
+                                    titles[bookID]![chapterNumber] = chapterTitles
+                                }
+                                totalHeadings += chapterTitles.count
                             }
                         }
-                        print("[NCB] Headings loaded successfully: \(totalHeadings) total titles")
                     }
+                    print("[NCB] Headings loaded successfully: \(totalHeadings) total titles")
                 }
 
                 let titleCount = titles.values.reduce(0) { $0 + $1.values.reduce(0) { $0 + $1.count } }
