@@ -194,14 +194,13 @@ enum ScriptureRef {
     }
 
     /// 한국어 인용(창세 2,4 / 1코린 15,22 / 창세 1,1-2,3 / 7,56; 10,11-16)을 링크로.
-    /// 책 이름 없는 약자도 이전 책을 잇는다(예: "사도 7,56; 10,11-16" → 10,11-16은 사도).
+    /// 책 이름 없는 약자는 현재 책(원문)을 사용한다. 세미콜론 분리 내에서는 이전 책을 잇는다.
     /// 화이트리스트에 있는 것만 링크해 오탐(예: "명단은 17,5")을 막는다.
     /// 세미콜론 분리 인용도 지원(예: (1,11; 9,7) / (로마 1,1; 갈라 2,2)).
     static func addKoreanLinks(to attr: NSMutableAttributedString, currentBook: String?,
                                color: UIColor) {
         guard let kre = koreanRegex else { return }
         let s = attr.string as NSString
-        var lastBook = currentBook
         let originalBook = currentBook  // preserve context book for unnamed references
         var processed: [NSRange] = []
 
@@ -214,13 +213,12 @@ enum ScriptureRef {
                 let bookName = s.substring(with: m.range(at: 1))
                 if let id = koreanNames[bookName] {
                     bookID = id
-                    lastBook = id
                 } else {
                     continue
                 }
             } else {
-                // use last book context for unnamed references (e.g., "148,7" after "시편 74,13")
-                bookID = lastBook ?? originalBook
+                // 명시적 책 이름이 없으면 현재 책 사용 (세미콜론 분리는 addSemicolonSeparatedLinks에서 처리)
+                bookID = originalBook
             }
 
             guard let bID = bookID,
