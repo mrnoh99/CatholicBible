@@ -318,7 +318,7 @@ struct ReaderPane: View {
             // NABRE, 공동번역: BibleStore에서 직접 로드
             let result = Dictionary(uniqueKeysWithValues:
                 store.titles(edition: edition, book: book, chapter: chapter)
-                    .map { ($0.verse, $0.text) }
+                    .map { ($0.verse, AnnotationMarkup.stripMarkers($0.text)) }
             )
             print("[titleMap] \(edition.id) \(book.id) Ch\(chapter): \(result.count) titles from BibleStore, verses: \(result.keys.sorted())")
             return result

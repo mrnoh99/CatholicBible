@@ -313,13 +313,14 @@ struct AnnotatedReader: View {
         if editionID == "nabre" || editionID == "ncb" {
             let titles = store.titles(edition: edition, book: book, chapter: max(chapter, 1))
             let result = Dictionary(uniqueKeysWithValues:
-                titles.map { ($0.verse, $0.text) }
+                titles.map { ($0.verse, AnnotationMarkup.stripMarkers($0.text)) }
             )
             print("[AnnotatedReader] \(editionID) \(book.id) Ch\(max(chapter, 1)): \(result.count) titles from BibleStore")
             return result
         } else {
             let knbEditionID = editionID == "knb" ? "knbnotes" : editionID
             let titleMap = knb.titlesByVerse(edition: knbEditionID, bookID: book.id, chapter: max(chapter, 1))
+                .mapValues { AnnotationMarkup.stripMarkers($0) }
             print("[AnnotatedReader] \(editionID)->[\(knbEditionID)] \(book.id) Ch\(max(chapter, 1)): \(titleMap.count) titles from KnbNotes")
             return titleMap
         }
