@@ -1722,7 +1722,7 @@ struct SearchView: View {
         }
 
         let (bgColor, textColor) = colorScheme == .dark
-            ? (Color.orange, Color.black)
+            ? (Color.black.opacity(0.5), Color.yellow)
             : (Color.yellow, Color.black)
 
         // Highlight all search terms
