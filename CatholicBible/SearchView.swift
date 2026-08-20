@@ -61,7 +61,7 @@ struct SearchView: View {
     @State private var selectedBookID: String = ""
     @State private var selectedChapter: Int = 0
     @State private var selectedVerse: Int = 0
-    @State private var selectedEditionIDs: Set<String> = []
+    @State private var selectedEditionIDs: Set<String> = ["knb"]
     @State private var selectedAnnotationEditionIDs: Set<String> = []
 
     // 여러 참조 선택을 위한 목록
