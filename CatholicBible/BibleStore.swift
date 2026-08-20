@@ -168,6 +168,7 @@ final class BibleStore {
                 // BibleTextFile의 headings 로드 (NABRE에서 사용)
                 if editionID == "nabre" && file.headings != nil {
                     let headingsData = file.headings!
+                    var totalHeadings = 0
                     for (bookID, chapters) in headingsData {
                         if titles[bookID] == nil {
                             titles[bookID] = [:]
@@ -175,18 +176,25 @@ final class BibleStore {
                         for (chapterKey, verseTitles) in chapters {
                             if let chapterNumber = Int(chapterKey) {
                                 var chapterTitles = titles[bookID]![chapterNumber] ?? [:]
+                                let countBefore = chapterTitles.count
                                 for (verseKey, titleText) in verseTitles {
                                     if let verseNumber = Int(verseKey) {
                                         // headings 데이터로 제목 추가/업데이트
                                         chapterTitles[verseNumber] = titleText
                                     }
                                 }
+                                let countAfter = chapterTitles.count
                                 if !chapterTitles.isEmpty {
                                     titles[bookID]![chapterNumber] = chapterTitles
+                                }
+                                totalHeadings += countAfter
+                                if bookID == "gn" && chapterNumber == 1 {
+                                    print("[NABRE] Genesis Ch1: \(countBefore) -> \(countAfter) titles, verses: \(chapterTitles.keys.sorted())")
                                 }
                             }
                         }
                     }
+                    print("[NABRE] Headings loaded successfully: \(totalHeadings) total titles")
                 }
 
                 result[editionID] = EditionText(translation: file.translation,
@@ -331,9 +339,13 @@ final class BibleStore {
     func titles(edition: Edition, book: BibleBook, chapter: Int) -> [SectionTitle] {
         guard let bookTitles = editions[edition.id]?.titles[book.id],
               let chapterTitles = bookTitles[chapter] else { return [] }
-        return chapterTitles
+        let result = chapterTitles
             .map { SectionTitle(verse: $0.key, text: $0.value) }
             .sorted { $0.verse < $1.verse }
+        if edition.id == "nabre" && book.id == "gn" && chapter == 1 {
+            print("[NABRE] titles() for Genesis Ch1: \(result.count) titles, verses: \(result.map { $0.verse })")
+        }
+        return result
     }
 
     // MARK: - 검색 (현재 판본 안에서)

@@ -313,10 +313,14 @@ struct ReaderPane: View {
 
         if edition.id == "nabre" {
             // NABRE: BibleStore에서 직접 로드
-            return Dictionary(uniqueKeysWithValues:
+            let result = Dictionary(uniqueKeysWithValues:
                 store.titles(edition: edition, book: book, chapter: chapter)
                     .map { ($0.verse, $0.text) }
             )
+            if book.id == "gn" && chapter == 1 {
+                print("[ReaderView] titleMap for Genesis Ch1: \(result.count) titles, keys: \(result.keys.sorted())")
+            }
+            return result
         }
 
         // 한국어 성경: KnbNotes + BibleStore 병합
@@ -867,7 +871,7 @@ struct SpreadReader: View {
                 ForEach(verses) { verse in
                     if let title = titleMap[verse.number] {
                         SectionTitleView(text: title, bookID: book.id, chapter: chapter,
-                                                         linkable: edition.id == "knbnotes")
+                                                         linkable: edition.id == "knbnotes" || edition.id == "nabre")
                     }
                     VerseRowView(edition: edition, book: book, chapter: chapter,
                                  verse: verse,
