@@ -317,9 +317,6 @@ struct ReaderPane: View {
                 store.titles(edition: edition, book: book, chapter: chapter)
                     .map { ($0.verse, $0.text) }
             )
-            if book.id == "gn" && chapter == 1 {
-                print("[ReaderView] titleMap for Genesis Ch1: \(result.count) titles, keys: \(result.keys.sorted())")
-            }
             return result
         }
 
@@ -491,11 +488,6 @@ struct ReaderPane: View {
                                     if let title = titleMap[verse.number] {
                                         SectionTitleView(text: title, bookID: book.id, chapter: chapter,
                                                          linkable: true)
-                                        .onAppear {
-                                            if edition.id == "nabre" && book.id == "gn" && chapter == 1 && (verse.number == 1 || verse.number == 4) {
-                                                print("[ReaderPane] Rendering NABRE Genesis Ch1 V\(verse.number) title: \(title)")
-                                            }
-                                        }
                                     }
                                     VerseRowView(edition: edition, book: book, chapter: chapter,
                                                  verse: verse,
