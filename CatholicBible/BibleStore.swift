@@ -594,11 +594,11 @@ final class BibleStore {
                         let matches: Bool
                         if isPhrase {
                             // 정확한 문구 검색
-                            matches = annotationText.localizedStandardContains(searchQuery)
+                            matches = annotationText.range(of: searchQuery, options: [.caseInsensitive]) != nil
                         } else {
                             // AND 검색 (모든 단어 포함)
                             let terms = searchQuery.split(separator: " ").map(String.init).filter { !$0.isEmpty }
-                            matches = terms.allSatisfy { annotationText.localizedStandardContains($0) }
+                            matches = terms.allSatisfy { annotationText.range(of: $0, options: [.caseInsensitive]) != nil }
                         }
                         if matches {
                             count += 1
@@ -639,11 +639,11 @@ final class BibleStore {
                         let matches: Bool
                         if isPhrase {
                             // 정확한 문구 검색
-                            matches = annotationText.localizedStandardContains(searchQuery)
+                            matches = annotationText.range(of: searchQuery, options: [.caseInsensitive]) != nil
                         } else {
                             // AND 검색 (모든 단어 포함)
                             let terms = searchQuery.split(separator: " ").map(String.init).filter { !$0.isEmpty }
-                            matches = terms.allSatisfy { annotationText.localizedStandardContains($0) }
+                            matches = terms.allSatisfy { annotationText.range(of: $0, options: [.caseInsensitive]) != nil }
                         }
                         if matches {
                             if matched >= offset && hits.count < limit {
