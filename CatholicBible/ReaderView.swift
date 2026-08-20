@@ -292,6 +292,8 @@ struct ReaderPane: View {
     @State private var showBookPicker = false
     /// ReaderPane 초기화 완료 후 책 선택 변경만 감지하기 위한 플래그
     @State private var isInitialized = false
+    /// picker에서 책과 장을 함께 선택할 때 자동 복원을 스킵하기 위한 플래그
+    @State private var skipChapterRestore = false
 
     private var edition: Edition { Editions.edition(editionID) ?? Editions.all[0] }
     private var book: BibleBook { Bible.book(bookID) ?? Bible.books[0] }
@@ -342,7 +344,7 @@ struct ReaderPane: View {
             isInitialized = true
         }
         .onChange(of: bookID) { _, _ in
-            if !isFollower {
+            if !isFollower && !skipChapterRestore {
                 let chapter = readingState.lastChapter(edition: edition, book: book)
                 setChapter(chapter)
                 // 처음 로드 이후 책 선택 변경만 히스토리에 추가
@@ -350,6 +352,7 @@ struct ReaderPane: View {
                     navigation.open(bookID: book.id, chapter: chapter)
                 }
             }
+            skipChapterRestore = false
         }
         .onChange(of: editionID) { _, _ in
             if !isFollower { setChapter(min(max(chapter, 1), book.chapterCount)) }
@@ -546,6 +549,17 @@ struct ReaderPane: View {
         }
     }
 
+    private func parseBookSelection(_ picked: String) {
+        let components = picked.split(separator: "-", maxSplits: 1).map(String.init)
+        if components.count == 2, let chapterNum = Int(components[1]) {
+            setChapter(chapterNum)
+            skipChapterRestore = true
+            bookID = components[0]
+        } else {
+            bookID = picked
+        }
+    }
+
     // MARK: 하단 장 이동 바
 
     @ViewBuilder
@@ -660,6 +674,7 @@ struct SpreadReader: View {
     @State private var contentSize: CGSize = .zero
     @State private var showBookPicker = false
     @State private var showChapterPicker = false
+    @State private var skipChapterRestore = false
 
     private var edition: Edition { Editions.edition(editionID) ?? Editions.all[0] }
     private var book: BibleBook { Bible.book(bookID) ?? Bible.books[0] }
@@ -707,8 +722,11 @@ struct SpreadReader: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .onAppear { initChapterIfNeeded() }
         .onChange(of: bookID) { _, _ in
-            setChapter(readingState.lastChapter(edition: edition, book: book))
-            spreadIndex = 0
+            if !skipChapterRestore {
+                setChapter(readingState.lastChapter(edition: edition, book: book))
+                spreadIndex = 0
+            }
+            skipChapterRestore = false
         }
         .onChange(of: editionID) { _, _ in
             setChapter(min(max(chapter, 1), book.chapterCount)); spreadIndex = 0
@@ -943,8 +961,9 @@ struct SpreadReader: View {
     private func parseBookSelection(_ picked: String) {
         let components = picked.split(separator: "-", maxSplits: 1).map(String.init)
         if components.count == 2, let chapterNum = Int(components[1]) {
-            bookID = components[0]
             setChapter(chapterNum)
+            skipChapterRestore = true
+            bookID = components[0]
         } else {
             bookID = picked
         }
