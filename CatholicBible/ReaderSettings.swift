@@ -83,6 +83,9 @@ final class ReaderSettings {
     var fontChoice: FontChoice {
         didSet { Self.defaults.set(fontChoice.rawValue, forKey: "reader.fontChoice") }
     }
+    var englishFontChoice: EnglishFontChoice {
+        didSet { Self.defaults.set(englishFontChoice.rawValue, forKey: "reader.englishFontChoice") }
+    }
     var theme: ReaderTheme {
         didSet { Self.defaults.set(theme.rawValue, forKey: "reader.theme") }
     }
@@ -99,6 +102,7 @@ final class ReaderSettings {
         let spacing = d.double(forKey: "reader.lineSpacing")
         lineSpacingFactor = spacing == 0 ? 0.65 : spacing
         fontChoice = FontChoice(rawValue: d.string(forKey: "reader.fontChoice") ?? "") ?? .myeongjo
+        englishFontChoice = EnglishFontChoice(rawValue: d.string(forKey: "reader.englishFontChoice") ?? "") ?? .georgia
         theme = ReaderTheme(rawValue: d.string(forKey: "reader.theme") ?? "") ?? .sepia
         showVerseNumbers = d.object(forKey: "reader.showVerseNumbers") as? Bool ?? true
     }
@@ -109,8 +113,8 @@ final class ReaderSettings {
         fontChoice.font(size: fontSize, bold: bold)
     }
 
-    /// 영문 폰트 (명조체 선택 시 Georgia, 고딕체 선택 시 San Francisco)
+    /// 영문 폰트
     func bodyEnglishFont(bold: Bool = false) -> Font {
-        fontChoice.englishFont(size: fontSize, bold: bold)
+        englishFontChoice.font(size: fontSize, bold: bold)
     }
 }

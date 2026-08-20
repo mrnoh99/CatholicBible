@@ -1407,8 +1407,12 @@ struct AppearanceControls: View {
                         Text("줄 간격").font(.caption).foregroundStyle(.secondary)
                         Slider(value: $settings.lineSpacingFactor, in: 0.35...1.1)
                     }
-                    Picker("서체", selection: $settings.fontChoice) {
+                    Picker("한글 서체", selection: $settings.fontChoice) {
                         ForEach(FontChoice.allCases) { choice in Text(choice.label).tag(choice) }
+                    }
+                    .pickerStyle(.segmented)
+                    Picker("영문 서체", selection: $settings.englishFontChoice) {
+                        ForEach(EnglishFontChoice.allCases) { choice in Text(choice.label).tag(choice) }
                     }
                     .pickerStyle(.segmented)
                 }

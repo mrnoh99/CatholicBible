@@ -5,7 +5,6 @@
 //  iOS/iPadOS에는 한글 명조 시스템 폰트가 없어, ebook다운 본문을 위해
 //  나눔명조를 번들한다(Info.plist UIAppFonts에 등록).
 //
-//  영문 폰트: 명조체 선택 시 Georgia(세리프), 고딕체 선택 시 San Francisco(산세리프)
 
 import SwiftUI
 
@@ -31,13 +30,26 @@ enum FontChoice: String, CaseIterable, Identifiable {
             return .system(size: size, weight: bold ? .semibold : .regular)
         }
     }
+}
 
-    /// 영문 폰트. 한글 폰트와 조화되는 영문 세리프/산세리프 폰트.
-    func englishFont(size: CGFloat, relativeTo style: Font.TextStyle = .body, bold: Bool = false) -> Font {
+enum EnglishFontChoice: String, CaseIterable, Identifiable {
+    case georgia
+    case sanfrancisco
+
+    var id: String { rawValue }
+
+    var label: String {
         switch self {
-        case .myeongjo:
+        case .georgia: return "Georgia"
+        case .sanfrancisco: return "San Francisco"
+        }
+    }
+
+    func font(size: CGFloat, relativeTo style: Font.TextStyle = .body, bold: Bool = false) -> Font {
+        switch self {
+        case .georgia:
             return .custom(bold ? "Georgia-Bold" : "Georgia", size: size, relativeTo: style)
-        case .gothic:
+        case .sanfrancisco:
             return .system(size: size, weight: bold ? .semibold : .regular)
         }
     }
