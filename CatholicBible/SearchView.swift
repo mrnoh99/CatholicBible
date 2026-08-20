@@ -687,25 +687,25 @@ struct SearchView: View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
                 Text("판본 선택")
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(.secondary)
+                    .font(.body.weight(.semibold))
+                    .foregroundStyle(.primary)
                 Spacer()
                 Button("전체선택") {
                     selectedEditionIDs = Set(store.loadedEditions.map { $0.id })
                 }
-                .font(.caption2)
+                .font(.caption)
                 .foregroundStyle(.blue)
 
                 Button("선택해지") {
                     selectedEditionIDs.removeAll()
                 }
-                .font(.caption2)
+                .font(.caption)
                 .foregroundStyle(.red)
             }
 
-            VStack(alignment: .leading, spacing: 6) {
+            VStack(alignment: .leading, spacing: 8) {
                 ForEach(store.loadedEditions) { edition in
-                    VStack(alignment: .leading, spacing: 4) {
+                    VStack(alignment: .leading, spacing: 6) {
                         Button(action: {
                             if selectedEditionIDs.contains(edition.id) {
                                 selectedEditionIDs.remove(edition.id)
@@ -717,10 +717,15 @@ struct SearchView: View {
                                 Image(systemName: selectedEditionIDs.contains(edition.id) ? "checkmark.square.fill" : "square")
                                     .font(.body)
                                     .foregroundStyle(selectedEditionIDs.contains(edition.id) ? .blue : .secondary)
-                                Text(edition.name)
-                                    .font(.caption)
-                                    .foregroundStyle(.primary)
-                                    .lineLimit(1)
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(edition.name)
+                                        .font(.body)
+                                        .foregroundStyle(.primary)
+                                        .lineLimit(2)
+                                    Text(edition.shortName)
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
                                 Spacer()
                             }
                         }
