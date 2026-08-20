@@ -48,9 +48,11 @@ struct AnnotatedReader: View {
     private var book: BibleBook { Bible.book(bookID) ?? Bible.books[0] }
     private var wide: Bool { hSize == .regular }
     /// 공유 장이 있으면 그것을 사용, 없으면 로컬 장
-    private var chapter: Int { sharedChapter?.wrappedValue ?? localChapter }
-    private func setChapter(_ value: Int) {
-        if let sharedChapter { sharedChapter.wrappedValue = value } else { localChapter = value }
+    private var chapter: Int {
+        get { sharedChapter?.wrappedValue ?? localChapter }
+        set {
+            if let sharedChapter { sharedChapter.wrappedValue = newValue } else { localChapter = newValue }
+        }
     }
 
     var body: some View {
