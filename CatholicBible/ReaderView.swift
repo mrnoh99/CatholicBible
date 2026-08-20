@@ -335,7 +335,12 @@ struct ReaderPane: View {
     }
 
     /// 표시 중인 장. 연동 시 공유 장, 아니면 이 열의 자기 장.
-    private var chapter: Int { linkedChapter?.wrappedValue ?? localChapter }
+    private var chapter: Int {
+        get { linkedChapter?.wrappedValue ?? localChapter }
+        set {
+            if let linkedChapter { linkedChapter.wrappedValue = newValue } else { localChapter = newValue }
+        }
+    }
     private func setChapter(_ value: Int) {
         if let linkedChapter { linkedChapter.wrappedValue = value } else { localChapter = value }
     }
@@ -672,7 +677,12 @@ struct SpreadReader: View {
     private var edition: Edition { Editions.edition(editionID) ?? Editions.all[0] }
     private var book: BibleBook { Bible.book(bookID) ?? Bible.books[0] }
     /// 공유 장이 있으면 그것을 사용, 없으면 로컬 장
-    private var chapter: Int { sharedChapter?.wrappedValue ?? localChapter }
+    private var chapter: Int {
+        get { sharedChapter?.wrappedValue ?? localChapter }
+        set {
+            if let sharedChapter { sharedChapter.wrappedValue = newValue } else { localChapter = newValue }
+        }
+    }
     private func setChapter(_ value: Int) {
         if let sharedChapter { sharedChapter.wrappedValue = value } else { localChapter = value }
     }
