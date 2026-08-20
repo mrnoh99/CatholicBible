@@ -295,11 +295,11 @@ struct AnnotatedReader: View {
                 titleMap = Dictionary(uniqueKeysWithValues:
                     titles.map { ($0.verse, $0.text) }
                 )
-                print("[AnnotatedReader] \(editionID) \(book.id) Ch\(max(chapter, 1)): \(titleMap.count) titles from BibleStore")
+                let _ = print("[AnnotatedReader] \(editionID) \(book.id) Ch\(max(chapter, 1)): \(titleMap.count) titles from BibleStore")
             } else {
                 let knbEditionID = editionID == "knb" ? "knbnotes" : editionID
                 titleMap = knb.titlesByVerse(edition: knbEditionID, bookID: book.id, chapter: max(chapter, 1))
-                print("[AnnotatedReader] \(editionID)->[\(knbEditionID)] \(book.id) Ch\(max(chapter, 1)): \(titleMap.count) titles from KnbNotes")
+                let _ = print("[AnnotatedReader] \(editionID)->[\(knbEditionID)] \(book.id) Ch\(max(chapter, 1)): \(titleMap.count) titles from KnbNotes")
             }
             LazyVStack(alignment: .leading, spacing: settings.lineSpacing * 0.9) {
                 ForEach(verses) { verse in
