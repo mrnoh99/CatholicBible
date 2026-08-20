@@ -197,6 +197,11 @@ final class BibleStore {
                     print("[NABRE] Headings loaded successfully: \(totalHeadings) total titles")
                 }
 
+                let titleCount = titles.values.reduce(0) { $0 + $1.values.reduce(0) { $0 + $1.count } }
+                if titleCount > 0 {
+                    print("[BibleStore] Edition '\(editionID)' has \(titleCount) titles from annotations")
+                }
+
                 result[editionID] = EditionText(translation: file.translation,
                                                 source: file.source,
                                                 bookNames: file.bookNames ?? [:],
