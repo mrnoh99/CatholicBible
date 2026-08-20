@@ -67,7 +67,7 @@ struct AnnotatedReader: View {
             isInitialized = true
         }
         .onChange(of: bookID) { _, _ in
-            chapter = readingState.lastChapter(edition: edition, book: book)
+            setChapter(readingState.lastChapter(edition: edition, book: book))
         }
         .onChange(of: chapter) { _, new in
             guard new > 0 else { return }
@@ -87,7 +87,7 @@ struct AnnotatedReader: View {
         }
         .fullScreenCover(isPresented: $showChapterPicker) {
             ChapterPickerView(book: book, current: max(chapter, 1)) { picked in
-                chapter = picked; showChapterPicker = false
+                setChapter(picked); showChapterPicker = false
             }
         }
         .fullScreenCover(isPresented: $showIntros) {
@@ -148,17 +148,17 @@ struct AnnotatedReader: View {
     private func initChapterIfNeeded() {
         guard chapter == 0 else { return }
         if navigation.hasPending(forBook: ownerBookID), let p = navigation.pendingChapter {
-            chapter = min(max(p, 1), book.chapterCount)
+            setChapter(min(max(p, 1), book.chapterCount))
             navigation.pendingChapter = nil
             scrollTarget = navigation.consumePending(forBook: ownerBookID)
         } else {
-            chapter = readingState.lastChapter(edition: edition, book: book)
+            setChapter(readingState.lastChapter(edition: edition, book: book))
         }
     }
 
     private func applyPending() {
         guard navigation.hasPending(forBook: ownerBookID), let p = navigation.pendingChapter else { return }
-        chapter = min(max(p, 1), book.chapterCount)
+        setChapter(min(max(p, 1), book.chapterCount))
         navigation.pendingChapter = nil
         scrollTarget = navigation.consumePending(forBook: ownerBookID)
     }
@@ -167,7 +167,7 @@ struct AnnotatedReader: View {
         let components = picked.split(separator: "-", maxSplits: 1).map(String.init)
         if components.count == 2, let chapterNum = Int(components[1]) {
             bookID = components[0]
-            chapter = chapterNum
+            setChapter(chapterNum)
         } else {
             bookID = picked
         }
@@ -177,7 +177,7 @@ struct AnnotatedReader: View {
         let n = chapter + d
         guard (1...book.chapterCount).contains(n) else { return }
         scrollTarget = 1
-        withAnimation(.easeInOut(duration: 0.2)) { chapter = n }
+        withAnimation(.easeInOut(duration: 0.2)) { setChapter(n) }
     }
 
     // MARK: 헤더
@@ -325,7 +325,7 @@ struct AnnotatedReader: View {
         if book.chapterCount > 1 && chapter > 0 {
             HStack(spacing: 10) {
                 Button { step(-1) } label: { Image(systemName: "chevron.left") }.disabled(chapter <= 1)
-                Slider(value: Binding(get: { Double(chapter) }, set: { chapter = Int($0.rounded()) }),
+                Slider(value: Binding(get: { Double(chapter) }, set: { setChapter(Int($0.rounded())) }),
                        in: 1...Double(book.chapterCount), step: 1)
                 Button { step(1) } label: { Image(systemName: "chevron.right") }.disabled(chapter >= book.chapterCount)
                 Button { showChapterPicker = true } label: {
