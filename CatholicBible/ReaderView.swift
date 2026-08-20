@@ -1369,11 +1369,21 @@ struct ChapterPickerView: View {
 
 struct AppearanceControls: View {
     @Environment(ReaderSettings.self) private var settings
+    @Environment(AppSettings.self) private var appSettings
 
     var body: some View {
         @Bindable var settings = settings
+        @Bindable var appSettings = appSettings
         NavigationStack {
             Form {
+                Section("테마") {
+                    Picker("테마 모드", selection: $appSettings.themeMode) {
+                        ForEach(AppThemeMode.allCases) { mode in
+                            Text(mode.label).tag(mode)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                }
                 Section("글자") {
                     VStack(alignment: .leading, spacing: 6) {
                         Text("글자 크기").font(.caption).foregroundStyle(.secondary)
@@ -1392,21 +1402,6 @@ struct AppearanceControls: View {
                     }
                     .pickerStyle(.segmented)
                     Toggle("절 번호 표시", isOn: $settings.showVerseNumbers)
-                }
-                Section("배경") {
-                    HStack(spacing: 12) {
-                        ForEach(ReaderTheme.allCases) { theme in
-                            Button { settings.theme = theme } label: {
-                                Circle()
-                                    .fill(theme.background)
-                                    .stroke(settings.theme == theme ? Color.accentColor : .secondary.opacity(0.4),
-                                            lineWidth: settings.theme == theme ? 2.5 : 1)
-                                    .frame(width: 36, height: 36)
-                            }
-                            .buttonStyle(.plain)
-                            .accessibilityLabel(theme.label)
-                        }
-                    }
                 }
             }
             .navigationTitle("보기 설정")

@@ -556,20 +556,6 @@ struct SearchView: View {
 
     private var searchConditionsSection: some View {
         VStack(alignment: .leading, spacing: 16) {
-            VStack(alignment: .leading, spacing: 8) {
-                Text("보기 설정")
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(.secondary)
-                Picker("테마", selection: $appSettings.themeMode) {
-                    ForEach(AppThemeMode.allCases) { mode in
-                        Text(mode.label).tag(mode)
-                    }
-                }
-                .pickerStyle(.segmented)
-            }
-
-            Divider()
-
             Picker("검색 방식", selection: $mode) {
                 ForEach(SearchMode.allCases) { m in
                     Text(m.label).tag(m)
@@ -1736,7 +1722,9 @@ struct SearchView: View {
             termsToHighlight = [searchTerm]
         }
 
-        let (bgColor, textColor) = colorScheme == .dark
+        let isDarkMode = appSettings.themeMode == .dark ||
+                         (appSettings.themeMode == .auto && colorScheme == .dark)
+        let (bgColor, textColor) = isDarkMode
             ? (Color.black.opacity(0.5), Color.yellow)
             : (Color.yellow, Color.black)
 
