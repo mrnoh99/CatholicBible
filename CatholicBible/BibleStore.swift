@@ -165,65 +165,93 @@ final class BibleStore {
                     }
                 }
 
-                // BibleTextFile의 headings 로드 (NABRE에서 사용)
-                if editionID == "nabre" && file.headings != nil {
-                    let headingsData = file.headings!
-                    var totalHeadings = 0
-                    for (bookID, chapters) in headingsData {
-                        if titles[bookID] == nil {
-                            titles[bookID] = [:]
-                        }
-                        for (chapterKey, verseTitles) in chapters {
-                            if let chapterNumber = Int(chapterKey) {
-                                var chapterTitles = titles[bookID]![chapterNumber] ?? [:]
-                                let countBefore = chapterTitles.count
-                                for (verseKey, titleText) in verseTitles {
-                                    if let verseNumber = Int(verseKey) {
-                                        // headings 데이터로 제목 추가/업데이트
-                                        chapterTitles[verseNumber] = titleText
+                // NABRE headings 로드 - 로컬 저장 파일을 먼저 확인, 없으면 번들 리소스 사용
+                if editionID == "nabre" {
+                    var nabreHeadings: [String: [String: [String: String]]]? = nil
+
+                    // 1. 로컬 저장 파일 확인
+                    if let localPath = DataDownloadManager.getHeadingsPath(forEdition: "nabre"),
+                       let localData = try? Data(contentsOf: localPath),
+                       let localDict = try? JSONSerialization.jsonObject(with: localData) as? [String: Any],
+                       let headingsData = localDict["headings"] as? [String: [String: [String: String]]] {
+                        nabreHeadings = headingsData
+                        print("[NABRE] Headings loaded from local file")
+                    }
+                    // 2. 번들 리소스의 headings 사용
+                    else if file.headings != nil {
+                        nabreHeadings = file.headings
+                        print("[NABRE] Headings loaded from bundle")
+                    }
+
+                    if let headingsData = nabreHeadings {
+                        var totalHeadings = 0
+                        for (bookID, chapters) in headingsData {
+                            if titles[bookID] == nil {
+                                titles[bookID] = [:]
+                            }
+                            for (chapterKey, verseTitles) in chapters {
+                                if let chapterNumber = Int(chapterKey) {
+                                    var chapterTitles = titles[bookID]![chapterNumber] ?? [:]
+                                    for (verseKey, titleText) in verseTitles {
+                                        if let verseNumber = Int(verseKey) {
+                                            chapterTitles[verseNumber] = titleText
+                                        }
                                     }
-                                }
-                                let countAfter = chapterTitles.count
-                                if !chapterTitles.isEmpty {
-                                    titles[bookID]![chapterNumber] = chapterTitles
-                                }
-                                totalHeadings += countAfter
-                                if bookID == "gn" && chapterNumber == 1 {
-                                    print("[NABRE] Genesis Ch1: \(countBefore) -> \(countAfter) titles, verses: \(chapterTitles.keys.sorted())")
+                                    if !chapterTitles.isEmpty {
+                                        titles[bookID]![chapterNumber] = chapterTitles
+                                    }
+                                    totalHeadings += chapterTitles.count
                                 }
                             }
                         }
+                        print("[NABRE] Headings loaded successfully: \(totalHeadings) total titles")
                     }
-                    print("[NABRE] Headings loaded successfully: \(totalHeadings) total titles")
                 }
 
-                // NCB 소제목 로드 (공동번역)
-                if editionID == "ncb",
-                   let ncbHeadingsURL = Bundle.main.url(forResource: "NcbHeadings", withExtension: "json"),
-                   let ncbHeadingsData = try? Data(contentsOf: ncbHeadingsURL),
-                   let ncbHeadingsDict = try? JSONSerialization.jsonObject(with: ncbHeadingsData) as? [String: Any],
-                   let headingsData = ncbHeadingsDict["headings"] as? [String: [String: [String: String]]] {
-                    var totalHeadings = 0
-                    for (bookID, chapters) in headingsData {
-                        if titles[bookID] == nil {
-                            titles[bookID] = [:]
-                        }
-                        for (chapterKey, verseTitles) in chapters {
-                            if let chapterNumber = Int(chapterKey) {
-                                var chapterTitles = titles[bookID]![chapterNumber] ?? [:]
-                                for (verseKey, titleText) in verseTitles {
-                                    if let verseNumber = Int(verseKey) {
-                                        chapterTitles[verseNumber] = titleText
+                // NCB 소제목 로드 (공동번역) - 로컬 저장 파일을 먼저 확인, 없으면 번들 리소스 사용
+                if editionID == "ncb" {
+                    var ncbHeadingsData: [String: [String: [String: String]]]? = nil
+
+                    // 1. 로컬 저장 파일 확인
+                    if let localPath = DataDownloadManager.getHeadingsPath(forEdition: "ncb"),
+                       let localData = try? Data(contentsOf: localPath),
+                       let localDict = try? JSONSerialization.jsonObject(with: localData) as? [String: Any],
+                       let headings = localDict["headings"] as? [String: [String: [String: String]]] {
+                        ncbHeadingsData = headings
+                        print("[NCB] Headings loaded from local file")
+                    }
+                    // 2. 번들 리소스 사용
+                    else if let ncbHeadingsURL = Bundle.main.url(forResource: "NcbHeadings", withExtension: "json"),
+                            let ncbHeadingsDataFile = try? Data(contentsOf: ncbHeadingsURL),
+                            let ncbDict = try? JSONSerialization.jsonObject(with: ncbHeadingsDataFile) as? [String: Any],
+                            let headings = ncbDict["headings"] as? [String: [String: [String: String]]] {
+                        ncbHeadingsData = headings
+                        print("[NCB] Headings loaded from bundle")
+                    }
+
+                    if let headingsData = ncbHeadingsData {
+                        var totalHeadings = 0
+                        for (bookID, chapters) in headingsData {
+                            if titles[bookID] == nil {
+                                titles[bookID] = [:]
+                            }
+                            for (chapterKey, verseTitles) in chapters {
+                                if let chapterNumber = Int(chapterKey) {
+                                    var chapterTitles = titles[bookID]![chapterNumber] ?? [:]
+                                    for (verseKey, titleText) in verseTitles {
+                                        if let verseNumber = Int(verseKey) {
+                                            chapterTitles[verseNumber] = titleText
+                                        }
                                     }
+                                    if !chapterTitles.isEmpty {
+                                        titles[bookID]![chapterNumber] = chapterTitles
+                                    }
+                                    totalHeadings += chapterTitles.count
                                 }
-                                if !chapterTitles.isEmpty {
-                                    titles[bookID]![chapterNumber] = chapterTitles
-                                }
-                                totalHeadings += chapterTitles.count
                             }
                         }
+                        print("[NCB] Headings loaded successfully: \(totalHeadings) total titles")
                     }
-                    print("[NCB] Headings loaded successfully: \(totalHeadings) total titles")
                 }
 
                 let titleCount = titles.values.reduce(0) { $0 + $1.values.reduce(0) { $0 + $1.count } }
