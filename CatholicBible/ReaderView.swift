@@ -321,7 +321,7 @@ struct ReaderPane: View {
         }
 
         // 한국어 성경: KnbNotes + BibleStore 병합
-        let titleEdition = edition.id
+        let titleEdition = edition.id == "knb" ? "knbnotes" : edition.id
         var titles = knbNotes.titlesByVerse(edition: titleEdition, bookID: book.id, chapter: chapter)
             .mapValues { AnnotationMarkup.stripMarkers($0) }
 
