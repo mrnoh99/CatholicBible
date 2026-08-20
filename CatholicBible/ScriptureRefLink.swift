@@ -292,7 +292,7 @@ enum ScriptureRef {
                             lastBook = id
                         }
                     } else {
-                        bookID = originalBook ?? lastBook ?? "mk"
+                        bookID = lastBook ?? originalBook ?? "mk"
                     }
 
                     if let bID = bookID,
