@@ -1898,6 +1898,7 @@ struct SearchView: View {
     }
 
     private func performTextSearch(_ text: String, scope: SearchScope) {
+        totalSearchCount = 0
         let fullQuery = text
         let isExplicitPartial = fullQuery.starts(with: "*")
         let searchText = isExplicitPartial ? String(fullQuery.dropFirst()) : fullQuery
@@ -2007,6 +2008,7 @@ struct SearchView: View {
     }
 
     private func performReferenceSearch(_ references: [(String, Int, Int)], scope: SearchScope) {
+        totalSearchCount = 0
         searchTask?.cancel()
 
         // 판본 선택 확인
