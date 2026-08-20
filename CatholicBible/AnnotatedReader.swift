@@ -310,7 +310,7 @@ struct AnnotatedReader: View {
     }
 
     private func getTitleMap() -> [Int: String] {
-        if editionID == "nabre" || editionID == "ncb" {
+        if editionID == "nabre" {
             let titles = store.titles(edition: edition, book: book, chapter: max(chapter, 1))
             let result = Dictionary(uniqueKeysWithValues:
                 titles.map { ($0.verse, AnnotationMarkup.stripMarkers($0.text)) }

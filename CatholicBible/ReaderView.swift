@@ -301,7 +301,7 @@ struct ReaderPane: View {
         if edition.id == "nabre" {
             return true
         }
-        if (edition.id == "knb" || edition.id == "ncb" || edition.isAnnotated) && edition.language == "ko" {
+        if (edition.id == "knb" || edition.isAnnotated) && edition.language == "ko" {
             return true
         }
         return false
@@ -314,8 +314,8 @@ struct ReaderPane: View {
             return [:]
         }
 
-        if edition.id == "nabre" || edition.id == "ncb" {
-            // NABRE, 공동번역: BibleStore에서 직접 로드
+        if edition.id == "nabre" {
+            // NABRE: BibleStore에서 직접 로드
             let result = Dictionary(uniqueKeysWithValues:
                 store.titles(edition: edition, book: book, chapter: chapter)
                     .map { ($0.verse, AnnotationMarkup.stripMarkers($0.text)) }
