@@ -390,10 +390,16 @@ struct SelectableNoteText: UIViewRepresentable {
         let attr = NSMutableAttributedString(string: text, attributes: [
             .font: font, .foregroundColor: color, .paragraphStyle: para,
         ])
+        if currentBook == "gn" {
+            print("[SelectableNoteText.updateUIView] Setting text: '\(text)' for gn, textLength: \(text.count)")
+        }
         ScriptureRef.addLinks(to: attr, currentBook: currentBook, color: linkColor)
         addMarkerLinks(to: attr, color: linkColor)  // 주석 마커 링크도 추가
         tv.linkTextAttributes = [.foregroundColor: linkColor]
         tv.attributedText = attr
+        if currentBook == "gn" {
+            print("[SelectableNoteText.updateUIView] tv.text after setting: '\(tv.text)'")
+        }
     }
 
     /// 각주 마커('N)')를 NSAttributedString에 링크로 추가
