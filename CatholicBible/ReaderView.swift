@@ -317,6 +317,7 @@ struct ReaderPane: View {
                 store.titles(edition: edition, book: book, chapter: chapter)
                     .map { ($0.verse, $0.text) }
             )
+            print("[titleMap] NABRE \(book.id) Ch\(chapter): \(result.count) titles")
             return result
         }
 
@@ -324,6 +325,7 @@ struct ReaderPane: View {
         let titleEdition = edition.id == "knb" ? "knbnotes" : edition.id
         var titles = knbNotes.titlesByVerse(edition: titleEdition, bookID: book.id, chapter: chapter)
             .mapValues { AnnotationMarkup.stripMarkers($0) }
+        print("[titleMap] Korean \(edition.id)->[\(titleEdition)] \(book.id) Ch\(chapter): \(titles.count) titles from KnbNotes")
 
         // BibleStore의 제목 추가
         for sectionTitle in store.titles(edition: edition, book: book, chapter: chapter) {
