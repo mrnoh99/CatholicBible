@@ -218,8 +218,8 @@ enum ScriptureRef {
                     continue
                 }
             } else {
-                // use original book context if available, else fall back to lastBook
-                bookID = originalBook ?? lastBook
+                // use last book context for unnamed references (e.g., "148,7" after "시편 74,13")
+                bookID = lastBook ?? originalBook
             }
 
             guard let bID = bookID,
