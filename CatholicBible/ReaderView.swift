@@ -38,6 +38,8 @@ struct ReaderView: View {
     @State private var showAppearance = false
     @State private var noteTarget: NoteTarget?
     @State private var markerNote: MarkerNoteTarget?
+    /// 첫째 열의 현재 장(판본 전환 시 유지됨).
+    @State private var primaryChapter = 0
     /// 두 판본 비교에서 두 열이 공유하는 장(연동 시 양쪽이 같은 장을 본다).
     @State private var compareChapter = 0
     /// 연동 비교에서 두 열이 맞추는 '맨 위 절'.
@@ -62,6 +64,7 @@ struct ReaderView: View {
                     // 주석 성경: 왼쪽 본문 · 오른쪽 주석 (입문 접근 포함)
                     AnnotatedReader(editionID: $rs.selectedEditionID,
                                     bookID: primaryBookBinding,
+                                    sharedChapter: $primaryChapter,
                                     ownerBookID: book.id,
                                     showHeader: true,
                                     onOpenNote: openNote)
@@ -71,11 +74,13 @@ struct ReaderView: View {
                         ReaderPane(role: .primary,
                                    editionID: $rs.selectedEditionID,
                                    bookID: primaryBookBinding,
+                                   linkedChapter: $primaryChapter,
                                    ownerBookID: book.id,
                                    onOpenNote: openNote)
                     case .spread:
                         SpreadReader(editionID: $rs.selectedEditionID,
                                      bookID: primaryBookBinding,
+                                     sharedChapter: $primaryChapter,
                                      ownerBookID: book.id,
                                      onOpenNote: openNote)
                     case .compare:
@@ -258,7 +263,7 @@ struct ReaderPane: View {
     @Binding var editionID: String
     @Binding var bookID: String
     var onClose: (() -> Void)? = nil
-    /// 두 판본 비교에서 두 열을 같은 장으로 묶을 때 쓰는 공유 장(없으면 각 열 독립).
+    /// 공유하는 장 바인딩(없으면 자체 장 관리). 판본 전환 시 장을 유지하는 데 사용됨.
     var linkedChapter: Binding<Int>? = nil
     /// 연동된 둘째 열: 장을 스스로 정하지 않고 첫째 열을 따라가기만 한다.
     var isFollower: Bool = false
@@ -643,6 +648,8 @@ private struct PendingChapterModifier: ViewModifier {
 struct SpreadReader: View {
     @Binding var editionID: String
     @Binding var bookID: String
+    /// 공유하는 장 바인딩(없으면 자체 장 관리).
+    var sharedChapter: Binding<Int>? = nil
     /// 이 리더가 담당하는 책(대기 이동 가로채기 방지용).
     var ownerBookID: String = ""
     let onOpenNote: (VerseRef, String) -> Void
@@ -653,7 +660,7 @@ struct SpreadReader: View {
     @Environment(ReaderNavigation.self) private var navigation
     @Environment(KnbNotesStore.self) private var knbNotes
 
-    @State private var chapter = 0
+    @State private var localChapter = 0
     @State private var spreadIndex = 0
     @State private var wantLastSpread = false
     /// 대기 이동 직후 그 절이 있는 펼침면으로 한 번 이동하기 위한 목표 절.
@@ -664,6 +671,11 @@ struct SpreadReader: View {
 
     private var edition: Edition { Editions.edition(editionID) ?? Editions.all[0] }
     private var book: BibleBook { Bible.book(bookID) ?? Bible.books[0] }
+    /// 공유 장이 있으면 그것을 사용, 없으면 로컬 장
+    private var chapter: Int { sharedChapter?.wrappedValue ?? localChapter }
+    private func setChapter(_ value: Int) {
+        if let sharedChapter { sharedChapter.wrappedValue = value } else { localChapter = value }
+    }
     private var verses: [Verse] {
         chapter > 0 ? store.verses(edition: edition, book: book, chapter: chapter) : []
     }

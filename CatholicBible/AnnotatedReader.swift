@@ -13,6 +13,8 @@ import UIKit
 struct AnnotatedReader: View {
     @Binding var editionID: String
     @Binding var bookID: String
+    /// 공유하는 장 바인딩(없으면 자체 장 관리).
+    var sharedChapter: Binding<Int>? = nil
     /// 이 리더가 담당하는 책(대기 이동 가로채기 방지용).
     var ownerBookID: String = ""
     /// 헤더를 표시할지 (False면 상단 툴바에서 판본·책을 선택).
@@ -27,7 +29,7 @@ struct AnnotatedReader: View {
     @Environment(AnnotationStore.self) private var annotations
     @Environment(\.horizontalSizeClass) private var hSize
 
-    @State private var chapter = 0
+    @State private var localChapter = 0
     /// 대기 이동 직후 한 번 스크롤할 절(강조 색은 navigation.activeHighlight가 담당).
     @State private var scrollTarget: Int?
     @State private var showBookPicker = false
@@ -45,6 +47,11 @@ struct AnnotatedReader: View {
     private var edition: Edition { Editions.edition(editionID) ?? Editions.all[0] }
     private var book: BibleBook { Bible.book(bookID) ?? Bible.books[0] }
     private var wide: Bool { hSize == .regular }
+    /// 공유 장이 있으면 그것을 사용, 없으면 로컬 장
+    private var chapter: Int { sharedChapter?.wrappedValue ?? localChapter }
+    private func setChapter(_ value: Int) {
+        if let sharedChapter { sharedChapter.wrappedValue = value } else { localChapter = value }
+    }
 
     var body: some View {
         VStack(spacing: 0) {
