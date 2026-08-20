@@ -309,7 +309,10 @@ struct ReaderPane: View {
 
     /// 절 번호 → 소제목 맵
     private var titleMap: [Int: String] {
-        guard showsTitles, chapter > 0 else { return [:] }
+        guard showsTitles, chapter > 0 else {
+            print("[titleMap] showsTitles=\(showsTitles) chapter=\(chapter), returning empty")
+            return [:]
+        }
 
         if edition.id == "nabre" || edition.id == "ncb" {
             // NABRE, 공동번역: BibleStore에서 직접 로드
@@ -317,6 +320,7 @@ struct ReaderPane: View {
                 store.titles(edition: edition, book: book, chapter: chapter)
                     .map { ($0.verse, $0.text) }
             )
+            print("[titleMap] \(edition.id) \(book.id) Ch\(chapter): \(result.count) titles from BibleStore, verses: \(result.keys.sorted())")
             return result
         }
 
@@ -332,6 +336,7 @@ struct ReaderPane: View {
             }
         }
 
+        print("[titleMap] \(edition.id)->[\(titleEdition)] \(book.id) Ch\(chapter): \(titles.count) total titles")
         return titles
     }
 
