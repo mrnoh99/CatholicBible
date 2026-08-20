@@ -777,8 +777,9 @@ struct SearchView: View {
         VStack {
             if mode == .text && !textSearchHistory.isEmpty {
                 VStack(alignment: .leading, spacing: 12) {
-                    Text("최근 검색")
-                        .font(.system(size: 16, weight: .semibold))
+                    HStack {
+                        Text("최근 검색")
+                            .font(.system(size: 16, weight: .semibold))
                         Spacer()
                         Button("전체 지우기") {
                             clearTextSearchHistory()
@@ -822,8 +823,9 @@ struct SearchView: View {
 
             if mode == .reference && !referenceSearchHistory.isEmpty {
                 VStack(alignment: .leading, spacing: 12) {
-                    Text("최근 검색")
-                        .font(.system(size: 16, weight: .semibold))
+                    HStack {
+                        Text("최근 검색")
+                            .font(.system(size: 16, weight: .semibold))
                         Spacer()
                         Button("전체 지우기") {
                             clearReferenceSearchHistory()
