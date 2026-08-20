@@ -1132,19 +1132,11 @@ struct VerseRowView: View {
         .accessibilityLabel("\(verse.number)절 동작")
     }
 
-    @ViewBuilder
     private func handleLabel(bookmarked: Bool, hasNote: Bool) -> some View {
-        if settings.showVerseNumbers {
-            Text("\(verse.number)")
-                .font(settings.fontChoice.font(size: settings.fontSize * 0.62))
-                .foregroundStyle(bookmarked || hasNote ? Color.accentColor : settings.theme.secondary)
-                .frame(minWidth: settings.fontSize * 1.1, alignment: .trailing)
-        } else {
-            Image(systemName: bookmarked || hasNote ? "circle.fill" : "circle")
-                .font(.system(size: max(6, settings.fontSize * 0.28)))
-                .foregroundStyle((bookmarked || hasNote ? Color.accentColor : settings.theme.secondary).opacity(0.5))
-                .frame(width: settings.fontSize * 0.9)
-        }
+        Text("\(verse.number)")
+            .font(settings.fontChoice.font(size: settings.fontSize * 0.62))
+            .foregroundStyle(bookmarked || hasNote ? Color.accentColor : settings.theme.secondary)
+            .frame(minWidth: settings.fontSize * 1.1, alignment: .trailing)
     }
 
     @ViewBuilder
@@ -1410,7 +1402,6 @@ struct AppearanceControls: View {
                         ForEach(FontChoice.allCases) { choice in Text(choice.label).tag(choice) }
                     }
                     .pickerStyle(.segmented)
-                    Toggle("절 번호 표시", isOn: $settings.showVerseNumbers)
                 }
             }
             .navigationTitle("보기 설정")
