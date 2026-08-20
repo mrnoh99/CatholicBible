@@ -392,6 +392,8 @@ struct SearchView: View {
                         )
                     } else {
                         VStack(spacing: 0) {
+                            searchConditionInfoSection
+
                             HStack(spacing: 8) {
                                 Image(systemName: "magnifyingglass")
                                     .font(.system(size: 14))
@@ -2192,5 +2194,51 @@ struct SearchView: View {
                 referenceSearchHistoryData = json
             }
         }
+    }
+
+    private var searchConditionInfoSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 12) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("검색 조건")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                    Text(query)
+                        .font(.system(size: 13, weight: .semibold))
+                        .lineLimit(1)
+                }
+
+                Spacer()
+
+                HStack(spacing: 6) {
+                    Label(mode.label, systemImage: mode == .text ? "textformat" : "book.pages")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+
+                    Divider()
+                        .frame(height: 12)
+
+                    Label(scope.label, systemImage: "checklist")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                }
+            }
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 6) {
+                    ForEach(store.loadedEditions.filter { selectedEditionIDs.contains($0.id) }) { edition in
+                        Text(edition.shortName)
+                            .font(.caption2.weight(.semibold))
+                            .padding(.horizontal, 8).padding(.vertical, 4)
+                            .background(Capsule().fill(Color.blue.opacity(0.1)))
+                            .foregroundStyle(.blue)
+                    }
+                }
+                .padding(.horizontal, 2)
+            }
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .background(Color(.systemGray6))
     }
 }
