@@ -752,7 +752,7 @@ struct SearchView: View {
                         .foregroundStyle(selectedEditionIDs.contains(edition.id) ? .blue : .secondary)
                     VStack(alignment: .leading, spacing: 1) {
                         Text(edition.shortName)
-                            .font(.caption.weight(.semibold))
+                            .font(.body)
                             .foregroundStyle(.primary)
                             .lineLimit(1)
                     }
