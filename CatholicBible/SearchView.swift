@@ -2197,45 +2197,19 @@ struct SearchView: View {
     }
 
     private var searchConditionInfoSection: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack(spacing: 12) {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("검색 조건")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(.secondary)
-                    Text(query)
-                        .font(.system(size: 13, weight: .semibold))
-                        .lineLimit(1)
-                }
+        let editionNames = store.loadedEditions
+            .filter { selectedEditionIDs.contains($0.id) }
+            .map { $0.shortName }
+            .joined(separator: ", ")
 
-                Spacer()
+        let conditionText = "\"\(query)\" - \(mode.label) · \(scope.label) · \(editionNames)"
 
-                HStack(spacing: 6) {
-                    Label(mode.label, systemImage: mode == .text ? "textformat" : "book.pages")
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
-
-                    Divider()
-                        .frame(height: 12)
-
-                    Label(scope.label, systemImage: "checklist")
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
-                }
-            }
-
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 6) {
-                    ForEach(store.loadedEditions.filter { selectedEditionIDs.contains($0.id) }) { edition in
-                        Text(edition.shortName)
-                            .font(.caption2.weight(.semibold))
-                            .padding(.horizontal, 8).padding(.vertical, 4)
-                            .background(Capsule().fill(Color.blue.opacity(0.1)))
-                            .foregroundStyle(.blue)
-                    }
-                }
-                .padding(.horizontal, 2)
-            }
+        return VStack(alignment: .leading, spacing: 0) {
+            Text(conditionText)
+                .font(.system(size: 13))
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+                .truncationMode(.tail)
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
