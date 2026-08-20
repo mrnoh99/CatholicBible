@@ -294,7 +294,7 @@ struct AnnotatedReader: View {
                     VStack(alignment: .leading, spacing: settings.lineSpacing * 0.9) {
                         if let title = titleMap[verse.number] {
                             SectionTitleView(text: title, bookID: book.id, chapter: chapter,
-                                             linkable: editionID == "knbnotes")
+                                             linkable: true)
                         }
                         VerseRowView(edition: edition, book: book, chapter: chapter,
                                      verse: verse,
