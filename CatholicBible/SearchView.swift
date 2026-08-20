@@ -2005,6 +2005,8 @@ struct SearchView: View {
             guard !Task.isCancelled else { return }
             previousResults = hits
             results = hits
+            totalSearchCount = hits.count
+            currentOffset = hits.count
             addToTextSearchHistory(searchText)
             hasSearched = true
             isSearching = false
@@ -2063,6 +2065,8 @@ struct SearchView: View {
 
             await MainActor.run {
                 results = hits
+                totalSearchCount = hits.count
+                currentOffset = hits.count
                 hasSearched = true
                 isSearching = false
             }
