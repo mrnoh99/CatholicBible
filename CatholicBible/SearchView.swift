@@ -807,7 +807,9 @@ struct SearchView: View {
                                     Button {
                                         query = item
                                         runSearch()
-                                        showResults = true
+                                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                                            showResults = true
+                                        }
                                     } label: {
                                         Text(item)
                                             .lineLimit(1)
@@ -865,7 +867,9 @@ struct SearchView: View {
                                                         selectedChapter = chapter
                                                         selectedVerse = verse
                                                         runSearch()
-                                                        showResults = true
+                                                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                                                            showResults = true
+                                                        }
                                                     }
                                                 }
                                             }
