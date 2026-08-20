@@ -168,27 +168,21 @@ final class BibleStore {
                 // BibleTextFile의 headings 로드 (NABRE에서 사용)
                 if editionID == "nabre" && file.headings != nil {
                     let headingsData = file.headings!
-                    var nabreHeadingCount = 0
                     for (bookID, chapters) in headingsData {
                         if titles[bookID] == nil {
                             titles[bookID] = [:]
                         }
                         for (chapterKey, verseTitles) in chapters {
                             if let chapterNumber = Int(chapterKey) {
-                                var titleMap: [Int: String] = [:]
+                                var chapterTitles = titles[bookID]![chapterNumber] ?? [:]
                                 for (verseKey, titleText) in verseTitles {
                                     if let verseNumber = Int(verseKey) {
-                                        titleMap[verseNumber] = titleText
-                                        nabreHeadingCount += 1
+                                        // headings 데이터로 제목 추가/업데이트
+                                        chapterTitles[verseNumber] = titleText
                                     }
                                 }
-                                if !titleMap.isEmpty {
-                                    if titles[bookID]![chapterNumber] == nil {
-                                        titles[bookID]![chapterNumber] = titleMap
-                                    } else {
-                                        // 기존 titles과 병합
-                                        titles[bookID]![chapterNumber]?.merge(titleMap) { (_, new) in new }
-                                    }
+                                if !chapterTitles.isEmpty {
+                                    titles[bookID]![chapterNumber] = chapterTitles
                                 }
                             }
                         }
