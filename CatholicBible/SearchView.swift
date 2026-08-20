@@ -807,8 +807,15 @@ struct SearchView: View {
                                     Button {
                                         query = item
                                         runSearch()
-                                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                                            showResults = true
+                                        showResults = false
+                                        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+                                            if hasSearched && !isSearching {
+                                                showResults = true
+                                            } else {
+                                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                                                    showResults = true
+                                                }
+                                            }
                                         }
                                     } label: {
                                         Text(item)
@@ -867,8 +874,15 @@ struct SearchView: View {
                                                         selectedChapter = chapter
                                                         selectedVerse = verse
                                                         runSearch()
-                                                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                                                            showResults = true
+                                                        showResults = false
+                                                        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+                                                            if hasSearched && !isSearching {
+                                                                showResults = true
+                                                            } else {
+                                                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                                                                    showResults = true
+                                                                }
+                                                            }
                                                         }
                                                     }
                                                 }
