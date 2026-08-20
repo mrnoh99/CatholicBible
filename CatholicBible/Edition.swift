@@ -90,7 +90,7 @@ enum Editions {
                 summary: "미국 가톨릭 공용 영어 성경(개정판) + 주석·소제목",
                 scope: .full, language: "en"),
         Edition(id: "pscms", urlPath: "Pscms",
-                name: "최민순 역 시편", shortName: "최민순역",
+                name: "최민순 역 시편", shortName: "최민순시편",
                 copyright: "「시편」 최민순 옮김 ⓒ 한국천주교주교회의 게재본",
                 summary: "최민순 신부의 운문 시편 번역",
                 scope: .psalter, language: "ko"),
