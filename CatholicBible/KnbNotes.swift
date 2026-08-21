@@ -26,6 +26,128 @@ struct TitleItem: Codable, Hashable, Sendable {
     let text: String
 }
 
+// MARK: - 성경 참조 정규화
+
+enum ScriptureRefNormalizer {
+    /// 주석 텍스트의 성경 참조들을 정규화한다.
+    /// 문맥상 생략된 책 이름을 추론하여 모든 참조를 완전하게 만든다.
+    /// 예: "창세 1,1; 2,4-23; 욥 1,1; 2,1" → "창세 1,1; 창세 2,4-23; 욥 1,1; 욥 2,1"
+    static func normalize(_ text: String) -> String {
+        // 성경 참조들이 세미콜론(;)이나 쉼표(,)로 구분되어 있다고 가정
+        let parts = text.split(separator: ";", omittingEmptySubsequences: false).map { String($0) }
+        var result: [String] = []
+        var currentBook: String? = nil
+
+        for part in parts {
+            let trimmed = part.trimmingCharacters(in: .whitespaces)
+            if trimmed.isEmpty {
+                result.append(part)
+                continue
+            }
+
+            // 이 부분에서 책 이름이 명시적으로 있는지 확인
+            let (book, ref) = extractBookAndRef(from: trimmed)
+
+            if let book = book {
+                currentBook = book
+                result.append(part.replacingOccurrences(of: trimmed, with: "\(book) \(ref)"))
+            } else if let currentBook = currentBook {
+                // 책 이름이 없으면 현재 컨텍스트의 책 사용
+                result.append(part.replacingOccurrences(of: trimmed, with: "\(currentBook) \(ref)"))
+            } else {
+                result.append(part)
+            }
+        }
+
+        return result.joined(separator: ";")
+    }
+
+    /// 주어진 참조 부분에서 책 이름과 참조 부분을 분리한다.
+    /// 반환: (책이름, 참조) 또는 (nil, 원본문자)
+    private static func extractBookAndRef(from ref: String) -> (String?, String) {
+        let bookNames = Bible.books.map { $0.name }
+
+        for book in bookNames {
+            if ref.hasPrefix(book) {
+                let afterBook = String(ref.dropFirst(book.count)).trimmingCharacters(in: .whitespaces)
+                return (book, afterBook)
+            }
+        }
+
+        // 책 이름이 없으면 참조는 숫자로 시작하거나 장만 있어야 함
+        // (예: "2,4-23", "38─39", "74,14-17", "104")
+        return (nil, ref)
+    }
+
+    /// 성경 참조 텍스트를 AttributedString으로 변환하여 cross-link를 추가한다.
+    static func attributed(_ text: String) -> AttributedString {
+        let normalized = normalize(text)
+        var result = AttributedString()
+
+        // 참조별로 파싱
+        let parts = normalized.split(separator: ";", omittingEmptySubsequences: false)
+
+        for part in parts {
+            let trimmed = String(part).trimmingCharacters(in: .whitespaces)
+
+            if trimmed.isEmpty {
+                result += AttributedString(String(part))
+                continue
+            }
+
+            if let (book, ref) = tryParseReference(trimmed) {
+                // 책 이름
+                var bookAttr = AttributedString(book)
+                result += bookAttr
+                result += AttributedString(" ")
+
+                // 참조
+                var refAttr = AttributedString(ref)
+                refAttr.link = createLink(for: book, reference: ref)
+                refAttr.foregroundColor = .accentColor
+                result += refAttr
+
+                // 세미콜론
+                if let last = String(part).last, last == ";" {
+                    result += AttributedString("; ")
+                }
+            } else {
+                result += AttributedString(String(part))
+            }
+        }
+
+        return result
+    }
+
+    /// 참조를 파싱하여 (책이름, 참조) 반환
+    private static func tryParseReference(_ ref: String) -> (String, String)? {
+        let bookNames = Bible.books.map { $0.name }
+
+        for book in bookNames {
+            if ref.hasPrefix(book) {
+                let afterBook = String(ref.dropFirst(book.count)).trimmingCharacters(in: .whitespaces)
+                if !afterBook.isEmpty {
+                    return (book, afterBook)
+                }
+            }
+        }
+        return nil
+    }
+
+    /// 성경 참조를 위한 deep link 생성
+    private static func createLink(for bookName: String, reference: String) -> URL? {
+        guard let book = Bible.book(bookName) else { return nil }
+
+        // 참조 파싱: "1,1-10" → 장 1, 절 1-10
+        let parts = reference.split(separator: ",")
+        guard let chapter = Int(parts.first ?? "") else { return nil }
+
+        let verse = parts.count > 1 ? String(parts[1]) : "1"
+        let url = "catholicbible://verse?b=\(book.id)&c=\(chapter)&v=\(verse)"
+        return URL(string: url)
+    }
+}
+
 // MARK: - 각주 마커 링크 마크업
 
 enum AnnotationMarkup {
