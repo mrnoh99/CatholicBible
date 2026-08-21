@@ -55,6 +55,11 @@ enum ScriptureRefNormalizer {
         // 3.5단계: "장 범위 참조" 패턴 정규화 (예: "(28─29장 참조)", "(13─14 참조)")
         result = normalizeChapterRangeReferences(result, currentBook: currentBook)
 
+        // 3.75단계: "입문 참조" 패턴 정규화 (예: "('입문' 6 참조)", "('입문' 4의 2)")
+        if let currentBook = currentBook {
+            result = normalizeIntroductionReferences(result, currentBook: currentBook)
+        }
+
         // 4단계: 세미콜론 구분 참조 정규화 (기존 로직)
         let parts = result.split(separator: ";", omittingEmptySubsequences: false).map { String($0) }
         var normalized: [String] = []
@@ -123,6 +128,31 @@ enum ScriptureRefNormalizer {
                     }
                 }
             }
+        }
+
+        return result
+    }
+
+    /// 입문 참조를 정규화한다.
+    /// 예: "('입문' 6 참조)" → "(현재책 입문)" (현재 책의 입문 섹션으로 링크)
+    /// 예: "('입문' 4의 2)" → "(현재책 입문)" (입문 섹션 번호는 제거, 입문으로만 통합)
+    private static func normalizeIntroductionReferences(_ text: String, currentBook: String) -> String {
+        var result = text
+
+        // 패턴: "('입문' 숫자[의 숫자] [참조]?)"
+        // 예: ('입문' 6 참조), ('입문' 4의 2), ('입문' 5)
+        let pattern = "\\('입문'\\s+\\d+(?:의\\s*\\d+)?(?:\\s*참조)?\\)"
+        guard let regex = try? NSRegularExpression(pattern: pattern) else {
+            return result
+        }
+
+        let ns = text as NSString
+        let matches = regex.matches(in: text, range: NSRange(location: 0, length: ns.length))
+
+        for match in matches.reversed() {
+            // 모든 입문 참조를 현재 책의 입문으로 정규화
+            let replacement = "(\(currentBook) 입문)"
+            result = (result as NSString).replacingCharacters(in: match.range, with: replacement)
         }
 
         return result
