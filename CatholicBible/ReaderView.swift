@@ -683,7 +683,7 @@ struct SpreadReader: View {
     private var pages: [[Verse]] { paginate(verses, size: contentSize) }
     private var spreadCount: Int { max(1, Int(ceil(Double(pages.count) / 2.0))) }
 
-    private var showsTitles: Bool { edition.id == "knb" || edition.id == "nabre" || edition.isAnnotated }
+    private var showsTitles: Bool { true }
     private var titleMap: [Int: String] {
         guard showsTitles, chapter > 0 else { return [:] }
 
