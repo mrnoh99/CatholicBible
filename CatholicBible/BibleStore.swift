@@ -599,6 +599,7 @@ final class BibleStore {
 
             var count = 0
             let order = edition.scope.books.map(\.id)
+            print("  - 검색 범위: \(order.count)개 책, 주석 데이터 책: \(text.annotations.keys.count)개")
 
             for bookID in order {
                 guard let chapters = text.annotations[bookID] else { continue }
@@ -619,6 +620,7 @@ final class BibleStore {
                     }
                 }
             }
+            print("📊 검색 결과: '\(searchQuery)' in \(edition.id) = \(count)개")
             return count
         }.value
     }
