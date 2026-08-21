@@ -37,10 +37,13 @@ enum ScriptureRefNormalizer {
     ///   - text: 정규화할 주석 텍스트
     ///   - currentBookID: 현재 주석이 속한 책 ID (예: "1chr", "1mo")
     static func normalize(_ text: String, currentBookID: String = "") -> String {
+        // 먼저 "책 장의 절과 절" 형태를 정규화
+        let normalized1 = normalizeChapterRanges(text)
+
         let currentBook = currentBookID.isEmpty ? nil : Bible.book(currentBookID)?.name
 
         // 성경 참조들이 세미콜론(;)이나 쉼표(,)로 구분되어 있다고 가정
-        let parts = text.split(separator: ";", omittingEmptySubsequences: false).map { String($0) }
+        let parts = normalized1.split(separator: ";", omittingEmptySubsequences: false).map { String($0) }
         var result: [String] = []
         var contextBook: String? = currentBook
 
@@ -84,6 +87,51 @@ enum ScriptureRefNormalizer {
         // 책 이름이 없으면 참조는 숫자로 시작하거나 장만 있어야 함
         // (예: "2,4-23", "38─39", "74,14-17", "104")
         return (nil, ref)
+    }
+
+    /// "창세 10장의 9-12절과 18ㄴ-21절" → "창세 10,9-12; 창세 10,18ㄴ-21"
+    /// 같은 장 내의 여러 절 범위를 정규화한다.
+    static func normalizeChapterRanges(_ text: String) -> String {
+        let bookNames = Bible.books.map { $0.name }
+        var result = text
+
+        for book in bookNames {
+            // "책 장장의 절-절과 절-절" 패턴 찾기
+            let pattern = "\(book)\\s+(\\d+)장의\\s+([\\d,ㄱ-ㄹ\\-─과 및,;]+)"
+            guard let regex = try? NSRegularExpression(pattern: pattern) else { continue }
+
+            let ns = text as NSString
+            let matches = regex.matches(in: text, range: NSRange(location: 0, length: ns.length))
+
+            for match in matches.reversed() {
+                if match.numberOfRanges >= 3 {
+                    let chapterStr = ns.substring(with: match.range(at: 1))
+                    let verseStr = ns.substring(with: match.range(at: 2))
+
+                    // "9-12절과 18ㄴ-21절" → ["9-12절", "18ㄴ-21절"]
+                    let verseParts = verseStr.split(separator: "과", omittingEmptySubsequences: true)
+                        .map { $0.trimmingCharacters(in: .whitespaces) }
+
+                    var normalized: [String] = []
+                    for part in verseParts {
+                        let cleaned = part.replacingOccurrences(of: "절", with: "")
+                            .trimmingCharacters(in: .whitespaces)
+                        if !cleaned.isEmpty {
+                            normalized.append("\(book) \(chapterStr),\(cleaned)")
+                        }
+                    }
+
+                    let replacement = normalized.joined(separator: "; ")
+                    let originalRange = match.range
+                    result = (result as NSString).replacingCharacters(
+                        in: originalRange,
+                        with: replacement
+                    )
+                }
+            }
+        }
+
+        return result
     }
 
     /// 성경 참조 텍스트를 AttributedString으로 변환하여 cross-link를 추가한다.
