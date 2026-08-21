@@ -376,10 +376,18 @@ enum ScriptureRefNormalizer {
     }
 
     /// 성경 참조를 위한 deep link 생성
+    /// 입문 참조: "(책 입문)" → catholicbible://introduction?b=bookID
+    /// 성경 참조: "(책 1,1)" → catholicbible://verse?b=bookID&c=1&v=1
     private static func createLink(for bookName: String, reference: String) -> URL? {
         guard let book = Bible.book(bookName) else { return nil }
 
-        // 참조 파싱: "1,1-10" → 장 1, 절 1-10
+        // 입문 참조 확인
+        if reference.trimmingCharacters(in: .whitespaces) == "입문" {
+            let url = "catholicbible://introduction?b=\(book.id)"
+            return URL(string: url)
+        }
+
+        // 성경 참조 파싱: "1,1-10" → 장 1, 절 1-10
         let parts = reference.split(separator: ",")
         guard let chapter = Int(parts.first ?? "") else { return nil }
 
