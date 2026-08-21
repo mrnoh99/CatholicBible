@@ -1538,6 +1538,8 @@ struct SearchView: View {
                 let editionsToSearch = store.loadedEditions.filter { edition in
                     selectedAnnotationEditionIDs.contains(edition.id)
                 }
+                print("[SearchView] 선택된 판본: \(selectedAnnotationEditionIDs)")
+                print("[SearchView] 검색 대상: \(editionsToSearch.map { $0.id })")
 
                 currentOffset = 0
                 currentSearchQuery = text
