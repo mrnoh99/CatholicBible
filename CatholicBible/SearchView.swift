@@ -681,8 +681,9 @@ struct SearchView: View {
                 Button(action: { addReferenceToList() }) {
                     Image(systemName: "plus.circle.fill")
                         .font(.system(size: 20))
-                        .foregroundStyle(.blue)
+                        .foregroundStyle(selectedBookID.isEmpty || selectedChapter == 0 ? .gray : .blue)
                 }
+                .disabled(selectedBookID.isEmpty || selectedChapter == 0)
             }
 
             if !referenceList.isEmpty {
@@ -2202,7 +2203,7 @@ struct SearchView: View {
     }
 
     private func addReferenceToList() {
-        guard !selectedBookID.isEmpty else { return }
+        guard !selectedBookID.isEmpty, selectedChapter > 0 else { return }
 
         // 중복 확인 - 같은 책/장/절이 이미 리스트에 있으면 추가하지 않음
         if referenceList.contains(where: { $0.bookID == selectedBookID && $0.chapter == selectedChapter && $0.verse == selectedVerse }) {
