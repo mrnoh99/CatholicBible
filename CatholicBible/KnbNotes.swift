@@ -132,27 +132,17 @@ enum ScriptureRefNormalizer {
         // 패턴 1: "(책이름 숫자 참조)" 또는 "(책이름 숫자장 참조)"
         let bookNames = Bible.books.map { $0.name }
         for book in bookNames {
-            // 간단한 문자열 기반 치환으로 더 신뢰성 있게 처리
-            let escapeBook = NSRegularExpression.escapedPattern(for: book)
-            let pattern = "\\(" + escapeBook + "\\s+(\\d+)(?:장)?\\s*참조\\)"
+            let pattern = "\\(\(NSRegularExpression.escapedPattern(for: book))\\s+(\\d+)(?:장)?\\s*참조\\)"
+            guard let regex = try? NSRegularExpression(pattern: pattern) else { continue }
 
-            if let regex = try? NSRegularExpression(pattern: pattern) {
-                let ns = result as NSString
-                let matches = regex.matches(in: result, range: NSRange(location: 0, length: ns.length))
+            let ns = result as NSString
+            let matches = regex.matches(in: result, range: NSRange(location: 0, length: ns.length))
 
-                // 역순으로 처리해서 범위 변경의 영향을 피함
-                for match in matches.reversed() {
-                    if match.numberOfRanges >= 2 {
-                        if let chapterRange = Range(match.range(at: 1), in: result) {
-                            let chapter = String(result[chapterRange])
-                            let verse = "1"
-                            let replacement = "(" + book + " " + chapter + "," + verse + " 참조)"
-
-                            if let matchRange = Range(match.range, in: result) {
-                                result.replaceSubrange(matchRange, with: replacement)
-                            }
-                        }
-                    }
+            for match in matches.reversed() {
+                if match.numberOfRanges >= 2 {
+                    let chapterStr = ns.substring(with: match.range(at: 1))
+                    let replacement = "(\(book) \(chapterStr),1 참조)"
+                    result = (result as NSString).replacingCharacters(in: match.range, with: replacement)
                 }
             }
         }
@@ -160,22 +150,18 @@ enum ScriptureRefNormalizer {
         // 패턴 2: "(숫자장 참조)" - 현재 책 컨텍스트 사용
         if let currentBook = currentBook {
             let pattern = "\\((\\d+)장\\s*참조\\)"
-            if let regex = try? NSRegularExpression(pattern: pattern) {
-                let ns = result as NSString
-                let matches = regex.matches(in: result, range: NSRange(location: 0, length: ns.length))
+            guard let regex = try? NSRegularExpression(pattern: pattern) else {
+                return result
+            }
 
-                for match in matches.reversed() {
-                    if match.numberOfRanges >= 2 {
-                        if let chapterRange = Range(match.range(at: 1), in: result) {
-                            let chapter = String(result[chapterRange])
-                            let verse = "1"
-                            let replacement = "(" + currentBook + " " + chapter + "," + verse + " 참조)"
+            let ns = result as NSString
+            let matches = regex.matches(in: result, range: NSRange(location: 0, length: ns.length))
 
-                            if let matchRange = Range(match.range, in: result) {
-                                result.replaceSubrange(matchRange, with: replacement)
-                            }
-                        }
-                    }
+            for match in matches.reversed() {
+                if match.numberOfRanges >= 2 {
+                    let chapterStr = ns.substring(with: match.range(at: 1))
+                    let replacement = "(\(currentBook) \(chapterStr),1 참조)"
+                    result = (result as NSString).replacingCharacters(in: match.range, with: replacement)
                 }
             }
         }
