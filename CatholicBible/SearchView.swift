@@ -1574,16 +1574,19 @@ struct SearchView: View {
                     }
 
                     guard !Task.isCancelled else { return }
+                    print("[SearchView] hits 개수: \(hits.count)")
                     var filteredHits = hits
                     if isExactMatch {
                         filteredHits = hits.filter { findExactMatches($0.text, term: text) }
                     }
+                    print("[SearchView] filteredHits 개수: \(filteredHits.count)")
                     previousResults = filteredHits
                     results = filteredHits
                     currentOffset = filteredHits.count
                     addToTextSearchHistory(text)
                     hasSearched = true
                     isSearching = false
+                    print("[SearchView] 최종 표시 결과: \(results.count)개")
                 }
                 return
             }
