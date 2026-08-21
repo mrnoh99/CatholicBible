@@ -1024,13 +1024,13 @@ struct SearchView: View {
                         // verse = 0 means all verses in chapter
                         for hit in verses {
                             hits.append(SearchHit(editionID: edition.id, bookID: bookID, chapter: chapter, verse: hit.number,
-                                                 text: hit.text))
+                                                 text: hit.text, annotationNumber: nil))
                         }
                     } else {
                         // specific verse
                         if let hit = verses.first(where: { $0.number == verse }) {
                             hits.append(SearchHit(editionID: edition.id, bookID: bookID, chapter: chapter, verse: verse,
-                                                 text: hit.text))
+                                                 text: hit.text, annotationNumber: nil))
                         }
                     }
                 }
@@ -1778,7 +1778,7 @@ struct SearchView: View {
                             }
                         } else if let hit = verses.first(where: { $0.number == verse }) {
                             hits.append(SearchHit(editionID: edition.id, bookID: bookID, chapter: chapter, verse: verse,
-                                                 text: hit.text))
+                                                 text: hit.text, annotationNumber: nil))
                         }
                     }
 
@@ -2136,13 +2136,13 @@ struct SearchView: View {
                         // verse = 0 means all verses in chapter
                         for hit in verses {
                             hits.append(SearchHit(editionID: edition.id, bookID: bookID, chapter: chapter, verse: hit.number,
-                                                 text: hit.text))
+                                                 text: hit.text, annotationNumber: nil))
                         }
                     } else {
                         // specific verse
                         if let hit = verses.first(where: { $0.number == verse }) {
                             hits.append(SearchHit(editionID: edition.id, bookID: bookID, chapter: chapter, verse: verse,
-                                                 text: hit.text))
+                                                 text: hit.text, annotationNumber: nil))
                         }
                     }
                 }
