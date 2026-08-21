@@ -48,10 +48,10 @@ struct ReaderView: View {
     private var canDual: Bool { hSize == .regular }
     /// 좁은 화면(iPhone)에서는 항상 한 페이지
     private var layout: ReaderLayout { canDual ? readingState.readerLayout : .single }
-    /// 주석 판본(주석성경·NABRE) 본문|주석 화면을 쓸지 (비교 모드가 아니면 사용)
+    /// 주석 판본(주석성경·NABRE) 본문|주석 화면을 쓸지 (.single 레이아웃일 때만)
     private var showAnnotated: Bool {
         (Editions.edition(readingState.selectedEditionID)?.isAnnotated ?? false)
-            && !(canDual && readingState.readerLayout == .compare)
+            && readingState.readerLayout == .single
     }
 
     var body: some View {
@@ -209,23 +209,25 @@ struct ReaderView: View {
 
         ToolbarItem(placement: .navigationBarTrailing) {
             Menu {
-                if canDual && (Editions.edition(readingState.selectedEditionID)?.isAnnotated ?? false) {
-                    // 주석 판본(주석성경·NABRE): 본문·주석 vs 판본 비교
-                    Section("보기") {
-                        Button {
-                            readingState.readerLayout = .single
-                        } label: { Label("본문·주석", systemImage: "book.pages") }
-                        Button {
-                            readingState.readerLayout = .compare
-                        } label: { Label("판본 비교", systemImage: "rectangle.split.2x1") }
-                    }
-                } else if canDual {
+                let isAnnotated = Editions.edition(readingState.selectedEditionID)?.isAnnotated ?? false
+
+                if canDual {
                     Section("페이지") {
                         Picker("페이지", selection: Binding(
                             get: { readingState.readerLayout },
                             set: { readingState.readerLayout = $0 })) {
                             ForEach(ReaderLayout.allCases) { l in
-                                Label(l.label, systemImage: l.systemImage).tag(l)
+                                if isAnnotated {
+                                    // 주석 판본: 각 레이아웃의 레이블을 주석 판본에 맞게 표시
+                                    let label = switch l {
+                                    case .single: "본문·주석"
+                                    case .spread: "두 페이지 (펼침)"
+                                    case .compare: "판본 비교"
+                                    }
+                                    Label(label, systemImage: l.systemImage).tag(l)
+                                } else {
+                                    Label(l.label, systemImage: l.systemImage).tag(l)
+                                }
                             }
                         }
                     }
