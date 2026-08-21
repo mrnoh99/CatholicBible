@@ -91,6 +91,8 @@ final class ReaderNavigation {
     var searchQuery: String = ""
     /// 주석 검색 여부
     var isAnnotationSearch: Bool = false
+    /// 검색에서 선택한 주석 번호 (스크롤용)
+    var selectedAnnotationNumber: String?
 
     /// 네비게이션 히스토리
     private var history: [NavigationHistoryItem] = []
