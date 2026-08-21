@@ -98,7 +98,13 @@ struct SearchView: View {
     @State private var resultFilterQuery = ""
 
     // Lazy Loading 관련
-    @State private var totalSearchCount = 0
+    @State private var totalSearchCount = 0 {
+        didSet {
+            if oldValue != totalSearchCount {
+                print("[DEBUG] totalSearchCount: \(oldValue) → \(totalSearchCount)")
+            }
+        }
+    }
     @State private var currentOffset = 0
     @State private var isLoadingMore = false
     @State private var searchPageSize = 50
