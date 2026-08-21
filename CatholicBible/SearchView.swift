@@ -158,12 +158,10 @@ struct SearchView: View {
             }
             .onChange(of: isCommentarySearchEnabled) { _, newValue in
                 scope = newValue ? .commentary : .current
-                // 주석 스코프 선택 시 자동으로 주석 판본 선택
+                // 주석 스코프 선택 시 첫 주석 판본만 자동으로 선택
                 if newValue && selectedAnnotationEditionIDs.isEmpty {
-                    for edition in store.loadedEditions {
-                        if hasAnnotationSupport(edition) {
-                            selectedAnnotationEditionIDs.insert(edition.id)
-                        }
+                    if let firstEdition = store.loadedEditions.first(where: { hasAnnotationSupport($0) }) {
+                        selectedAnnotationEditionIDs.insert(firstEdition.id)
                     }
                 }
                 runSearch()
