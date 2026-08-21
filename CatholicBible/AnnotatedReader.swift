@@ -314,18 +314,24 @@ struct AnnotatedReader: View {
     }
 
     private func getTitleMap() -> [Int: String] {
+        let chapter = max(self.chapter, 1)
         var titleMap: [Int: String] = [:]
 
         // 현재 판본에서 소제목 찾기
-        let storeTitle = store.titles(edition: edition, book: book, chapter: max(chapter, 1))
+        let storeTitle = store.titles(edition: edition, book: book, chapter: chapter)
         for title in storeTitle {
             titleMap[title.verse] = title.text
         }
 
-        // 현재 판본에 소제목이 없으면 주석성경에서 가져오기
-        if titleMap.isEmpty {
-            titleMap = knb.titlesByVerse(edition: "knbnotes", bookID: book.id, chapter: max(chapter, 1))
-                .mapValues { AnnotationMarkup.stripMarkers($0) }
+        // 주석성경에서 소제목 가져오기 (현재 판본이 없으면 사용, 있으면 보완)
+        let knbTitles = knb.titlesByVerse(edition: "knbnotes", bookID: book.id, chapter: chapter)
+            .mapValues { AnnotationMarkup.stripMarkers($0) }
+
+        // knbnotes의 소제목을 현재 판본의 소제목에 추가 (없는 절만)
+        for (verse, text) in knbTitles {
+            if titleMap[verse] == nil {
+                titleMap[verse] = text
+            }
         }
 
         return titleMap
