@@ -314,8 +314,18 @@ struct AnnotatedReader: View {
     }
 
     private func getTitleMap() -> [Int: String] {
-        knb.titlesByVerse(edition: "knbnotes", bookID: book.id, chapter: max(chapter, 1))
-            .mapValues { AnnotationMarkup.stripMarkers($0) }
+        let ch = max(chapter, 1)
+
+        // 주석성경(knbnotes)에서 소제목을 가져온다
+        var titleMap = knb.titlesByVerse(edition: "knbnotes", bookID: book.id, chapter: ch)
+
+        // knbnotes가 없으면 현재 판본 ID로 시도
+        if titleMap.isEmpty {
+            titleMap = knb.titlesByVerse(edition: editionID, bookID: book.id, chapter: ch)
+        }
+
+        // 마크업 제거
+        return titleMap.mapValues { AnnotationMarkup.stripMarkers($0) }
     }
 
     private var chapterHeader: some View {
