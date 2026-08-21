@@ -975,6 +975,8 @@ struct SelectableVerseText: UIViewRepresentable {
     var chapter: Int = 0
     /// 마커를 눌렀을 때 열 URL 처리(주석 팝업). SwiftUI의 openURL 액션을 넘긴다.
     var onOpenURL: ((URL) -> Void)? = nil
+    /// 검색 쿼리 - 해당 단어를 하이라이트
+    var searchQuery: String = ""
 
     func makeCoordinator() -> Coordinator { Coordinator(onOpenURL: onOpenURL) }
 
@@ -1019,6 +1021,25 @@ struct SelectableVerseText: UIViewRepresentable {
             }
             tv.linkTextAttributes = [.foregroundColor: markerColor]
         }
+
+        // 검색 쿼리에 해당하는 단어 하이라이트
+        if !searchQuery.isEmpty {
+            let ns = text as NSString
+            let searchLower = searchQuery.lowercased()
+            let textLower = text.lowercased()
+            var searchRange = NSRange(location: 0, length: 0)
+            while searchRange.location + searchRange.length < ns.length {
+                searchRange = (textLower as NSString).range(
+                    of: searchLower,
+                    options: [.caseInsensitive],
+                    range: NSRange(location: searchRange.location + searchRange.length,
+                                 length: ns.length - (searchRange.location + searchRange.length))
+                )
+                if searchRange.location == NSNotFound { break }
+                attr.addAttribute(.backgroundColor, value: UIColor.yellow.withAlphaComponent(0.3), range: searchRange)
+            }
+        }
+
         tv.attributedText = attr
     }
 
@@ -1082,7 +1103,8 @@ struct VerseRowView: View {
                             markerColor: isAnnotationEdition ? UIColor(Color.accentColor) : nil,
                             bookID: book.id,
                             chapter: chapter,
-                            onOpenURL: { openURL($0) })
+                            onOpenURL: { openURL($0) },
+                            searchQuery: navigation.searchQuery)
     }
 
     private var uiBodyFont: UIFont {
