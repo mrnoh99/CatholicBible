@@ -265,7 +265,7 @@ struct ContentView: View {
             injectShared(NotesListView().environment(navigation))
         }
         .sheet(isPresented: $showSettings) {
-            injectShared(SettingsView())
+            injectShared(AppSettingsView())
         }
         .fullScreenCover(isPresented: $showMass) {
             injectShared(DailyMassView().environment(navigation))

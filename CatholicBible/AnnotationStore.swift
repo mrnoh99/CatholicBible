@@ -47,6 +47,11 @@ final class AnnotationStore {
         saveBookmarks()
     }
 
+    func addBookmark(_ ref: VerseRef) {
+        bookmarks.insert(ref)
+        saveBookmarks()
+    }
+
     /// 성경 목차 순서로 정렬된 책갈피 목록
     var sortedBookmarks: [VerseRef] {
         bookmarks.sorted { $0.sortKey < $1.sortKey }

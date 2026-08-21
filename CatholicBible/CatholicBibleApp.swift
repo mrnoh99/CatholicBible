@@ -29,7 +29,15 @@ struct CatholicBibleApp: App {
                     await store.load()
                     await knbNotes.load()
                     await liturgy.load()
+                    checkAutoBackup()
                 }
+        }
+    }
+
+    private func checkAutoBackup() {
+        let backupManager = BackupManager.shared
+        if backupManager.shouldBackup() {
+            _ = backupManager.backup(annotationStore: annotations)
         }
     }
 }
