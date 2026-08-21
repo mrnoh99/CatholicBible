@@ -65,6 +65,11 @@ enum ScriptureRefNormalizer {
             result = normalizeIntroductionReferences(result, currentBook: currentBook)
         }
 
+        // 3.8단계: "쉼표-점 형식" 절 참조 정규화 (예: "(1,1.19; 4,5)" → "(현재책 1,1; 현재책 1,19; 현재책 4,5)")
+        if let currentBook = currentBook {
+            result = normalizeCommaDotFormatReferences(result, currentBook: currentBook)
+        }
+
         // 4단계: 세미콜론 구분 참조 정규화 (기존 로직)
         let parts = result.split(separator: ";", omittingEmptySubsequences: false).map { String($0) }
         var normalized: [String] = []
@@ -204,6 +209,69 @@ enum ScriptureRefNormalizer {
         for match in matches.reversed() {
             // 모든 입문 참조를 현재 책의 입문으로 정규화
             let replacement = "(\(currentBook) 입문)"
+            result = (result as NSString).replacingCharacters(in: match.range, with: replacement)
+        }
+
+        return result
+    }
+
+    /// 쉼표-점 형식 절 참조를 정규화한다.
+    /// 예: "(1,1.19; 4,5)" → "(현재책 1,1; 현재책 1,19; 현재책 4,5)"
+    /// 같은 장 내의 여러 절을 쉼표-점으로 표현한 형식을 확장한다.
+    private static func normalizeCommaDotFormatReferences(_ text: String, currentBook: String) -> String {
+        var result = text
+
+        // 패턴: "(장,절.절... 또는 장,절; 장,절.절...)"
+        // 예: (1,1.19), (1,1.19; 4,5), (3,38; 6,10.28)
+        // 점 형식이 있으면서 절 마커가 없는 쉼표-점 혼합 형식
+        let pattern = "\\(([^)]*\\d+,\\d+(?:\\.\\d+)+[^)]*)\\)"
+        guard let regex = try? NSRegularExpression(pattern: pattern) else {
+            return result
+        }
+
+        let ns = text as NSString
+        let matches = regex.matches(in: text, range: NSRange(location: 0, length: ns.length))
+
+        for match in matches.reversed() {
+            let fullMatch = ns.substring(with: match.range(at: 0))
+            let innerContent = (fullMatch as NSString).substring(with: NSRange(location: 1, length: fullMatch.count - 2))
+
+            // 세미콜론으로 분리된 참조들을 처리
+            let refs = innerContent.split(separator: ";").map { String($0).trimmingCharacters(in: .whitespaces) }
+            var expandedRefs: [String] = []
+
+            for ref in refs {
+                // 각 참조가 "N,V.V" 형식인지 확인
+                let parts = ref.split(separator: ",")
+                if parts.count == 2 {
+                    let chapter = String(parts[0]).trimmingCharacters(in: .whitespaces)
+                    let versePart = String(parts[1])
+
+                    // 점으로 분리된 절들
+                    let verses = versePart.split(separator: ".").map { String($0).trimmingCharacters(in: .whitespaces) }
+
+                    if verses.count > 1 {
+                        // 점 형식이 있음 - 각 절을 확장
+                        for verse in verses {
+                            expandedRefs.append("\(currentBook) \(chapter),\(verse)")
+                        }
+                    } else {
+                        // 점 형식이 없으면 책 이름이 있는지 확인 후 추가
+                        if ref.contains(currentBook) {
+                            expandedRefs.append(ref)
+                        } else {
+                            expandedRefs.append("\(currentBook) \(ref)")
+                        }
+                    }
+                } else if !ref.contains(currentBook) {
+                    // 책 이름이 없으면 추가
+                    expandedRefs.append("\(currentBook) \(ref)")
+                } else {
+                    expandedRefs.append(ref)
+                }
+            }
+
+            let replacement = "(\(expandedRefs.joined(separator: "; ")))"
             result = (result as NSString).replacingCharacters(in: match.range, with: replacement)
         }
 
