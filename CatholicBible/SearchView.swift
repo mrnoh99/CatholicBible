@@ -1560,6 +1560,7 @@ struct SearchView: View {
                     }
 
                     guard !Task.isCancelled else { return }
+                    print("[SearchView] 주석 검색 결과 설정: \(count)개")
                     totalSearchCount = count
 
                     // 초기 결과 로드
