@@ -55,6 +55,11 @@ enum ScriptureRefNormalizer {
         // 3.5단계: "장 범위 참조" 패턴 정규화 (예: "(28─29장 참조)", "(13─14 참조)")
         result = normalizeChapterRangeReferences(result, currentBook: currentBook)
 
+        // 3.6단계: "점 형식 절 참조" 패턴 정규화 (예: "(3.13.14절)" → "(책 3,13); (책 3,14)")
+        if let currentBook = currentBook, chapter > 0 {
+            result = normalizeDotFormatReferences(result, currentBook: currentBook, chapter: chapter)
+        }
+
         // 3.75단계: "입문 참조" 패턴 정규화 (예: "('입문' 6 참조)", "('입문' 4의 2)")
         if let currentBook = currentBook {
             result = normalizeIntroductionReferences(result, currentBook: currentBook)
@@ -127,6 +132,50 @@ enum ScriptureRefNormalizer {
                         result = (result as NSString).replacingCharacters(in: match.range, with: replacement)
                     }
                 }
+            }
+        }
+
+        return result
+    }
+
+    /// 점 형식 절 참조를 정규화한다.
+    /// 예: "(3.13.14절)" → "(책 장,13); (책 장,14)"
+    /// 같은 장 내의 여러 절을 개별 링크로 분리
+    private static func normalizeDotFormatReferences(_ text: String, currentBook: String, chapter: Int) -> String {
+        var result = text
+
+        // 패턴: "(숫자.숫자.숫자...절)" 또는 "(숫자.숫자절)"
+        // 예: (3.13.14절), (17.20.24절), (21.23.24절)
+        let pattern = "\\((\\d+)(?:\\.(\\d+))+절\\)"
+        guard let regex = try? NSRegularExpression(pattern: pattern) else {
+            return result
+        }
+
+        let ns = text as NSString
+        let matches = regex.matches(in: text, range: NSRange(location: 0, length: ns.length))
+
+        for match in matches.reversed() {
+            if match.numberOfRanges >= 2 {
+                // 첫 번째 숫자는 버림 (같은 장 내라고 가정)
+                // 나머지 숫자들을 추출해서 개별 참조로 변환
+                let fullMatch = ns.substring(with: match.range)
+
+                // 점 형식에서 모든 숫자 추출
+                let versesStr = fullMatch.replacingOccurrences(of: "(", with: "")
+                    .replacingOccurrences(of: ")", with: "")
+                    .replacingOccurrences(of: "절", with: "")
+                    .trimmingCharacters(in: .whitespaces)
+
+                let verses = versesStr.split(separator: ".").map { String($0) }
+
+                // 각 절을 개별 참조로 변환
+                var verseReferences: [String] = []
+                for verse in verses {
+                    verseReferences.append("\(currentBook) \(chapter),\(verse)")
+                }
+
+                let replacement = "(" + verseReferences.joined(separator: "); (") + ")"
+                result = (result as NSString).replacingCharacters(in: match.range, with: replacement)
             }
         }
 
