@@ -45,7 +45,7 @@ enum ScriptureRefNormalizer {
 
         // 2단계: "절 참조" 패턴 정규화 (괄호나 "참조" 포함)
         let currentBook = currentBookID.isEmpty ? nil : Bible.book(currentBookID)?.name
-        if let currentBook = currentBook, chapter > 0 {
+        if let currentBook = currentBook {
             result = normalizeVerseOnlyReferences(result, currentBook: currentBook, chapter: chapter)
         }
 
@@ -80,10 +80,12 @@ enum ScriptureRefNormalizer {
     }
 
     /// 절만 있는 참조를 정규화한다.
-    /// 예: "(29절)" → "(현재책 현재장,29절)"
-    /// 예: "6절 각주 참조" → "현재책 현재장,6절 각주 참조"
+    /// 예: "(29절)" → "(현재책 현재장,29절)" (chapter > 0 일 때)
+    /// 예: "6절 각주 참조" → "현재책 현재장,6절 각주 참조" (chapter > 0 일 때)
+    /// chapter == 0 일 때는 책 이름만 추가.
     private static func normalizeVerseOnlyReferences(_ text: String, currentBook: String, chapter: Int) -> String {
         var result = text
+        let chapterStr = chapter > 0 ? "\(chapter)," : ""
 
         // 패턴 1: "(절 번호절)"  예: "(29절)", "(1-23절)", "(18ㄴ-21절)"
         let pattern1 = "\\((\\d+[-─]?\\d*[ㄱ-ㄹ]?)절\\)"
@@ -93,7 +95,7 @@ enum ScriptureRefNormalizer {
             for match in matches.reversed() {
                 if match.numberOfRanges >= 2 {
                     let verse = ns.substring(with: match.range(at: 1))
-                    let replacement = "(\(currentBook) \(chapter),\(verse))"
+                    let replacement = "(\(currentBook) \(chapterStr)\(verse))"
                     result = (result as NSString).replacingCharacters(in: match.range, with: replacement)
                 }
             }
@@ -111,7 +113,7 @@ enum ScriptureRefNormalizer {
                     let fullMatch = ns.substring(with: match.range)
                     // 앞에 "현재책"을 추가하되 중복 제거
                     if !fullMatch.hasPrefix(currentBook) {
-                        let replacement = "\(currentBook) \(chapter),\(fullMatch)"
+                        let replacement = "\(currentBook) \(chapterStr)\(fullMatch)"
                         result = (result as NSString).replacingCharacters(in: match.range, with: replacement)
                     }
                 }
