@@ -129,16 +129,18 @@ enum ScriptureRefNormalizer {
     }
 
     /// 장 범위 참조를 정규화한다.
-    /// 예: "(28─29장 참조)" → "(28─29장 참조)" (유지)
-    /// 예: "(13─14 참조)" → "(현재책 13─14 참조)" (현재 책 이름 추가)
-    /// 예: "(23─24장)" → "(현재책 23─24장)" (장 참조 키워드 없이도 처리)
+    /// 예: "(28─29장 참조)" → "(현재책 28─29장 참조)" 또는 유지 (이미 책 이름 있으면 유지)
+    /// 예: "(28─29장)" → "(현재책 28─29장)"
+    /// 예: "(13─14 참조)" → "(현재책 13─14 참조)"
+    /// "참조" 유무는 상관없음 (동일하게 처리)
     private static func normalizeChapterRangeReferences(_ text: String, currentBook: String?) -> String {
         var result = text
 
-        // 패턴 1: "(책이름 장─장 참조)" 형태 - 이미 정규화됨
         let bookNames = Bible.books.map { $0.name }
+
+        // 패턴 1: 책 이름이 명시된 경우 - "(책이름 장─장[장?] [참조]?)"
         for book in bookNames {
-            let pattern = "\\(\(NSRegularExpression.escapedPattern(for: book))\\s+(\\d+)[-─](\\d+)(?:장)?\\s*참조\\)"
+            let pattern = "\\(\(NSRegularExpression.escapedPattern(for: book))\\s+(\\d+)[-─](\\d+)(?:장)?(?:\\s*참조)?\\)"
             guard let regex = try? NSRegularExpression(pattern: pattern) else { continue }
 
             let ns = result as NSString
@@ -154,9 +156,9 @@ enum ScriptureRefNormalizer {
             }
         }
 
-        // 패턴 2: "(숫자─숫자장 참조)" 또는 "(숫자─숫자 참조)" - 현재 책 컨텍스트 사용
+        // 패턴 2: 책 이름 없는 경우 - "(장─장[장?] [참조]?)"
         if let currentBook = currentBook {
-            let pattern = "\\((\\d+)[-─](\\d+)(?:장)?\\s*참조\\)"
+            let pattern = "\\((\\d+)[-─](\\d+)(?:장)?(?:\\s*참조)?\\)"
             guard let regex = try? NSRegularExpression(pattern: pattern) else {
                 return result
             }
@@ -169,27 +171,6 @@ enum ScriptureRefNormalizer {
                     let startChapter = ns.substring(with: match.range(at: 1))
                     let endChapter = ns.substring(with: match.range(at: 2))
                     let replacement = "(\(currentBook) \(startChapter)─\(endChapter) 참조)"
-                    result = (result as NSString).replacingCharacters(in: match.range, with: replacement)
-                }
-            }
-        }
-
-        // 패턴 3: "(장─장장)" 또는 "(장─장)" 형태 - "참조" 키워드 없는 장 범위
-        // 예: "(23─24장)", "(18─20장)"
-        if let currentBook = currentBook {
-            let pattern = "\\((\\d+)[-─](\\d+)장\\)(?!\\s*참조)"
-            guard let regex = try? NSRegularExpression(pattern: pattern) else {
-                return result
-            }
-
-            let ns = result as NSString
-            let matches = regex.matches(in: result, range: NSRange(location: 0, length: ns.length))
-
-            for match in matches.reversed() {
-                if match.numberOfRanges >= 3 {
-                    let startChapter = ns.substring(with: match.range(at: 1))
-                    let endChapter = ns.substring(with: match.range(at: 2))
-                    let replacement = "(\(currentBook) \(startChapter)─\(endChapter)장)"
                     result = (result as NSString).replacingCharacters(in: match.range, with: replacement)
                 }
             }
