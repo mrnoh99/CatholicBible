@@ -101,9 +101,9 @@ enum ScriptureRefNormalizer {
             }
         }
 
-        // 패턴 2: "절 각주 참조" 또는 "절에" 형태
-        // 예: "6절 각주 참조", "11절에 나온다", "17-23절에서"
-        let pattern2 = "(\\d+[-─]?\\d*[ㄱ-ㄹ]?)절(?:\\s*(?:각주\\s*참조|에|에서|의))"
+        // 패턴 2: "절 각주 참조" 또는 "절에/에서/의" 형태 (뒤에 문맥 단어가 올 수 있음)
+        // 예: "6절 각주 참조", "11절에 나온다", "17-23절에서는", "24-27절의 명단"
+        let pattern2 = "(\\d+[-─]?\\d*[ㄱ-ㄹ]?)절(?:\\s*(?:에(?:\\s+[가-힣]+)*|에서(?:\\s+[가-힣]+)*|의|각주\\s*참조))"
         if let regex = try? NSRegularExpression(pattern: pattern2) {
             let ns = text as NSString
             let matches = regex.matches(in: text, range: NSRange(location: 0, length: ns.length))
