@@ -235,7 +235,8 @@ struct AnnotatedReader: View {
                     textColumn(verses)
                     Divider()
                     AnnotationsPane(notes: notes, xrefs: xrefs,
-                                    emptyHint: emptyNotesHint, bookID: book.id, wide: true)
+                                    emptyHint: emptyNotesHint, bookID: book.id, wide: true,
+                                    searchQuery: navigation.searchQuery)
                         .frame(maxWidth: .infinity)
                 }
             } else {
@@ -244,7 +245,8 @@ struct AnnotatedReader: View {
                         versesBlock(verses)
                         Divider().padding(.vertical, 16)
                         AnnotationsPane(notes: notes, xrefs: xrefs,
-                                        emptyHint: emptyNotesHint, bookID: book.id)
+                                        emptyHint: emptyNotesHint, bookID: book.id,
+                                        searchQuery: navigation.searchQuery)
                     }
                     .frame(maxWidth: 720, alignment: .leading)
                     .padding(.horizontal, 28).padding(.bottom, 40)
@@ -296,7 +298,7 @@ struct AnnotatedReader: View {
                     VStack(alignment: .leading, spacing: settings.lineSpacing * 0.9) {
                         if let title = titleMap[verse.number] {
                             SectionTitleView(text: title, bookID: book.id, chapter: chapter,
-                                             linkable: true)
+                                             linkable: true, searchQuery: navigation.searchQuery)
                         }
                         VerseRowView(edition: edition, book: book, chapter: chapter,
                                      verse: verse,
@@ -362,6 +364,7 @@ struct SectionTitleView: View {
     let bookID: String
     let chapter: Int
     var linkable: Bool = true
+    var searchQuery: String = ""
 
     @Environment(ReaderSettings.self) private var settings
     @Environment(\.openURL) private var openURL
@@ -378,6 +381,7 @@ struct SectionTitleView: View {
                     color: UIColor(settings.theme.text),
                     linkColor: UIColor(Color.accentColor),
                     lineSpacing: settings.lineSpacing,
+                    searchQuery: searchQuery,
                     onOpenURL: { openURL($0) }
                 )
             } else {
@@ -529,6 +533,7 @@ struct AnnotationsPane: View {
     let emptyHint: String
     var bookID: String = ""
     var wide: Bool = false
+    var searchQuery: String = ""
     @State private var tab = 0        // 0=주석, 1=상호참조
     @Environment(ReaderSettings.self) private var settings
 
@@ -546,9 +551,11 @@ struct AnnotationsPane: View {
                 NotesList(title: "",
                           notes: tab == 1 ? xrefs : notes,
                           emptyHint: tab == 1 ? "이 장에는 상호참조가 없습니다." : emptyHint,
-                          bookID: bookID)
+                          bookID: bookID,
+                          searchQuery: searchQuery)
             } else {
-                NotesList(title: "주석", notes: notes, emptyHint: emptyHint, bookID: bookID)
+                NotesList(title: "주석", notes: notes, emptyHint: emptyHint, bookID: bookID,
+                          searchQuery: searchQuery)
             }
         }
     }
@@ -576,6 +583,7 @@ struct NotesList: View {
     var bookID: String = ""
     /// 각주 마커 링크를 위해 필요
     var chapter: Int = 0
+    var searchQuery: String = ""
     @Environment(ReaderSettings.self) private var settings
     @Environment(\.openURL) private var openURL
 
@@ -611,6 +619,7 @@ struct NotesList: View {
                                            color: UIColor(settings.theme.text),
                                            linkColor: UIColor(Color.accentColor),
                                            lineSpacing: settings.lineSpacing,
+                                           searchQuery: searchQuery,
                                            onOpenURL: { openURL($0) })
                             .frame(maxWidth: .infinity, alignment: .leading)
                     }

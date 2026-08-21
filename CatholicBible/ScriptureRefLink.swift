@@ -362,11 +362,13 @@ struct SelectableNoteText: UIViewRepresentable {
     let color: UIColor
     let linkColor: UIColor
     let lineSpacing: CGFloat
+    let searchQuery: String
     let onOpenURL: (URL) -> Void
 
     init(text: String, currentBook: String? = nil, chapter: Int = 0,
          font: UIFont, color: UIColor, linkColor: UIColor,
-         lineSpacing: CGFloat, onOpenURL: @escaping (URL) -> Void) {
+         lineSpacing: CGFloat, searchQuery: String = "",
+         onOpenURL: @escaping (URL) -> Void) {
         self.text = text
         self.currentBook = currentBook
         self.chapter = chapter
@@ -374,6 +376,7 @@ struct SelectableNoteText: UIViewRepresentable {
         self.color = color
         self.linkColor = linkColor
         self.lineSpacing = lineSpacing
+        self.searchQuery = searchQuery
         self.onOpenURL = onOpenURL
     }
 
@@ -402,6 +405,19 @@ struct SelectableNoteText: UIViewRepresentable {
         ])
         ScriptureRef.addLinks(to: attr, currentBook: currentBook, color: linkColor)
         addMarkerLinks(to: attr, color: linkColor)  // 주석 마커 링크도 추가
+
+        if !searchQuery.isEmpty {
+            let pattern = NSRegularExpression.escapedPattern(for: searchQuery)
+            if let regex = try? NSRegularExpression(pattern: pattern, options: .caseInsensitive) {
+                let s = attr.string as NSString
+                for match in regex.matches(in: attr.string, range: NSRange(location: 0, length: s.length)) {
+                    attr.addAttribute(.backgroundColor,
+                                    value: UIColor.yellow.withAlphaComponent(0.3),
+                                    range: match.range)
+                }
+            }
+        }
+
         tv.linkTextAttributes = [.foregroundColor: linkColor]
         tv.attributedText = attr
     }
