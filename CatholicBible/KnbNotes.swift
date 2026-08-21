@@ -32,11 +32,17 @@ enum ScriptureRefNormalizer {
     /// 주석 텍스트의 성경 참조들을 정규화한다.
     /// 문맥상 생략된 책 이름을 추론하여 모든 참조를 완전하게 만든다.
     /// 예: "창세 1,1; 2,4-23; 욥 1,1; 2,1" → "창세 1,1; 창세 2,4-23; 욥 1,1; 욥 2,1"
-    static func normalize(_ text: String) -> String {
+    ///
+    /// - Parameters:
+    ///   - text: 정규화할 주석 텍스트
+    ///   - currentBookID: 현재 주석이 속한 책 ID (예: "1chr", "1mo")
+    static func normalize(_ text: String, currentBookID: String = "") -> String {
+        let currentBook = currentBookID.isEmpty ? nil : Bible.book(currentBookID)?.name
+
         // 성경 참조들이 세미콜론(;)이나 쉼표(,)로 구분되어 있다고 가정
         let parts = text.split(separator: ";", omittingEmptySubsequences: false).map { String($0) }
         var result: [String] = []
-        var currentBook: String? = nil
+        var contextBook: String? = currentBook
 
         for part in parts {
             let trimmed = part.trimmingCharacters(in: .whitespaces)
@@ -49,12 +55,13 @@ enum ScriptureRefNormalizer {
             let (book, ref) = extractBookAndRef(from: trimmed)
 
             if let book = book {
-                currentBook = book
+                contextBook = book
                 result.append(part.replacingOccurrences(of: trimmed, with: "\(book) \(ref)"))
-            } else if let currentBook = currentBook {
+            } else if let contextBook = contextBook {
                 // 책 이름이 없으면 현재 컨텍스트의 책 사용
-                result.append(part.replacingOccurrences(of: trimmed, with: "\(currentBook) \(ref)"))
+                result.append(part.replacingOccurrences(of: trimmed, with: "\(contextBook) \(ref)"))
             } else {
+                // 현재 책도 없으면 원본 유지
                 result.append(part)
             }
         }
