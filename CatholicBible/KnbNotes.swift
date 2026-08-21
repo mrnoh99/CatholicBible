@@ -124,15 +124,16 @@ enum ScriptureRefNormalizer {
     }
 
     /// 장만 있는 참조를 정규화한다.
-    /// 예: "(창세 10 참조)" → "(창세 10,1 참조)"
-    /// 예: "(24장 참조)" → "(현재책 24,1 참조)"
+    /// 예: "(창세 10 참조)" → "(창세 10 참조)" (이미 정규화됨 또는 유지)
+    /// 예: "(24장 참조)" → "(현재책 24 참조)" (현재 책 이름 추가, 장 전체 보기)
     private static func normalizeChapterOnlyReferences(_ text: String, currentBook: String?) -> String {
         var result = text
 
         // 패턴 1: "(책이름 숫자 참조)" 또는 "(책이름 숫자장 참조)"
+        // 이미 책 이름이 명시되어 있으므로 장 전체 보기 형식으로 유지
         let bookNames = Bible.books.map { $0.name }
         for book in bookNames {
-            let pattern = "\\(\(NSRegularExpression.escapedPattern(for: book))\\s+(\\d+)(?:장)?\\s*참조\\)"
+            let pattern = "\\(\(NSRegularExpression.escapedPattern(for: book))\\s+(\\d+)(?:,\\d+)?(?:장)?\\s*참조\\)"
             guard let regex = try? NSRegularExpression(pattern: pattern) else { continue }
 
             let ns = result as NSString
@@ -141,7 +142,8 @@ enum ScriptureRefNormalizer {
             for match in matches.reversed() {
                 if match.numberOfRanges >= 2 {
                     let chapterStr = ns.substring(with: match.range(at: 1))
-                    let replacement = "(\(book) \(chapterStr),1 참조)"
+                    // 장 전체를 보여주기 위해 절 번호 제거
+                    let replacement = "(\(book) \(chapterStr) 참조)"
                     result = (result as NSString).replacingCharacters(in: match.range, with: replacement)
                 }
             }
@@ -160,7 +162,8 @@ enum ScriptureRefNormalizer {
             for match in matches.reversed() {
                 if match.numberOfRanges >= 2 {
                     let chapterStr = ns.substring(with: match.range(at: 1))
-                    let replacement = "(\(currentBook) \(chapterStr),1 참조)"
+                    // 장 전체를 보여주기 위해 절 번호 없이 유지
+                    let replacement = "(\(currentBook) \(chapterStr) 참조)"
                     result = (result as NSString).replacingCharacters(in: match.range, with: replacement)
                 }
             }
