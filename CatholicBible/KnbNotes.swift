@@ -93,7 +93,7 @@ enum ScriptureRefNormalizer {
         // 패턴 1: "(절 번호절)" 또는 "(절 범위절)"
         // 예: "(29절)", "(1-23절)", "(18ㄴ-21절)", "(29-31절)", "(11-47절)"
         // 명시적 절 범위 패턴: 숫자[한글?][-숫자[한글?]?]?
-        let pattern1 = "\\((\\d+[ㄱ-ㄹ]?(?:[-─]\\d+[ㄱ-ㄹ]?)?)절\\)"
+        let pattern1 = "\\((\\d+[ㄱ-ㅁ]?(?:[-─]\\d+[ㄱ-ㅁ]?)?)절\\)"
         if let regex = try? NSRegularExpression(pattern: pattern1) {
             let ns = text as NSString
             let matches = regex.matches(in: text, range: NSRange(location: 0, length: ns.length))
@@ -108,7 +108,7 @@ enum ScriptureRefNormalizer {
 
         // 패턴 2: "절 각주 참조" 또는 "절에/에서/의" 형태 (뒤에 문맥 단어가 올 수 있음)
         // 예: "6절 각주 참조", "11절에 나온다", "17-23절에서는", "24-27절의 명단", "18ㄴ-21절의"
-        let pattern2 = "(\\d+[ㄱ-ㄹ]?(?:[-─]\\d+[ㄱ-ㄹ]?)?)절(?:\\s*(?:에(?:\\s+[가-힣]+)*|에서(?:\\s+[가-힣]+)*|의|각주\\s*참조))"
+        let pattern2 = "(\\d+[ㄱ-ㅁ]?(?:[-─]\\d+[ㄱ-ㅁ]?)?)절(?:\\s*(?:에(?:\\s+[가-힣]+)*|에서(?:\\s+[가-힣]+)*|의|각주\\s*참조))"
         if let regex = try? NSRegularExpression(pattern: pattern2) {
             let ns = text as NSString
             let matches = regex.matches(in: text, range: NSRange(location: 0, length: ns.length))
