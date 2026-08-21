@@ -87,6 +87,10 @@ final class ReaderNavigation {
     var activeHighlight: VerseHighlight?
     /// 사전 시트 요청 (nil이 아니면 사전이 열린다)
     var dictionaryRequest: DictionaryRequest?
+    /// 주석 검색에서 하이라이트할 쿼리
+    var searchQuery: String = ""
+    /// 주석 검색 여부
+    var isAnnotationSearch: Bool = false
 
     /// 네비게이션 히스토리
     private var history: [NavigationHistoryItem] = []

@@ -962,11 +962,18 @@ struct SearchView: View {
         if (scope == .all || scope == .commentary), Editions.edition(hit.editionID) != nil {
             readingState.selectedEditionID = hit.editionID
         }
+
         // 주석 검색 결과는 절 번호를 전달하지 않고 장만 전달
         // (주석 번호는 절 번호와 다르므로 highlight하지 않음)
         if hit.annotationNumber != nil {
+            // 주석 검색 결과: 검색 쿼리 저장
+            navigation.searchQuery = query
+            navigation.isAnnotationSearch = true
             navigation.open(bookID: hit.bookID, chapter: hit.chapter)
         } else {
+            // 일반 검색 결과
+            navigation.searchQuery = ""
+            navigation.isAnnotationSearch = false
             navigation.open(bookID: hit.bookID, chapter: hit.chapter, verse: hit.verse)
         }
         dismiss()
