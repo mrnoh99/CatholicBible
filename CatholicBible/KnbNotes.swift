@@ -36,40 +36,132 @@ enum ScriptureRefNormalizer {
     /// - Parameters:
     ///   - text: 정규화할 주석 텍스트
     ///   - currentBookID: 현재 주석이 속한 책 ID (예: "1chr", "1mo")
-    static func normalize(_ text: String, currentBookID: String = "") -> String {
-        // 먼저 "책 장의 절과 절" 형태를 정규화
-        let normalized1 = normalizeChapterRanges(text)
+    ///   - chapter: 현재 장 번호 (절만 있는 참조를 정규화하기 위해 사용)
+    static func normalize(_ text: String, currentBookID: String = "", chapter: Int = 0) -> String {
+        var result = text
 
+        // 1단계: "책 장의 절과 절" 형태를 정규화
+        result = normalizeChapterRanges(result)
+
+        // 2단계: "절 참조" 패턴 정규화 (괄호나 "참조" 포함)
         let currentBook = currentBookID.isEmpty ? nil : Bible.book(currentBookID)?.name
+        if let currentBook = currentBook, chapter > 0 {
+            result = normalizeVerseOnlyReferences(result, currentBook: currentBook, chapter: chapter)
+        }
 
-        // 성경 참조들이 세미콜론(;)이나 쉼표(,)로 구분되어 있다고 가정
-        let parts = normalized1.split(separator: ";", omittingEmptySubsequences: false).map { String($0) }
-        var result: [String] = []
+        // 3단계: "장 참조" 패턴 정규화
+        result = normalizeChapterOnlyReferences(result, currentBook: currentBook)
+
+        // 4단계: 세미콜론 구분 참조 정규화 (기존 로직)
+        let parts = result.split(separator: ";", omittingEmptySubsequences: false).map { String($0) }
+        var normalized: [String] = []
         var contextBook: String? = currentBook
 
         for part in parts {
             let trimmed = part.trimmingCharacters(in: .whitespaces)
             if trimmed.isEmpty {
-                result.append(part)
+                normalized.append(part)
                 continue
             }
 
-            // 이 부분에서 책 이름이 명시적으로 있는지 확인
             let (book, ref) = extractBookAndRef(from: trimmed)
 
             if let book = book {
                 contextBook = book
-                result.append(part.replacingOccurrences(of: trimmed, with: "\(book) \(ref)"))
+                normalized.append(part.replacingOccurrences(of: trimmed, with: "\(book) \(ref)"))
             } else if let contextBook = contextBook {
-                // 책 이름이 없으면 현재 컨텍스트의 책 사용
-                result.append(part.replacingOccurrences(of: trimmed, with: "\(contextBook) \(ref)"))
+                normalized.append(part.replacingOccurrences(of: trimmed, with: "\(contextBook) \(ref)"))
             } else {
-                // 현재 책도 없으면 원본 유지
-                result.append(part)
+                normalized.append(part)
             }
         }
 
-        return result.joined(separator: ";")
+        return normalized.joined(separator: ";")
+    }
+
+    /// 절만 있는 참조를 정규화한다.
+    /// 예: "(29절)" → "(현재책 현재장,29절)"
+    /// 예: "6절 각주 참조" → "현재책 현재장,6절 각주 참조"
+    private static func normalizeVerseOnlyReferences(_ text: String, currentBook: String, chapter: Int) -> String {
+        var result = text
+
+        // 패턴 1: "(절 번호절)"  예: "(29절)", "(1-23절)", "(18ㄴ-21절)"
+        let pattern1 = "\\((\\d+[-─]?\\d*[ㄱ-ㄹ]?)절\\)"
+        if let regex = try? NSRegularExpression(pattern: pattern1) {
+            let ns = text as NSString
+            let matches = regex.matches(in: text, range: NSRange(location: 0, length: ns.length))
+            for match in matches.reversed() {
+                if match.numberOfRanges >= 2 {
+                    let verse = ns.substring(with: match.range(at: 1))
+                    let replacement = "(\(currentBook) \(chapter),\(verse))"
+                    result = (result as NSString).replacingCharacters(in: match.range, with: replacement)
+                }
+            }
+        }
+
+        // 패턴 2: "절 각주 참조" 또는 "절에" 형태
+        // 예: "6절 각주 참조", "11절에 나온다", "17-23절에서"
+        let pattern2 = "(\\d+[-─]?\\d*[ㄱ-ㄹ]?)절(?:\\s*(?:각주\\s*참조|에|에서|의))"
+        if let regex = try? NSRegularExpression(pattern: pattern2) {
+            let ns = text as NSString
+            let matches = regex.matches(in: text, range: NSRange(location: 0, length: ns.length))
+            for match in matches.reversed() {
+                if match.numberOfRanges >= 2 {
+                    let verse = ns.substring(with: match.range(at: 1))
+                    let fullMatch = ns.substring(with: match.range)
+                    // 앞에 "현재책"을 추가하되 중복 제거
+                    if !fullMatch.hasPrefix(currentBook) {
+                        let replacement = "\(currentBook) \(chapter),\(fullMatch)"
+                        result = (result as NSString).replacingCharacters(in: match.range, with: replacement)
+                    }
+                }
+            }
+        }
+
+        return result
+    }
+
+    /// 장만 있는 참조를 정규화한다.
+    /// 예: "(창세 10 참조)" → "(창세 10,1 참조)"
+    /// 예: "(24장 참조)" → "(현재책 24,1 참조)"
+    private static func normalizeChapterOnlyReferences(_ text: String, currentBook: String?) -> String {
+        var result = text
+
+        // 패턴 1: "(책이름 숫자 참조)" 또는 "(책이름 숫자장 참조)"
+        let bookNames = Bible.books.map { $0.name }
+        for book in bookNames {
+            let pattern = "\\(\(NSRegularExpression.escapedPattern(for: book))\\s+(\\d+)(?:장)?\\s*참조\\)"
+            if let regex = try? NSRegularExpression(pattern: pattern) {
+                let ns = text as NSString
+                let matches = regex.matches(in: text, range: NSRange(location: 0, length: ns.length))
+                for match in matches.reversed() {
+                    if match.numberOfRanges >= 2 {
+                        let chapter = ns.substring(with: match.range(at: 1))
+                        let replacement = "(\(book) \(chapter),1 참조)"
+                        result = (result as NSString).replacingCharacters(in: match.range, with: replacement)
+                    }
+                }
+            }
+        }
+
+        // 패턴 2: "(숫자장 참조)" - 현재 책 컨텍스트 사용
+        if let currentBook = currentBook {
+            let pattern = "\\((\\d+)장\\s*참조\\)"
+            if let regex = try? NSRegularExpression(pattern: pattern) {
+                let ns = text as NSString
+                let matches = regex.matches(in: text, range: NSRange(location: 0, length: ns.length))
+                for match in matches.reversed() {
+                    if match.numberOfRanges >= 2 {
+                        let chapter = ns.substring(with: match.range(at: 1))
+                        // 현재 책이 이미 명시되지 않은 경우만 추가
+                        let replacement = "(\(currentBook) \(chapter),1 참조)"
+                        result = (result as NSString).replacingCharacters(in: match.range, with: replacement)
+                    }
+                }
+            }
+        }
+
+        return result
     }
 
     /// 주어진 참조 부분에서 책 이름과 참조 부분을 분리한다.
