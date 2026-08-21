@@ -87,15 +87,17 @@ enum ScriptureRefNormalizer {
         var result = text
         let chapterStr = chapter > 0 ? "\(chapter)," : ""
 
-        // 패턴 1: "(절 번호절)"  예: "(29절)", "(1-23절)", "(18ㄴ-21절)"
-        let pattern1 = "\\((\\d+[-─]?\\d*[ㄱ-ㄹ]?)절\\)"
+        // 패턴 1: "(절 번호절)" 또는 "(절 범위절)"
+        // 예: "(29절)", "(1-23절)", "(18ㄴ-21절)", "(29-31절)", "(11-47절)"
+        // 명시적 절 범위 패턴: 숫자[-숫자][한글]*
+        let pattern1 = "\\((\\d+(?:[-─]\\d+)?[ㄱ-ㄹ]?)절\\)"
         if let regex = try? NSRegularExpression(pattern: pattern1) {
             let ns = text as NSString
             let matches = regex.matches(in: text, range: NSRange(location: 0, length: ns.length))
             for match in matches.reversed() {
                 if match.numberOfRanges >= 2 {
                     let verse = ns.substring(with: match.range(at: 1))
-                    let replacement = "(\(currentBook) \(chapterStr)\(verse))"
+                    let replacement = "(\(currentBook) \(chapterStr)\(verse)절)"
                     result = (result as NSString).replacingCharacters(in: match.range, with: replacement)
                 }
             }
