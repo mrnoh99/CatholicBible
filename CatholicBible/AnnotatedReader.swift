@@ -378,7 +378,7 @@ struct SectionTitleView: View {
                     currentBook: bookID,
                     chapter: chapter,
                     font: titleFont,
-                    color: UIColor(settings.theme.text),
+                    color: UIColor(.blue),
                     linkColor: UIColor(Color.accentColor),
                     lineSpacing: settings.lineSpacing,
                     searchQuery: searchQuery,
@@ -388,7 +388,7 @@ struct SectionTitleView: View {
                 // 단순 텍스트
                 Text(text)
                     .font(.system(size: settings.fontSize * 1.05, weight: .semibold, design: .default))
-                    .foregroundStyle(settings.theme.text)
+                    .foregroundStyle(.blue)
                     .textSelection(.enabled)
                     .lineLimit(nil)
             }
