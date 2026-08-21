@@ -314,8 +314,7 @@ struct AnnotatedReader: View {
     }
 
     private func getTitleMap() -> [Int: String] {
-        let knbEditionID = editionID == "knb" ? "knbnotes" : editionID
-        let titleMap = knb.titlesByVerse(edition: knbEditionID, bookID: book.id, chapter: max(chapter, 1))
+        let titleMap = knb.titlesByVerse(edition: "knbnotes", bookID: book.id, chapter: max(chapter, 1))
             .mapValues { AnnotationMarkup.stripMarkers($0) }
         return titleMap
     }
