@@ -52,6 +52,9 @@ enum ScriptureRefNormalizer {
         // 3단계: "장 참조" 패턴 정규화
         result = normalizeChapterOnlyReferences(result, currentBook: currentBook)
 
+        // 3.5단계: "장 범위 참조" 패턴 정규화 (예: "(28─29장 참조)", "(13─14 참조)")
+        result = normalizeChapterRangeReferences(result, currentBook: currentBook)
+
         // 4단계: 세미콜론 구분 참조 정규화 (기존 로직)
         let parts = result.split(separator: ";", omittingEmptySubsequences: false).map { String($0) }
         var normalized: [String] = []
@@ -118,6 +121,55 @@ enum ScriptureRefNormalizer {
                         let replacement = "\(currentBook) \(chapterStr)\(fullMatch)"
                         result = (result as NSString).replacingCharacters(in: match.range, with: replacement)
                     }
+                }
+            }
+        }
+
+        return result
+    }
+
+    /// 장 범위 참조를 정규화한다.
+    /// 예: "(28─29장 참조)" → "(28─29장 참조)" (유지)
+    /// 예: "(13─14 참조)" → "(현재책 13─14 참조)" (현재 책 이름 추가)
+    private static func normalizeChapterRangeReferences(_ text: String, currentBook: String?) -> String {
+        var result = text
+
+        // 패턴 1: "(책이름 장─장 참조)" 또는 "(책이름 장─장)" 형태 - 이미 정규화됨
+        let bookNames = Bible.books.map { $0.name }
+        for book in bookNames {
+            let pattern = "\\(\(NSRegularExpression.escapedPattern(for: book))\\s+(\\d+)[-─](\\d+)(?:장)?\\s*참조\\)"
+            guard let regex = try? NSRegularExpression(pattern: pattern) else { continue }
+
+            let ns = result as NSString
+            let matches = regex.matches(in: result, range: NSRange(location: 0, length: ns.length))
+
+            for match in matches.reversed() {
+                if match.numberOfRanges >= 3 {
+                    let startChapter = ns.substring(with: match.range(at: 1))
+                    let endChapter = ns.substring(with: match.range(at: 2))
+                    let replacement = "(\(book) \(startChapter)─\(endChapter) 참조)"
+                    result = (result as NSString).replacingCharacters(in: match.range, with: replacement)
+                }
+            }
+        }
+
+        // 패턴 2: "(숫자─숫자장 참조)" 또는 "(숫자─숫자 참조)" - 현재 책 컨텍스트 사용
+        if let currentBook = currentBook {
+            let pattern = "\\((\\d+)[-─](\\d+)(?:장)?\\s*참조\\)"
+            guard let regex = try? NSRegularExpression(pattern: pattern) else {
+                return result
+            }
+
+            let ns = result as NSString
+            let matches = regex.matches(in: result, range: NSRange(location: 0, length: ns.length))
+
+            for match in matches.reversed() {
+                if match.numberOfRanges >= 3 {
+                    let startChapter = ns.substring(with: match.range(at: 1))
+                    let endChapter = ns.substring(with: match.range(at: 2))
+                    // 현재 책이 명시되지 않은 경우에만 추가
+                    let replacement = "(\(currentBook) \(startChapter)─\(endChapter) 참조)"
+                    result = (result as NSString).replacingCharacters(in: match.range, with: replacement)
                 }
             }
         }
