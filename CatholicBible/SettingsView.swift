@@ -2,6 +2,7 @@ import SwiftUI
 
 struct SettingsView: View {
     @Environment(ReaderSettings.self) private var settings
+    @Environment(\.dismiss) private var dismiss
 
     var body: some View {
         @Bindable var settings = settings
@@ -45,6 +46,11 @@ struct SettingsView: View {
                 }
             }
             .navigationTitle("설정")
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("완료") { dismiss() }
+                }
+            }
         }
     }
 
