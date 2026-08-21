@@ -47,8 +47,8 @@ struct SettingsView: View {
             }
             .navigationTitle("설정")
             .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("완료") { dismiss() }
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("닫기") { dismiss() }
                 }
             }
         }
