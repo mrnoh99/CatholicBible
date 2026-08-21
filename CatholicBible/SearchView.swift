@@ -172,7 +172,9 @@ struct SearchView: View {
                 }
                 runSearch()
             }
-            .onChange(of: mode, perform: handleModeChange)
+            .onChange(of: mode) { _, newMode in
+                handleModeChange(newMode)
+            }
             .onChange(of: selectedBookID) { _, _ in
                 if mode == .reference {
                     updateReferenceQueryFromList()
@@ -627,9 +629,9 @@ struct SearchView: View {
 
     private var referenceSearchSection: some View {
         let selectedBook = selectedBookID.isEmpty ? nil : Bible.book(selectedBookID)
-        let maxChapters = selectedBook?.chapterCount ?? 0
+        _ = selectedBook?.chapterCount ?? 0
         let versesInChapter = selectedBook.map { store.verses(edition: readingState.selectedEdition, book: $0, chapter: selectedChapter) } ?? []
-        let maxVerses = versesInChapter.count
+        _ = versesInChapter.count
 
         return VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 8) {

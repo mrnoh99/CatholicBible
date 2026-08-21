@@ -357,7 +357,7 @@ final class BibleStore {
         }.value
     }
 
-    nonisolated(unsafe) private func searchByText(_ query: String, snapshot: [String: [String: [String: String]]],
+    nonisolated private func searchByText(_ query: String, snapshot: [String: [String: [String: String]]],
                              order: [String], editionID: String, limit: Int, offset: Int = 0) -> [SearchHit] {
         let (orTerms, andTerms) = parseSearchTerms(query)
         guard !orTerms.isEmpty || !andTerms.isEmpty else { return [] }
@@ -392,7 +392,7 @@ final class BibleStore {
         return hits
     }
 
-    nonisolated(unsafe) private func searchByReference(_ query: String, snapshot: [String: [String: [String: String]]],
+    nonisolated private func searchByReference(_ query: String, snapshot: [String: [String: [String: String]]],
                                    order: [String], editionID: String, limit: Int, offset: Int = 0) -> [SearchHit] {
         guard let (chapter, verse, endVerse) = parseReference(query) else { return [] }
 
@@ -533,7 +533,7 @@ final class BibleStore {
 
     // MARK: - 검색 결과 개수 카운팅
 
-    nonisolated(unsafe) private func countSearchByText(_ query: String, snapshot: [String: [String: [String: String]]],
+    nonisolated private func countSearchByText(_ query: String, snapshot: [String: [String: [String: String]]],
                                           order: [String]) -> Int {
         let (orTerms, andTerms) = parseSearchTerms(query)
         guard !orTerms.isEmpty || !andTerms.isEmpty else { return 0 }
@@ -561,7 +561,7 @@ final class BibleStore {
         return count
     }
 
-    nonisolated(unsafe) private func countSearchByReference(_ query: String, snapshot: [String: [String: [String: String]]],
+    nonisolated private func countSearchByReference(_ query: String, snapshot: [String: [String: [String: String]]],
                                               order: [String]) -> Int {
         guard let (chapter, verse, endVerse) = parseReference(query) else { return 0 }
 
@@ -590,6 +590,7 @@ final class BibleStore {
         print("🔍 검색 시도: '\(query)' in \(edition.id)")
         let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
         guard trimmed.count >= 2 else { return 0 }
+        let order = edition.scope.books.map(\.id)
 
         return await Task.detached(priority: .userInitiated) {
             // 정확한 구문 검색 (큰따옴표로 감싸진 경우)
@@ -599,7 +600,6 @@ final class BibleStore {
             guard !searchQuery.isEmpty else { return 0 }
 
             var count = 0
-            let order = edition.scope.books.map(\.id)
             print("  - 검색 범위: \(order.count)개 책, 주석 데이터 책: \(text.annotations.keys.count)개")
 
             for bookID in order {
@@ -631,6 +631,7 @@ final class BibleStore {
         guard !query.isEmpty, let text = editions[edition.id] else { return [] }
         let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
         guard trimmed.count >= 2 else { return [] }
+        let order = edition.scope.books.map(\.id)
 
         return await Task.detached(priority: .userInitiated) {
             // 정확한 구문 검색 (큰따옴표로 감싸진 경우)
@@ -641,7 +642,6 @@ final class BibleStore {
 
             var hits: [SearchHit] = []
             var matched = 0
-            let order = edition.scope.books.map(\.id)
 
             outer: for bookID in order {
                 guard let chapters = text.annotations[bookID] else { continue }

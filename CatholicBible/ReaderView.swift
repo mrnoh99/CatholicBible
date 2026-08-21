@@ -313,7 +313,7 @@ struct ReaderPane: View {
         }
 
         let titleEdition = edition.id == "knb" ? "knbnotes" : edition.id
-        var titles = knbNotes.titlesByVerse(edition: titleEdition, bookID: book.id, chapter: chapter)
+        let titles = knbNotes.titlesByVerse(edition: titleEdition, bookID: book.id, chapter: chapter)
             .mapValues { AnnotationMarkup.stripMarkers($0) }
 
         return titles
