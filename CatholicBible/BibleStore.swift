@@ -58,8 +58,9 @@ nonisolated struct SearchHit: Identifiable, Hashable, Sendable {
     let chapter: Int
     let verse: Int
     let text: String
+    let annotationNumber: String?  // 주석 검색 결과의 주석 번호
 
-    var id: String { "\(editionID)-\(bookID)-\(chapter)-\(verse)" }
+    var id: String { "\(editionID)-\(bookID)-\(chapter)-\(verse)-\(annotationNumber ?? "")" }
 }
 
 /// 로드된 한 판본의 본문
@@ -380,7 +381,7 @@ final class BibleStore {
                         if matched >= offset && hits.count < limit {
                             hits.append(SearchHit(editionID: editionID, bookID: bookID,
                                                 chapter: chapterNumber, verse: verseNumber,
-                                                text: verseText))
+                                                text: verseText, annotationNumber: nil))
                         }
                         matched += 1
                         if hits.count >= limit { break outer }
@@ -407,7 +408,7 @@ final class BibleStore {
                 if matched >= offset && hits.count < limit {
                     hits.append(SearchHit(editionID: editionID, bookID: bookID,
                                         chapter: chapter, verse: v,
-                                        text: verseText))
+                                        text: verseText, annotationNumber: nil))
                 }
                 matched += 1
                 if hits.count >= limit { break }
@@ -662,9 +663,10 @@ final class BibleStore {
                         }
                         if matches {
                             if matched >= offset && hits.count < limit {
+                                // 주석 검색: verseNumber는 이미 주석 번호 (String(annot.n))
                                 hits.append(SearchHit(editionID: edition.id, bookID: bookID,
                                                     chapter: chapterNumber, verse: verseNumber,
-                                                    text: annotationText))
+                                                    text: annotationText, annotationNumber: String(verseNumber)))
                             }
                             matched += 1
                             if hits.count >= limit { break outer }
