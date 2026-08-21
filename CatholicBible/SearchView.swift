@@ -1564,14 +1564,20 @@ struct SearchView: View {
                     totalSearchCount = count
 
                     // 초기 결과 로드
+                    print("[SearchView] 결과 로드 시작...")
                     let hits: [SearchHit]
                     if editionsToSearch.count > 1 {
+                        print("[SearchView] 여러 판본 검색...")
                         hits = await store.searchAllAnnotationsWithOffset(text, editions: editionsToSearch, offset: 0, limit: searchPageSize)
                     } else if let edition = editionsToSearch.first {
+                        print("[SearchView] 단일 판본 검색: \(edition.id)")
                         hits = await store.searchAnnotationsWithOffset(text, edition: edition, offset: 0, limit: searchPageSize)
+                        print("[SearchView] 단일 판본 검색 완료")
                     } else {
+                        print("[SearchView] 판본 없음")
                         hits = []
                     }
+                    print("[SearchView] 결과 로드 완료")
 
                     guard !Task.isCancelled else { return }
                     print("[SearchView] hits 개수: \(hits.count)")
