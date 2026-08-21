@@ -1062,8 +1062,9 @@ struct SearchView: View {
 
             var rangeToProcess = rangeStr
 
-            // If range doesn't start with Korean characters, try prepending the last book
-            if let lastBook = currentBookID, (rangeStr.first?.isLetter ?? false) == false {
+            // If range doesn't contain Korean characters (book name), try prepending the last book
+            let hasKoreanBookName = rangeStr.contains(where: { ("가"..."힣").contains($0) })
+            if let lastBook = currentBookID, !hasKoreanBookName {
                 if let book = Bible.book(lastBook) {
                     rangeToProcess = book.abbrev + " " + rangeStr
                 }
