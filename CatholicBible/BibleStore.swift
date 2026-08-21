@@ -582,7 +582,11 @@ final class BibleStore {
 
     /// 주석에서 검색 결과 총 개수 파악
     func searchAnnotationsCount(_ query: String, edition: Edition) async -> Int {
-        guard !query.isEmpty, let text = editions[edition.id] else { return 0 }
+        guard !query.isEmpty, let text = editions[edition.id] else {
+            print("🔍 검색 실패: edition.id=\(edition.id), 가용한 판본: \(editions.keys)")
+            return 0
+        }
+        print("🔍 검색 시도: '\(query)' in \(edition.id)")
         let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
         guard trimmed.count >= 2 else { return 0 }
 
