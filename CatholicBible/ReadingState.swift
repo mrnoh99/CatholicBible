@@ -42,6 +42,7 @@ final class ReadingState {
     private static let secondaryBookKey = "reading.secondaryBookID"
     private static let layoutKey = "reading.layout"
     private static let compareLinkedKey = "reading.compareLinked"
+    private static let showAnnotatedNotesKey = "reading.showAnnotatedNotes"
     private static let lastBookKey = "reading.lastBookID"
     private static let chapterPrefix = "reading.chapter."
 
@@ -70,6 +71,11 @@ final class ReadingState {
         didSet { Self.defaults.set(compareLinked, forKey: Self.compareLinkedKey) }
     }
 
+    /// 주석 판본에서 본문·주석 보기를 사용할지 (기본: true, 활성화 시 AnnotatedReader 표시)
+    var showAnnotatedNotes: Bool {
+        didSet { Self.defaults.set(showAnnotatedNotes, forKey: Self.showAnnotatedNotesKey) }
+    }
+
     /// 마지막으로 읽던 책 (판본별)
     private var lastBookIDs: [String: String] {
         didSet { Self.defaults.set(lastBookIDs, forKey: Self.lastBookKey) }
@@ -81,6 +87,7 @@ final class ReadingState {
         secondaryBookID = Self.defaults.string(forKey: Self.secondaryBookKey) ?? ""
         readerLayout = ReaderLayout(rawValue: Self.defaults.string(forKey: Self.layoutKey) ?? "") ?? .single
         compareLinked = Self.defaults.object(forKey: Self.compareLinkedKey) as? Bool ?? true
+        showAnnotatedNotes = Self.defaults.object(forKey: Self.showAnnotatedNotesKey) as? Bool ?? false
         lastBookIDs = Self.defaults.dictionary(forKey: Self.lastBookKey) as? [String: String] ?? [:]
     }
 
