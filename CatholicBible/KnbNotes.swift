@@ -139,8 +139,8 @@ enum ScriptureRefNormalizer {
     }
 
     /// 점 형식 절 참조를 정규화한다.
-    /// 예: "(3.13.14절)" → "(책 장,13); (책 장,14)"
-    /// 같은 장 내의 여러 절을 개별 링크로 분리
+    /// 예: "(3.13.14절)" → "(책 장,13; 장,14)"
+    /// 같은 장 내의 여러 절을 하나의 괄호 안에서 세미콜론으로 분리
     private static func normalizeDotFormatReferences(_ text: String, currentBook: String, chapter: Int) -> String {
         var result = text
 
@@ -156,11 +156,8 @@ enum ScriptureRefNormalizer {
 
         for match in matches.reversed() {
             if match.numberOfRanges >= 2 {
-                // 첫 번째 숫자는 버림 (같은 장 내라고 가정)
-                // 나머지 숫자들을 추출해서 개별 참조로 변환
-                let fullMatch = ns.substring(with: match.range)
-
                 // 점 형식에서 모든 숫자 추출
+                let fullMatch = ns.substring(with: match.range)
                 let versesStr = fullMatch.replacingOccurrences(of: "(", with: "")
                     .replacingOccurrences(of: ")", with: "")
                     .replacingOccurrences(of: "절", with: "")
@@ -168,13 +165,19 @@ enum ScriptureRefNormalizer {
 
                 let verses = versesStr.split(separator: ".").map { String($0) }
 
-                // 각 절을 개별 참조로 변환
+                // 세미콜론으로 분리된 참조로 변환 (첫 번째는 책과 장 포함, 나머지는 장과 절만)
                 var verseReferences: [String] = []
-                for verse in verses {
-                    verseReferences.append("\(currentBook) \(chapter),\(verse)")
+                for (index, verse) in verses.enumerated() {
+                    if index == 0 {
+                        // 첫 번째: 전체 형식 "책 장,절"
+                        verseReferences.append("\(currentBook) \(chapter),\(verse)")
+                    } else {
+                        // 나머지: "장,절" 형식만
+                        verseReferences.append("\(chapter),\(verse)")
+                    }
                 }
 
-                let replacement = "(" + verseReferences.joined(separator: "); (") + ")"
+                let replacement = "(\(verseReferences.joined(separator: "; ")))"
                 result = (result as NSString).replacingCharacters(in: match.range, with: replacement)
             }
         }
