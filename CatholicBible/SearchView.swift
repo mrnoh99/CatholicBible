@@ -1849,11 +1849,13 @@ struct SearchView: View {
             performReferenceSearch(references, scope: scope)
         } else {
             print("[DEBUG] parseReferences failed, treating as text search")
-            // It's text search - reset scope to .current and execute
+            // It's text search - 주석 검색일 때는 scope 유지, 아니면 .current로 변경
             mode = .text
-            let textSearchScope = SearchScope.current
+            let textSearchScope = isCommentarySearchEnabled ? scope : SearchScope.current
             performTextSearch(input, scope: textSearchScope)
-            scope = textSearchScope
+            if !isCommentarySearchEnabled {
+                scope = textSearchScope
+            }
         }
     }
 
