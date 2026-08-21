@@ -116,9 +116,12 @@ final class BibleStore {
                 // 주석 로드
                 var annotations: [String: [Int: [Int: String]]] = [:]
                 var titles: [String: [Int: [Int: String]]] = [:]
-                if let annotationURL = Bundle.main.url(forResource: BibleStore.annotationFileName(for: editionID), withExtension: "json"),
+                let annotationFileName = BibleStore.annotationFileName(for: editionID)
+                print("📝 주석 로드 시도: \(editionID) → \(annotationFileName).json")
+                if let annotationURL = Bundle.main.url(forResource: annotationFileName, withExtension: "json"),
                    let annotationData = try? Data(contentsOf: annotationURL),
                    let annotationFile = try? JSONDecoder().decode(AnnotationFile.self, from: annotationData) {
+                    print("✅ \(editionID) 주석 로드 성공")
 
                     // 주석 로드
                     if let annots = annotationFile.annotations {
@@ -166,7 +169,13 @@ final class BibleStore {
                 }
 
 
+                let annotationCount = annotations.values.reduce(0) { $0 + $1.values.reduce(0) { $0 + $1.count } }
                 let titleCount = titles.values.reduce(0) { $0 + $1.values.reduce(0) { $0 + $1.count } }
+                if annotationCount > 0 {
+                    print("✅ \(editionID) 주석 개수: \(annotationCount)개")
+                } else {
+                    print("⚠️ \(editionID) 주석: 없음")
+                }
                 if titleCount > 0 {
                     print("[BibleStore] Edition '\(editionID)' has \(titleCount) titles from annotations")
                 }
