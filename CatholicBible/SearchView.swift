@@ -336,7 +336,7 @@ struct SearchView: View {
             let maxVerses = versesInChapter.count
 
             Group {
-                if maxVerses > 0 {
+                if selectedChapter > 0 && maxVerses > 0 {
                     List {
                         Button(action: {
                             selectedVerse = 0
@@ -966,6 +966,7 @@ struct SearchView: View {
         // 검색 쿼리 저장 (하이라이트용)
         navigation.searchQuery = query
         navigation.isAnnotationSearch = (hit.annotationNumber != nil)
+        navigation.selectedAnnotationNumber = hit.annotationNumber
 
         // 주석 검색 결과는 절 번호를 전달하지 않고 장만 전달
         // (주석 번호는 절 번호와 다르므로 highlight하지 않음)
