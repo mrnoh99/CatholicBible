@@ -318,23 +318,39 @@ struct ReaderPane: View {
 
     /// 소제목 표시 여부 판단
     private var showsTitles: Bool {
-        if (edition.id == "knb" || edition.isAnnotated) && edition.language == "ko" {
-            return true
-        }
-        return false
+        // 모든 판본에서 제목 표시 가능
+        // 1. JSON 파일의 headings 필드에서 로드된 제목
+        // 2. KnbNotes의 주석 제목 (한국어 판본)
+        chapter > 0
     }
 
     /// 절 번호 → 소제목 맵
     private var titleMap: [Int: String] {
-        guard showsTitles, chapter > 0 else {
+        guard showsTitles else {
             return [:]
         }
 
-        let titleEdition = edition.id == "knb" ? "knbnotes" : edition.id
-        let titles = knbNotes.titlesByVerse(edition: titleEdition, bookID: book.id, chapter: chapter)
-            .mapValues { AnnotationMarkup.stripMarkers($0) }
+        // 1. 먼저 BibleStore의 titles (JSON headings)에서 찾기
+        let titles = store.titles(edition: edition, book: book, chapter: chapter)
+        var titleMap: [Int: String] = [:]
 
-        return titles
+        for title in titles {
+            titleMap[title.verse] = title.text
+        }
+
+        // 2. KnbNotes의 제목으로 보완 (한국어 판본만)
+        if (edition.id == "knb" || edition.isAnnotated) && edition.language == "ko" {
+            let titleEdition = edition.id == "knb" ? "knbnotes" : edition.id
+            let knbTitles = knbNotes.titlesByVerse(edition: titleEdition, bookID: book.id, chapter: chapter)
+                .mapValues { AnnotationMarkup.stripMarkers($0) }
+
+            // KnbNotes의 제목이 있으면 우선 사용
+            for (verse, text) in knbTitles {
+                titleMap[verse] = text
+            }
+        }
+
+        return titleMap
     }
 
     /// 표시 중인 장. 연동 시 공유 장, 아니면 이 열의 자기 장.

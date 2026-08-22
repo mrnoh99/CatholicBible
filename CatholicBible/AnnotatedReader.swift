@@ -316,9 +316,21 @@ struct AnnotatedReader: View {
     private func getTitleMap() -> [Int: String] {
         let ch = max(chapter, 1)
 
-        // 주석성경(knbnotes)에서 소제목을 가져온다
-        let titleMap = knb.titlesByVerse(edition: "knbnotes", bookID: book.id, chapter: ch)
+        var titleMap: [Int: String] = [:]
+
+        // 1. BibleStore의 제목 먼저 로드 (JSON headings)
+        let storeTitle = store.titles(edition: edition, book: book, chapter: ch)
+        for title in storeTitle {
+            titleMap[title.verse] = title.text
+        }
+
+        // 2. 주석성경(knbnotes)의 제목으로 보완/우선 적용
+        let knbTitles = knb.titlesByVerse(edition: "knbnotes", bookID: book.id, chapter: ch)
             .mapValues { AnnotationMarkup.stripMarkers($0) }
+
+        for (verse, text) in knbTitles {
+            titleMap[verse] = text
+        }
 
         return titleMap
     }
