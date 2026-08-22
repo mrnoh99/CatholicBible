@@ -318,9 +318,7 @@ struct ReaderPane: View {
 
     /// 소제목 표시 여부 판단
     private var showsTitles: Bool {
-        // 모든 판본에서 제목 표시 가능
-        // 1. JSON 파일의 headings 필드에서 로드된 제목
-        // 2. KnbNotes의 주석 제목 (한국어 판본)
+        // JSON headings에서 제목 표시
         chapter > 0
     }
 
@@ -330,24 +328,12 @@ struct ReaderPane: View {
             return [:]
         }
 
-        // 1. 먼저 BibleStore의 titles (JSON headings)에서 찾기
+        // JSON headings 필드에서 로드
         let titles = store.titles(edition: edition, book: book, chapter: chapter)
         var titleMap: [Int: String] = [:]
 
         for title in titles {
             titleMap[title.verse] = title.text
-        }
-
-        // 2. KnbNotes의 제목으로 보완 (한국어 판본만)
-        if (edition.id == "knb" || edition.isAnnotated) && edition.language == "ko" {
-            let titleEdition = edition.id == "knb" ? "knbnotes" : edition.id
-            let knbTitles = knbNotes.titlesByVerse(edition: titleEdition, bookID: book.id, chapter: chapter)
-                .mapValues { AnnotationMarkup.stripMarkers($0) }
-
-            // KnbNotes의 제목이 있으면 우선 사용
-            for (verse, text) in knbTitles {
-                titleMap[verse] = text
-            }
         }
 
         return titleMap

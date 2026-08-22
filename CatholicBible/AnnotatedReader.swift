@@ -318,18 +318,10 @@ struct AnnotatedReader: View {
 
         var titleMap: [Int: String] = [:]
 
-        // 1. BibleStore의 제목 먼저 로드 (JSON headings)
+        // JSON headings 필드에서 로드
         let storeTitle = store.titles(edition: edition, book: book, chapter: ch)
         for title in storeTitle {
             titleMap[title.verse] = title.text
-        }
-
-        // 2. 주석성경(knbnotes)의 제목으로 보완/우선 적용
-        let knbTitles = knb.titlesByVerse(edition: "knbnotes", bookID: book.id, chapter: ch)
-            .mapValues { AnnotationMarkup.stripMarkers($0) }
-
-        for (verse, text) in knbTitles {
-            titleMap[verse] = text
         }
 
         return titleMap
