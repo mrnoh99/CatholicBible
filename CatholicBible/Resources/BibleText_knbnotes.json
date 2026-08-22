@@ -38322,5 +38322,12 @@
     }
   },
   "source": "https://bible.cbck.or.kr/Knbnotes/Bible",
-  "translation": "주석 성경"
+  "translation": "주석 성경",
+  "headings": {
+    "sir": {
+      "1": {
+        "1h": "하느님의 지혜의 선물"
+      }
+    }
+  }
 }

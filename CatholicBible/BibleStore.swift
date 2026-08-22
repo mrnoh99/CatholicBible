@@ -114,6 +114,33 @@ final class BibleStore {
                     if !chapterMap.isEmpty { indexed[bookID] = chapterMap }
                 }
 
+                // 파일에 포함된 제목 로드 (BibleText_*.json의 headings 필드)
+                var headingsFromFile: [String: [Int: [Int: String]]] = [:]
+                if let fileHeadings = file.headings {
+                    for (bookID, chapters) in fileHeadings {
+                        var bookHeadings: [Int: [Int: String]] = [:]
+                        for (chapterKey, verses) in chapters {
+                            guard let chapterNumber = Int(chapterKey) else { continue }
+                            var verseHeadings: [Int: String] = [:]
+                            for (verseKey, headingText) in verses {
+                                // Handle both "1h" and "1_heading" formats
+                                let verseStr = verseKey.hasSuffix("h")
+                                    ? String(verseKey.dropLast())
+                                    : verseKey.replacingOccurrences(of: "_heading", with: "")
+                                if let verseNumber = Int(verseStr) {
+                                    verseHeadings[verseNumber] = headingText
+                                }
+                            }
+                            if !verseHeadings.isEmpty {
+                                bookHeadings[chapterNumber] = verseHeadings
+                            }
+                        }
+                        if !bookHeadings.isEmpty {
+                            headingsFromFile[bookID] = bookHeadings
+                        }
+                    }
+                }
+
                 // 주석 로드
                 var annotations: [String: [Int: [Int: String]]] = [:]
                 var titles: [String: [Int: [Int: String]]] = [:]
@@ -170,6 +197,24 @@ final class BibleStore {
                 }
 
 
+                // 파일의 제목과 주석의 제목 합치기
+                for (bookID, bookHeadings) in headingsFromFile {
+                    if titles[bookID] == nil {
+                        titles[bookID] = [:]
+                    }
+                    for (chapterNumber, chapterHeadings) in bookHeadings {
+                        if titles[bookID]![chapterNumber] == nil {
+                            titles[bookID]![chapterNumber] = [:]
+                        }
+                        for (verseNumber, headingText) in chapterHeadings {
+                            // 이미 있는 제목이 없을 때만 파일의 제목 사용
+                            if titles[bookID]![chapterNumber]![verseNumber] == nil {
+                                titles[bookID]![chapterNumber]![verseNumber] = headingText
+                            }
+                        }
+                    }
+                }
+
                 let annotationCount = annotations.values.reduce(0) { $0 + $1.values.reduce(0) { $0 + $1.count } }
                 let titleCount = titles.values.reduce(0) { $0 + $1.values.reduce(0) { $0 + $1.count } }
                 if annotationCount > 0 {
@@ -178,7 +223,7 @@ final class BibleStore {
                     print("⚠️ \(editionID) 주석: 없음")
                 }
                 if titleCount > 0 {
-                    print("[BibleStore] Edition '\(editionID)' has \(titleCount) titles from annotations")
+                    print("[BibleStore] Edition '\(editionID)' has \(titleCount) titles")
                 }
 
                 result[editionID] = EditionText(translation: file.translation,
