@@ -116,6 +116,7 @@ struct SearchView: View {
     @State private var showBookPicker = false
     @State private var showChapterPicker = false
     @State private var showVersePicker = false
+    @State private var selectedBookCategory: BookCategory? = nil
 
     var body: some View {
         mainContent
@@ -264,12 +265,48 @@ struct SearchView: View {
     private var bookPickerSheet: some View {
         NavigationStack {
             VStack(spacing: 0) {
+                // 카테고리 필터 탭
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 8) {
+                        Button(action: { selectedBookCategory = nil }) {
+                            Text("모두")
+                                .font(.subheadline)
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 6)
+                                .background(selectedBookCategory == nil ? Color.blue : Color(.systemGray6))
+                                .foregroundStyle(selectedBookCategory == nil ? .white : .primary)
+                                .cornerRadius(6)
+                        }
+
+                        ForEach(BookCategory.allCases, id: \.self) { category in
+                            Button(action: { selectedBookCategory = category }) {
+                                Text(category.title)
+                                    .font(.subheadline)
+                                    .padding(.horizontal, 12)
+                                    .padding(.vertical, 6)
+                                    .background(selectedBookCategory == category ? Color.blue : Color(.systemGray6))
+                                    .foregroundStyle(selectedBookCategory == category ? .white : .primary)
+                                    .cornerRadius(6)
+                            }
+                        }
+                    }
+                    .padding(.horizontal)
+                    .padding(.vertical, 8)
+                }
+
                 TextField("책 이름, 약칭 검색", text: $bookSearchText)
                     .font(.system(size: 16))
                     .textFieldStyle(.roundedBorder)
                     .padding()
 
                 let filteredBooks = Bible.books.filter { book in
+                    // 카테고리 필터 적용
+                    if let selectedCategory = selectedBookCategory {
+                        if book.category != selectedCategory {
+                            return false
+                        }
+                    }
+
                     if bookSearchText.isEmpty {
                         return true
                     }
@@ -285,6 +322,7 @@ struct SearchView: View {
                         selectedChapter = 0
                         selectedVerse = 0
                         bookSearchText = ""
+                        selectedBookCategory = nil
                         showBookPicker = false
                     }) {
                         HStack {
@@ -311,6 +349,7 @@ struct SearchView: View {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("완료") {
                         bookSearchText = ""
+                        selectedBookCategory = nil
                         showBookPicker = false
                     }
                 }
