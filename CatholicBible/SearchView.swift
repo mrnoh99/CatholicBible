@@ -1306,16 +1306,20 @@ struct SearchView: View {
         let bookPartRaw = String(input[..<versionPart.lowerBound]).trimmingCharacters(in: .whitespaces)
         guard !bookPartRaw.isEmpty else { return nil }
 
-        // Extract book name (handles "코린", "1코린", "사무엘기 상" formats)
+        // Extract book name (handles "코린", "1코린", "요한 3서", "사무엘기 상" formats)
         var bookName = ""
         var digitPrefix = ""
         var suffix = "" // 전/후/상/하 등
 
         for char in bookPartRaw {
             if char.isNumber && "123".contains(char) {
-                if bookName.isEmpty {
+                if bookName.isEmpty && digitPrefix.isEmpty {
+                    // 앞의 숫자 (e.g., "1" in "1코린")
                     digitPrefix.append(char)
-                } else {
+                } else if !bookName.isEmpty && digitPrefix.isEmpty {
+                    // bookName 뒤의 숫자 (e.g., "3" in "요한 3서")
+                    digitPrefix.append(char)
+                    // 숫자 추출 후 종료 (더 이상의 한글은 처리 안 함)
                     break
                 }
             } else if ("가"..."힣").contains(char) {
