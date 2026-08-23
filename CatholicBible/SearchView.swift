@@ -1309,6 +1309,7 @@ struct SearchView: View {
         // Extract book name (handles "코린", "1코린", "사무엘기 상" formats)
         var bookName = ""
         var digitPrefix = ""
+        var suffix = "" // 전/후/상/하 등
 
         for char in bookPartRaw {
             if char.isNumber && "123".contains(char) {
@@ -1327,14 +1328,37 @@ struct SearchView: View {
             }
         }
 
+        // "전/후/상/하" 처리 (예: "코린 전" → "1코린", "사무 하" → "2사무")
+        if bookName.hasSuffix("전") && !bookName.hasSuffix("전서") {
+            bookName = String(bookName.dropLast())
+            if digitPrefix.isEmpty {
+                digitPrefix = "1"
+            }
+        } else if bookName.hasSuffix("후") && !bookName.hasSuffix("후서") {
+            bookName = String(bookName.dropLast())
+            if digitPrefix.isEmpty {
+                digitPrefix = "2"
+            }
+        } else if bookName.hasSuffix("상") && !bookName.hasSuffix("상권") {
+            bookName = String(bookName.dropLast())
+            if digitPrefix.isEmpty {
+                digitPrefix = "1"
+            }
+        } else if bookName.hasSuffix("하") && !bookName.hasSuffix("하권") {
+            bookName = String(bookName.dropLast())
+            if digitPrefix.isEmpty {
+                digitPrefix = "2"
+            }
+        }
+
         if !bookName.isEmpty {
             if let bookID = findBookByAbbrev(bookName, digitPrefix: digitPrefix) {
                 return (bookID, chapter, verse)
             }
 
             // Try with common suffixes if not found
-            for suffix in ["기", "서", "편", "복음"] {
-                if let bookID = findBookByAbbrev(bookName + suffix, digitPrefix: digitPrefix) {
+            for suf in ["기", "서", "편", "복음"] {
+                if let bookID = findBookByAbbrev(bookName + suf, digitPrefix: digitPrefix) {
                     return (bookID, chapter, verse)
                 }
             }

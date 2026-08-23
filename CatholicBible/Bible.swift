@@ -115,6 +115,38 @@ struct BibleBook: Identifiable, Hashable, Sendable {
             }
         }
 
+        // 복수형 서간들의 공통 기본명 추가 (예: "1코린", "2코린" → "코린")
+        // 사용자가 "코린 전" 또는 "코린 후"로 검색할 수 있도록
+        let commonBaseNames: [String: String] = [
+            "1코린": "코린",
+            "2코린": "코린",
+            "1테살": "테살",
+            "2테살": "테살",
+            "1티모": "티모",
+            "2티모": "티모",
+            "1베드": "베드",
+            "2베드": "베드",
+            "1요한": "요한",
+            "2요한": "요한",
+            "3요한": "요한",
+            "1사무": "사무",
+            "2사무": "사무",
+            "1열왕": "열왕",
+            "2열왕": "열왕",
+            "1역대": "역대",
+            "2역대": "역대",
+            "1마카": "마카",
+            "2마카": "마카",
+            "1고린": "고린",
+            "2고린": "고린",
+        ]
+
+        for keyword in keywords.filter({ !$0.isEmpty }) {
+            if let baseName = commonBaseNames[keyword] {
+                keywords.append(baseName)
+            }
+        }
+
         // 한글 표기 변형 추가 (공동번역 성서 및 다른 버전의 이름들)
         let romanizationVariants: [String: [String]] = [
             // 복음서
