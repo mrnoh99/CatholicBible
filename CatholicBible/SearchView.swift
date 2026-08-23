@@ -898,28 +898,6 @@ struct SearchView: View {
                 }
             }
             .buttonStyle(.plain)
-
-            if mode == .text && hasAnnotationSupport(edition) && selectedEditionIDs.contains(edition.id) {
-                Button(action: {
-                    if selectedAnnotationEditionIDs.contains(edition.id) {
-                        selectedAnnotationEditionIDs.remove(edition.id)
-                    } else {
-                        selectedAnnotationEditionIDs.insert(edition.id)
-                    }
-                }) {
-                    HStack(spacing: 6) {
-                        Image(systemName: selectedAnnotationEditionIDs.contains(edition.id) ? "checkmark.square.fill" : "square")
-                            .font(.system(size: 12))
-                            .foregroundStyle(selectedAnnotationEditionIDs.contains(edition.id) ? .blue : .secondary)
-                        Text("주석")
-                            .font(.caption2)
-                            .foregroundStyle(.secondary)
-                        Spacer()
-                    }
-                }
-                .buttonStyle(.plain)
-                .padding(.leading, 20)
-            }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
