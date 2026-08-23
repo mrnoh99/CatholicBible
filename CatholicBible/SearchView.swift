@@ -657,25 +657,27 @@ struct SearchView: View {
 
                 Divider()
 
-                HStack(spacing: 8) {
-                    Image(systemName: isCommentarySearchEnabled ? "checkmark.square.fill" : "square")
-                        .font(.system(size: 16))
-                        .foregroundStyle(isCommentarySearchEnabled ? .blue : .secondary)
+                if mode == .text {
+                    HStack(spacing: 8) {
+                        Image(systemName: isCommentarySearchEnabled ? "checkmark.square.fill" : "square")
+                            .font(.system(size: 16))
+                            .foregroundStyle(isCommentarySearchEnabled ? .blue : .secondary)
 
-                    Button(action: {
-                        isCommentarySearchEnabled.toggle()
-                    }) {
-                        Text("주석 검색")
-                            .font(.system(size: 14))
-                            .foregroundStyle(.primary)
+                        Button(action: {
+                            isCommentarySearchEnabled.toggle()
+                        }) {
+                            Text("주석 검색")
+                                .font(.system(size: 14))
+                                .foregroundStyle(.primary)
+                        }
+                        .buttonStyle(.plain)
+
+                        Spacer()
                     }
-                    .buttonStyle(.plain)
-
-                    Spacer()
-                }
-                .contentShape(Rectangle())
-                .onTapGesture {
-                    isCommentarySearchEnabled.toggle()
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        isCommentarySearchEnabled.toggle()
+                    }
                 }
 
                 if mode == .reference {
@@ -854,10 +856,10 @@ struct SearchView: View {
                     ForEach(Array(store.loadedEditions.enumerated()), id: \.element.id) { index, edition in
                         if index % 2 == 0 {
                             HStack(spacing: 12) {
-                                editionItem(edition: edition)
+                                editionItem(edition: edition, mode: mode)
 
                                 if index + 1 < store.loadedEditions.count {
-                                    editionItem(edition: store.loadedEditions[index + 1])
+                                    editionItem(edition: store.loadedEditions[index + 1], mode: mode)
                                 }
                                 Spacer()
                             }
@@ -873,7 +875,7 @@ struct SearchView: View {
         .padding(.horizontal, 16)
     }
 
-    private func editionItem(edition: Edition) -> some View {
+    private func editionItem(edition: Edition, mode: SearchMode) -> some View {
         VStack(alignment: .leading, spacing: 4) {
             Button(action: {
                 if selectedEditionIDs.contains(edition.id) {
@@ -897,7 +899,7 @@ struct SearchView: View {
             }
             .buttonStyle(.plain)
 
-            if hasAnnotationSupport(edition) && selectedEditionIDs.contains(edition.id) {
+            if mode == .text && hasAnnotationSupport(edition) && selectedEditionIDs.contains(edition.id) {
                 Button(action: {
                     if selectedAnnotationEditionIDs.contains(edition.id) {
                         selectedAnnotationEditionIDs.remove(edition.id)
