@@ -2159,10 +2159,8 @@ struct SearchView: View {
 
         let editionsToSearch: [Edition]
         if scope == .commentary {
-            // 주석 검색: 주석 포함이 활성화된 판본만 검색
-            editionsToSearch = store.loadedEditions.filter { edition in
-                selectedEditionIDs.contains(edition.id) && selectedAnnotationEditionIDs.contains(edition.id)
-            }
+            // 주석 검색: 선택된 주석 판본만 검색
+            editionsToSearch = store.loadedEditions.filter { selectedAnnotationEditionIDs.contains($0.id) }
         } else {
             // scope == .all 또는 .current: 선택된 판본들 사용
             editionsToSearch = store.loadedEditions.filter { selectedEditionIDs.contains($0.id) }
