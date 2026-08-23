@@ -90,10 +90,10 @@ struct BibleBook: Identifiable, Hashable, Sendable {
         let suffixes = ["기", "서", "편", "복음서"]
         for suffix in suffixes {
             if name.hasSuffix(suffix) {
-                keywords.append(name.dropLast(suffix.count) as String)
+                keywords.append(String(name.dropLast(suffix.count)))
             }
             if shortName.hasSuffix(suffix) {
-                keywords.append(shortName.dropLast(suffix.count) as String)
+                keywords.append(String(shortName.dropLast(suffix.count)))
             }
         }
 
@@ -103,7 +103,7 @@ struct BibleBook: Identifiable, Hashable, Sendable {
                                .replacingOccurrences(of: " 하권", with: "")
             keywords.append(baseName)
             if baseName.hasSuffix("기") {
-                keywords.append(baseName.dropLast() as String)
+                keywords.append(String(baseName.dropLast()))
             }
         }
 
