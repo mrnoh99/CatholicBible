@@ -2233,16 +2233,7 @@ struct SearchView: View {
         isSearching = true
         results = []
 
-        let editionsToSearch: [Edition]
-        if scope == .commentary {
-            // 주석 검색: 주석 포함이 활성화된 판본만 검색
-            editionsToSearch = store.loadedEditions.filter { edition in
-                selectedEditionIDs.contains(edition.id) && selectedAnnotationEditionIDs.contains(edition.id)
-            }
-        } else {
-            // scope == .all 또는 .current: 선택된 판본들 사용
-            editionsToSearch = store.loadedEditions.filter { selectedEditionIDs.contains($0.id) }
-        }
+        let editionsToSearch: [Edition] = store.loadedEditions.filter { selectedEditionIDs.contains($0.id) }
 
         searchTask = Task {
             try? await Task.sleep(for: .milliseconds(300))
