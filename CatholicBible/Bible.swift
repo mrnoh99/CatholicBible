@@ -115,6 +115,22 @@ struct BibleBook: Identifiable, Hashable, Sendable {
             }
         }
 
+        // 한글 로마자 표기 변형 추가 (코린토/고린도, 테살로니카/데살로니가 등)
+        let romanizationVariants: [String: [String]] = [
+            "코린토": ["고린도", "고린도"],
+            "테살로니카": ["데살로니가"],
+            "갈라디아": ["갈라디아"],
+            "에페소": ["에베소"],
+            "필리피": ["빌립보", "필립보"],
+            "콜로새": ["골로새"],
+        ]
+
+        for keyword in keywords {
+            if let variants = romanizationVariants[keyword] {
+                keywords.append(contentsOf: variants)
+            }
+        }
+
         return Array(Set(keywords)).sorted()
     }
 }

@@ -1346,7 +1346,26 @@ struct SearchView: View {
     private func findBookByAbbrev(_ abbrev: String, digitPrefix: String = "") -> String? {
         let searchAbbrev = digitPrefix + abbrev
         let searchInput = abbrev + digitPrefix
+        let searchLower = abbrev.lowercased()
+        let searchAbbrLower = searchAbbrev.lowercased()
+        let searchInputLower = searchInput.lowercased()
 
+        // 1단계: searchKeywords를 이용한 검색 (로마자 표기 변형 포함)
+        for book in Bible.books {
+            for keyword in book.searchKeywords {
+                let keywordLower = keyword.lowercased()
+                if keywordLower == searchLower ||
+                   keywordLower == searchAbbrLower ||
+                   keywordLower == searchInputLower {
+                    // 숫자 접두사가 있으면 확인
+                    if digitPrefix.isEmpty || keyword.contains(digitPrefix) {
+                        return book.id
+                    }
+                }
+            }
+        }
+
+        // 2단계: 기존 로직 (호환성 유지)
         for book in Bible.books {
             let variants = generateBookVariants(from: book.abbrev)
             let lowerBookAbbrev = book.abbrev.lowercased()
