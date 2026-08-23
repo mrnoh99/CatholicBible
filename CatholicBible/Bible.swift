@@ -81,6 +81,42 @@ struct BibleBook: Identifiable, Hashable, Sendable {
     func chapterLabel(_ chapter: Int) -> String {
         id == "ps" ? "\(chapter)편" : "\(chapter)장"
     }
+
+    /// 검색용 다양한 검색어 목록 (정식명칭, 짧은이름, 약칭, ID 등)
+    var searchKeywords: [String] {
+        var keywords = [name, shortName, abbrev, id]
+
+        // 접미사 제거 버전 추가 (예: "창세기" -> "창세", "사무엘기 상권" -> "사무엘")
+        let suffixes = ["기", "서", "편", "복음서"]
+        for suffix in suffixes {
+            if name.hasSuffix(suffix) {
+                keywords.append(name.dropLast(suffix.count) as String)
+            }
+            if shortName.hasSuffix(suffix) {
+                keywords.append(shortName.dropLast(suffix.count) as String)
+            }
+        }
+
+        // 특수 케이스: "사무엘기 상권" -> "사무엘기", "사무엘", "사무" 형태로 검색 가능
+        if name.contains("상권") || name.contains("하권") {
+            let baseName = name.replacingOccurrences(of: " 상권", with: "")
+                               .replacingOccurrences(of: " 하권", with: "")
+            keywords.append(baseName)
+            if baseName.hasSuffix("기") {
+                keywords.append(baseName.dropLast() as String)
+            }
+        }
+
+        // 숫자 접두사가 있는 경우, 숫자 없는 버전도 추가
+        for keyword in [name, shortName, abbrev] {
+            let cleaned = keyword.filter { !$0.isNumber }
+            if !cleaned.isEmpty && cleaned != keyword {
+                keywords.append(cleaned)
+            }
+        }
+
+        return Array(Set(keywords)).sorted()
+    }
 }
 
 // MARK: - Canon (73권)

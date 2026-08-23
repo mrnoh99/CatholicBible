@@ -263,29 +263,56 @@ struct SearchView: View {
 
     private var bookPickerSheet: some View {
         NavigationStack {
-            List(Bible.books, id: \.id) { book in
-                Button(action: {
-                    selectedBookID = book.id
-                    selectedChapter = 0
-                    selectedVerse = 0
-                    showBookPicker = false
-                }) {
-                    HStack {
-                        Text(book.name)
-                        Spacer()
-                        if book.id == selectedBookID {
-                            Image(systemName: "checkmark")
-                                .foregroundStyle(.blue)
-                        }
+            VStack(spacing: 0) {
+                TextField("책 이름, 약칭 검색", text: $bookSearchText)
+                    .font(.system(size: 16))
+                    .textFieldStyle(.roundedBorder)
+                    .padding()
+
+                let filteredBooks = Bible.books.filter { book in
+                    if bookSearchText.isEmpty {
+                        return true
+                    }
+                    let searchLower = bookSearchText.lowercased()
+                    return book.searchKeywords.contains { keyword in
+                        keyword.lowercased().contains(searchLower)
                     }
                 }
-                .foregroundStyle(.primary)
+
+                List(filteredBooks, id: \.id) { book in
+                    Button(action: {
+                        selectedBookID = book.id
+                        selectedChapter = 0
+                        selectedVerse = 0
+                        bookSearchText = ""
+                        showBookPicker = false
+                    }) {
+                        HStack {
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text(book.name)
+                                    .font(.body)
+                                Text(book.abbrev)
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                            Spacer()
+                            if book.id == selectedBookID {
+                                Image(systemName: "checkmark")
+                                    .foregroundStyle(.blue)
+                            }
+                        }
+                    }
+                    .foregroundStyle(.primary)
+                }
             }
             .navigationTitle("책 선택")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button("완료") { showBookPicker = false }
+                    Button("완료") {
+                        bookSearchText = ""
+                        showBookPicker = false
+                    }
                 }
             }
         }
