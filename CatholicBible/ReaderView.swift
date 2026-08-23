@@ -1448,7 +1448,10 @@ struct AppearanceControls: View {
                         Slider(value: $settings.lineSpacingFactor, in: 0.35...1.1)
                     }
                     Picker("한글 서체", selection: $settings.fontChoice) {
-                        ForEach(FontChoice.allCases) { choice in Text(choice.label).tag(choice) }
+                        ForEach(FontChoice.allCases) { choice in
+                            let displayLabel = choice == settings.fontChoice ? choice.label : choice.opposite.label
+                            Text(displayLabel).tag(choice)
+                        }
                     }
                     .pickerStyle(.segmented)
                     Picker("영문 서체", selection: $settings.englishFontChoice) {

@@ -21,6 +21,13 @@ enum FontChoice: String, CaseIterable, Identifiable {
         }
     }
 
+    var opposite: FontChoice {
+        switch self {
+        case .myeongjo: return .gothic
+        case .gothic:   return .myeongjo
+        }
+    }
+
     /// 본문용 폰트. Dynamic Type과 함께 확대·축소된다.
     func font(size: CGFloat, relativeTo style: Font.TextStyle = .body, bold: Bool = false) -> Font {
         switch self {
