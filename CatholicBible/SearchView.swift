@@ -1980,16 +1980,17 @@ struct SearchView: View {
             performReferenceSearch(references, scope: scope)
         } else {
             print("[DEBUG] parseReferences failed, treating as text search")
-            // 주석 검색일 때는 performTextSearch 호출하지 않음 (주석 검색 결과 유지)
-            if isCommentarySearchEnabled {
-                print("[DEBUG] 주석 검색 중, performTextSearch 스킵")
-                return
-            }
-            // It's text search - scope을 .current로 변경
             mode = .text
-            let textSearchScope = SearchScope.current
-            performTextSearch(input, scope: textSearchScope)
-            scope = textSearchScope
+            if isCommentarySearchEnabled {
+                print("[DEBUG] 주석 검색 실행")
+                performTextSearch(input, scope: .commentary)
+                scope = .commentary
+            } else {
+                // 일반 텍스트 검색
+                let textSearchScope = SearchScope.current
+                performTextSearch(input, scope: textSearchScope)
+                scope = textSearchScope
+            }
         }
     }
 
@@ -2204,10 +2205,20 @@ struct SearchView: View {
                 }
             } else {
                 // Original behavior for non-operator queries
-                if editionsToSearch.count > 1 {
-                    hits = await store.searchAll(searchText, editions: editionsToSearch, mode: .text)
-                } else if let edition = editionsToSearch.first {
-                    hits = await store.search(searchText, edition: edition, mode: .text)
+                if scope == .commentary {
+                    // 주석 검색
+                    if editionsToSearch.count > 1 {
+                        hits = await store.searchAllAnnotationsWithOffset(searchText, editions: editionsToSearch, offset: 0, limit: 200)
+                    } else if let edition = editionsToSearch.first {
+                        hits = await store.searchAnnotationsWithOffset(searchText, edition: edition, offset: 0, limit: 200)
+                    }
+                } else {
+                    // 본문 검색
+                    if editionsToSearch.count > 1 {
+                        hits = await store.searchAll(searchText, editions: editionsToSearch, mode: .text)
+                    } else if let edition = editionsToSearch.first {
+                        hits = await store.search(searchText, edition: edition, mode: .text)
+                    }
                 }
             }
 
