@@ -2204,12 +2204,19 @@ struct SearchView: View {
             } else {
                 // Original behavior for non-operator queries
                 if scope == .commentary {
-                    // 주석 검색
+                    // 주석 검색: 본문과 주석을 OR로 연결 (둘 다 검색)
+                    var textHits: [SearchHit] = []
+                    var annotationHits: [SearchHit] = []
+
                     if editionsToSearch.count > 1 {
-                        hits = await store.searchAllAnnotationsWithOffset(searchText, editions: editionsToSearch, offset: 0, limit: 200)
+                        textHits = await store.searchAll(searchText, editions: editionsToSearch, mode: .text, limit: 100)
+                        annotationHits = await store.searchAllAnnotationsWithOffset(searchText, editions: editionsToSearch, offset: 0, limit: 100)
                     } else if let edition = editionsToSearch.first {
-                        hits = await store.searchAnnotationsWithOffset(searchText, edition: edition, offset: 0, limit: 200)
+                        textHits = await store.search(searchText, edition: edition, mode: .text, limit: 100)
+                        annotationHits = await store.searchAnnotationsWithOffset(searchText, edition: edition, offset: 0, limit: 100)
                     }
+
+                    hits = textHits + annotationHits
                 } else {
                     // 본문 검색
                     if editionsToSearch.count > 1 {
