@@ -235,7 +235,7 @@ struct BackupListView: View {
 }
 
 #Preview {
-    @State var annotationStore = AnnotationStore()
+    let annotationStore = AnnotationStore()
     return BackupSettingsView()
         .environment(annotationStore)
 }

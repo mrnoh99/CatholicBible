@@ -6,14 +6,23 @@
 //
 
 import SwiftUI
+import Observation
 
 @Observable
 final class AppSettings {
     static let shared = AppSettings()
 
-    @AppStorage("theme.preference") var themePreference: String = "system"
-    @AppStorage("fontSize") var fontSize: Double = 16
-    @AppStorage("lineHeight") var lineHeight: Double = 1.5
+    private(set) var themePreference: String = UserDefaults.standard.string(forKey: "theme.preference") ?? "system" {
+        didSet { UserDefaults.standard.set(themePreference, forKey: "theme.preference") }
+    }
+
+    private(set) var fontSize: Double = UserDefaults.standard.double(forKey: "fontSize") > 0 ? UserDefaults.standard.double(forKey: "fontSize") : 16 {
+        didSet { UserDefaults.standard.set(fontSize, forKey: "fontSize") }
+    }
+
+    private(set) var lineHeight: Double = UserDefaults.standard.double(forKey: "lineHeight") > 0 ? UserDefaults.standard.double(forKey: "lineHeight") : 1.5 {
+        didSet { UserDefaults.standard.set(lineHeight, forKey: "lineHeight") }
+    }
 
     // MARK: - 백업 설정
     var backupManager = BackupManager.shared
