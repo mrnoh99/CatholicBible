@@ -2204,16 +2204,30 @@ struct SearchView: View {
             } else {
                 // Original behavior for non-operator queries
                 if scope == .commentary {
-                    // 주석 검색: 본문과 주석을 OR로 연결 (둘 다 검색)
+                    // 주석 검색: 본문과 주석의 총 개수를 먼저 구하기
+                    var textCount = 0
+                    var annotationCount = 0
+
+                    if editionsToSearch.count > 1 {
+                        textCount = await store.searchAllCount(searchText, editions: editionsToSearch, mode: .text)
+                        annotationCount = await store.searchAllAnnotationsCount(searchText, editions: editionsToSearch)
+                    } else if let edition = editionsToSearch.first {
+                        textCount = await store.searchCount(searchText, edition: edition, mode: .text)
+                        annotationCount = await store.searchAnnotationsCount(searchText, edition: edition)
+                    }
+
+                    totalSearchCount = textCount + annotationCount
+
+                    // 처음 searchPageSize만큼 로드
                     var textHits: [SearchHit] = []
                     var annotationHits: [SearchHit] = []
 
                     if editionsToSearch.count > 1 {
-                        textHits = await store.searchAll(searchText, editions: editionsToSearch, mode: .text, limit: 100)
-                        annotationHits = await store.searchAllAnnotationsWithOffset(searchText, editions: editionsToSearch, offset: 0, limit: 100)
+                        textHits = await store.searchAllWithOffset(searchText, editions: editionsToSearch, mode: .text, offset: 0, limit: searchPageSize)
+                        annotationHits = await store.searchAllAnnotationsWithOffset(searchText, editions: editionsToSearch, offset: 0, limit: searchPageSize)
                     } else if let edition = editionsToSearch.first {
-                        textHits = await store.search(searchText, edition: edition, mode: .text, limit: 100)
-                        annotationHits = await store.searchAnnotationsWithOffset(searchText, edition: edition, offset: 0, limit: 100)
+                        textHits = await store.searchWithOffset(searchText, edition: edition, mode: .text, offset: 0, limit: searchPageSize)
+                        annotationHits = await store.searchAnnotationsWithOffset(searchText, edition: edition, offset: 0, limit: searchPageSize)
                     }
 
                     hits = textHits + annotationHits
@@ -2230,8 +2244,12 @@ struct SearchView: View {
             guard !Task.isCancelled else { return }
             previousResults = hits
             results = hits
-            totalSearchCount = hits.count
-            currentOffset = hits.count
+            if scope == .commentary {
+                currentOffset = hits.count
+            } else {
+                totalSearchCount = hits.count
+                currentOffset = hits.count
+            }
             addToTextSearchHistory(searchText)
             hasSearched = true
             isSearching = false
