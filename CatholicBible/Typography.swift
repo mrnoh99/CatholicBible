@@ -21,6 +21,13 @@ enum FontChoice: String, CaseIterable, Identifiable {
         }
     }
 
+    var shortLabel: String {
+        switch self {
+        case .myeongjo: return "명조"
+        case .gothic:   return "고딕"
+        }
+    }
+
     var opposite: FontChoice {
         switch self {
         case .myeongjo: return .gothic

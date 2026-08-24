@@ -29,7 +29,7 @@ struct SettingsView: View {
                     .pickerStyle(.segmented)
                     Picker("한글 서체", selection: $settings.fontChoice) {
                         ForEach(FontChoice.allCases) { choice in
-                            Text(choice.label).tag(choice)
+                            Text(choice.shortLabel).tag(choice)
                         }
                     }
                     .pickerStyle(.segmented)
