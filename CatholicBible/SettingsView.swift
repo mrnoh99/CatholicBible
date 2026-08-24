@@ -86,4 +86,5 @@ struct SettingsView: View {
 
 #Preview {
     SettingsView()
+        .environment(ReaderSettings())
 }
