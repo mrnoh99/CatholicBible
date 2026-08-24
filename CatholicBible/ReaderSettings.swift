@@ -72,25 +72,44 @@ enum ReaderTheme: String, CaseIterable, Identifiable {
 @Observable
 final class ReaderSettings {
     private static let defaults = UserDefaults.standard
+    private var updateTrigger = false
 
     var fontSize: Double {
-        didSet { Self.defaults.set(fontSize, forKey: "reader.fontSize") }
+        didSet {
+            Self.defaults.set(fontSize, forKey: "reader.fontSize")
+            updateTrigger.toggle()
+        }
     }
     /// 줄 간격 배율 (본문 폰트 크기 대비)
     var lineSpacingFactor: Double {
-        didSet { Self.defaults.set(lineSpacingFactor, forKey: "reader.lineSpacing") }
+        didSet {
+            Self.defaults.set(lineSpacingFactor, forKey: "reader.lineSpacing")
+            updateTrigger.toggle()
+        }
     }
     var fontChoice: FontChoice {
-        didSet { Self.defaults.set(fontChoice.rawValue, forKey: "reader.fontChoice") }
+        didSet {
+            Self.defaults.set(fontChoice.rawValue, forKey: "reader.fontChoice")
+            updateTrigger.toggle()
+        }
     }
     var englishFontChoice: EnglishFontChoice {
-        didSet { Self.defaults.set(englishFontChoice.rawValue, forKey: "reader.englishFontChoice") }
+        didSet {
+            Self.defaults.set(englishFontChoice.rawValue, forKey: "reader.englishFontChoice")
+            updateTrigger.toggle()
+        }
     }
     var theme: ReaderTheme {
-        didSet { Self.defaults.set(theme.rawValue, forKey: "reader.theme") }
+        didSet {
+            Self.defaults.set(theme.rawValue, forKey: "reader.theme")
+            updateTrigger.toggle()
+        }
     }
     var showVerseNumbers: Bool {
-        didSet { Self.defaults.set(showVerseNumbers, forKey: "reader.showVerseNumbers") }
+        didSet {
+            Self.defaults.set(showVerseNumbers, forKey: "reader.showVerseNumbers")
+            updateTrigger.toggle()
+        }
     }
 
     static let fontSizeRange: ClosedRange<Double> = 14...30
