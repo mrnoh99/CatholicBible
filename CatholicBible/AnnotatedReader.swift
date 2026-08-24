@@ -748,6 +748,7 @@ struct IntroDetailView: View {
     @Environment(\.horizontalSizeClass) private var hSize
     @Environment(\.dismiss) private var dismiss
     @State private var xrefTarget: XrefTarget?
+    @State private var showNotes = true
 
     private var wide: Bool { hSize == .regular }
 
@@ -779,16 +780,18 @@ struct IntroDetailView: View {
                 if wide {
                     HStack(spacing: 0) {
                         bodyColumn
-                        Divider()
-                        NotesColumn(title: "주석", notes: intro.notes,
-                                    emptyHint: "이 입문에는 주석이 없습니다.")
-                            .frame(maxWidth: .infinity)
+                        if showNotes {
+                            Divider()
+                            NotesColumn(title: "주석", notes: intro.notes,
+                                        emptyHint: "이 입문에는 주석이 없습니다.")
+                                .frame(maxWidth: .infinity)
+                        }
                     }
                 } else {
                     ScrollView {
                         VStack(alignment: .leading, spacing: 0) {
                             bodyText
-                            if !intro.notes.isEmpty {
+                            if showNotes && !intro.notes.isEmpty {
                                 Divider().padding(.vertical, 16)
                                 NotesList(title: "주석", notes: intro.notes, emptyHint: "")
                             }
@@ -800,7 +803,17 @@ struct IntroDetailView: View {
             .background(settings.theme.background.ignoresSafeArea())
             .navigationTitle(intro.title.isEmpty ? "입문" : intro.title)
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar { ToolbarItem(placement: .topBarTrailing) { Button("닫기") { dismiss() } } }
+            .toolbar {
+                ToolbarItemGroup(placement: .topBarTrailing) {
+                    if !intro.notes.isEmpty {
+                        Button(action: { showNotes.toggle() }) {
+                            Image(systemName: showNotes ? "eye" : "eye.slash")
+                                .accessibilityLabel(showNotes ? "주석 숨기기" : "주석 보이기")
+                        }
+                    }
+                    Button("닫기") { dismiss() }
+                }
+            }
             .preferredColorScheme(settings.theme.colorScheme)
             // 주석 열(NotesList)의 인용 링크도 여기서 처리하도록 openURL 재정의
             .environment(\.openURL, OpenURLAction { url in handleURL(url); return .handled })
