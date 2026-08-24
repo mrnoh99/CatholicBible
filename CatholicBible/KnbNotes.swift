@@ -98,7 +98,7 @@ enum ScriptureRefNormalizer {
                 let refWords = refToCheck.split(separator: " ", maxSplits: 1).map { String($0) }
                 if !refWords.isEmpty {
                     let firstWord = refWords[0]
-                    if let foundBook = Bible.books.first(where: { $0.abbrev == firstWord }) {
+                    if let foundBook = Bible.books.first(where: { $0.abbrev == firstWord || $0.searchKeywords.contains(firstWord) }) {
                         // 약자를 찾았으므로 책 이름을 사용하되, 약자는 유지
                         finalBook = foundBook.name
                         finalRef = ref  // 약자를 포함한 원본 ref 유지
@@ -114,8 +114,8 @@ enum ScriptureRefNormalizer {
                 let refWords = finalRef.split(separator: " ").map { String($0) }
                 if !refWords.isEmpty {
                     let firstWord = refWords[0]
-                    // 참조의 첫 단어가 어떤 책의 약자와 일치하면 중복으로 판단
-                    if Bible.books.contains(where: { $0.abbrev == firstWord }) {
+                    // 참조의 첫 단어가 어떤 책의 약자나 검색 키워드와 일치하면 중복으로 판단
+                    if Bible.books.contains(where: { $0.abbrev == firstWord || $0.searchKeywords.contains(firstWord) }) {
                         shouldIncludeBook = false
                     }
 
@@ -124,8 +124,12 @@ enum ScriptureRefNormalizer {
                     if shouldIncludeBook && refWords.count > 1 {
                         for i in 1..<refWords.count {
                             let potentialBookRef = refWords[i...].joined(separator: " ")
-                            // 약자 확인
-                            if let foundBook = Bible.books.first(where: { $0.abbrev == refWords[i] }) {
+                            let currentWord = refWords[i]
+
+                            // 약자 또는 searchKeywords 확인
+                            if let foundBook = Bible.books.first(where: {
+                                $0.abbrev == currentWord || $0.searchKeywords.contains(currentWord)
+                            }) {
                                 finalRef = potentialBookRef
                                 shouldIncludeBook = false
                                 break
