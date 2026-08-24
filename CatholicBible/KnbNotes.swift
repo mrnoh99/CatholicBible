@@ -399,12 +399,23 @@ enum ScriptureRefNormalizer {
     /// 주어진 참조 부분에서 책 이름과 참조 부분을 분리한다.
     /// 반환: (책이름, 참조) 또는 (nil, 원본문자)
     private static func extractBookAndRef(from ref: String) -> (String?, String) {
-        let bookNames = Bible.books.map { $0.name }
+        // 먼저 전체 책 이름으로 확인
+        for book in Bible.books {
+            if ref.hasPrefix(book.name) {
+                let afterBook = String(ref.dropFirst(book.name.count)).trimmingCharacters(in: .whitespaces)
+                return (book.name, afterBook)
+            }
+        }
 
-        for book in bookNames {
-            if ref.hasPrefix(book) {
-                let afterBook = String(ref.dropFirst(book.count)).trimmingCharacters(in: .whitespaces)
-                return (book, afterBook)
+        // 그 다음 약자로 확인
+        for book in Bible.books {
+            if ref.hasPrefix(book.abbrev) {
+                // 약자가 참조의 일부가 아닌지 확인 (예: "루" in "루카"가 아닌지)
+                let afterAbbrev = String(ref.dropFirst(book.abbrev.count))
+                if afterAbbrev.isEmpty || afterAbbrev.first?.isWhitespace ?? false || afterAbbrev.first?.isNumber ?? false {
+                    let trimmed = afterAbbrev.trimmingCharacters(in: .whitespaces)
+                    return (book.name, trimmed)
+                }
             }
         }
 
