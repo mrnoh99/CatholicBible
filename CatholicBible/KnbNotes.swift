@@ -85,9 +85,11 @@ enum ScriptureRefNormalizer {
             let (book, ref) = extractBookAndRef(from: trimmed)
 
             if let book = book {
-                contextBook = book
+                // 책 이름이 명시된 경우: contextBook을 업데이트하지 않음 (다른 참조의 컨텍스트 오염 방지)
+                // 단순히 "책 참조" 형식으로 정규화만 함
                 normalized.append(part.replacingOccurrences(of: trimmed, with: "\(book) \(ref)"))
             } else if let contextBook = contextBook {
+                // 책 이름이 없는 경우만 contextBook 사용
                 normalized.append(part.replacingOccurrences(of: trimmed, with: "\(contextBook) \(ref)"))
             } else {
                 normalized.append(part)
