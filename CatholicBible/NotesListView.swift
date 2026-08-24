@@ -7,20 +7,6 @@
 //
 
 import SwiftUI
-import UniformTypeIdentifiers
-
-/// 노트·책갈피·미디어를 한 파일로 담는 백업 문서(JSON)
-struct BackupDocument: FileDocument {
-    static var readableContentTypes: [UTType] { [.json] }
-    var data: Data
-    init(data: Data) { self.data = data }
-    init(configuration: ReadConfiguration) throws {
-        data = configuration.file.regularFileContents ?? Data()
-    }
-    func fileWrapper(configuration: WriteConfiguration) throws -> FileWrapper {
-        FileWrapper(regularFileWithContents: data)
-    }
-}
 
 struct NotesListView: View {
     @Environment(AnnotationStore.self) private var annotations
@@ -30,10 +16,6 @@ struct NotesListView: View {
     @Environment(\.dismiss) private var dismiss
 
     @State private var editing: Note?
-    @State private var showExporter = false
-    @State private var showImporter = false
-    @State private var backupDoc = BackupDocument(data: Data())
-    @State private var resultMessage: String?
 
     var body: some View {
         NavigationStack {
@@ -59,44 +41,12 @@ struct NotesListView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) { Button("닫기") { dismiss() } }
-                ToolbarItem(placement: .primaryAction) {
-                    Menu {
-                        Button("파일로 내보내기(백업)", systemImage: "square.and.arrow.up") {
-                            backupDoc = BackupDocument(data: annotations.exportBackup() ?? Data())
-                            showExporter = true
-                        }
-                        Button("파일에서 가져오기(복원)", systemImage: "square.and.arrow.down") {
-                            showImporter = true
-                        }
-                    } label: {
-                        Label("백업", systemImage: "externaldrive")
-                    }
-                }
             }
             .sheet(item: $editing) { note in
                 NoteEditorView(verse: note.verse,
                                verseText: previewText(note.verse),
                                existing: note)
                     .environment(annotations)   // Mac Catalyst: 모달 환경 전파 대비
-            }
-            .fileExporter(isPresented: $showExporter, document: backupDoc,
-                          contentType: .json,
-                          defaultFilename: "가톨릭성경-노트백업") { result in
-                if case .failure(let err) = result {
-                    resultMessage = "내보내기 실패: \(err.localizedDescription)"
-                } else {
-                    resultMessage = "백업 파일을 저장했습니다."
-                }
-            }
-            .fileImporter(isPresented: $showImporter,
-                          allowedContentTypes: [.json]) { result in
-                handleImport(result)
-            }
-            .alert("백업", isPresented: Binding(get: { resultMessage != nil },
-                                              set: { if !$0 { resultMessage = nil } })) {
-                Button("확인", role: .cancel) { resultMessage = nil }
-            } message: {
-                Text(resultMessage ?? "")
             }
         }
     }
