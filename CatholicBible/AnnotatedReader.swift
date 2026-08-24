@@ -775,36 +775,38 @@ struct IntroDetailView: View {
     }
 
     var body: some View {
-        ZStack {
-            if wide {
-                wideLayout
-            } else {
-                narrowLayout
-            }
-        }
-        .background(settings.theme.background.ignoresSafeArea())
-        .navigationTitle(intro.title.isEmpty ? "입문" : intro.title)
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            ToolbarItemGroup(placement: .topBarTrailing) {
-                if !intro.notes.isEmpty {
-                    Button(action: { showNotes.toggle() }) {
-                        Image(systemName: showNotes ? "eye" : "eye.slash")
-                            .accessibilityLabel(showNotes ? "주석 숨기기" : "주석 보이기")
-                    }
+        NavigationStack {
+            ZStack {
+                if wide {
+                    wideLayout
+                } else {
+                    narrowLayout
                 }
-                Button("닫기") { dismiss() }
             }
-        }
-        .preferredColorScheme(settings.theme.colorScheme)
-        .environment(\.openURL, OpenURLAction { url in handleURL(url); return .handled })
-        .fullScreenCover(item: $xrefTarget) { t in
-            RefPreviewSheet(target: t)
-                .environment(store)
-                .environment(settings)
-                .environment(annotations)
-                .environment(navigation)
-                .environment(knb)
+            .background(settings.theme.background.ignoresSafeArea())
+            .navigationTitle(intro.title.isEmpty ? "입문" : intro.title)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItemGroup(placement: .topBarTrailing) {
+                    if !intro.notes.isEmpty {
+                        Button(action: { showNotes.toggle() }) {
+                            Image(systemName: showNotes ? "eye" : "eye.slash")
+                                .accessibilityLabel(showNotes ? "주석 숨기기" : "주석 보이기")
+                        }
+                    }
+                    Button("닫기") { dismiss() }
+                }
+            }
+            .preferredColorScheme(settings.theme.colorScheme)
+            .environment(\.openURL, OpenURLAction { url in handleURL(url); return .handled })
+            .fullScreenCover(item: $xrefTarget) { t in
+                RefPreviewSheet(target: t)
+                    .environment(store)
+                    .environment(settings)
+                    .environment(annotations)
+                    .environment(navigation)
+                    .environment(knb)
+            }
         }
     }
 
