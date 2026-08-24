@@ -236,7 +236,7 @@ struct AnnotatedReader: View {
                     Divider()
                     AnnotationsPane(notes: notes, xrefs: xrefs,
                                     emptyHint: emptyNotesHint, bookID: book.id, wide: true,
-                                    searchQuery: navigation.searchQuery)
+                                    searchQuery: navigation.searchQuery, editionID: editionID)
                         .frame(maxWidth: .infinity)
                 }
             } else {
@@ -246,7 +246,7 @@ struct AnnotatedReader: View {
                         Divider().padding(.vertical, 16)
                         AnnotationsPane(notes: notes, xrefs: xrefs,
                                         emptyHint: emptyNotesHint, bookID: book.id,
-                                        searchQuery: navigation.searchQuery)
+                                        searchQuery: navigation.searchQuery, editionID: editionID)
                     }
                     .frame(maxWidth: 720, alignment: .leading)
                     .padding(.horizontal, 28).padding(.bottom, 40)
@@ -518,12 +518,13 @@ struct NotesColumn: View {
     let emptyHint: String
     /// 인용의 '이어지는 절' 기준 책 id (링크 연결용).
     var bookID: String = ""
+    var editionID: String = "knbnotes"
     @Environment(ReaderSettings.self) private var settings
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
-                NotesList(title: title, notes: notes, emptyHint: emptyHint, bookID: bookID)
+                NotesList(title: title, notes: notes, emptyHint: emptyHint, bookID: bookID, editionID: editionID)
             }
             .padding(.horizontal, 22).padding(.vertical, 24)
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -542,6 +543,7 @@ struct AnnotationsPane: View {
     var wide: Bool = false
     var searchQuery: String = ""
     var selectedAnnotationNumber: String? = nil
+    var editionID: String = "knbnotes"
     @State private var tab = 0        // 0=주석, 1=상호참조
     @Environment(ReaderSettings.self) private var settings
 
@@ -561,11 +563,13 @@ struct AnnotationsPane: View {
                           emptyHint: tab == 1 ? "이 장에는 상호참조가 없습니다." : emptyHint,
                           bookID: bookID,
                           searchQuery: searchQuery,
-                          selectedAnnotationNumber: selectedAnnotationNumber)
+                          selectedAnnotationNumber: selectedAnnotationNumber,
+                          editionID: editionID)
             } else {
                 NotesList(title: "주석", notes: notes, emptyHint: emptyHint, bookID: bookID,
                           searchQuery: searchQuery,
-                          selectedAnnotationNumber: selectedAnnotationNumber)
+                          selectedAnnotationNumber: selectedAnnotationNumber,
+                          editionID: editionID)
             }
         }
     }
@@ -617,8 +621,11 @@ struct NotesList: View {
     var chapter: Int = 0
     var searchQuery: String = ""
     var selectedAnnotationNumber: String? = nil
+    var editionID: String = "knbnotes"
     @Environment(ReaderSettings.self) private var settings
     @Environment(\.openURL) private var openURL
+
+    private var edition: Edition { Editions.edition(editionID) ?? Editions.all[0] }
 
     private var noteUIFont: UIFont {
         let size = settings.fontSize * 0.9
@@ -709,7 +716,7 @@ struct IntroductionsView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .topBarTrailing) { Button("닫기") { dismiss() } } }
             .fullScreenCover(item: $selected) { intro in
-                IntroDetailView(intro: intro)
+                IntroDetailView(intro: intro, editionID: editionID)
                     .environment(settings)
                     .environment(store)
                     .environment(annotations)
@@ -747,6 +754,7 @@ struct IntroductionsView: View {
 
 struct IntroDetailView: View {
     let intro: Introduction
+    var editionID: String = "knbnotes"
     @Environment(ReaderSettings.self) private var settings
     @Environment(BibleStore.self) private var store
     @Environment(AnnotationStore.self) private var annotations
@@ -823,7 +831,7 @@ struct IntroDetailView: View {
             if showNotes {
                 Divider()
                 NotesColumn(title: "주석", notes: intro.notes,
-                            emptyHint: "이 입문에는 주석이 없습니다.")
+                            emptyHint: "이 입문에는 주석이 없습니다.", editionID: editionID)
                     .frame(maxWidth: .infinity)
             }
         }
@@ -835,7 +843,7 @@ struct IntroDetailView: View {
                 bodyText
                 if showNotes && !intro.notes.isEmpty {
                     Divider().padding(.vertical, 16)
-                    NotesList(title: "주석", notes: intro.notes, emptyHint: "")
+                    NotesList(title: "주석", notes: intro.notes, emptyHint: "", editionID: editionID)
                 }
             }
             .padding(.horizontal, 24).padding(.vertical, 20)
