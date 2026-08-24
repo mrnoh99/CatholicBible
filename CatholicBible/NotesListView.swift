@@ -33,6 +33,7 @@ struct NotesListView: View {
     @State private var showImporter = false
     @State private var backupDoc = BackupDocument(data: Data())
     @State private var resultMessage: String?
+    @State private var isExporting = false
 
     var body: some View {
         NavigationStack {
@@ -59,16 +60,29 @@ struct NotesListView: View {
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) { Button("닫기") { dismiss() } }
                 ToolbarItem(placement: .primaryAction) {
-                    Menu {
-                        Button("파일로 내보내기(백업)", systemImage: "square.and.arrow.up") {
-                            backupDoc = BackupDocument(data: annotations.exportBackup() ?? Data())
-                            showExporter = true
+                    if isExporting {
+                        ProgressView()
+                            .scaleEffect(0.8)
+                    } else {
+                        Menu {
+                            Button("파일로 내보내기(백업)", systemImage: "square.and.arrow.up") {
+                                isExporting = true
+                                Task {
+                                    if let data = annotations.exportBackup() {
+                                        backupDoc = BackupDocument(data: data)
+                                        showExporter = true
+                                    } else {
+                                        resultMessage = "백업 데이터 생성 실패"
+                                    }
+                                    isExporting = false
+                                }
+                            }
+                            Button("파일에서 가져오기(복원)", systemImage: "square.and.arrow.down") {
+                                showImporter = true
+                            }
+                        } label: {
+                            Label("백업", systemImage: "externaldrive")
                         }
-                        Button("파일에서 가져오기(복원)", systemImage: "square.and.arrow.down") {
-                            showImporter = true
-                        }
-                    } label: {
-                        Label("백업", systemImage: "externaldrive")
                     }
                 }
             }
