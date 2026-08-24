@@ -1132,7 +1132,9 @@ struct VerseRowView: View {
         if edition.language == "en" {
             switch settings.englishFontChoice {
             case .georgia: return UIFont(name: "Georgia", size: size) ?? .systemFont(ofSize: size)
-            case .sanfrancisco, .palatino, .charter: return .systemFont(ofSize: size)
+            case .sanfrancisco: return .systemFont(ofSize: size)
+            case .palatino: return UIFont(name: "Palatino", size: size) ?? UIFont(name: "Palatino Linotype", size: size) ?? .systemFont(ofSize: size)
+            case .charter: return UIFont(name: "Charter", size: size) ?? UIFont(name: "Bitstream Charter", size: size) ?? .systemFont(ofSize: size)
             }
         } else {
             switch settings.fontChoice {

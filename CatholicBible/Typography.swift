@@ -67,8 +67,12 @@ enum EnglishFontChoice: String, CaseIterable, Identifiable {
         switch self {
         case .georgia:
             return .custom(bold ? "Georgia-Bold" : "Georgia", size: size, relativeTo: style)
-        case .sanfrancisco, .palatino, .charter:
+        case .sanfrancisco:
             return .system(size: size, weight: bold ? .semibold : .regular)
+        case .palatino:
+            return .custom("Palatino", size: size, relativeTo: style)
+        case .charter:
+            return .custom("Charter", size: size, relativeTo: style)
         }
     }
 }
