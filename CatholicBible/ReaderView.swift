@@ -1456,8 +1456,7 @@ struct AppearanceControls: View {
                     }
                     Picker("한글 서체", selection: $settings.fontChoice) {
                         ForEach(FontChoice.allCases) { choice in
-                            let displayLabel = choice == settings.fontChoice ? choice.label : choice.opposite.label
-                            Text(displayLabel).tag(choice)
+                            Text(choice.label).tag(choice)
                         }
                     }
                     .pickerStyle(.segmented)
