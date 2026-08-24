@@ -29,7 +29,8 @@ struct SettingsView: View {
                     .pickerStyle(.segmented)
                     Picker("한글 서체", selection: $settings.fontChoice) {
                         ForEach(FontChoice.allCases) { choice in
-                            Text(choice.label).tag(choice)
+                            let displayLabel = choice == settings.fontChoice ? choice.opposite.label : choice.label
+                            Text(displayLabel).tag(choice)
                         }
                     }
                     .pickerStyle(.segmented)
