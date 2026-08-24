@@ -45,6 +45,7 @@ final class BackupManager {
     private static let iCloudEnabledKey = "backupManager.iCloudEnabled"
     private static let lastICloudSyncKey = "backupManager.lastICloudSync"
     private static let iCloudBackupDirName = "CatholicBibleBackups"
+    private static let deviceIdKey = "backupManager.deviceId"
 
     var isAutoBackupEnabled: Bool {
         get {
@@ -104,20 +105,42 @@ final class BackupManager {
 
     private let backupDir: URL
     private let iCloudBackupDir: URL?
+    private let deviceId: String
 
     init() {
         let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
         backupDir = docs.appendingPathComponent(Self.backupDirName, isDirectory: true)
         try? FileManager.default.createDirectory(at: backupDir, withIntermediateDirectories: true)
 
-        // iCloud Drive 설정
+        // 기기 ID 설정 (처음 한 번만 생성)
+        if let saved = Self.defaults.string(forKey: Self.deviceIdKey) {
+            self.deviceId = saved
+        } else {
+            let newId = UIDevice.current.identifierForVendor?.uuidString ?? UUID().uuidString
+            Self.defaults.set(newId, forKey: Self.deviceIdKey)
+            self.deviceId = newId
+        }
+
+        // iCloud Drive 설정 (기기별 폴더)
         if let iCloudContainerURL = FileManager.default.url(forUbiquityContainerIdentifier: nil) {
-            let iCloudBackupDirURL = iCloudContainerURL.appendingPathComponent(Self.iCloudBackupDirName, isDirectory: true)
+            let iCloudBackupDirURL = iCloudContainerURL
+                .appendingPathComponent(Self.iCloudBackupDirName, isDirectory: true)
+                .appendingPathComponent(deviceId, isDirectory: true)
             try? FileManager.default.createDirectory(at: iCloudBackupDirURL, withIntermediateDirectories: true)
             self.iCloudBackupDir = iCloudBackupDirURL
         } else {
             self.iCloudBackupDir = nil
         }
+    }
+
+    // MARK: - 기기 정보
+
+    func getDeviceIdentifier() -> String {
+        deviceId
+    }
+
+    func getDeviceName() -> String {
+        UIDevice.current.name
     }
 
     // MARK: - iCloud 확인
@@ -173,9 +196,49 @@ final class BackupManager {
                 name: url.lastPathComponent,
                 date: metadata["date"] as? String ?? "",
                 bookmarksCount: metadata["bookmarksCount"] as? Int ?? 0,
-                notesCount: metadata["notesCount"] as? Int ?? 0
+                notesCount: metadata["notesCount"] as? Int ?? 0,
+                deviceName: getDeviceName(),
+                isFromCurrentDevice: true
             )
         }.sorted { ($0.date) > ($1.date) }
+    }
+
+    func listAllDeviceBackups() -> [BackupInfo] {
+        guard let iCloudContainerURL = FileManager.default.url(forUbiquityContainerIdentifier: nil) else { return [] }
+        let backupRootDir = iCloudContainerURL.appendingPathComponent(Self.iCloudBackupDirName, isDirectory: true)
+
+        guard let devices = try? FileManager.default.contentsOfDirectory(at: backupRootDir, includingPropertiesForKeys: nil) else {
+            return []
+        }
+
+        var allBackups: [BackupInfo] = []
+
+        for deviceDir in devices {
+            guard let backups = try? FileManager.default.contentsOfDirectory(at: deviceDir, includingPropertiesForKeys: [.contentModificationDateKey]) else {
+                continue
+            }
+
+            for backupDir in backups {
+                let metadataFile = backupDir.appendingPathComponent("metadata.json")
+                guard let metadataData = try? Data(contentsOf: metadataFile),
+                      let metadata = try? JSONSerialization.jsonObject(with: metadataData) as? [String: Any] else {
+                    continue
+                }
+
+                let isCurrentDevice = deviceDir.lastPathComponent == deviceId
+                allBackups.append(BackupInfo(
+                    path: backupDir,
+                    name: backupDir.lastPathComponent,
+                    date: metadata["date"] as? String ?? "",
+                    bookmarksCount: metadata["bookmarksCount"] as? Int ?? 0,
+                    notesCount: metadata["notesCount"] as? Int ?? 0,
+                    deviceName: metadata["deviceName"] as? String,
+                    isFromCurrentDevice: isCurrentDevice
+                ))
+            }
+        }
+
+        return allBackups.sorted { ($0.date) > ($1.date) }
     }
 
     func downloadFromICloud(_ backup: BackupInfo, to localDir: URL) async -> Result<Void, Error> {
@@ -254,6 +317,8 @@ final class BackupManager {
                 "date": ISO8601DateFormatter().string(from: Date()),
                 "appVersion": Bundle.main.appVersion,
                 "osVersion": UIDevice.current.systemVersion,
+                "deviceName": UIDevice.current.name,
+                "deviceId": deviceId,
                 "bookmarksCount": annotationStore.sortedBookmarks.count,
                 "notesCount": annotationStore.notes.count
             ]
@@ -333,7 +398,9 @@ final class BackupManager {
                 name: url.lastPathComponent,
                 date: metadata["date"] as? String ?? "",
                 bookmarksCount: metadata["bookmarksCount"] as? Int ?? 0,
-                notesCount: metadata["notesCount"] as? Int ?? 0
+                notesCount: metadata["notesCount"] as? Int ?? 0,
+                deviceName: getDeviceName(),
+                isFromCurrentDevice: true
             )
         }.sorted { ($0.date) > ($1.date) }
     }
@@ -366,6 +433,18 @@ struct BackupInfo: Identifiable {
     let date: String
     let bookmarksCount: Int
     let notesCount: Int
+    let deviceName: String?
+    let isFromCurrentDevice: Bool
+
+    init(path: URL, name: String, date: String, bookmarksCount: Int, notesCount: Int, deviceName: String? = nil, isFromCurrentDevice: Bool = true) {
+        self.path = path
+        self.name = name
+        self.date = date
+        self.bookmarksCount = bookmarksCount
+        self.notesCount = notesCount
+        self.deviceName = deviceName
+        self.isFromCurrentDevice = isFromCurrentDevice
+    }
 }
 
 extension Bundle {
