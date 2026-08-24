@@ -51,24 +51,6 @@ struct NotesListView: View {
         }
     }
 
-    private func handleImport(_ result: Result<URL, Error>) {
-        switch result {
-        case .failure(let err):
-            resultMessage = "가져오기 실패: \(err.localizedDescription)"
-        case .success(let url):
-            let scoped = url.startAccessingSecurityScopedResource()
-            defer { if scoped { url.stopAccessingSecurityScopedResource() } }
-            guard let data = try? Data(contentsOf: url) else {
-                resultMessage = "파일을 읽지 못했습니다."; return
-            }
-            if let (n, b) = annotations.importBackup(data) {
-                resultMessage = "복원 완료: 노트 \(n)개, 책갈피 \(b)개 추가."
-            } else {
-                resultMessage = "백업 파일 형식이 아닙니다."
-            }
-        }
-    }
-
     private func row(_ note: Note) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack {
