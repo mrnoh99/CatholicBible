@@ -84,11 +84,33 @@ enum ScriptureRefNormalizer {
 
             let (book, ref) = extractBookAndRef(from: trimmed)
 
-            if let book = book {
+            // 책 이름이나 약자가 명시되지 않은 경우, ref에 약자가 있는지 다시 확인
+            var finalBook = book
+            var finalRef = ref
+
+            if book == nil && !ref.isEmpty {
+                // ref의 앞에 있는 구두점 제거하고 첫 단어가 책 약자인지 확인
+                var refToCheck = ref
+                while !refToCheck.isEmpty && !refToCheck.first!.isLetter {
+                    refToCheck.removeFirst()
+                }
+
+                let refWords = refToCheck.split(separator: " ", maxSplits: 1).map { String($0) }
+                if !refWords.isEmpty {
+                    let firstWord = refWords[0]
+                    if let foundBook = Bible.books.first(where: { $0.abbrev == firstWord }) {
+                        // 약자를 찾았으므로 책 이름을 사용하되, 약자는 유지
+                        finalBook = foundBook.name
+                        finalRef = ref  // 약자를 포함한 원본 ref 유지
+                    }
+                }
+            }
+
+            if let book = finalBook {
                 // 책 이름이 명시된 경우: 중복 방지
                 // ref가 책 약자로 시작하는지 확인 (예: "마태 1,1", "마르 2,1" 등)
                 var shouldIncludeBook = true
-                let refWords = ref.split(separator: " ")
+                let refWords = finalRef.split(separator: " ")
                 if !refWords.isEmpty {
                     let firstWord = String(refWords[0])
                     // 참조의 첫 단어가 어떤 책의 약자와 일치하면 중복으로 판단
@@ -99,14 +121,14 @@ enum ScriptureRefNormalizer {
 
                 if shouldIncludeBook {
                     // 책 이름과 함께 정규화
-                    normalized.append(part.replacingOccurrences(of: trimmed, with: "\(book) \(ref)"))
+                    normalized.append(part.replacingOccurrences(of: trimmed, with: "\(book) \(finalRef)"))
                 } else {
                     // 책 약자가 이미 있으므로 책 이름 생략
-                    normalized.append(part.replacingOccurrences(of: trimmed, with: ref))
+                    normalized.append(part.replacingOccurrences(of: trimmed, with: finalRef))
                 }
             } else if let contextBook = contextBook {
                 // 책 이름이 없는 경우만 contextBook 사용
-                normalized.append(part.replacingOccurrences(of: trimmed, with: "\(contextBook) \(ref)"))
+                normalized.append(part.replacingOccurrences(of: trimmed, with: "\(contextBook) \(finalRef)"))
             } else {
                 normalized.append(part)
             }
