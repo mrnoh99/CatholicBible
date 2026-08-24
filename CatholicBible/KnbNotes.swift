@@ -85,16 +85,24 @@ enum ScriptureRefNormalizer {
             let (book, ref) = extractBookAndRef(from: trimmed)
 
             if let book = book {
-                // 책 이름이 명시된 경우: 참조 부분이 이미 책 약자를 포함하는지 확인
-                // 포함하면 책 이름을 중복으로 추가하지 않음 (예: "마태오 복음서 마태" 형식 방지)
-                let refFirstWord = ref.split(separator: " ").first.map(String.init) ?? ""
-                let refHasBookAbbrev = Bible.books.contains { $0.abbrev == refFirstWord }
-                if refHasBookAbbrev {
-                    // 참조가 이미 책 약자를 포함: 책 이름을 붙이지 않음
-                    normalized.append(part.replacingOccurrences(of: trimmed, with: ref))
-                } else {
-                    // 참조가 책 약자 없음: 책 이름과 함께 정규화
+                // 책 이름이 명시된 경우: 중복 방지
+                // ref가 책 약자로 시작하는지 확인 (예: "마태 1,1", "마르 2,1" 등)
+                var shouldIncludeBook = true
+                let refWords = ref.split(separator: " ")
+                if !refWords.isEmpty {
+                    let firstWord = String(refWords[0])
+                    // 참조의 첫 단어가 어떤 책의 약자와 일치하면 중복으로 판단
+                    if Bible.books.contains(where: { $0.abbrev == firstWord }) {
+                        shouldIncludeBook = false
+                    }
+                }
+
+                if shouldIncludeBook {
+                    // 책 이름과 함께 정규화
                     normalized.append(part.replacingOccurrences(of: trimmed, with: "\(book) \(ref)"))
+                } else {
+                    // 책 약자가 이미 있으므로 책 이름 생략
+                    normalized.append(part.replacingOccurrences(of: trimmed, with: ref))
                 }
             } else if let contextBook = contextBook {
                 // 책 이름이 없는 경우만 contextBook 사용
