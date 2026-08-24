@@ -282,6 +282,7 @@ enum ScriptureRefNormalizer {
         // 패턴: "(장,절.절... 또는 장,절; 장,절.절...)"
         // 예: (1,1.19), (1,1.19; 4,5), (3,38; 6,10.28)
         // 점 형식이 있으면서 절 마커가 없는 쉼표-점 혼합 형식
+        // 단, 책 이름이나 약자로 시작하는 것은 제외
         let pattern = "\\(([^)]*\\d+,\\d+(?:\\.\\d+)+[^)]*)\\)"
         guard let regex = try? NSRegularExpression(pattern: pattern) else {
             return result
@@ -293,6 +294,39 @@ enum ScriptureRefNormalizer {
         for match in matches.reversed() {
             let fullMatch = ns.substring(with: match.range(at: 0))
             let innerContent = (fullMatch as NSString).substring(with: NSRange(location: 1, length: fullMatch.count - 2))
+
+            // 책 이름이나 약자로 시작하는지 확인 (이미 명시된 참조는 건너뛰기)
+            var startsWithBook = false
+            var bookPrefix = ""
+
+            // 책 이름 확인
+            for book in Bible.books {
+                if innerContent.hasPrefix(book.name) {
+                    startsWithBook = true
+                    bookPrefix = book.name
+                    break
+                }
+            }
+
+            // 책 약자 확인
+            if !startsWithBook {
+                for book in Bible.books {
+                    if innerContent.hasPrefix(book.abbrev) {
+                        // 약자가 완전한 단어인지 확인 (예: "루" in "루카"가 아닌지)
+                        let afterAbbrev = String(innerContent.dropFirst(book.abbrev.count))
+                        if afterAbbrev.isEmpty || afterAbbrev.first?.isWhitespace ?? false {
+                            startsWithBook = true
+                            bookPrefix = book.abbrev
+                            break
+                        }
+                    }
+                }
+            }
+
+            // 이미 책이 명시된 경우 건너뛰기
+            if startsWithBook {
+                continue
+            }
 
             // 세미콜론으로 분리된 참조들을 처리
             let refs = innerContent.split(separator: ";").map { String($0).trimmingCharacters(in: .whitespaces) }
