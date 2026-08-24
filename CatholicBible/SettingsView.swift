@@ -29,12 +29,18 @@ struct SettingsView: View {
                     .pickerStyle(.segmented)
                     Picker("한글 서체", selection: $settings.fontChoice) {
                         ForEach(FontChoice.allCases) { choice in
-                            Text(choice.shortLabel).tag(choice)
+                            Text(choice.shortLabel)
+                                .font(choice.font(size: settings.fontSize))
+                                .tag(choice)
                         }
                     }
                     .pickerStyle(.segmented)
                     Picker("영문 서체", selection: $settings.englishFontChoice) {
-                        ForEach(EnglishFontChoice.allCases) { choice in Text(choice.label).tag(choice) }
+                        ForEach(EnglishFontChoice.allCases) { choice in
+                            Text(choice.label)
+                                .font(choice.font(size: settings.fontSize))
+                                .tag(choice)
+                        }
                     }
                     .pickerStyle(.segmented)
                 }
