@@ -49,6 +49,8 @@ enum FontChoice: String, CaseIterable, Identifiable {
 enum EnglishFontChoice: String, CaseIterable, Identifiable {
     case georgia
     case sanfrancisco
+    case palatino
+    case charter
 
     var id: String { rawValue }
 
@@ -56,6 +58,8 @@ enum EnglishFontChoice: String, CaseIterable, Identifiable {
         switch self {
         case .georgia: return "Georgia"
         case .sanfrancisco: return "San Francisco"
+        case .palatino: return "Palatino"
+        case .charter: return "Charter"
         }
     }
 
@@ -63,7 +67,7 @@ enum EnglishFontChoice: String, CaseIterable, Identifiable {
         switch self {
         case .georgia:
             return .custom(bold ? "Georgia-Bold" : "Georgia", size: size, relativeTo: style)
-        case .sanfrancisco:
+        case .sanfrancisco, .palatino, .charter:
             return .system(size: size, weight: bold ? .semibold : .regular)
         }
     }
