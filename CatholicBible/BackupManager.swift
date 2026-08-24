@@ -16,6 +16,23 @@ enum BackupFrequency: String, CaseIterable {
     var id: String { self.rawValue }
 }
 
+enum SyncError: LocalizedError {
+    case iCloudUnavailable
+    case syncFailed(String)
+    case downloadFailed
+
+    var errorDescription: String? {
+        switch self {
+        case .iCloudUnavailable:
+            return "iCloud를 사용할 수 없습니다"
+        case .syncFailed(let msg):
+            return "동기화 실패: \(msg)"
+        case .downloadFailed:
+            return "다운로드 실패"
+        }
+    }
+}
+
 @Observable
 final class BackupManager {
     static let shared = BackupManager()
@@ -25,6 +42,9 @@ final class BackupManager {
     private static let lastBackupKey = "backupManager.lastBackupDate"
     private static let autoBackupEnabledKey = "backupManager.autoBackupEnabled"
     private static let backupFrequencyKey = "backupManager.backupFrequency"
+    private static let iCloudEnabledKey = "backupManager.iCloudEnabled"
+    private static let lastICloudSyncKey = "backupManager.lastICloudSync"
+    private static let iCloudBackupDirName = "CatholicBibleBackups"
 
     var isAutoBackupEnabled: Bool {
         get {
@@ -58,12 +78,124 @@ final class BackupManager {
         }
     }
 
+    var isICloudEnabled: Bool {
+        get {
+            Self.defaults.bool(forKey: Self.iCloudEnabledKey)
+        }
+        set {
+            Self.defaults.set(newValue, forKey: Self.iCloudEnabledKey)
+        }
+    }
+
+    var lastICloudSyncDate: Date? {
+        get {
+            Self.defaults.object(forKey: Self.lastICloudSyncKey) as? Date
+        }
+        set {
+            if let date = newValue {
+                Self.defaults.set(date, forKey: Self.lastICloudSyncKey)
+            } else {
+                Self.defaults.removeObject(forKey: Self.lastICloudSyncKey)
+            }
+        }
+    }
+
+    var isSyncing = false
+
     private let backupDir: URL
+    private let iCloudBackupDir: URL?
 
     init() {
         let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
         backupDir = docs.appendingPathComponent(Self.backupDirName, isDirectory: true)
         try? FileManager.default.createDirectory(at: backupDir, withIntermediateDirectories: true)
+
+        // iCloud Drive 설정
+        if let iCloudContainerURL = FileManager.default.url(forUbiquityContainerIdentifier: nil) {
+            let iCloudBackupDirURL = iCloudContainerURL.appendingPathComponent(Self.iCloudBackupDirName, isDirectory: true)
+            try? FileManager.default.createDirectory(at: iCloudBackupDirURL, withIntermediateDirectories: true)
+            self.iCloudBackupDir = iCloudBackupDirURL
+        } else {
+            self.iCloudBackupDir = nil
+        }
+    }
+
+    // MARK: - iCloud 확인
+
+    func isICloudAvailable() -> Bool {
+        iCloudBackupDir != nil
+    }
+
+    // MARK: - iCloud 동기화
+
+    func syncToICloud(backupPath: URL) async -> Result<Void, Error> {
+        guard let iCloudDir = iCloudBackupDir else {
+            return .failure(SyncError.iCloudUnavailable)
+        }
+
+        isSyncing = true
+        defer { isSyncing = false }
+
+        do {
+            let backupName = backupPath.lastPathComponent
+            let iCloudBackupPath = iCloudDir.appendingPathComponent(backupName, isDirectory: true)
+
+            // 기존 백업이 있으면 제거
+            if FileManager.default.fileExists(atPath: iCloudBackupPath.path) {
+                try FileManager.default.removeItem(at: iCloudBackupPath)
+            }
+
+            // 백업 폴더 복사
+            try FileManager.default.copyItem(at: backupPath, to: iCloudBackupPath)
+            lastICloudSyncDate = Date()
+            return .success(())
+        } catch {
+            return .failure(SyncError.syncFailed(error.localizedDescription))
+        }
+    }
+
+    func listICloudBackups() -> [BackupInfo] {
+        guard let iCloudDir = iCloudBackupDir else { return [] }
+
+        guard let contents = try? FileManager.default.contentsOfDirectory(at: iCloudDir, includingPropertiesForKeys: [.contentModificationDateKey]) else {
+            return []
+        }
+
+        return contents.compactMap { url in
+            let metadataFile = url.appendingPathComponent("metadata.json")
+            guard let metadataData = try? Data(contentsOf: metadataFile),
+                  let metadata = try? JSONSerialization.jsonObject(with: metadataData) as? [String: Any] else {
+                return nil
+            }
+
+            return BackupInfo(
+                path: url,
+                name: url.lastPathComponent,
+                date: metadata["date"] as? String ?? "",
+                bookmarksCount: metadata["bookmarksCount"] as? Int ?? 0,
+                notesCount: metadata["notesCount"] as? Int ?? 0
+            )
+        }.sorted { ($0.date) > ($1.date) }
+    }
+
+    func downloadFromICloud(_ backup: BackupInfo, to localDir: URL) async -> Result<Void, Error> {
+        isSyncing = true
+        defer { isSyncing = false }
+
+        do {
+            let localBackupPath = localDir.appendingPathComponent(backup.name, isDirectory: true)
+
+            // 기존 백업이 있으면 제거
+            if FileManager.default.fileExists(atPath: localBackupPath.path) {
+                try FileManager.default.removeItem(at: localBackupPath)
+            }
+
+            // iCloud에서 복사
+            try FileManager.default.copyItem(at: backup.path, to: localBackupPath)
+            return .success(())
+        } catch {
+            return .failure(SyncError.downloadFailed)
+        }
     }
 
     // MARK: - 자동 백업 체크
@@ -129,6 +261,14 @@ final class BackupManager {
             try metadataData.write(to: backupPath.appendingPathComponent("metadata.json"))
 
             lastBackupDate = Date()
+
+            // iCloud 동기화 활성화 시 비동기로 업로드
+            if isICloudEnabled {
+                Task {
+                    _ = await self.syncToICloud(backupPath: backupPath)
+                }
+            }
+
             return .success(backupPath)
         } catch {
             return .failure(error)
