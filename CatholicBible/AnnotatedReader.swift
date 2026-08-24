@@ -775,56 +775,61 @@ struct IntroDetailView: View {
     }
 
     var body: some View {
-        NavigationStack {
-            Group {
-                if wide {
-                    HStack(spacing: 0) {
-                        bodyColumn
-                        if showNotes {
-                            Divider()
-                            NotesColumn(title: "주석", notes: intro.notes,
-                                        emptyHint: "이 입문에는 주석이 없습니다.")
-                                .frame(maxWidth: .infinity)
-                        }
-                    }
-                } else {
-                    ScrollView {
-                        VStack(alignment: .leading, spacing: 0) {
-                            bodyText
-                            if showNotes && !intro.notes.isEmpty {
-                                Divider().padding(.vertical, 16)
-                                NotesList(title: "주석", notes: intro.notes, emptyHint: "")
-                            }
-                        }
-                        .padding(.horizontal, 24).padding(.vertical, 20)
+        ZStack {
+            if wide {
+                wideLayout
+            } else {
+                narrowLayout
+            }
+        }
+        .background(settings.theme.background.ignoresSafeArea())
+        .navigationTitle(intro.title.isEmpty ? "입문" : intro.title)
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItemGroup(placement: .topBarTrailing) {
+                if !intro.notes.isEmpty {
+                    Button(action: { showNotes.toggle() }) {
+                        Image(systemName: showNotes ? "eye" : "eye.slash")
+                            .accessibilityLabel(showNotes ? "주석 숨기기" : "주석 보이기")
                     }
                 }
+                Button("닫기") { dismiss() }
             }
-            .background(settings.theme.background.ignoresSafeArea())
-            .navigationTitle(intro.title.isEmpty ? "입문" : intro.title)
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItemGroup(placement: .topBarTrailing) {
-                    if !intro.notes.isEmpty {
-                        Button(action: { showNotes.toggle() }) {
-                            Image(systemName: showNotes ? "eye" : "eye.slash")
-                                .accessibilityLabel(showNotes ? "주석 숨기기" : "주석 보이기")
-                        }
-                    }
-                    Button("닫기") { dismiss() }
+        }
+        .preferredColorScheme(settings.theme.colorScheme)
+        .environment(\.openURL, OpenURLAction { url in handleURL(url); return .handled })
+        .fullScreenCover(item: $xrefTarget) { t in
+            RefPreviewSheet(target: t)
+                .environment(store)
+                .environment(settings)
+                .environment(annotations)
+                .environment(navigation)
+                .environment(knb)
+        }
+    }
+
+    private var wideLayout: some View {
+        HStack(spacing: 0) {
+            bodyColumn
+            if showNotes {
+                Divider()
+                NotesColumn(title: "주석", notes: intro.notes,
+                            emptyHint: "이 입문에는 주석이 없습니다.")
+                    .frame(maxWidth: .infinity)
+            }
+        }
+    }
+
+    private var narrowLayout: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 0) {
+                bodyText
+                if showNotes && !intro.notes.isEmpty {
+                    Divider().padding(.vertical, 16)
+                    NotesList(title: "주석", notes: intro.notes, emptyHint: "")
                 }
             }
-            .preferredColorScheme(settings.theme.colorScheme)
-            // 주석 열(NotesList)의 인용 링크도 여기서 처리하도록 openURL 재정의
-            .environment(\.openURL, OpenURLAction { url in handleURL(url); return .handled })
-            .fullScreenCover(item: $xrefTarget) { t in
-                RefPreviewSheet(target: t)
-                    .environment(store)
-                    .environment(settings)
-                    .environment(annotations)
-                    .environment(navigation)
-                    .environment(knb)
-            }
+            .padding(.horizontal, 24).padding(.vertical, 20)
         }
     }
 
