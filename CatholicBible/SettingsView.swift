@@ -51,6 +51,12 @@ struct SettingsView: View {
                         Text(appVersion)
                             .foregroundStyle(.secondary)
                     }
+                    Button(action: { exportBookmarks() }) {
+                        Label("백업", systemImage: "arrow.up.doc")
+                    }
+                    Button(action: { importBookmarks() }) {
+                        Label("복구", systemImage: "arrow.down.doc")
+                    }
                 }
             }
             .navigationTitle("설정")
@@ -67,6 +73,14 @@ struct SettingsView: View {
         let version = bundle.infoDictionary?["CFBundleShortVersionString"] as? String ?? "Unknown"
         let build = bundle.infoDictionary?["CFBundleVersion"] as? String ?? "Unknown"
         return "\(version) (\(build))"
+    }
+
+    private func exportBookmarks() {
+        // Placeholder for backup functionality
+    }
+
+    private func importBookmarks() {
+        // Placeholder for restore functionality
     }
 }
 
