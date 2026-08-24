@@ -347,8 +347,6 @@ struct HelpManualView: View {
                             .font(.headline.weight(.semibold))
                         Text("설정 > 보기에서 사용할 판본을 선택할 수 있습니다.")
                             .font(.callout)
-                        Text("불필요한 판본을 삭제하여 저장 공간을 절약할 수 있습니다.")
-                            .font(.callout)
                     }
                 }
 
