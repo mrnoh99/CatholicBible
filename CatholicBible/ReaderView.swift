@@ -1129,9 +1129,16 @@ struct VerseRowView: View {
 
     private var uiBodyFont: UIFont {
         let size = settings.fontSize
-        switch settings.fontChoice {
-        case .myeongjo: return UIFont(name: "NanumMyeongjo", size: size) ?? .systemFont(ofSize: size)
-        case .gothic:   return .systemFont(ofSize: size)
+        if edition.language == "en" {
+            switch settings.englishFontChoice {
+            case .georgia: return UIFont(name: "Georgia", size: size) ?? .systemFont(ofSize: size)
+            case .sanfrancisco: return .systemFont(ofSize: size)
+            }
+        } else {
+            switch settings.fontChoice {
+            case .myeongjo: return UIFont(name: "NanumMyeongjo", size: size) ?? .systemFont(ofSize: size)
+            case .gothic:   return .systemFont(ofSize: size)
+            }
         }
     }
 
