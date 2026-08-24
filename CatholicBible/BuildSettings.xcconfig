@@ -1,0 +1,2 @@
+// Code Signing Entitlements for macOS file access
+CODE_SIGN_ENTITLEMENTS = CatholicBible/CatholicBible.entitlements
