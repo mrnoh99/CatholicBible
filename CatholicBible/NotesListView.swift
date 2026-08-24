@@ -34,6 +34,7 @@ struct NotesListView: View {
     @State private var backupDoc = BackupDocument(data: Data())
     @State private var resultMessage: String?
     @State private var isExporting = false
+    @State private var backupFilename = ""
 
     var body: some View {
         NavigationStack {
@@ -70,6 +71,9 @@ struct NotesListView: View {
                                 Task {
                                     if let data = annotations.exportBackup() {
                                         backupDoc = BackupDocument(data: data)
+                                        let formatter = DateFormatter()
+                                        formatter.dateFormat = "yyyy-MM-dd-HHmmss"
+                                        backupFilename = "가톨릭성경-노트백업-\(formatter.string(from: Date()))"
                                         showExporter = true
                                     } else {
                                         resultMessage = "백업 데이터 생성 실패"
@@ -94,7 +98,7 @@ struct NotesListView: View {
             }
             .fileExporter(isPresented: $showExporter, document: backupDoc,
                           contentType: .json,
-                          defaultFilename: "가톨릭성경-노트백업") { result in
+                          defaultFilename: backupFilename) { result in
                 if case .failure(let err) = result {
                     resultMessage = "내보내기 실패: \(err.localizedDescription)"
                 } else {
