@@ -29,6 +29,13 @@ struct AppSettingsView: View {
                         Image(systemName: "arrow.up.doc")
                         Text("백업")
                     }
+
+                helpTab
+                    .tag(2)
+                    .tabItem {
+                        Image(systemName: "questionmark.circle.fill")
+                        Text("도움말")
+                    }
             }
             .navigationTitle("설정")
             .toolbar {
@@ -45,6 +52,10 @@ struct AppSettingsView: View {
 
     private var backupSettingsTab: some View {
         BackupSettingsView()
+    }
+
+    private var helpTab: some View {
+        HelpManualView()
     }
 }
 
