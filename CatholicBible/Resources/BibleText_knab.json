@@ -1,7 +1,10 @@
 {
-  "translation": "성경",
-  "source": "https://bible.cbck.or.kr/Knb",
-  "bookNames": {},
+  "metadata": {
+    "edition": "knab",
+    "source": "https://www.kingjamesbibleonline.org",
+    "language": "en",
+    "editionName": "King James Bible"
+  },
   "books": {
     "gn": {
       "1": {
@@ -38459,5 +38462,5 @@
       }
     }
   },
-  "headings": {}
+  "translation": "성경"
 }

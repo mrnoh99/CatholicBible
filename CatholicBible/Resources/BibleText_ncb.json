@@ -1,8 +1,10 @@
 {
   "metadata": {
     "edition": "ncb",
-    "source": "공동번역 성서",
-    "hasHeadings": true
+    "source": "https://bible.cbck.or.kr/Ncb",
+    "hasHeadings": true,
+    "editionName": "공동번역 성서",
+    "language": "ko"
   },
   "books": {
     "1chr": {

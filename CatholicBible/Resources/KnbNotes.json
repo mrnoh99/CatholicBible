@@ -1,7 +1,10 @@
 {
   "metadata": {
     "edition": "knbnotes",
-    "annotationType": "footnote"
+    "annotationType": "footnote",
+    "editionName": "성경(새 번역)",
+    "source": "https://bible.cbck.or.kr/Knb",
+    "language": "ko"
   },
   "annotations": {
     "1chr": {

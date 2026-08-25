@@ -1,7 +1,10 @@
 {
   "metadata": {
     "edition": "nabre",
-    "annotationType": "footnote"
+    "annotationType": "footnote",
+    "editionName": "NABRE (본문+주석)",
+    "source": "https://bible.usccb.org/bible",
+    "language": "en"
   },
   "annotations": {
     "gn": {

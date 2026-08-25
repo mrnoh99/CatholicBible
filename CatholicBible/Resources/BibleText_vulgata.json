@@ -1,8 +1,10 @@
 {
   "metadata": {
     "edition": "vulgata",
-    "source": "Nova Vulgata",
-    "hasHeadings": false
+    "source": "https://www.vatican.va",
+    "hasHeadings": false,
+    "editionName": "Nova Vulgata",
+    "language": "la"
   },
   "books": {
     "1chr": {

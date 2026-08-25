@@ -1,8 +1,10 @@
 {
   "metadata": {
     "edition": "b200",
-    "source": "200주년 신약성서",
-    "hasHeadings": true
+    "source": "https://bible.cbck.or.kr/200",
+    "hasHeadings": true,
+    "editionName": "200주년 신약성서",
+    "language": "ko"
   },
   "books": {
     "mt": {

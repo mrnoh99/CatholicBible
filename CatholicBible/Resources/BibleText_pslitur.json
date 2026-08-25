@@ -2,11 +2,10 @@
   "metadata": {
     "edition": "pslitur",
     "source": "https://bible.cbck.or.kr/Pslitur",
-    "hasHeadings": false
+    "hasHeadings": false,
+    "editionName": "전례 시편",
+    "language": "ko"
   },
-  "translation": "전례 시편",
-  "source": "https://bible.cbck.or.kr/Pslitur",
-  "bookNames": {},
   "books": {
     "ps": {
       "1": {

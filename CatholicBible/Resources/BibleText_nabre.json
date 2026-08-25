@@ -2,11 +2,10 @@
   "metadata": {
     "edition": "nabre",
     "source": "https://bible.usccb.org/bible",
-    "hasHeadings": false
+    "hasHeadings": false,
+    "editionName": "NABRE (본문+주석)",
+    "language": "en"
   },
-  "translation": "New American Bible, revised edition",
-  "source": "https://bible.usccb.org/bible",
-  "bookNames": {},
   "books": {
     "gn": {
       "1": {
@@ -42075,5 +42074,6 @@
         "headings": {}
       }
     }
-  }
+  },
+  "translation": "New American Bible, revised edition"
 }

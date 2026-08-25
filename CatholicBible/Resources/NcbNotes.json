@@ -1,7 +1,10 @@
 {
   "metadata": {
     "edition": "ncb",
-    "annotationType": "footnote"
+    "annotationType": "footnote",
+    "editionName": "공동번역 성서",
+    "source": "https://bible.cbck.or.kr/Ncb",
+    "language": "ko"
   },
   "annotations": {},
   "titles": {}

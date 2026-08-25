@@ -2,11 +2,10 @@
   "metadata": {
     "edition": "pscms",
     "source": "https://bible.cbck.or.kr/Pscms",
-    "hasHeadings": false
+    "hasHeadings": false,
+    "editionName": "최민순 역 시편",
+    "language": "ko"
   },
-  "translation": "최민순 역 시편",
-  "source": "https://bible.cbck.or.kr/Pscms",
-  "bookNames": {},
   "books": {
     "ps": {
       "1": {

@@ -1,8 +1,10 @@
 {
   "metadata": {
     "edition": "knb",
-    "source": "성경",
-    "hasHeadings": true
+    "source": "https://bible.cbck.or.kr/Knb",
+    "hasHeadings": true,
+    "editionName": "성경(새 번역)",
+    "language": "ko"
   },
   "books": {
     "gn": {

@@ -1,8 +1,10 @@
 {
   "metadata": {
     "edition": "knbnotes",
-    "source": "주석 성경",
-    "hasHeadings": true
+    "source": "https://bible.cbck.or.kr/Knbnotes",
+    "hasHeadings": true,
+    "editionName": "주석 성경",
+    "language": "ko"
   },
   "books": {
     "1chr": {
