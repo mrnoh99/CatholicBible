@@ -194,6 +194,11 @@ final class BibleStore {
                             titles[bookID]![chapterKey] = [:]
                         }
                         for (verseKey, headingText) in chapterHeadings {
+                            // 제목이 너무 길거나 parenthetical 절 마커를 포함하면 제외
+                            // (예: 에스더의 경우 본문 내용이 제목 필드에 저장됨)
+                            if headingText.count > 150 || headingText.contains("(") && headingText.contains(")") {
+                                continue
+                            }
                             // 이미 있는 제목이 없을 때만 파일의 제목 사용
                             if titles[bookID]![chapterKey]![verseKey] == nil {
                                 titles[bookID]![chapterKey]![verseKey] = headingText
