@@ -107,9 +107,13 @@ final class BibleStore {
                     var chapterMap: [Int: [Verse]] = [:]
                     for (chapterKey, verses) in chapters {
                         guard let chapterNumber = Int(chapterKey) else { continue }
-                        chapterMap[chapterNumber] = verses
+                        let mapped = verses
                             .map { key, text in Verse(number: key, text: text) }
                             .sorted { self.compareVerseKeys($0.number, $1.number) }
+
+                        // 중복 절 제거 (같은 번호가 여러 번 나타나면 첫 번째만 유지)
+                        var seen = Set<String>()
+                        chapterMap[chapterNumber] = mapped.filter { seen.insert($0.number).inserted }
                     }
                     if !chapterMap.isEmpty { indexed[bookID] = chapterMap }
                 }
@@ -385,14 +389,29 @@ final class BibleStore {
     }
 
     private func compareVerseKeys(_ a: String, _ b: String) -> Bool {
-        // "1", "2", "10", "1(1)", "1(2)" 등을 올바르게 정렬
-        if let aNum = Int(a), let bNum = Int(b) {
-            return aNum < bNum
+        // "1", "2", "10", "1(1)", "1(2)", "1(10)" 등을 올바르게 정렬
+        let aIsParenthetical = a.contains("(")
+        let bIsParenthetical = b.contains("(")
+
+        // 기본 번호 추출
+        let aBase = Int(a.split(separator: "(").first.map(String.init) ?? a) ?? Int.max
+        let bBase = Int(b.split(separator: "(").first.map(String.init) ?? b) ?? Int.max
+
+        // 기본 번호가 다르면 기본 번호로 정렬
+        if aBase != bBase { return aBase < bBase }
+
+        // 기본 번호가 같으면 - 일반절 먼저, 그 다음 parenthetical
+        if aIsParenthetical != bIsParenthetical {
+            return !aIsParenthetical  // a가 일반절이면 true (더 먼저)
         }
-        if let aBase = Int(a.split(separator: "(").first.map(String.init) ?? a),
-           let bBase = Int(b.split(separator: "(").first.map(String.init) ?? b) {
-            if aBase != bBase { return aBase < bBase }
+
+        // 둘 다 parenthetical인 경우 괄호 안의 번호로 정렬
+        if aIsParenthetical && bIsParenthetical {
+            let aInner = Int(a.split(separator: "(").dropFirst().first?.trimmingCharacters(in: CharacterSet(charactersIn: ")")) ?? "") ?? Int.max
+            let bInner = Int(b.split(separator: "(").dropFirst().first?.trimmingCharacters(in: CharacterSet(charactersIn: ")")) ?? "") ?? Int.max
+            return aInner < bInner
         }
+
         return a < b
     }
 
