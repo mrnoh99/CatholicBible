@@ -806,12 +806,11 @@ struct IntroDetailView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItemGroup(placement: .topBarTrailing) {
-                    if !intro.notes.isEmpty {
-                        Button(action: { showNotes.toggle() }) {
-                            Image(systemName: showNotes ? "eye" : "eye.slash")
-                                .accessibilityLabel(showNotes ? "주석 숨기기" : "주석 보이기")
-                        }
+                    Button(action: { showNotes.toggle() }) {
+                        Image(systemName: showNotes ? "eye" : "eye.slash")
+                            .accessibilityLabel(showNotes ? "주석 숨기기" : "주석 보이기")
                     }
+                    .disabled(intro.notes.isEmpty)
                     Button("닫기") { dismiss() }
                 }
             }
