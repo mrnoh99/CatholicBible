@@ -687,11 +687,13 @@ final class BibleStore {
             outer: for bookID in order {
                 guard let chapters = text.annotations[bookID] else { continue }
                 let chapterNumbers = chapters.keys.sorted()
-                for chapterNumber in chapterNumbers {
-                    guard let verses = chapters[chapterNumber] else { continue }
+                for chapterKey in chapterNumbers {
+                    guard let verses = chapters[chapterKey] else { continue }
+                    guard let chapterNumber = Int(chapterKey) else { continue }
                     let verseNumbers = verses.keys.sorted()
-                    for verseNumber in verseNumbers {
-                        guard let annotationText = verses[verseNumber] else { continue }
+                    for verseKey in verseNumbers {
+                        guard let annotationText = verses[verseKey] else { continue }
+                        guard let verseNumber = Int(verseKey) else { continue }
 
                         let matches: Bool
                         if isPhrase {
@@ -704,10 +706,9 @@ final class BibleStore {
                         }
                         if matches {
                             if matched >= offset && hits.count < limit {
-                                // 주석 검색: verseNumber는 이미 주석 번호 (String(annot.n))
                                 hits.append(SearchHit(editionID: edition.id, bookID: bookID,
                                                     chapter: chapterNumber, verse: verseNumber,
-                                                    text: annotationText, annotationNumber: String(verseNumber)))
+                                                    text: annotationText, annotationNumber: verseKey))
                             }
                             matched += 1
                             if hits.count >= limit { break outer }
