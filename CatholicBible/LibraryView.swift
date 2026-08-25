@@ -111,30 +111,36 @@ struct LibraryView: View {
     /// 생일 버전(기본): 문구를 누르면 생일 축하 노래가 재생된다.
     /// 일반 버전(GENERAL_EDITION 플래그): 사운드 없이 개발자·연도만 표시.
     private var creditFooter: some View {
-        VStack(spacing: 2) {
+        VStack(spacing: 6) {
             if AppEdition.isBirthday {
                 Button {
                     BirthdaySound.shared.play()
                 } label: {
-                    Text("Developed by JaiSung NOH MD.,\nas a birthday gift for Eunkyung (Teresa) Kim\n— July 30, 2026")
-                        .multilineTextAlignment(.center)
-                        .foregroundStyle(Color.accentColor)
+                    VStack(spacing: 3) {
+                        Text("Developed by JaiSung NOH MD.")
+                            .font(.system(size: 12, weight: .semibold, design: .default))
+                        Text("as a birthday gift for\nEunkyung (Teresa) Kim\n— July 30, 2026")
+                            .font(.system(size: 11, weight: .regular, design: .default))
+                    }
+                    .multilineTextAlignment(.center)
+                    .foregroundStyle(Color.accentColor)
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel("생일 축하 노래 재생")
                 .accessibilityHint("눌러서 생일 축하 노래를 듣습니다")
             } else {
-                Text("Developed by JaiSung NOH MD., 2026")
+                Text("Developed by JaiSung NOH MD.\n2026")
                     .multilineTextAlignment(.center)
-                    .foregroundStyle(.secondary)
+                    .font(.system(size: 12, weight: .semibold, design: .default))
+                    .foregroundStyle(.primary)
             }
 
             Text(appVersionText)
-                .foregroundStyle(.tertiary)
+                .font(.system(size: 11, weight: .regular, design: .monospaced))
+                .foregroundStyle(.secondary)
         }
-        .font(.caption2)
         .frame(maxWidth: .infinity, alignment: .center)
-        .padding(.top, 8)
+        .padding(.vertical, 12)
         .listRowBackground(Color.clear)
         .listRowSeparator(.hidden)
     }
@@ -149,15 +155,21 @@ struct LibraryView: View {
 
     @ViewBuilder
     private func categorySection(_ category: BookCategory, edition: Edition) -> some View {
-        // 사도행전·묵시록처럼 한 권뿐인 분류는 소제목 없이 바로 나열
         let books = Bible.books(in: category)
         if books.count > 1 {
             DisclosureGroup {
                 ForEach(books) { book in bookRow(book, edition: edition) }
             } label: {
-                Text(category.title)
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(.secondary)
+                HStack(spacing: 8) {
+                    Image(systemName: category == .gospels ? "book.pages" : "book")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(Color.accentColor)
+                        .frame(width: 16)
+
+                    Text(category.title)
+                        .font(.system(size: 14, weight: .semibold, design: .default))
+                        .foregroundStyle(.primary)
+                }
             }
         } else {
             ForEach(books) { book in bookRow(book, edition: edition) }
@@ -169,28 +181,35 @@ struct LibraryView: View {
         let fullName = store.bookName(edition: edition, book: book)
         let available = store.hasText(edition: edition, book: book)
 
-        return HStack {
+        return HStack(spacing: 10) {
             VStack(alignment: .leading, spacing: 2) {
                 Text(displayName)
+                    .font(.system(size: 15, weight: available ? .semibold : .regular, design: .default))
+                    .foregroundStyle(available ? .primary : .secondary)
+
                 if fullName != displayName {
                     Text(fullName)
-                        .font(.caption2)
-                        .foregroundStyle(.tertiary)
+                        .font(.system(size: 12, weight: .regular, design: .default))
+                        .foregroundStyle(.secondary)
                         .lineLimit(1)
                 }
             }
             Spacer()
             if available {
                 Text(book.id == "ps" ? "\(book.chapterCount)편" : "\(book.chapterCount)장")
-                    .font(.caption)
+                    .font(.system(size: 13, weight: .semibold, design: .monospaced))
                     .foregroundStyle(.secondary)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 3)
+                    .background(Color.accentColor.opacity(0.08))
+                    .clipShape(Capsule())
             } else {
-                Text("본문 준비 중")
-                    .font(.caption2)
+                Text("준비 중")
+                    .font(.system(size: 12, weight: .regular, design: .default))
                     .foregroundStyle(.tertiary)
             }
         }
-        .opacity(available ? 1 : 0.45)
+        .opacity(available ? 1 : 0.6)
         .tag(book.id)
         .accessibilityLabel(available ? fullName : "\(fullName), 본문 준비 중")
     }
