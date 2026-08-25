@@ -806,11 +806,22 @@ struct IntroDetailView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItemGroup(placement: .topBarTrailing) {
-                    Button(action: { showNotes.toggle() }) {
-                        Image(systemName: showNotes ? "eye" : "eye.slash")
-                            .accessibilityLabel(showNotes ? "주석 숨기기" : "주석 보이기")
+                    HStack(spacing: 2) {
+                        Button("입문") {
+                            showNotes = false
+                        }
+                        .buttonStyle(.bordered)
+                        .foregroundColor(showNotes ? .gray : .accentColor)
+
+                        Button("입문+주석") {
+                            showNotes = true
+                        }
+                        .buttonStyle(.bordered)
+                        .foregroundColor(showNotes ? .accentColor : .gray)
+                        .disabled(intro.notes.isEmpty)
                     }
-                    .disabled(intro.notes.isEmpty)
+                    .font(.caption)
+
                     Button("닫기") { dismiss() }
                 }
             }
