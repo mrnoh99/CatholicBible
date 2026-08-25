@@ -1300,25 +1300,19 @@ struct BookPickerView: View {
 
     private var bookList: some View {
         List {
-            if searchText.isEmpty {
-                // 카테고리별 정렬된 표시
+            if filteredBooks.isEmpty && !searchText.isEmpty {
+                Section {
+                    Text("검색 결과 없음")
+                        .foregroundStyle(.secondary)
+                }
+            } else {
                 ForEach(Testament.allCases) { testament in
-                    let books = edition.scope.books.filter { $0.testament == testament }
+                    let books = filteredBooks.filter { $0.testament == testament }
                     if !books.isEmpty {
                         Section(testament.title) {
                             ForEach(books) { book in row(book) }
                         }
                     }
-                }
-            } else {
-                // 검색 결과
-                if filteredBooks.isEmpty {
-                    Section {
-                        Text("검색 결과 없음")
-                            .foregroundStyle(.secondary)
-                    }
-                } else {
-                    ForEach(filteredBooks) { book in row(book) }
                 }
             }
         }
