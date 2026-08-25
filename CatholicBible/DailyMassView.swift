@@ -396,9 +396,11 @@ private struct ReadingCard: View {
         var out: [(Int, Verse)] = []
         var seen = Set<String>()
         for seg in segs {
-            for v in store.verses(edition: edition, book: book, chapter: seg.chapter)
-                where v.number >= seg.low && v.number <= seg.high {
-                if seen.insert("\(seg.chapter):\(v.number)").inserted { out.append((seg.chapter, v)) }
+            for v in store.verses(edition: edition, book: book, chapter: seg.chapter) {
+                let verseNum = Int(v.number) ?? Int(v.number.split(separator: "(").first ?? "") ?? Int.max
+                if verseNum >= seg.low && verseNum <= seg.high {
+                    if seen.insert("\(seg.chapter):\(v.number)").inserted { out.append((seg.chapter, v)) }
+                }
             }
         }
         return out
