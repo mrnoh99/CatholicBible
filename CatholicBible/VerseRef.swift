@@ -33,7 +33,8 @@ struct VerseRef: Codable, Hashable, Identifiable, Sendable {
     /// 성경 목차 순서 정렬용 키 (책 순서, 장, 절)
     var sortKey: (Int, Int, Int) {
         let bookIndex = Bible.books.firstIndex { $0.id == bookID } ?? Int.max
-        return (bookIndex, chapter, verse)
+        let verseNum = Int(verse) ?? 999999
+        return (bookIndex, chapter, verseNum)
     }
 }
 
