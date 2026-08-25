@@ -194,14 +194,30 @@ final class BibleStore {
                             titles[bookID]![chapterKey] = [:]
                         }
                         for (verseKey, headingText) in chapterHeadings {
-                            // 제목이 너무 길거나 parenthetical 절 마커를 포함하면 제외
-                            // (예: 에스더의 경우 본문 내용이 제목 필드에 저장됨)
-                            if headingText.count > 150 || headingText.contains("(") && headingText.contains(")") {
-                                continue
+                            var cleanHeading = headingText
+
+                            // 제목이 너무 길면 parenthetical 절 마커 앞부분만 추출
+                            // (예: 에스더의 경우 "모르도카이의 꿈 1(1)..." → "모르도카이의 꿈")
+                            if headingText.count > 150 {
+                                // "1(", "2(" 등의 parenthetical 절 마커로 시작하는 부분 찾기
+                                if let regex = try? NSRegularExpression(pattern: "\\s+\\d+\\(", options: []) {
+                                    if let match = regex.firstMatch(in: headingText, options: [], range: NSRange(headingText.startIndex..., in: headingText)) {
+                                        if let range = Range(match.range, in: headingText) {
+                                            cleanHeading = String(headingText[..<range.lowerBound]).trimmingCharacters(in: .whitespaces)
+                                        }
+                                    }
+                                }
                             }
-                            // 이미 있는 제목이 없을 때만 파일의 제목 사용
-                            if titles[bookID]![chapterKey]![verseKey] == nil {
-                                titles[bookID]![chapterKey]![verseKey] = headingText
+
+                            // 정제된 제목이 유효한 제목 형식인지 확인 (너무 짧지 않고, 마침표로 끝남 또는 간단한 구문)
+                            if cleanHeading.count > 3 && cleanHeading.count < 150 {
+                                // 마침표로 끝나거나, 짧은 구문(5-30자 사이)이면 제목으로 인정
+                                if cleanHeading.hasSuffix(".") || (cleanHeading.count < 30 && !cleanHeading.contains("\n")) {
+                                    // 이미 있는 제목이 없을 때만 파일의 제목 사용
+                                    if titles[bookID]![chapterKey]![verseKey] == nil {
+                                        titles[bookID]![chapterKey]![verseKey] = cleanHeading
+                                    }
+                                }
                             }
                         }
                     }
