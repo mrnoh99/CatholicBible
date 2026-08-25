@@ -843,9 +843,9 @@ struct IntroDetailView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
                 bodyText
-                if showNotes && !intro.notes.isEmpty {
+                if showNotes {
                     Divider().padding(.vertical, 16)
-                    NotesList(title: "주석", notes: intro.notes, emptyHint: "", editionID: editionID)
+                    NotesList(title: "주석", notes: intro.notes, emptyHint: "이 입문에는 주석이 없습니다.", editionID: editionID)
                 }
             }
             .padding(.horizontal, 24).padding(.vertical, 20)
