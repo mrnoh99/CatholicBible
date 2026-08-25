@@ -1274,6 +1274,7 @@ struct BookPickerView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var selectedBook: BibleBook?
     @State private var searchText = ""
+    @State private var selectedCategory: BookCategory?
 
     var body: some View {
         NavigationStack {
@@ -1298,30 +1299,69 @@ struct BookPickerView: View {
         }
     }
 
+    private var availableCategories: [BookCategory] {
+        let books = filteredBooks
+        return BookCategory.allCases.filter { category in
+            books.contains { $0.category == category }
+        }
+    }
+
     private var bookList: some View {
-        List {
-            if filteredBooks.isEmpty && !searchText.isEmpty {
-                Section {
-                    Text("검색 결과 없음")
-                        .foregroundStyle(.secondary)
+        VStack(spacing: 0) {
+            if searchText.isEmpty {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 8) {
+                        ForEach(availableCategories) { category in
+                            Button(action: { selectedCategory = category }) {
+                                Text(category.title)
+                                    .font(.body.weight(selectedCategory == category ? .semibold : .regular))
+                                    .foregroundStyle(selectedCategory == category ? .white : .primary)
+                                    .padding(.horizontal, 12)
+                                    .padding(.vertical, 8)
+                                    .background(selectedCategory == category ? Color.blue : Color(.systemGray6))
+                                    .cornerRadius(8)
+                            }
+                        }
+                        Spacer()
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 12)
                 }
-            } else {
-                ForEach(BookCategory.allCases) { category in
-                    let books = filteredBooks.filter { $0.category == category }
-                    if !books.isEmpty {
-                        Section(category.title) {
-                            ForEach(books) { book in row(book) }
+                Divider()
+            }
+
+            List {
+                if filteredBooks.isEmpty && !searchText.isEmpty {
+                    Section {
+                        Text("검색 결과 없음")
+                            .foregroundStyle(.secondary)
+                    }
+                } else if !searchText.isEmpty {
+                    ForEach(availableCategories) { category in
+                        let books = filteredBooks.filter { $0.category == category }
+                        if !books.isEmpty {
+                            Section(category.title) {
+                                ForEach(books) { book in row(book) }
+                            }
                         }
                     }
+                } else if let selected = selectedCategory {
+                    let books = filteredBooks.filter { $0.category == selected }
+                    ForEach(books) { book in row(book) }
                 }
             }
+            .listStyle(.insetGrouped)
         }
-        .listStyle(.insetGrouped)
         .searchable(text: $searchText, prompt: "책 이름으로 검색")
         .navigationTitle("\(edition.shortName) · 책 선택")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) { Button("닫기") { dismiss() } }
+        }
+        .onAppear {
+            if selectedCategory == nil, let first = availableCategories.first {
+                selectedCategory = first
+            }
         }
     }
 
