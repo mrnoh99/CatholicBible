@@ -364,6 +364,8 @@ class CBCKFetcher:
         if book_limit:
             books_to_fetch = books_to_fetch[:book_limit]
 
+        headings_data = {}  # 별도의 headings 딕셔너리
+
         for i, (book_code, book_info) in enumerate(books_to_fetch, 1):
             book_name = book_info['name']
             chapters = book_info['chapters']
@@ -372,11 +374,29 @@ class CBCKFetcher:
 
             bible_data['bookNames'][book_code] = book_name
             bible_data['books'][book_code] = {}
+            headings_data[book_code] = {}
 
             for chapter in range(1, chapters + 1):
                 verses_and_headings = self.fetch_chapter(book_code, chapter)
                 if verses_and_headings:
-                    bible_data['books'][book_code][str(chapter)] = verses_and_headings
+                    # heading을 분리
+                    chapter_headings = {}
+                    chapter_verses = {}
+                    for key, value in verses_and_headings.items():
+                        if key.endswith('_heading') or key == '0_heading':
+                            chapter_headings[key] = value
+                        else:
+                            chapter_verses[key] = value
+
+                    # 분리된 데이터 저장
+                    if chapter_verses:
+                        bible_data['books'][book_code][str(chapter)] = chapter_verses
+                    if chapter_headings:
+                        headings_data[book_code][str(chapter)] = chapter_headings
+
+        # headings 필드 추가
+        if headings_data and any(h for h in headings_data.values()):
+            bible_data['headings'] = headings_data
 
         return bible_data
 
