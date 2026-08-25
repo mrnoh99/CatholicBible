@@ -541,11 +541,13 @@ struct RefPreviewSheet: View {
             let lo = ch == target.chapter ? target.verse : 1
             let hi = ch == endChapter ? endVerse : Int.max
             var first = true
-            for v in store.verses(edition: edition, book: book, chapter: ch)
-                where v.number >= lo && v.number <= hi {
-                out.append(RangeVerse(chapter: ch, verse: v, newChapter: multi && first))
-                first = false
-                if out.count >= cap { break }
+            for v in store.verses(edition: edition, book: book, chapter: ch) {
+                let verseNum = Int(v.number) ?? Int(v.number.split(separator: "(").first ?? "") ?? Int.max
+                if verseNum >= lo && verseNum <= hi {
+                    out.append(RangeVerse(chapter: ch, verse: v, newChapter: multi && first))
+                    first = false
+                    if out.count >= cap { break }
+                }
             }
             ch += 1
         }
@@ -574,7 +576,7 @@ struct RefPreviewSheet: View {
                             VerseRowView(edition: edition, book: book,
                                          chapter: item.chapter, verse: item.verse,
                                          highlighted: item.chapter == target.chapter
-                                             && item.verse.number == target.verse,
+                                             && item.verse.number == String(target.verse),
                                          onOpenNote: { ref, text in
                                              noteTarget = RefNoteTarget(ref: ref, text: text)
                                          },
@@ -615,7 +617,7 @@ struct RefPreviewSheet: View {
                     func q(_ k: String) -> String? { items.first { $0.name == k }?.value }
                     if let n = q("n"), let book, let text = knb.notes(edition: editionID, bookID: book.id, chapter: target.chapter)
                         .first(where: { $0.n == n })?.text {
-                        noteTarget = RefNoteTarget(ref: VerseRef(bookID: book.id, chapter: target.chapter, verse: target.verse), text: text)
+                        noteTarget = RefNoteTarget(ref: VerseRef(bookID: book.id, chapter: target.chapter, verse: String(target.verse)), text: text)
                     }
                     return .handled
                 }
