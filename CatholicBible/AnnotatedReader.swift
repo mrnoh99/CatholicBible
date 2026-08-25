@@ -296,7 +296,7 @@ struct AnnotatedReader: View {
             LazyVStack(alignment: .leading, spacing: settings.lineSpacing * 0.9) {
                 ForEach(verses) { verse in
                     VStack(alignment: .leading, spacing: settings.lineSpacing * 0.9) {
-                        if let title = titleMap[verse.number] {
+                        if let title = titleMap[String(verse.number)] {
                             SectionTitleView(text: title, bookID: book.id, chapter: chapter,
                                              linkable: true, searchQuery: navigation.searchQuery)
                         }
@@ -313,10 +313,10 @@ struct AnnotatedReader: View {
         }
     }
 
-    private func getTitleMap() -> [Int: String] {
+    private func getTitleMap() -> [String: String] {
         let ch = max(chapter, 1)
 
-        var titleMap: [Int: String] = [:]
+        var titleMap: [String: String] = [:]
 
         // JSON headings 필드에서 로드
         let storeTitle = store.titles(edition: edition, book: book, chapter: ch)
