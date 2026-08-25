@@ -435,8 +435,16 @@ def main():
 
     # 저장
     output_path = 'BibleText_nab_cbck.json'
+    replace_current = False
+    if len(sys.argv) > 2 and sys.argv[2] == '--replace':
+        output_path = 'CatholicBible/Resources/BibleText_nab.json'
+        replace_current = True
+
     if fetcher.save(bible_data, output_path):
-        print(f"\n🎉 완료! 새 파일: {output_path}")
+        if replace_current:
+            print(f"\n🎉 완료! 현재 NAB 판본 교체됨: {output_path}")
+        else:
+            print(f"\n🎉 완료! 새 파일: {output_path}")
 
         # 기존 파일과 비교 (있으면)
         try:
