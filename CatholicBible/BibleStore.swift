@@ -109,7 +109,7 @@ final class BibleStore {
                         guard let chapterNumber = Int(chapterKey) else { continue }
                         chapterMap[chapterNumber] = verses
                             .map { key, text in Verse(number: key, text: text) }
-                            .sorted { compareVerseKeys($0.number, $1.number) }
+                            .sorted { self.compareVerseKeys($0.number, $1.number) }
                     }
                     if !chapterMap.isEmpty { indexed[bookID] = chapterMap }
                 }
@@ -377,7 +377,7 @@ final class BibleStore {
               let chapterTitles = bookTitles[String(chapter)] else { return [] }
         let result = chapterTitles
             .map { SectionTitle(verse: $0.key, text: $0.value) }
-            .sorted { compareVerseKeys($0.verse, $1.verse) }
+            .sorted { self.compareVerseKeys($0.verse, $1.verse) }
         if edition.id == "nabre" && book.id == "gn" && chapter == 1 {
             print("[NABRE] titles() for Genesis Ch1: \(result.count) titles, verses: \(result.map { $0.verse })")
         }
@@ -432,7 +432,7 @@ final class BibleStore {
             let chapterNumbers = chapters.keys.compactMap { Int($0) }.sorted()
             for chapterNumber in chapterNumbers {
                 guard let verses = chapters[String(chapterNumber)] else { continue }
-                let verseKeys = verses.keys.sorted { compareVerseKeys($0, $1) }
+                let verseKeys = verses.keys.sorted { self.compareVerseKeys($0, $1) }
                 for verseKey in verseKeys {
                     guard let verseText = verses[verseKey] else { continue }
                     let matches = !orTerms.isEmpty
