@@ -115,24 +115,17 @@ final class BibleStore {
                 }
 
                 // 파일에 포함된 제목 로드 (BibleText_*.json의 headings 필드)
-                var headingsFromFile: [String: [Int: [Int: String]]] = [:]
+                var headingsFromFile: [String: [String: [String: String]]] = [:]
                 if let fileHeadings = file.headings {
                     for (bookID, chapters) in fileHeadings {
-                        var bookHeadings: [Int: [Int: String]] = [:]
+                        var bookHeadings: [String: [String: String]] = [:]
                         for (chapterKey, verses) in chapters {
-                            guard let chapterNumber = Int(chapterKey) else { continue }
-                            var verseHeadings: [Int: String] = [:]
+                            var verseHeadings: [String: String] = [:]
                             for (verseKey, headingText) in verses {
-                                // Handle both "1h" and "1_heading" formats
-                                let verseStr = verseKey.hasSuffix("h")
-                                    ? String(verseKey.dropLast())
-                                    : verseKey.replacingOccurrences(of: "_heading", with: "")
-                                if let verseNumber = Int(verseStr) {
-                                    verseHeadings[verseNumber] = headingText
-                                }
+                                verseHeadings[verseKey] = headingText
                             }
                             if !verseHeadings.isEmpty {
-                                bookHeadings[chapterNumber] = verseHeadings
+                                bookHeadings[chapterKey] = verseHeadings
                             }
                         }
                         if !bookHeadings.isEmpty {
@@ -142,8 +135,8 @@ final class BibleStore {
                 }
 
                 // 주석 로드
-                var annotations: [String: [Int: [Int: String]]] = [:]
-                var titles: [String: [Int: [Int: String]]] = [:]
+                var annotations: [String: [String: [String: String]]] = [:]
+                var titles: [String: [String: [String: String]]] = [:]
                 let annotationFileName = BibleStore.annotationFileName(for: editionID)
                 print("📝 주석 로드 시도: \(editionID) → \(annotationFileName).json")
                 if let annotationURL = Bundle.main.url(forResource: annotationFileName, withExtension: "json"),
@@ -154,18 +147,14 @@ final class BibleStore {
                     // 주석 로드
                     if let annots = annotationFile.annotations {
                         for (bookID, chapters) in annots {
-                            var bookAnnotations: [Int: [Int: String]] = [:]
+                            var bookAnnotations: [String: [String: String]] = [:]
                             for (chapterKey, annots) in chapters {
-                                if let chapterNumber = Int(chapterKey) {
-                                    var verseAnnotations: [Int: String] = [:]
-                                    for annot in annots {
-                                        if let verseNumber = Int(annot.n) {
-                                            verseAnnotations[verseNumber] = annot.text
-                                        }
-                                    }
-                                    if !verseAnnotations.isEmpty {
-                                        bookAnnotations[chapterNumber] = verseAnnotations
-                                    }
+                                var verseAnnotations: [String: String] = [:]
+                                for annot in annots {
+                                    verseAnnotations[annot.n] = annot.text
+                                }
+                                if !verseAnnotations.isEmpty {
+                                    bookAnnotations[chapterKey] = verseAnnotations
                                 }
                             }
                             if !bookAnnotations.isEmpty {
@@ -177,16 +166,14 @@ final class BibleStore {
                     // 소제목 로드
                     if let ttls = annotationFile.titles {
                         for (bookID, chapters) in ttls {
-                            var bookTitles: [Int: [Int: String]] = [:]
+                            var bookTitles: [String: [String: String]] = [:]
                             for (chapterKey, titleList) in chapters {
-                                if let chapterNumber = Int(chapterKey) {
-                                    var verseTitles: [Int: String] = [:]
-                                    for title in titleList {
-                                        verseTitles[title.v] = title.text
-                                    }
-                                    if !verseTitles.isEmpty {
-                                        bookTitles[chapterNumber] = verseTitles
-                                    }
+                                var verseTitles: [String: String] = [:]
+                                for title in titleList {
+                                    verseTitles[String(title.v)] = title.text
+                                }
+                                if !verseTitles.isEmpty {
+                                    bookTitles[chapterKey] = verseTitles
                                 }
                             }
                             if !bookTitles.isEmpty {
@@ -202,14 +189,14 @@ final class BibleStore {
                     if titles[bookID] == nil {
                         titles[bookID] = [:]
                     }
-                    for (chapterNumber, chapterHeadings) in bookHeadings {
-                        if titles[bookID]![chapterNumber] == nil {
-                            titles[bookID]![chapterNumber] = [:]
+                    for (chapterKey, chapterHeadings) in bookHeadings {
+                        if titles[bookID]![chapterKey] == nil {
+                            titles[bookID]![chapterKey] = [:]
                         }
-                        for (verseNumber, headingText) in chapterHeadings {
+                        for (verseKey, headingText) in chapterHeadings {
                             // 이미 있는 제목이 없을 때만 파일의 제목 사용
-                            if titles[bookID]![chapterNumber]![verseNumber] == nil {
-                                titles[bookID]![chapterNumber]![verseNumber] = headingText
+                            if titles[bookID]![chapterKey]![verseKey] == nil {
+                                titles[bookID]![chapterKey]![verseKey] = headingText
                             }
                         }
                     }
@@ -369,14 +356,26 @@ final class BibleStore {
     /// 장의 소제목 목록 (절 번호 순서로)
     func titles(edition: Edition, book: BibleBook, chapter: Int) -> [SectionTitle] {
         guard let bookTitles = editions[edition.id]?.titles[book.id],
-              let chapterTitles = bookTitles[chapter] else { return [] }
+              let chapterTitles = bookTitles[String(chapter)] else { return [] }
         let result = chapterTitles
             .map { SectionTitle(verse: $0.key, text: $0.value) }
-            .sorted { $0.verse < $1.verse }
+            .sorted { compareVerseKeys($0.verse, $1.verse) }
         if edition.id == "nabre" && book.id == "gn" && chapter == 1 {
             print("[NABRE] titles() for Genesis Ch1: \(result.count) titles, verses: \(result.map { $0.verse })")
         }
         return result
+    }
+
+    private func compareVerseKeys(_ a: String, _ b: String) -> Bool {
+        // "1", "2", "10", "1(1)", "1(2)" 등을 올바르게 정렬
+        if let aNum = Int(a), let bNum = Int(b) {
+            return aNum < bNum
+        }
+        if let aBase = Int(a.split(separator: "(").first.map(String.init) ?? a),
+           let bBase = Int(b.split(separator: "(").first.map(String.init) ?? b) {
+            if aBase != bBase { return aBase < bBase }
+        }
+        return a < b
     }
 
     // MARK: - 검색 (현재 판본 안에서)
