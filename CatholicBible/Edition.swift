@@ -5,7 +5,7 @@
 //  천주교회의 판본들. 각 판본이 서재의 ebook 한 권이다.
 //
 //    1. 성경(새 번역)      /Knb             73권
-//    2. 영어 NAB 성경      /Nab             73권 (미국 가톨릭)
+//    2. NAB               /Nab             73권 (미국 가톨릭 영어)
 //    3. 주석 성경          /Knbnotes/Bible  73권 (TOB 기반 주석)
 //    4. 공동번역 성서       /Ncb             73권
 //    5. 200주년 신약성서    /200             신약 27권
@@ -70,7 +70,7 @@ enum Editions {
                 summary: "한국 천주교 공용 새 번역 성경 (2005)",
                 scope: .full, language: "ko"),
         Edition(id: "nab", urlPath: "Nab",
-                name: "영어 NAB 성경", shortName: "NAB",
+                name: "NAB", shortName: "NAB",
                 copyright: "New American Bible ⓒ Confraternity of Christian Doctrine (USCCB)",
                 summary: "미국 가톨릭 공용 영어 성경",
                 scope: .full, language: "en"),
