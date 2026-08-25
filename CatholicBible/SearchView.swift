@@ -1020,7 +1020,8 @@ struct SearchView: View {
         if hit.annotationNumber != nil {
             navigation.open(bookID: hit.bookID, chapter: hit.chapter)
         } else {
-            navigation.open(bookID: hit.bookID, chapter: hit.chapter, verse: hit.verse)
+            let verseNum = Int(hit.verse) ?? Int(hit.verse.split(separator: "(").first ?? "") ?? 1
+            navigation.open(bookID: hit.bookID, chapter: hit.chapter, verse: verseNum)
         }
         dismiss()
     }
