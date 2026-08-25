@@ -29442,5 +29442,2572 @@
   "url": "https://bible.cbck.or.kr/",
   "translation": "NAB",
   "fetched_date": "2026-08-25T15:50:19.997587",
-  "version": "2.0"
+  "version": "2.0",
+  "headings": {
+    "Gn": {
+      "1": {
+        "0": "The Story of Creation."
+      },
+      "2": {
+        "0": "The Garden of Eden."
+      },
+      "3": {
+        "0": "Expulsion from Eden."
+      },
+      "4": {
+        "0": "Cain and Abel."
+      },
+      "5": {
+        "0": "Generations: Adam to Noah."
+      },
+      "6": {
+        "0": "Origin of the Nephilim."
+      },
+      "7": {
+        "0": "The Great Flood."
+      },
+      "9": {
+        "0": "Covenant with Noah."
+      },
+      "10": {
+        "0": "Table of the Nations."
+      },
+      "11": {
+        "0": "Tower of Babel."
+      },
+      "12": {
+        "0": "Abram’s Call and Migration."
+      },
+      "13": {
+        "0": "Abram and Lot Part."
+      },
+      "14": {
+        "0": "The Four Kings."
+      },
+      "15": {
+        "0": "The Covenant with Abram."
+      },
+      "16": {
+        "0": "Birth of Ishmael."
+      },
+      "17": {
+        "0": "Covenant of Circumcision."
+      },
+      "18": {
+        "0": "Abraham’s Visitors."
+      },
+      "19": {
+        "0": "Destruction of Sodom and Gomorrah."
+      },
+      "20": {
+        "0": "Abraham at Gerar."
+      },
+      "21": {
+        "0": "Birth of Isaac."
+      },
+      "22": {
+        "0": "The Testing of Abraham."
+      },
+      "23": {
+        "0": "Purchase of a Burial Plot."
+      },
+      "24": {
+        "0": "Isaac and Rebekah."
+      },
+      "25": {
+        "0": "Abraham’s Sons by Keturah."
+      },
+      "26": {
+        "0": "Isaac and Abimelech."
+      },
+      "27": {
+        "0": "Jacob’s Deception."
+      },
+      "28": {
+        "0": "Jacob’s Dream at Bethel."
+      },
+      "29": {
+        "0": "Arrival in Haran."
+      },
+      "30": {
+        "0": "Jacob Outwits Laban."
+      },
+      "31": {
+        "0": "Flight from Laban."
+      },
+      "32": {
+        "0": "Envoys to Esau."
+      },
+      "33": {
+        "0": "Jacob and Esau Meet."
+      },
+      "34": {
+        "0": "The Rape of Dinah."
+      },
+      "35": {
+        "0": "Bethel Revisited."
+      },
+      "36": {
+        "0": "Edomite Lists."
+      },
+      "37": {
+        "0": "Joseph Sold into Egypt."
+      },
+      "38": {
+        "0": "Judah and Tamar."
+      },
+      "39": {
+        "0": "Joseph’s Temptation."
+      },
+      "40": {
+        "0": "The Dreams Interpreted."
+      },
+      "41": {
+        "0": "Pharaoh’s Dream."
+      },
+      "42": {
+        "0": "The Brothers’ First Journey to Egypt."
+      },
+      "43": {
+        "0": "The Second Journey to Egypt."
+      },
+      "44": {
+        "0": "Final Test."
+      },
+      "45": {
+        "0": "The Truth Revealed."
+      },
+      "46": {
+        "0": "Migration to Egypt."
+      },
+      "47": {
+        "0": "Settlement in Goshen."
+      },
+      "49": {
+        "0": "Jacob’s Testament."
+      },
+      "50": {
+        "0": "Jacob’s Funeral."
+      }
+    },
+    "Ex": {
+      "1": {
+        "0": "Jacob’s Descendants in Egypt."
+      },
+      "2": {
+        "0": "Birth and Adoption of Moses."
+      },
+      "3": {
+        "0": "The Call and Commission of Moses."
+      },
+      "4": {
+        "0": "Aaron’s Office as Assistant."
+      },
+      "5": {
+        "0": "Pharaoh’s Hardness of Heart."
+      },
+      "6": {
+        "0": "Confirmation of the Promise to the Ancestors."
+      },
+      "7": {
+        "0": "The Staff Turned into a Serpent."
+      },
+      "8": {
+        "0": "Third Plague: The Gnats"
+      },
+      "9": {
+        "0": "Fifth Plague:The Pestilence."
+      },
+      "10": {
+        "0": "Eighth Plague: The Locusts."
+      },
+      "11": {
+        "0": "Tenth Plague: The Death of the Firstborn."
+      },
+      "12": {
+        "0": "The Passover Ritual Prescribed."
+      },
+      "13": {
+        "0": "Consecration of Firstborn."
+      },
+      "14": {
+        "0": "Crossing the Red Sea."
+      },
+      "15": {
+        "0": "At Marah and Elim."
+      },
+      "16": {
+        "0": "The Wilderness of Sin."
+      },
+      "17": {
+        "0": "Water from the Rock."
+      },
+      "18": {
+        "0": "Meeting with Jethro."
+      },
+      "19": {
+        "0": "Arrival at Sinai."
+      },
+      "20": {
+        "0": "The Ten Commandments."
+      },
+      "21": {
+        "0": "Laws Regarding Slaves."
+      },
+      "22": {
+        "0": "Trusts and Loans."
+      },
+      "23": {
+        "0": "Religious Laws."
+      },
+      "24": {
+        "0": "Ratification of the Covenant."
+      },
+      "25": {
+        "0": "Collection of Materials."
+      },
+      "26": {
+        "0": "The Tent Cloth."
+      },
+      "27": {
+        "0": "The Altar for Burnt Offerings."
+      },
+      "28": {
+        "0": "The Priestly Vestments."
+      },
+      "29": {
+        "0": "Consecration of the Priests."
+      },
+      "30": {
+        "0": "Altar of Incense."
+      },
+      "31": {
+        "0": "Choice of Artisans."
+      },
+      "32": {
+        "0": "The Golden Calf."
+      },
+      "33": {
+        "0": "Moses’ Intimacy with God."
+      },
+      "34": {
+        "0": "Religious Laws."
+      },
+      "35": {
+        "0": "Sabbath Regulations."
+      },
+      "36": {
+        "0": "The Tent Cloth and Coverings."
+      },
+      "37": {
+        "0": "The Ark."
+      },
+      "38": {
+        "0": "The Altar for Burnt Offerings."
+      },
+      "39": {
+        "0": "The Priestly Vestments."
+      },
+      "40": {
+        "0": "Setting Up the Tabernacle."
+      }
+    },
+    "Lv": {
+      "1": {
+        "0": "Burnt Offerings."
+      },
+      "2": {
+        "0": "Grain Offerings."
+      },
+      "3": {
+        "0": "Communion Sacrifices."
+      },
+      "4": {
+        "0": "Purification Offerings."
+      },
+      "5": {
+        "0": "Special Cases for Purification Offerings."
+      },
+      "6": {
+        "0": "The Daily Burnt Offering."
+      },
+      "7": {
+        "0": "Reparation Offerings."
+      },
+      "8": {
+        "0": "Ordination of Aaron and His Sons."
+      },
+      "9": {
+        "0": "Octave of the Ordination."
+      },
+      "10": {
+        "0": "Nadab and Abihu."
+      },
+      "11": {
+        "0": "Clean and Unclean Meats."
+      },
+      "12": {
+        "0": "Uncleanness of Childbirth."
+      },
+      "13": {
+        "0": "Scaly Infection."
+      },
+      "14": {
+        "0": "Purification After Scaly Infection."
+      },
+      "15": {
+        "0": "Sexual Uncleanness."
+      },
+      "16": {
+        "0": "The Day of Atonement."
+      },
+      "17": {
+        "0": "Sacredness of Blood."
+      },
+      "18": {
+        "0": "Laws Concerning Sexual Behavior."
+      },
+      "19": {
+        "0": "Various Rules of Conduct."
+      },
+      "20": {
+        "0": "Penalties for Various Sins."
+      },
+      "21": {
+        "0": "Sanctity of the Priesthood."
+      },
+      "22": {
+        "0": "Priestly Purity."
+      },
+      "23": {
+        "0": "Holy Days."
+      },
+      "24": {
+        "0": "The Sanctuary Light."
+      },
+      "25": {
+        "0": "The Sabbatical Year."
+      },
+      "26": {
+        "0": "The Reward of Obedience."
+      },
+      "27": {
+        "0": "Votive Offerings and Dedications."
+      }
+    },
+    "Nm": {
+      "1": {
+        "0": "The Census."
+      },
+      "2": {
+        "0": "Arrangement of the Tribes."
+      },
+      "3": {
+        "0": "The Sons of Aaron."
+      },
+      "4": {
+        "0": "Duties Further Defined."
+      },
+      "5": {
+        "0": "The Unclean Expelled."
+      },
+      "6": {
+        "0": "Laws Concerning Nazirites."
+      },
+      "7": {
+        "0": "Offerings of the Tribal Leaders."
+      },
+      "8": {
+        "0": "The Menorah."
+      },
+      "9": {
+        "0": "Second Passover."
+      },
+      "10": {
+        "0": "The Silver Trumpets."
+      },
+      "11": {
+        "0": "Discontent of the People."
+      },
+      "12": {
+        "0": "Jealousy of Aaron and Miriam."
+      },
+      "13": {
+        "0": "The Twelve Scouts."
+      },
+      "14": {
+        "0": "Threats of Revolt."
+      },
+      "15": {
+        "0": "Secondary Offerings."
+      },
+      "16": {
+        "0": "Rebellion of Korah."
+      },
+      "17": {
+        "0": "Aaron’s Staff."
+      },
+      "18": {
+        "0": "The Priests’ Share of the Sacrifices."
+      },
+      "19": {
+        "0": "Ashes of the Red Heifer."
+      },
+      "20": {
+        "0": "Death of Miriam."
+      },
+      "21": {
+        "0": "Victory over Arad."
+      },
+      "22": {
+        "0": "Balaam Summoned."
+      },
+      "23": {
+        "0": "The Second Oracle."
+      },
+      "24": {
+        "0": "The Fourth Oracle."
+      },
+      "25": {
+        "0": "Worship of Baal of Peor."
+      },
+      "26": {
+        "0": "Allotment of the Land."
+      },
+      "27": {
+        "0": "Zelophehad’s Daughters."
+      },
+      "28": {
+        "0": "General Sacrifices."
+      },
+      "29": {
+        "0": "On New Year’s Day."
+      },
+      "30": {
+        "0": "Validity and Annulment of Vows."
+      },
+      "31": {
+        "0": "Treatment of the Captives."
+      },
+      "32": {
+        "0": "Request of Gad and Reuben."
+      },
+      "33": {
+        "0": "Stages of the Journey."
+      },
+      "34": {
+        "0": "The Boundaries."
+      },
+      "35": {
+        "0": "Cities for the Levites."
+      },
+      "36": {
+        "0": "Inheritance of Daughters."
+      }
+    },
+    "Dt": {
+      "1": {
+        "0": "Introduction."
+      },
+      "2": {
+        "0": "Northward Along Edom."
+      },
+      "3": {
+        "0": "Defeat of Og."
+      },
+      "4": {
+        "0": "Advantages of Fidelity."
+      },
+      "5": {
+        "0": "The Covenant at Horeb."
+      },
+      "6": {
+        "0": "The Great Commandment."
+      },
+      "7": {
+        "0": "Destruction of the Nations in the Land."
+      },
+      "8": {
+        "0": "God’s Care."
+      },
+      "9": {
+        "0": "Unmerited Success."
+      },
+      "10": {
+        "0": "The Lord’s Majesty and Compassion."
+      },
+      "11": {
+        "0": "Recalling the Wonders of the Lord."
+      },
+      "12": {
+        "0": "One Center of Worship."
+      },
+      "13": {
+        "0": "Penalties for Enticing to Idolatry."
+      },
+      "14": {
+        "0": "Improper Mourning Rites."
+      },
+      "15": {
+        "0": "Debts and the Poor."
+      },
+      "16": {
+        "0": "Feast of the Passover."
+      },
+      "17": {
+        "0": "Judges."
+      },
+      "18": {
+        "0": "Priests."
+      },
+      "19": {
+        "0": "Cities of Refuge."
+      },
+      "20": {
+        "0": "Courage in War."
+      },
+      "21": {
+        "0": "Absolution of Untraced Murder."
+      },
+      "22": {
+        "0": "Concern for the Neighbor."
+      },
+      "23": {
+        "0": "Membership in the Assembly."
+      },
+      "24": {
+        "0": "Marriage Legislation."
+      },
+      "25": {
+        "0": "Limits on Punishments."
+      },
+      "26": {
+        "0": "Thanksgiving for the Harvest."
+      },
+      "27": {
+        "0": "The Altar on Mount Ebal."
+      },
+      "28": {
+        "0": "Blessings for Obedience."
+      },
+      "29": {
+        "0": "Past Favors Recalled."
+      },
+      "30": {
+        "0": "Compassion for the Repentant."
+      },
+      "31": {
+        "0": "The Lord’s Leadership."
+      },
+      "32": {
+        "0": "Final Appeal."
+      },
+      "33": {
+        "0": "Blessing upon the Tribes."
+      }
+    },
+    "Jos": {
+      "1": {
+        "0": "Divine Promise of Assistance."
+      },
+      "2": {
+        "0": "Spies Saved by Rahab."
+      },
+      "3": {
+        "0": "Preparations for Crossing the Jordan."
+      },
+      "4": {
+        "0": "Memorial Stones."
+      },
+      "5": {
+        "0": "Rites at Gilgal."
+      },
+      "6": {
+        "0": "The Fall of Jericho."
+      },
+      "7": {
+        "0": "Defeat at Ai."
+      },
+      "8": {
+        "0": "Capture of Ai."
+      },
+      "9": {
+        "0": "Confederacy Against Israel."
+      },
+      "10": {
+        "0": "The Siege of Gibeon."
+      },
+      "11": {
+        "0": "Northern Confederacy."
+      },
+      "12": {
+        "0": "Lists of Conquered Kings."
+      },
+      "13": {
+        "0": "Division of Land Commanded."
+      },
+      "14": {
+        "0": "The Western Tribes."
+      },
+      "15": {
+        "0": "Boundaries of Judah."
+      },
+      "16": {
+        "0": "The Joseph Tribes."
+      },
+      "17": {
+        "0": "Protest of Joseph Tribes."
+      },
+      "18": {
+        "0": "The Seven Remaining Portions."
+      },
+      "19": {
+        "0": "Simeon."
+      },
+      "20": {
+        "0": "Cities of Refuge."
+      },
+      "21": {
+        "0": "Levitical Cities."
+      },
+      "22": {
+        "0": "The Eastern Tribes Dismissed."
+      },
+      "23": {
+        "0": "Joshua’s Final Plea."
+      },
+      "24": {
+        "0": "Covenant Ceremony."
+      }
+    },
+    "Jgs": {
+      "1": {
+        "0": "Canaanites in Palestine."
+      },
+      "2": {
+        "0": "Infidelities of the Israelites."
+      },
+      "3": {
+        "0": "Othniel."
+      },
+      "4": {
+        "0": "Deborah and Barak."
+      },
+      "5": {
+        "0": "Song of Deborah."
+      },
+      "6": {
+        "0": "The Call of Gideon."
+      },
+      "7": {
+        "0": "Defeat of Midian."
+      },
+      "8": {
+        "0": "Gideon’s Son Abimelech."
+      },
+      "10": {
+        "0": "Tola."
+      },
+      "11": {
+        "0": "Jephthah."
+      },
+      "12": {
+        "0": "The Shibboleth Incident."
+      },
+      "13": {
+        "0": "The Birth of Samson."
+      },
+      "14": {
+        "0": "Marriage of Samson."
+      },
+      "15": {
+        "0": "Samson Defeats the Philistines."
+      },
+      "16": {
+        "0": "Samson and Delilah."
+      },
+      "17": {
+        "0": "Micah and the Levite."
+      },
+      "18": {
+        "0": "Migration of the Danites."
+      },
+      "19": {
+        "0": "The Levite from Ephraim."
+      },
+      "20": {
+        "0": "Assembly of Israelites."
+      },
+      "21": {
+        "0": "Ensuring a Future for Benjamin."
+      }
+    },
+    "Ru": {
+      "1": {
+        "0": "Naomi in Moab."
+      },
+      "2": {
+        "0": "The Meeting."
+      },
+      "3": {
+        "0": "Ruth Again Presents Herself."
+      },
+      "4": {
+        "0": "Boaz Marries Ruth."
+      }
+    },
+    "1Sm": {
+      "1": {
+        "0": "Elkanah and His Family at Shiloh."
+      },
+      "2": {
+        "0": "Wickedness of Eli’s Sons."
+      },
+      "3": {
+        "0": "Revelation to Samuel."
+      },
+      "4": {
+        "0": "Defeat of the Israelites."
+      },
+      "5": {
+        "0": "The Ark in the Temple of Dagon."
+      },
+      "6": {
+        "0": "The Ark Is Returned."
+      },
+      "7": {
+        "0": "Samuel the Judge."
+      },
+      "8": {
+        "0": "Request for a King."
+      },
+      "9": {
+        "0": "Saul."
+      },
+      "10": {
+        "0": "The Signs Foretold."
+      },
+      "11": {
+        "0": "Defeat of the Ammonites."
+      },
+      "12": {
+        "0": "Samuel’s Integrity."
+      },
+      "13": {
+        "0": "Saul Offers Sacrifice."
+      },
+      "14": {
+        "0": "Rout of the Philistines."
+      },
+      "15": {
+        "0": "Disobedience of Saul."
+      },
+      "16": {
+        "0": "Samuel Is Sent to Bethlehem."
+      },
+      "17": {
+        "0": "The Challenge of Goliath."
+      },
+      "18": {
+        "0": "David and Jonathan."
+      },
+      "19": {
+        "0": "Persecution of David."
+      },
+      "20": {
+        "0": "David Consults with Jonathan."
+      },
+      "21": {
+        "0": "The Holy Bread."
+      },
+      "22": {
+        "0": "Doeg Betrays Ahimelech."
+      },
+      "23": {
+        "0": "Keilah Liberated."
+      },
+      "24": {
+        "0": "David Spares Saul."
+      },
+      "25": {
+        "0": "Death of Samuel."
+      },
+      "26": {
+        "0": "David Spares Saul Again."
+      },
+      "27": {
+        "0": "David Flees to the Philistines."
+      },
+      "28": {
+        "0": "Saul in Despair."
+      },
+      "29": {
+        "0": "David’s Aid Rejected."
+      },
+      "30": {
+        "0": "Ziklag in Ruins."
+      },
+      "31": {
+        "0": "Death of Saul and His Sons."
+      }
+    },
+    "2Sm": {
+      "1": {
+        "0": "Report of Saul’s Death."
+      },
+      "2": {
+        "0": "David Is Anointed King."
+      },
+      "3": {
+        "0": "Sons Born in Hebron."
+      },
+      "4": {
+        "0": "Death of Ishbaal."
+      },
+      "5": {
+        "0": "David King of Israel."
+      },
+      "6": {
+        "0": "The Ark Brought to Jerusalem."
+      },
+      "7": {
+        "0": "The Oracle of Nathan."
+      },
+      "8": {
+        "0": "Summary of David’s Wars."
+      },
+      "9": {
+        "0": "David and Meribbaal."
+      },
+      "10": {
+        "0": "Campaigns Against Ammon."
+      },
+      "11": {
+        "0": "David’s Sin."
+      },
+      "12": {
+        "0": "Nathan’s Parable."
+      },
+      "13": {
+        "0": "Amnon’s Rape of Tamar."
+      },
+      "14": {
+        "0": "The Wise Woman of Tekoa."
+      },
+      "15": {
+        "0": "Absalom’s Ambition."
+      },
+      "16": {
+        "0": "David and Ziba."
+      },
+      "17": {
+        "0": "Counsel of Hushai."
+      },
+      "18": {
+        "0": "Preparation for Battle."
+      },
+      "19": {
+        "0": "Joab Reproves David."
+      },
+      "20": {
+        "0": "Sheba’s Rebellion."
+      },
+      "21": {
+        "0": "Gibeonite Vengeance."
+      },
+      "22": {
+        "0": "Song of Thanksgiving."
+      },
+      "23": {
+        "0": "The Last Words of David."
+      },
+      "24": {
+        "0": "David’s Census; the Plague."
+      }
+    },
+    "Ezr": {
+      "1": {
+        "0": "The Decree of Cyrus."
+      },
+      "2": {
+        "0": "A Census of the Returned Exiles."
+      },
+      "3": {
+        "0": "Restoration of Worship."
+      },
+      "4": {
+        "0": "Outside Interference."
+      },
+      "5": {
+        "0": "The Work Resumed Under Darius; Further Problems."
+      },
+      "6": {
+        "0": "The Decree of Darius."
+      },
+      "7": {
+        "0": "Ezra, Priest and Scribe."
+      },
+      "8": {
+        "0": "Ezra’s Caravan."
+      },
+      "9": {
+        "0": "The Crisis of Mixed Marriages."
+      },
+      "10": {
+        "0": "Response to the Crisis."
+      }
+    },
+    "Neh": {
+      "1": {
+        "0": "Nehemiah Hears Bad News."
+      },
+      "2": {
+        "0": "Appointment by the King."
+      },
+      "3": {
+        "0": "List of Workers."
+      },
+      "5": {
+        "0": "Social and Economic Problems."
+      },
+      "6": {
+        "0": "Plots Against Nehemiah."
+      },
+      "7": {
+        "0": "Census of the Province."
+      },
+      "8": {
+        "0": "Ezra Reads the Law."
+      },
+      "9": {
+        "0": "Public Confession of Sin."
+      },
+      "10": {
+        "0": "Signatories to the Pact."
+      },
+      "11": {
+        "0": "Resettlement of Jerusalem."
+      },
+      "12": {
+        "0": "Priests and Levites at the Time of Zerubbabel."
+      },
+      "13": {
+        "0": "Reform in the Temple."
+      }
+    },
+    "Est": {
+      "1": {
+        "0": "Dream of Mordecai."
+      },
+      "2": {
+        "0": "The Search for a New Queen."
+      },
+      "3": {
+        "0": "Mordecai Refuses to Honor Haman."
+      },
+      "4": {
+        "0": "Mordecai Exhorts Esther."
+      },
+      "5": {
+        "0": "First Banquet of Esther."
+      },
+      "6": {
+        "0": "Mordecai’s Reward from the King."
+      },
+      "7": {
+        "0": "Punishment of Haman."
+      },
+      "8": {
+        "0": "The Second Royal Decree."
+      },
+      "9": {
+        "0": "The Massacre Reversed."
+      },
+      "10": {
+        "0": "The Rise of Mordecai Completed."
+      }
+    },
+    "Ps": {
+      "37": {
+        "0": "ALEPH"
+      },
+      "119": {
+        "0": "ALEPH"
+      }
+    },
+    "Prv": {
+      "1": {
+        "0": "PURPOSE OF THE PROVERBS OF SOLOMON"
+      },
+      "2": {
+        "0": "THE BLESSINGS OF WISDOM"
+      },
+      "3": {
+        "0": "CONFIDENCE IN GOD LEADS TO PROSPERITY"
+      },
+      "4": {
+        "0": "THE TEACHER AS MODEL DISCIPLE"
+      },
+      "5": {
+        "0": "WARNING AGAINST ADULTERY"
+      },
+      "6": {
+        "0": "Against Going Surety for One’s Neighbor"
+      },
+      "7": {
+        "0": "THE SEDUCTION"
+      },
+      "8": {
+        "0": "THE DISCOURSE OF WISDOM"
+      },
+      "9": {
+        "0": "Woman Wisdom Issues Her Invitation"
+      }
+    },
+    "Eccl": {
+      "1": {
+        "0": "VANITY OF HUMAN TOIL"
+      },
+      "2": {
+        "0": "Study of Pleasure-seeking."
+      },
+      "3": {
+        "0": "NO ONE CAN DETERMINE THE RIGHT TIME TO ACT"
+      },
+      "4": {
+        "0": "Vanity of Toil."
+      },
+      "5": {
+        "0": "Gain and Loss of Goods."
+      },
+      "6": {
+        "0": "Limited Worth of Enjoyment."
+      },
+      "7": {
+        "0": "CRITIQUE OF SAGES ON THE DAY OF ADVERSITY"
+      },
+      "8": {
+        "0": "CRITIQUE OF ADVICE TO HEED AUTHORITY"
+      },
+      "9": {
+        "0": "The Time of Misfortune Is Not Known."
+      },
+      "10": {
+        "0": "NO ONE KNOWS WHAT EVIL WILL COME"
+      },
+      "11": {
+        "0": "NO ONE KNOWS WHAT GOOD WILL COME"
+      },
+      "12": {
+        "0": "Epilogue."
+      }
+    },
+    "Is": {
+      "1": {
+        "0": "ACCUSATION AND APPEAL"
+      },
+      "2": {
+        "0": "Zion, the Royal City of God"
+      },
+      "3": {
+        "0": "JUDGMENT ON JERUSALEM AND JUDAH"
+      },
+      "4": {
+        "0": "JERUSALEM PURIFIED"
+      },
+      "5": {
+        "0": "THE SONG OF THE VINEYARD"
+      },
+      "6": {
+        "0": "The Sending of Isaiah."
+      },
+      "7": {
+        "0": "Crisis in Judah."
+      },
+      "8": {
+        "0": "A Son of Isaiah."
+      },
+      "9": {
+        "0": "JUDGMENT ON THE NORTHERN KINGDOM"
+      },
+      "10": {
+        "0": "PERVERSION OF JUSTICE"
+      },
+      "11": {
+        "0": "THE IDEAL DAVIDIC KING"
+      },
+      "12": {
+        "0": "SONG OF THANKSGIVING"
+      },
+      "13": {
+        "0": "Babylon."
+      },
+      "14": {
+        "0": "Restoration of Israel."
+      },
+      "15": {
+        "0": "MOAB"
+      },
+      "17": {
+        "0": "DAMASCUS"
+      },
+      "18": {
+        "0": "ETHIOPIA"
+      },
+      "19": {
+        "0": "EGYPT"
+      },
+      "20": {
+        "0": "Isaiah’s Warning Against Trust in Egypt and Ethiopia."
+      },
+      "21": {
+        "0": "FALL OF BABYLON"
+      },
+      "22": {
+        "0": "THE VALLEY OF VISION"
+      },
+      "23": {
+        "0": "TYRE AND SIDON"
+      },
+      "24": {
+        "0": "JUDGMENT UPON THE WORLD AND THE LORD’S ENTHRONEMENT ON MOUNT ZION"
+      },
+      "25": {
+        "0": "PRAISE FOR GOD’S DELIVERANCE AND THE CELEBRATION IN ZION"
+      },
+      "26": {
+        "0": "Judah’s Praise and Prayer for Deliverance."
+      },
+      "27": {
+        "0": "THE JUDGMENT AND DELIVERANCE OF ISRAEL"
+      },
+      "28": {
+        "0": "THE FATE OF SAMARIA"
+      },
+      "29": {
+        "0": "JUDGMENT AND DELIVERANCE OF JERUSALEM"
+      },
+      "30": {
+        "0": "ORACLE ON THE FUTILITY OF AN ALLIANCE WITH EGYPT"
+      },
+      "31": {
+        "0": "AGAINST THE EGYPTIAN ALLIANCE"
+      },
+      "32": {
+        "0": "THE KINGDOM OF JUSTICE"
+      },
+      "33": {
+        "0": "OVERTHROW OF ASSYRIA"
+      },
+      "34": {
+        "0": "JUDGMENT UPON EDOM"
+      },
+      "35": {
+        "0": "ISRAEL’S DELIVERANCE"
+      },
+      "36": {
+        "0": "Invasion of Sennacherib."
+      },
+      "38": {
+        "0": "Sickness and Recovery of Hezekiah."
+      },
+      "39": {
+        "0": "Embassy from Merodach-baladan."
+      },
+      "40": {
+        "0": "PROMISE OF SALVATION"
+      },
+      "41": {
+        "0": "THE LIBERATOR OF ISRAEL"
+      },
+      "42": {
+        "0": "THE SERVANT OF THE LORD"
+      },
+      "43": {
+        "0": "PROMISES OF REDEMPTION AND RESTORATION"
+      },
+      "44": {
+        "0": "THE TRUE GOD AND FALSE GODS"
+      },
+      "46": {
+        "0": "THE GODS OF BABYLON"
+      },
+      "47": {
+        "0": "THE FALL OF BABYLON"
+      },
+      "48": {
+        "0": "EXHORTATIONS TO THE EXILES"
+      },
+      "49": {
+        "0": "THE SERVANT OF THE LORD"
+      },
+      "50": {
+        "0": "SALVATION THROUGH THE LORD’S SERVANT"
+      },
+      "51": {
+        "0": "EXHORTATION TO TRUST IN THE LORD"
+      },
+      "52": {
+        "0": "LET ZION REJOICE"
+      },
+      "54": {
+        "0": "THE NEW ZION"
+      },
+      "55": {
+        "0": "AN INVITATION TO GRACE"
+      },
+      "56": {
+        "0": "SALVATION FOR THE JUST"
+      },
+      "57": {
+        "0": "AN IDOLATROUS PEOPLE"
+      },
+      "58": {
+        "0": "REASONS FOR JUDGMENT"
+      },
+      "59": {
+        "0": "SALVATION DELAYED"
+      },
+      "60": {
+        "0": "THE DAWNING OF DIVINE GLORY FOR ZION"
+      },
+      "61": {
+        "0": "THE ANOINTED BEARER OF GLAD TIDINGS"
+      },
+      "62": {
+        "0": "A NEW NAME FOR ZION"
+      },
+      "63": {
+        "0": "THE DIVINE WARRIOR"
+      },
+      "64": {
+        "0": "A FINAL PLEA"
+      },
+      "65": {
+        "0": "FATE OF THE JUST AND UNJUST IN ISRAEL"
+      },
+      "66": {
+        "0": "TRUE AND FALSE WORSHIP"
+      }
+    },
+    "Jer": {
+      "1": {
+        "0": "CALL OF JEREMIAH"
+      },
+      "2": {
+        "0": "Infidelity of Israel."
+      },
+      "3": {
+        "0": "Judah and Israel."
+      },
+      "4": {
+        "0": "THE INVASION FROM THE NORTH"
+      },
+      "5": {
+        "0": "UNIVERSAL CORRUPTION"
+      },
+      "6": {
+        "0": "THE ENEMY AT THE GATES"
+      },
+      "7": {
+        "0": "The Temple Sermon."
+      },
+      "8": {
+        "0": "ISRAEL’S CONDUCT INCOMPREHENSIBLE"
+      },
+      "9": {
+        "0": "THE CORRUPTION OF THE PEOPLE"
+      },
+      "10": {
+        "0": "The Folly of Idolatry."
+      },
+      "11": {
+        "0": "Plea for Fidelity to the Covenant."
+      },
+      "12": {
+        "0": "THE LORD’S COMPLAINT"
+      },
+      "13": {
+        "0": "Judah’s Corruption."
+      },
+      "14": {
+        "0": "The Great Drought."
+      },
+      "15": {
+        "0": "SCENE OF TRAGEDY"
+      },
+      "16": {
+        "0": "Jeremiah’s Life a Warning."
+      },
+      "17": {
+        "0": "THE SIN OF JUDAH AND ITS PUNISHMENT"
+      },
+      "18": {
+        "0": "The Potter’s Vessel."
+      },
+      "19": {
+        "0": "Symbol of the Potter’s Flask."
+      },
+      "20": {
+        "0": "JEREMIAH’S INTERIOR CRISIS"
+      },
+      "21": {
+        "0": "Fate of Zedekiah and Jerusalem."
+      },
+      "22": {
+        "0": "JEHOAHAZ"
+      },
+      "23": {
+        "0": "A Just Shepherd."
+      },
+      "24": {
+        "0": "The Two Baskets of Figs."
+      },
+      "25": {
+        "0": "Seventy Years of Exile."
+      },
+      "26": {
+        "0": "Jeremiah Threatened with Death."
+      },
+      "27": {
+        "0": "Serve Babylon or Perish."
+      },
+      "28": {
+        "0": "The Two Yokes."
+      },
+      "29": {
+        "0": "Letter to the Exiles in Babylon."
+      },
+      "30": {
+        "0": "The Restoration."
+      },
+      "31": {
+        "0": "GOOD NEWS OF THE RETURN"
+      },
+      "32": {
+        "0": "Pledge of Restoration."
+      },
+      "33": {
+        "0": "Restoration of Jerusalem."
+      },
+      "34": {
+        "0": "Fate of Zedekiah."
+      },
+      "35": {
+        "0": "The Faithful Rechabites."
+      },
+      "36": {
+        "0": "Baruch, the Scribe of Jeremiah."
+      },
+      "37": {
+        "0": "Jeremiah in the Dungeon."
+      },
+      "38": {
+        "0": "Jeremiah in the Muddy Cistern."
+      },
+      "39": {
+        "0": "The Capture of Jerusalem."
+      },
+      "40": {
+        "0": "Jeremiah Still in Judah."
+      },
+      "41": {
+        "0": "Flight to Egypt."
+      },
+      "43": {
+        "0": "Jeremiah in Egypt."
+      },
+      "45": {
+        "0": "A Message to Baruch."
+      },
+      "46": {
+        "0": "Against Egypt."
+      },
+      "47": {
+        "0": "Against the Philistines."
+      },
+      "48": {
+        "0": "Against Moab."
+      },
+      "49": {
+        "0": "Against the Ammonites."
+      },
+      "50": {
+        "0": "The First Oracle Against Babylon."
+      },
+      "51": {
+        "0": "THE SECOND ORACLE AGAINST BABYLON"
+      },
+      "52": {
+        "0": "Capture of Jerusalem."
+      }
+    },
+    "Lam": {
+      "1": {
+        "0": "THE DESOLATION OF JERUSALEM"
+      },
+      "2": {
+        "0": "THE LORD’S WRATH AND ZION’S RUIN"
+      },
+      "3": {
+        "0": "THE VOICE OF A SUFFERING INDIVIDUAL"
+      },
+      "4": {
+        "0": "MISERIES OF THE BESIEGED CITY"
+      },
+      "5": {
+        "0": "THE COMMUNITY’S LAMENT TO THE LORD"
+      }
+    },
+    "Ez": {
+      "1": {
+        "0": "The Vision: God on the Cherubim."
+      },
+      "2": {
+        "0": "Eating of the Scroll."
+      },
+      "3": {
+        "0": "The Prophet as Sentinel."
+      },
+      "4": {
+        "0": "Acts Symbolic of Siege and Exile."
+      },
+      "6": {
+        "0": "Against the Mountains of Israel."
+      },
+      "7": {
+        "0": "The End Has Come."
+      },
+      "8": {
+        "0": "Vision of Abominations in the Temple."
+      },
+      "9": {
+        "0": "Slaughter of the Idolaters."
+      },
+      "11": {
+        "0": "Death for the Remnant in Jerusalem."
+      },
+      "12": {
+        "0": "Acts Symbolic of the Exile."
+      },
+      "13": {
+        "0": "Against the Prophets of Peace."
+      },
+      "14": {
+        "0": "Idolatry and Unfaithfulness."
+      },
+      "15": {
+        "0": "Parable of the Vine."
+      },
+      "16": {
+        "0": "A Parable of Infidelity."
+      },
+      "17": {
+        "0": "The Eagles and the Vine."
+      },
+      "18": {
+        "0": "Personal Responsibility."
+      },
+      "19": {
+        "0": "ALLEGORY OF THE LIONS"
+      },
+      "20": {
+        "0": "Israel’s History of Infidelity."
+      },
+      "21": {
+        "0": "The Sword of the Lord."
+      },
+      "22": {
+        "0": "Crimes of Jerusalem."
+      },
+      "23": {
+        "0": "The Two Sisters."
+      },
+      "24": {
+        "0": "Allegory of the Pot."
+      },
+      "25": {
+        "0": "Against Ammon."
+      },
+      "26": {
+        "0": "Against the City of Tyre."
+      },
+      "27": {
+        "0": "The Ship Tyre."
+      },
+      "28": {
+        "0": "The Prince of Tyre."
+      },
+      "29": {
+        "0": "Egypt the Crocodile."
+      },
+      "30": {
+        "0": "The Day of the Lord Against Egypt."
+      },
+      "31": {
+        "0": "Allegory of the Cedar."
+      },
+      "32": {
+        "0": "Lament over Pharaoh."
+      },
+      "33": {
+        "0": "The Prophet as Sentinel."
+      },
+      "34": {
+        "0": "Parable of the Shepherds."
+      },
+      "35": {
+        "0": "Against Edom."
+      },
+      "36": {
+        "0": "Regeneration of the Land."
+      },
+      "37": {
+        "0": "Vision of the Dry Bones."
+      },
+      "38": {
+        "0": "First Prophecy Against Gog."
+      },
+      "39": {
+        "0": "Third Prophecy Against Gog."
+      },
+      "40": {
+        "0": "The Man with a Measure."
+      },
+      "41": {
+        "0": "Interior of the Temple."
+      },
+      "42": {
+        "0": "Other Structures."
+      },
+      "43": {
+        "0": "The Glory of the Lord Returns."
+      },
+      "44": {
+        "0": "The Closed Gate."
+      },
+      "45": {
+        "0": "The Holy Portion."
+      },
+      "46": {
+        "0": "Sabbaths."
+      },
+      "47": {
+        "0": "The Wonderful Stream."
+      },
+      "48": {
+        "0": "The Sacred Tract."
+      }
+    },
+    "Dn": {
+      "1": {
+        "0": "The Food Test."
+      },
+      "2": {
+        "0": "Nebuchadnezzar’s Dream."
+      },
+      "3": {
+        "0": "The Fiery Furnace."
+      },
+      "4": {
+        "0": "Nebuchadnezzar’s Madness."
+      },
+      "5": {
+        "0": "The Writing on the Wall."
+      },
+      "6": {
+        "0": "The Lions’ Den."
+      },
+      "7": {
+        "0": "The Beasts and the Judgment."
+      },
+      "8": {
+        "0": "The Ram and the He-goat."
+      },
+      "9": {
+        "0": "The Seventy Weeks of Years."
+      },
+      "10": {
+        "0": "An Angelic Vision."
+      },
+      "11": {
+        "0": "The Hellenistic Age."
+      },
+      "12": {
+        "0": "THE RESURRECTION"
+      }
+    },
+    "Hos": {
+      "1": {
+        "0": "Marriage of Hosea and Gomer."
+      },
+      "2": {
+        "0": "THE LORD AND ISRAEL HIS SPOUSE"
+      },
+      "3": {
+        "0": "Hosea and His Wife Reunited."
+      },
+      "4": {
+        "0": "INDICTMENT OF ISRAEL"
+      },
+      "5": {
+        "0": "GUILT OF THE RELIGIOUS AND POLITICAL LEADERS"
+      },
+      "6": {
+        "0": "FURTHER CRIMES OF ISRAEL"
+      },
+      "7": {
+        "0": "ISRAEL’S DOMESTIC POLITICS"
+      },
+      "8": {
+        "0": "CORRUPTION OF CULT, DOMESTIC AND FOREIGN POLITICS"
+      },
+      "9": {
+        "0": "FROM DAYS OF CELEBRATION TO DAYS OF PUNISHMENT"
+      },
+      "10": {
+        "0": "DESTRUCTION OF IDOLATROUS CULTIC OBJECTS"
+      },
+      "11": {
+        "0": "THE DISAPPOINTMENT OF A PARENT"
+      },
+      "12": {
+        "0": "INFIDELITY OF ISRAEL"
+      },
+      "13": {
+        "0": "THE DEATH OF EPHRAIM"
+      },
+      "14": {
+        "0": "SINCERE CONVERSION AND NEW LIFE"
+      }
+    },
+    "Jl": {
+      "1": {
+        "0": "CRY OUT TO THE LORD"
+      },
+      "2": {
+        "0": "THE DAY APPROACHES"
+      },
+      "3": {
+        "0": "THE DAY OF THE LORD"
+      }
+    },
+    "Am": {
+      "1": {
+        "0": "ARAM"
+      },
+      "2": {
+        "0": "MOAB"
+      },
+      "3": {
+        "0": "FIRST SUMMONS"
+      },
+      "4": {
+        "0": "SECOND SUMMONS"
+      },
+      "5": {
+        "0": "THIRD SUMMONS"
+      },
+      "6": {
+        "0": "THIRD WOE"
+      },
+      "7": {
+        "0": "FIRST VISION: THE LOCUST SWARM"
+      },
+      "8": {
+        "0": "FOURTH VISION: THE SUMMER FRUIT"
+      },
+      "9": {
+        "0": "FIFTH VISION: THE DESTRUCTION OF THE SANCTUARY"
+      }
+    },
+    "Ob": {
+      "1": {
+        "0": "EDOM’S FALL DECREED"
+      }
+    },
+    "Jon": {
+      "1": {
+        "0": "Jonah’s Disobedience and Flight."
+      },
+      "2": {
+        "0": "Jonah’s Prayer."
+      },
+      "3": {
+        "0": "Jonah’s Obedience and the Ninevites’ Repentance."
+      },
+      "4": {
+        "0": "Jonah’s Anger and God’s Reproof."
+      }
+    },
+    "Na": {
+      "1": {
+        "0": "GOD’S TERRIFYING APPEARANCE"
+      },
+      "2": {
+        "0": "THE ATTACK ON NINEVEH"
+      },
+      "3": {
+        "0": "NINEVEH’S INESCAPABLE FATE"
+      }
+    },
+    "Zep": {
+      "1": {
+        "0": "I. THE DAY OF THE LORD: JUDGMENT ON JUDAH"
+      },
+      "2": {
+        "0": "II. JUDGMENT ON THE NATIONS"
+      },
+      "3": {
+        "0": "III. JERUSALEM REPROACHED"
+      }
+    },
+    "Hg": {
+      "1": {
+        "0": "Prophetic Call to Work on the Temple."
+      },
+      "2": {
+        "0": "Assurance of God’s Presence."
+      }
+    },
+    "Zec": {
+      "1": {
+        "0": "Call for Obedience."
+      },
+      "2": {
+        "0": "Second Vision: The Four Horns and the Four Smiths."
+      },
+      "3": {
+        "0": "Prophetic Vision: Joshua the High Priest."
+      },
+      "4": {
+        "0": "Fourth Vision: The Lampstand and the Two Olive Trees."
+      },
+      "5": {
+        "0": "Fifth Vision: The Flying Scroll."
+      },
+      "6": {
+        "0": "Seventh Vision: Four Chariots."
+      },
+      "7": {
+        "0": "A Question About Fasting."
+      },
+      "8": {
+        "0": "Seven Oracles: Judah and Zion Restored."
+      },
+      "9": {
+        "0": "RESTORATION OF THE LAND OF ISRAEL"
+      },
+      "10": {
+        "0": "THE LORD STRENGTHENS JUDAH AND RESCUES EPHRAIM"
+      },
+      "11": {
+        "0": "THE CRY OF TREES, SHEPHERDS, AND LIONS"
+      },
+      "12": {
+        "0": "Oracles Concerning the Nations and Judah."
+      },
+      "13": {
+        "0": "Oracles Concerning the End of False Prophecy."
+      },
+      "14": {
+        "0": "Devastation and Rescue of Jerusalem."
+      }
+    },
+    "Mal": {
+      "1": {
+        "0": "I. ISRAEL PREFERRED TO EDOM"
+      },
+      "2": {
+        "0": "III. MARRIAGE AND DIVORCE"
+      },
+      "3": {
+        "0": "V. THE MESSENGER OF THE COVENANT"
+      },
+      "4": {
+        "0": "NAB"
+      }
+    },
+    "Mt": {
+      "1": {
+        "0": "The Genealogy of Jesus."
+      },
+      "2": {
+        "0": "The Visit of the Magi."
+      },
+      "3": {
+        "0": "The Preaching of John the Baptist."
+      },
+      "4": {
+        "0": "The Temptation of Jesus."
+      },
+      "5": {
+        "0": "The Sermon on the Mount."
+      },
+      "6": {
+        "0": "Teaching About Almsgiving."
+      },
+      "7": {
+        "0": "Judging Others."
+      },
+      "8": {
+        "0": "The Cleansing of a Leper."
+      },
+      "9": {
+        "0": "The Healing of a Paralytic."
+      },
+      "10": {
+        "0": "The Mission of the Twelve."
+      },
+      "11": {
+        "0": "The Messengers from John the Baptist."
+      },
+      "12": {
+        "0": "Picking Grain on the Sabbath."
+      },
+      "13": {
+        "0": "The Parable of the Sower."
+      },
+      "14": {
+        "0": "Herod’s Opinion of Jesus."
+      },
+      "15": {
+        "0": "The Tradition of the Elders."
+      },
+      "16": {
+        "0": "The Demand for a Sign."
+      },
+      "17": {
+        "0": "The Transfiguration of Jesus."
+      },
+      "18": {
+        "0": "The Greatest in the Kingdom."
+      },
+      "19": {
+        "0": "Marriage and Divorce."
+      },
+      "20": {
+        "0": "The Workers in the Vineyard."
+      },
+      "21": {
+        "0": "The Entry into Jerusalem."
+      },
+      "22": {
+        "0": "The Parable of the Wedding Feast."
+      },
+      "23": {
+        "0": "Denunciation of the Scribes and Pharisees."
+      },
+      "24": {
+        "0": "The Destruction of the Temple Foretold."
+      },
+      "25": {
+        "0": "The Parable of the Ten Virgins."
+      },
+      "26": {
+        "0": "The Conspiracy Against Jesus."
+      },
+      "27": {
+        "0": "Jesus Before Pilate."
+      },
+      "28": {
+        "0": "The Resurrection of Jesus."
+      }
+    },
+    "Mk": {
+      "1": {
+        "0": "The Preaching of John the Baptist."
+      },
+      "2": {
+        "0": "The Healing of a Paralytic."
+      },
+      "3": {
+        "0": "A Man with a Withered Hand."
+      },
+      "4": {
+        "0": "The Parable of the Sower."
+      },
+      "5": {
+        "0": "The Healing of the Gerasene Demoniac."
+      },
+      "6": {
+        "0": "The Rejection at Nazareth."
+      },
+      "7": {
+        "0": "The Tradition of the Elders."
+      },
+      "8": {
+        "0": "The Feeding of the Four Thousand."
+      },
+      "9": {
+        "0": "The Transfiguration of Jesus."
+      },
+      "10": {
+        "0": "Marriage and Divorce."
+      },
+      "11": {
+        "0": "The Entry into Jerusalem."
+      },
+      "12": {
+        "0": "Parable of the Tenants."
+      },
+      "13": {
+        "0": "The Destruction of the Temple Foretold."
+      },
+      "14": {
+        "0": "The Conspiracy Against Jesus."
+      },
+      "15": {
+        "0": "Jesus Before Pilate."
+      },
+      "16": {
+        "0": "The Resurrection of Jesus."
+      }
+    },
+    "Lk": {
+      "1": {
+        "0": "Announcement of the Birth of John."
+      },
+      "2": {
+        "0": "The Birth of Jesus."
+      },
+      "3": {
+        "0": "The Preaching of John the Baptist."
+      },
+      "4": {
+        "0": "The Temptation of Jesus."
+      },
+      "5": {
+        "0": "The Call of Simon the Fisherman."
+      },
+      "6": {
+        "0": "Debates About the Sabbath."
+      },
+      "7": {
+        "0": "The Healing of a Centurion’s Slave."
+      },
+      "8": {
+        "0": "Galilean Women Follow Jesus."
+      },
+      "9": {
+        "0": "The Mission of the Twelve."
+      },
+      "10": {
+        "0": "The Mission of the Seventy-two."
+      },
+      "11": {
+        "0": "The Lord’s Prayer."
+      },
+      "12": {
+        "0": "The Leaven of the Pharisees."
+      },
+      "13": {
+        "0": "A Call to Repentance."
+      },
+      "14": {
+        "0": "Healing of the Man with Dropsy on the Sabbath."
+      },
+      "15": {
+        "0": "The Parable of the Lost Sheep."
+      },
+      "16": {
+        "0": "The Parable of the Dishonest Steward."
+      },
+      "17": {
+        "0": "Temptations to Sin."
+      },
+      "18": {
+        "0": "The Parable of the Persistent Widow."
+      },
+      "19": {
+        "0": "Zacchaeus the Tax Collector."
+      },
+      "20": {
+        "0": "The Authority of Jesus Questioned."
+      },
+      "21": {
+        "0": "The Poor Widow’s Contribution."
+      },
+      "22": {
+        "0": "The Conspiracy Against Jesus."
+      },
+      "23": {
+        "0": "Jesus Before Pilate."
+      },
+      "24": {
+        "0": "The Resurrection of Jesus."
+      }
+    },
+    "Jn": {
+      "1": {
+        "0": "John the Baptist’s Testimony to Himself."
+      },
+      "2": {
+        "0": "The Wedding at Cana."
+      },
+      "3": {
+        "0": "Nicodemus."
+      },
+      "4": {
+        "0": "The Samaritan Woman."
+      },
+      "5": {
+        "0": "Cure on a Sabbath."
+      },
+      "6": {
+        "0": "Multiplication of the Loaves."
+      },
+      "7": {
+        "0": "The Feast of Tabernacles."
+      },
+      "8": {
+        "0": "The Light of the World."
+      },
+      "9": {
+        "0": "The Man Born Blind."
+      },
+      "10": {
+        "0": "The Good Shepherd."
+      },
+      "11": {
+        "0": "The Raising of Lazarus."
+      },
+      "12": {
+        "0": "The Anointing at Bethany."
+      },
+      "13": {
+        "0": "The Washing of the Disciples’ Feet."
+      },
+      "14": {
+        "0": "Last Supper Discourses."
+      },
+      "15": {
+        "0": "The Vine and the Branches."
+      },
+      "16": {
+        "0": "Jesus’ Departure; Coming of the Advocate."
+      },
+      "17": {
+        "0": "The Prayer of Jesus."
+      },
+      "18": {
+        "0": "Jesus Arrested."
+      },
+      "19": {
+        "0": "The Crucifixion of Jesus."
+      },
+      "20": {
+        "0": "The Empty Tomb."
+      },
+      "21": {
+        "0": "The Appearance to the Seven Disciples."
+      }
+    },
+    "Acts": {
+      "1": {
+        "0": "The Promise of the Spirit."
+      },
+      "2": {
+        "0": "The Coming of the Spirit."
+      },
+      "3": {
+        "0": "Cure of a Crippled Beggar."
+      },
+      "4": {
+        "0": "Before the Sanhedrin."
+      },
+      "5": {
+        "0": "Ananias and Sapphira."
+      },
+      "6": {
+        "0": "The Need for Assistants."
+      },
+      "7": {
+        "0": "Stephen’s Discourses."
+      },
+      "8": {
+        "0": "Persecution of the Church."
+      },
+      "9": {
+        "0": "Saul’s Conversion."
+      },
+      "10": {
+        "0": "The Vision of Cornelius."
+      },
+      "11": {
+        "0": "The Baptism of the Gentiles Explained."
+      },
+      "12": {
+        "0": "Herod’s Persecution of the Christians."
+      },
+      "13": {
+        "0": "First Mission Begins in Cyprus."
+      },
+      "14": {
+        "0": "Paul and Barnabas at Iconium."
+      },
+      "15": {
+        "0": "Council of Jerusalem."
+      },
+      "16": {
+        "0": "Paul in Lycaonia: Timothy."
+      },
+      "17": {
+        "0": "Paul in Thessalonica."
+      },
+      "18": {
+        "0": "Paul in Corinth."
+      },
+      "19": {
+        "0": "Paul in Ephesus."
+      },
+      "20": {
+        "0": "Journey to Macedonia and Greece."
+      },
+      "21": {
+        "0": "Arrival at Tyre."
+      },
+      "22": {
+        "0": "Paul’s Defense before the Jerusalem Jews."
+      },
+      "23": {
+        "0": "Transfer to Caesarea."
+      },
+      "24": {
+        "0": "Trial before Felix."
+      },
+      "25": {
+        "0": "Appeal to Caesar."
+      },
+      "26": {
+        "0": "King Agrippa Hears Paul."
+      },
+      "27": {
+        "0": "Departure for Rome."
+      },
+      "28": {
+        "0": "Winter in Malta."
+      }
+    },
+    "Rom": {
+      "1": {
+        "0": "Greeting."
+      },
+      "2": {
+        "0": "God’s Just Judgment."
+      },
+      "3": {
+        "0": "Answers to Objections."
+      },
+      "4": {
+        "0": "Abraham Justified by Faith."
+      },
+      "5": {
+        "0": "Faith, Hope, and Love."
+      },
+      "6": {
+        "0": "Freedom from Sin; Life in God."
+      },
+      "7": {
+        "0": "Freedom from the Law."
+      },
+      "8": {
+        "0": "The Flesh and the Spirit."
+      },
+      "9": {
+        "0": "Paul’s Love for Israel."
+      },
+      "11": {
+        "0": "The Remnant of Israel."
+      },
+      "12": {
+        "0": "Sacrifice of Body and Mind."
+      },
+      "13": {
+        "0": "Obedience in Authority."
+      },
+      "14": {
+        "0": "To Live and Die for Christ."
+      },
+      "15": {
+        "0": "Patience and Self-Denial."
+      },
+      "16": {
+        "0": "Phoebe Commended."
+      }
+    },
+    "1Cor": {
+      "1": {
+        "0": "Greeting."
+      },
+      "2": {
+        "0": "The True Wisdom."
+      },
+      "3": {
+        "0": "The Role of God’s Ministers."
+      },
+      "4": {
+        "0": "Paul’s Life as Pattern."
+      },
+      "5": {
+        "0": "A Case of Incest."
+      },
+      "6": {
+        "0": "Lawsuits before Unbelievers."
+      },
+      "7": {
+        "0": "Advice to the Married."
+      },
+      "8": {
+        "0": "Knowledge Insufficient."
+      },
+      "9": {
+        "0": "Paul’s Rights as an Apostle."
+      },
+      "10": {
+        "0": "Warning against Overconfidence."
+      },
+      "11": {
+        "0": "Man and Woman."
+      },
+      "12": {
+        "0": "Unity and Variety."
+      },
+      "14": {
+        "0": "Prophecy Greater than Tongues."
+      },
+      "15": {
+        "0": "The Gospel Teaching."
+      },
+      "16": {
+        "0": "The Collection."
+      }
+    },
+    "2Cor": {
+      "1": {
+        "0": "Greeting."
+      },
+      "2": {
+        "0": "The Offender."
+      },
+      "3": {
+        "0": "Contrast with the Old Covenant."
+      },
+      "4": {
+        "0": "Integrity in the Ministry."
+      },
+      "5": {
+        "0": "Our Future Destiny."
+      },
+      "6": {
+        "0": "The Experience of the Ministry."
+      },
+      "7": {
+        "0": "Paul’s Joy in Macedonia."
+      },
+      "8": {
+        "0": "Generosity in Giving."
+      },
+      "9": {
+        "0": "God’s Indescribable Gift."
+      },
+      "10": {
+        "0": "Accusation of Weakness."
+      },
+      "11": {
+        "0": "Preaching without Charge."
+      },
+      "12": {
+        "0": "Selfless Concern for the Church."
+      }
+    },
+    "Gal": {
+      "1": {
+        "0": "Greeting."
+      },
+      "2": {
+        "0": "The Council of Jerusalem."
+      },
+      "3": {
+        "0": "Justification by Faith."
+      },
+      "4": {
+        "0": "God’s Free Children in Christ."
+      },
+      "5": {
+        "0": "The Importance of Faith."
+      },
+      "6": {
+        "0": "Life in the Community of Christ."
+      }
+    },
+    "Eph": {
+      "1": {
+        "0": "Greeting."
+      },
+      "2": {
+        "0": "Generosity of God’s Plan."
+      },
+      "3": {
+        "0": "Commission to Preach God’s Plan."
+      },
+      "4": {
+        "0": "Unity in the Body."
+      },
+      "5": {
+        "0": "Duty to Live in the Light."
+      },
+      "6": {
+        "0": "Children and Parents."
+      }
+    },
+    "Phil": {
+      "1": {
+        "0": "Greeting."
+      },
+      "2": {
+        "0": "Plea for Unity and Humility."
+      },
+      "3": {
+        "0": "Concluding Admonitions."
+      },
+      "4": {
+        "0": "Live in Concord."
+      }
+    },
+    "Col": {
+      "1": {
+        "0": "Greeting."
+      },
+      "2": {
+        "0": "A General Admonition."
+      },
+      "3": {
+        "0": "Mystical Death and Resurrection."
+      },
+      "4": {
+        "0": "Prayer and Apostolic Spirit."
+      }
+    },
+    "1Tm": {
+      "1": {
+        "0": "Greeting."
+      },
+      "2": {
+        "0": "Prayer and Conduct."
+      },
+      "3": {
+        "0": "Qualifications of Various Ministers."
+      },
+      "4": {
+        "0": "False Asceticism."
+      },
+      "5": {
+        "0": "Rules for Widows."
+      },
+      "6": {
+        "0": "Rules for Slaves."
+      }
+    },
+    "2Tm": {
+      "1": {
+        "0": "Greeting."
+      },
+      "2": {
+        "0": "Timothy’s Conduct."
+      },
+      "3": {
+        "0": "The Dangers of the Last Days."
+      },
+      "4": {
+        "0": "Solemn Charge."
+      }
+    },
+    "Ti": {
+      "1": {
+        "0": "Greeting."
+      },
+      "2": {
+        "0": "Christian Behavior."
+      },
+      "3": {
+        "0": "Advice to Titus."
+      }
+    },
+    "Phlm": {
+      "1": {
+        "0": "Address and Greeting."
+      }
+    },
+    "Heb": {
+      "1": {
+        "0": "Messianic Enthronement."
+      },
+      "2": {
+        "0": "Exhortation to Faithfulness."
+      },
+      "3": {
+        "0": "Jesus, Superior to Moses."
+      },
+      "4": {
+        "0": "The Sabbath Rest."
+      },
+      "5": {
+        "0": "Exhortation to Spiritual Renewal."
+      },
+      "6": {
+        "0": "God’s Promise Immutable."
+      },
+      "7": {
+        "0": "Melchizedek, a Type of Christ."
+      },
+      "8": {
+        "0": "Heavenly Priesthood of Jesus."
+      },
+      "9": {
+        "0": "The Worship of the First Covenant."
+      },
+      "10": {
+        "0": "One Sacrifice instead of Many."
+      },
+      "11": {
+        "0": "Faith of the Ancients."
+      },
+      "12": {
+        "0": "God our Father."
+      }
+    },
+    "Jas": {
+      "1": {
+        "0": "Perseverance in Trial."
+      },
+      "2": {
+        "0": "Sin of Partiality."
+      },
+      "3": {
+        "0": "Power of the Tongue."
+      },
+      "4": {
+        "0": "Causes of Division."
+      },
+      "5": {
+        "0": "Warning to the Rich."
+      }
+    },
+    "1Pt": {
+      "1": {
+        "0": "Greeting."
+      },
+      "2": {
+        "0": "God’s House and People."
+      },
+      "3": {
+        "0": "Christian Spouses."
+      },
+      "4": {
+        "0": "Christian Restraint."
+      },
+      "5": {
+        "0": "Advice to Presbyters."
+      }
+    },
+    "2Pt": {
+      "1": {
+        "0": "Greeting."
+      },
+      "2": {
+        "0": "False Teachers."
+      },
+      "3": {
+        "0": "Denial of the Parousia."
+      }
+    },
+    "1Jn": {
+      "1": {
+        "0": "The Word of Life"
+      },
+      "2": {
+        "0": "Christ and His Commandments."
+      },
+      "3": {
+        "0": "Avoiding Sin."
+      },
+      "4": {
+        "0": "Testing the Spirits."
+      },
+      "5": {
+        "0": "Faith is Victory over the World."
+      }
+    },
+    "Jude": {
+      "1": {
+        "0": "Address and Greeting."
+      }
+    },
+    "Rv": {
+      "1": {
+        "0": "Greeting."
+      },
+      "2": {
+        "0": "To Ephesus."
+      },
+      "3": {
+        "0": "To Sardis."
+      },
+      "4": {
+        "0": "Vision of Heavenly Worship."
+      },
+      "5": {
+        "0": "The Scroll and the Lamb."
+      },
+      "6": {
+        "0": "The First Six Seals."
+      },
+      "7": {
+        "0": "The 144,000 Sealed."
+      },
+      "8": {
+        "0": "The Seven Trumpets."
+      },
+      "9": {
+        "0": "The Fifth Trumpet."
+      },
+      "10": {
+        "0": "The Angel with the Small Scroll."
+      },
+      "11": {
+        "0": "The Two Witnesses."
+      },
+      "12": {
+        "0": "The Woman and the Dragon."
+      },
+      "13": {
+        "0": "The First Beast."
+      },
+      "14": {
+        "0": "The Lamb’s Companions."
+      },
+      "15": {
+        "0": "The Seven Last Plagues."
+      },
+      "16": {
+        "0": "The Seven Bowls."
+      },
+      "17": {
+        "0": "Babylon the Great."
+      },
+      "18": {
+        "0": "The Fall of Babylon."
+      },
+      "19": {
+        "0": "The Victory Song."
+      },
+      "20": {
+        "0": "The Thousand-year Reign."
+      },
+      "21": {
+        "0": "The New Heaven and the New Earth."
+      }
+    }
+  }
 }
