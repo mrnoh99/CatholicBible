@@ -818,7 +818,6 @@ struct IntroDetailView: View {
                         }
                         .buttonStyle(.bordered)
                         .foregroundColor(showNotes ? .accentColor : .gray)
-                        .disabled(intro.notes.isEmpty)
                     }
                     .font(.caption)
 
