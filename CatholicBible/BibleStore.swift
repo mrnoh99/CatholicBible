@@ -108,8 +108,8 @@ final class BibleStore {
                     for (chapterKey, verses) in chapters {
                         guard let chapterNumber = Int(chapterKey) else { continue }
                         chapterMap[chapterNumber] = verses
-                            .compactMap { key, text in Int(key).map { Verse(number: $0, text: text) } }
-                            .sorted { $0.number < $1.number }
+                            .map { key, text in Verse(number: key, text: text) }
+                            .sorted { compareVerseKeys($0.number, $1.number) }
                     }
                     if !chapterMap.isEmpty { indexed[bookID] = chapterMap }
                 }
@@ -711,7 +711,7 @@ final class BibleStore {
                 for chapterKey in chapterNumbers {
                     guard let verses = chapters[chapterKey] else { continue }
                     guard let chapterNumber = Int(chapterKey) else { continue }
-                    let verseNumbers = verses.keys.sorted { compareVerseKeys($0, $1) }
+                    let verseNumbers = verses.keys.sorted { self.compareVerseKeys($0, $1) }
                     for verseKey in verseNumbers {
                         guard let annotationText = verses[verseKey] else { continue }
 

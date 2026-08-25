@@ -78,7 +78,7 @@ struct BookmarksView: View {
     }
 
     private func open(_ ref: VerseRef) {
-        navigation.open(bookID: ref.bookID, chapter: ref.chapter, verse: ref.verse)
+        navigation.open(bookID: ref.bookID, chapter: ref.chapter, verse: Int(ref.verse))
         dismiss()
     }
 
