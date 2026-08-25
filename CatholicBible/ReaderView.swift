@@ -323,14 +323,14 @@ struct ReaderPane: View {
     }
 
     /// 절 번호 → 소제목 맵
-    private var titleMap: [Int: String] {
+    private var titleMap: [String: String] {
         guard showsTitles else {
             return [:]
         }
 
         // JSON headings 필드에서 로드
         let titles = store.titles(edition: edition, book: book, chapter: chapter)
-        var titleMap: [Int: String] = [:]
+        var titleMap: [String: String] = [:]
 
         for title in titles {
             titleMap[title.verse] = title.text
@@ -490,7 +490,7 @@ struct ReaderPane: View {
                         LazyVStack(alignment: .leading, spacing: settings.lineSpacing * 0.9) {
                             ForEach(verses) { verse in
                                 VStack(alignment: .leading, spacing: settings.lineSpacing * 0.9) {
-                                    if let title = titleMap[verse.number] {
+                                    if let title = titleMap[String(verse.number)] {
                                         SectionTitleView(text: title, bookID: book.id, chapter: chapter,
                                                          linkable: true)
                                     }
@@ -875,7 +875,7 @@ struct SpreadReader: View {
             if isFirst { chapterHeader }
             if let verses {
                 ForEach(verses) { verse in
-                    if let title = titleMap[verse.number] {
+                    if let title = titleMap[String(verse.number)] {
                         SectionTitleView(text: title, bookID: book.id, chapter: chapter,
                                                          linkable: true)
                     }
