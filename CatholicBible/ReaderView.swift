@@ -1273,6 +1273,7 @@ struct BookPickerView: View {
     @Environment(BibleStore.self) private var store
     @Environment(\.dismiss) private var dismiss
     @State private var selectedBook: BibleBook?
+    @State private var searchText = ""
 
     var body: some View {
         NavigationStack {
@@ -1284,18 +1285,45 @@ struct BookPickerView: View {
         }
     }
 
+    private var filteredBooks: [BibleBook] {
+        let books = edition.scope.books
+        if searchText.isEmpty {
+            return books
+        }
+        return books.filter { book in
+            let name = store.bookName(edition: edition, book: book)
+            let shortName = store.bookShortName(edition: edition, book: book)
+            return name.localizedCaseInsensitiveContains(searchText) ||
+                   shortName.localizedCaseInsensitiveContains(searchText)
+        }
+    }
+
     private var bookList: some View {
         List {
-            ForEach(Testament.allCases) { testament in
-                let books = edition.scope.books.filter { $0.testament == testament }
-                if !books.isEmpty {
-                    Section(testament.title) {
-                        ForEach(books) { book in row(book) }
+            if searchText.isEmpty {
+                // 카테고리별 정렬된 표시
+                ForEach(Testament.allCases) { testament in
+                    let books = edition.scope.books.filter { $0.testament == testament }
+                    if !books.isEmpty {
+                        Section(testament.title) {
+                            ForEach(books) { book in row(book) }
+                        }
                     }
+                }
+            } else {
+                // 검색 결과
+                if filteredBooks.isEmpty {
+                    Section {
+                        Text("검색 결과 없음")
+                            .foregroundStyle(.secondary)
+                    }
+                } else {
+                    ForEach(filteredBooks) { book in row(book) }
                 }
             }
         }
         .listStyle(.insetGrouped)
+        .searchable(text: $searchText, prompt: "책 이름으로 검색")
         .navigationTitle("\(edition.shortName) · 책 선택")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
