@@ -704,12 +704,13 @@ struct SpreadReader: View {
     private var spreadCount: Int { max(1, Int(ceil(Double(pages.count) / 2.0))) }
 
     private var showsTitles: Bool { true }
-    private var titleMap: [Int: String] {
+    private var titleMap: [String: String] {
         guard showsTitles, chapter > 0 else { return [:] }
 
-        // KNB Notes의 제목 먼저 확인
-        var titlesByVerse = knbNotes.titlesByVerse(edition: edition.id, bookID: book.id, chapter: chapter)
+        // KNB Notes의 제목 먼저 확인 (Int 키를 String으로 변환)
+        var titlesByVerse: [String: String] = knbNotes.titlesByVerse(edition: edition.id, bookID: book.id, chapter: chapter)
             .mapValues { AnnotationMarkup.stripMarkers($0) }
+            .reduce(into: [:]) { result, pair in result[String(pair.key)] = pair.value }
 
         // BibleStore의 제목 추가 (NABRE 등)
         let storeTitle = store.titles(edition: edition, book: book, chapter: chapter)
