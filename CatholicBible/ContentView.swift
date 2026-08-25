@@ -209,12 +209,18 @@ struct ContentView: View {
                 .navigationTitle("서재")
                 .toolbar {
                     ToolbarItemGroup(placement: .primaryAction) {
-                        Button("오늘의 미사", systemImage: "sun.max") { showMass = true }
-                        Button("검색", systemImage: "magnifyingglass") { showSearch = true }
-                        Button("사전", systemImage: "character.book.closed") { navigation.lookUp() }
-                        Button("책갈피", systemImage: "bookmark") { showBookmarks = true }
-                        Button("노트", systemImage: "note.text") { showNotes = true }
-                        Button("설정", systemImage: "gear") { showSettings = true }
+                        Button(systemImage: "sun.max") { showMass = true }
+                            .help("오늘의 미사")
+                        Button(systemImage: "magnifyingglass") { showSearch = true }
+                            .help("검색")
+                        Button(systemImage: "character.book.closed") { navigation.lookUp() }
+                            .help("사전")
+                        Button(systemImage: "bookmark") { showBookmarks = true }
+                            .help("책갈피")
+                        Button(systemImage: "note.text") { showNotes = true }
+                            .help("노트")
+                        Button(systemImage: "gear") { showSettings = true }
+                            .help("설정")
                     }
                 }
         } detail: {
@@ -302,26 +308,47 @@ struct ShelfView: View {
         ZStack {
             settings.theme.background.ignoresSafeArea()
             ScrollView {
-                VStack(spacing: 24) {
-                    VStack(spacing: 6) {
+                VStack(spacing: 28) {
+                    VStack(spacing: 8) {
                         Text("가톨릭 성경 서재")
-                            .font(settings.fontChoice.font(size: 32, relativeTo: .largeTitle, bold: true))
+                            .font(.system(size: 34, weight: .bold, design: .default))
                             .foregroundStyle(settings.theme.text)
-                        Text("천주교회의 아홉가지 책")
-                            .font(.subheadline)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                        Text("천주교회의 아홉가지 책과 전례 독서")
+                            .font(.system(size: 15, weight: .regular, design: .default))
                             .foregroundStyle(settings.theme.secondary)
+                            .frame(maxWidth: .infinity, alignment: .leading)
                     }
-                    .padding(.top, 40)
+                    .padding(.top, 48)
+                    .padding(.horizontal, 32)
 
-                    massCard
-                    continueReadingCard
-
-                    LazyVGrid(columns: columns, spacing: 20) {
-                        ForEach(Editions.all) { edition in
-                            EditionCard(edition: edition) { open(edition) }
-                        }
+                    VStack(spacing: 20) {
+                        massCard
+                        continueReadingCard
                     }
                     .padding(.horizontal, 32)
+
+                    VStack(spacing: 16) {
+                        HStack {
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("모든 성경 판본")
+                                    .font(.system(size: 18, weight: .semibold, design: .default))
+                                    .foregroundStyle(settings.theme.text)
+                                Text("새 판본을 선택하세요")
+                                    .font(.system(size: 13, weight: .regular, design: .default))
+                                    .foregroundStyle(settings.theme.secondary)
+                            }
+                            Spacer()
+                        }
+                        .padding(.horizontal, 32)
+
+                        LazyVGrid(columns: columns, spacing: 20) {
+                            ForEach(Editions.all) { edition in
+                                EditionCard(edition: edition) { open(edition) }
+                            }
+                        }
+                        .padding(.horizontal, 32)
+                    }
                     .padding(.bottom, 48)
                 }
                 .frame(maxWidth: 1000)
@@ -339,24 +366,42 @@ struct ShelfView: View {
     @ViewBuilder
     private var massCard: some View {
         Button { showMass = true } label: {
-            HStack(spacing: 12) {
+            HStack(spacing: 14) {
                 Image(systemName: "sun.max.fill")
-                    .font(.title2)
+                    .font(.system(size: 24, weight: .semibold))
                     .foregroundStyle(LiturgicalCalendar.liturgicalColor().color)
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("오늘의 미사 · 전례력")
-                        .font(.headline)
+                    .frame(width: 44, height: 44)
+                    .background(LiturgicalCalendar.liturgicalColor().color.opacity(0.12))
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("오늘의 미사")
+                        .font(.system(size: 17, weight: .semibold, design: .default))
                         .foregroundStyle(settings.theme.text)
                     Text(LiturgicalCalendar.liturgicalDayName())
-                        .font(.subheadline)
+                        .font(.system(size: 14, weight: .regular, design: .default))
                         .foregroundStyle(settings.theme.secondary)
                         .lineLimit(1)
                 }
                 Spacer(minLength: 0)
-                Image(systemName: "chevron.right").foregroundStyle(settings.theme.secondary)
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(settings.theme.secondary.opacity(0.6))
             }
-            .padding(.horizontal, 16).padding(.vertical, 12)
-            .background(RoundedRectangle(cornerRadius: 14).fill(settings.theme.text.opacity(0.05)))
+            .padding(.horizontal, 18)
+            .padding(.vertical, 14)
+            .background(
+                RoundedRectangle(cornerRadius: 16)
+                    .fill(LinearGradient(
+                        gradient: Gradient(colors: [
+                            settings.theme.text.opacity(0.04),
+                            settings.theme.text.opacity(0.02)
+                        ]),
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    ))
+                    .stroke(settings.theme.secondary.opacity(0.1), lineWidth: 1)
+            )
         }
         .buttonStyle(.plain)
         .padding(.horizontal, 32)
@@ -386,11 +431,33 @@ struct ShelfView: View {
                 navigation.open(bookID: book.id,
                                 chapter: readingState.lastChapter(edition: edition, book: book))
             } label: {
-                Label("이어 읽기 — \(edition.shortName) · \(store.bookShortName(edition: edition, book: book)) \(book.chapterLabel(readingState.lastChapter(edition: edition, book: book)))",
-                      systemImage: "book")
-                    .padding(.horizontal, 6)
+                HStack(spacing: 12) {
+                    Image(systemName: "book.fill")
+                        .font(.system(size: 18, weight: .semibold))
+
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text("이어 읽기")
+                            .font(.system(size: 16, weight: .semibold, design: .default))
+                        Text("\(edition.shortName) · \(store.bookShortName(edition: edition, book: book)) \(book.chapterLabel(readingState.lastChapter(edition: edition, book: book)))")
+                            .font(.system(size: 13, weight: .regular, design: .default))
+                            .opacity(0.8)
+                    }
+
+                    Spacer()
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 13, weight: .semibold))
+                        .opacity(0.6)
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 14)
+                .background(
+                    RoundedRectangle(cornerRadius: 14)
+                        .fill(Color.accentColor.opacity(0.1))
+                        .stroke(Color.accentColor.opacity(0.2), lineWidth: 1.5)
+                )
+                .foregroundStyle(Color.accentColor)
             }
-            .buttonStyle(.borderedProminent)
+            .buttonStyle(.plain)
         }
     }
 }
@@ -409,45 +476,63 @@ struct EditionCard: View {
         let hasAny = availability.loaded > 0
 
         Button(action: action) {
-            VStack(alignment: .leading, spacing: 10) {
-                HStack(alignment: .top) {
+            VStack(alignment: .leading, spacing: 12) {
+                HStack(alignment: .top, spacing: 12) {
                     Image(systemName: edition.scope == .psalter ? "music.note.list" : "book.closed.fill")
-                        .font(.title2)
+                        .font(.system(size: 18, weight: .semibold))
                         .foregroundStyle(hasAny ? Color.accentColor : settings.theme.secondary)
+                        .frame(width: 40, height: 40)
+                        .background(
+                            RoundedRectangle(cornerRadius: 10)
+                                .fill(settings.theme.text.opacity(hasAny ? 0.08 : 0.04))
+                        )
+
                     Spacer()
+
                     Text(languageBadge)
-                        .font(.caption2.weight(.semibold))
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 3)
+                        .font(.system(size: 12, weight: .semibold, design: .default))
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 4)
                         .background(Capsule().fill(settings.theme.secondary.opacity(0.15)))
                         .foregroundStyle(settings.theme.secondary)
                 }
 
-                Text(edition.name)
-                    .font(settings.fontChoice.font(size: 20, relativeTo: .title3, bold: true))
-                    .foregroundStyle(settings.theme.text)
-                    .multilineTextAlignment(.leading)
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(edition.name)
+                        .font(.system(size: 18, weight: .semibold, design: .default))
+                        .foregroundStyle(settings.theme.text)
+                        .lineLimit(2)
+                        .frame(maxWidth: .infinity, alignment: .leading)
 
-                Text(edition.summary)
-                    .font(.footnote)
-                    .foregroundStyle(settings.theme.secondary)
-                    .multilineTextAlignment(.leading)
-                    .lineLimit(2)
+                    Text(edition.summary)
+                        .font(.system(size: 13, weight: .regular, design: .default))
+                        .foregroundStyle(settings.theme.secondary)
+                        .lineLimit(2)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
 
-                Spacer(minLength: 4)
+                Spacer(minLength: 0)
 
-                Text(availabilityLabel(availability))
-                    .font(.caption2)
-                    .foregroundStyle(hasAny ? Color.accentColor : settings.theme.secondary.opacity(0.8))
+                HStack(spacing: 8) {
+                    Image(systemName: hasAny ? "checkmark.circle.fill" : "clock.fill")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(hasAny ? Color.green : settings.theme.secondary)
+
+                    Text(availabilityLabel(availability))
+                        .font(.system(size: 12, weight: .regular, design: .default))
+                        .foregroundStyle(hasAny ? Color.green : settings.theme.secondary.opacity(0.8))
+
+                    Spacer(minLength: 0)
+                }
             }
             .padding(18)
-            .frame(maxWidth: .infinity, minHeight: 150, alignment: .topLeading)
+            .frame(maxWidth: .infinity, minHeight: 160, alignment: .topLeading)
             .background(
                 RoundedRectangle(cornerRadius: 16)
                     .fill(settings.theme.text.opacity(0.04))
-                    .stroke(settings.theme.secondary.opacity(0.25), lineWidth: 1)
+                    .stroke(settings.theme.secondary.opacity(hasAny ? 0.2 : 0.1), lineWidth: 1.5)
             )
-            .opacity(hasAny ? 1 : 0.6)
+            .opacity(hasAny ? 1 : 0.7)
         }
         .buttonStyle(.plain)
         .accessibilityLabel("\(edition.name), \(availabilityLabel(availability))")

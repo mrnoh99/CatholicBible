@@ -186,88 +186,97 @@ struct ReaderView: View {
     @ToolbarContentBuilder
     private var readerToolbar: some ToolbarContent {
         ToolbarItem(placement: .principal) {
-            HStack(spacing: 4) {
+            HStack(spacing: 8) {
                 Button { navigation.goBack() } label: {
                     Image(systemName: "chevron.left")
-                        .font(.title2)
+                        .font(.system(size: 16, weight: .semibold))
+                        .contentShape(Circle())
                 }
                 .disabled(!navigation.canGoBack)
                 .help("이전 페이지")
+                .opacity(navigation.canGoBack ? 1 : 0.4)
 
                 Text("성경 읽기")
-                    .font(.headline)
-                    .fontWeight(.semibold)
+                    .font(.system(size: 16, weight: .semibold, design: .default))
 
                 Button { navigation.goForward() } label: {
                     Image(systemName: "chevron.right")
-                        .font(.title2)
+                        .font(.system(size: 16, weight: .semibold))
+                        .contentShape(Circle())
                 }
                 .disabled(!navigation.canGoForward)
                 .help("다음 페이지")
+                .opacity(navigation.canGoForward ? 1 : 0.4)
             }
         }
 
         ToolbarItem(placement: .navigationBarTrailing) {
-            Menu {
-                let isAnnotated = Editions.edition(readingState.selectedEditionID)?.isAnnotated ?? false
+            HStack(spacing: 12) {
+                Button { showAppearance = true } label: {
+                    Image(systemName: "textformat.size")
+                        .font(.system(size: 15, weight: .semibold))
+                }
+                .help("보기 설정")
 
-                if canDual {
-                    if isAnnotated {
-                        // 주석 판본: 한 페이지, 두 페이지, 본문·주석, 판본 비교
-                        Section("보기") {
-                            Button {
-                                readingState.readerLayout = .single
-                                readingState.showAnnotatedNotes = false
-                            } label: { Label("한 페이지", systemImage: "rectangle.portrait") }
+                Menu {
+                    let isAnnotated = Editions.edition(readingState.selectedEditionID)?.isAnnotated ?? false
 
-                            Button {
-                                readingState.readerLayout = .spread
-                                readingState.showAnnotatedNotes = false
-                            } label: { Label("두 페이지 (펼침)", systemImage: "book.pages") }
+                    if canDual {
+                        if isAnnotated {
+                            Section("보기") {
+                                Button {
+                                    readingState.readerLayout = .single
+                                    readingState.showAnnotatedNotes = false
+                                } label: { Label("한 페이지", systemImage: "rectangle.portrait") }
 
-                            Button {
-                                readingState.readerLayout = .single
-                                readingState.showAnnotatedNotes = true
-                            } label: { Label("본문·주석", systemImage: "books.vertical") }
+                                Button {
+                                    readingState.readerLayout = .spread
+                                    readingState.showAnnotatedNotes = false
+                                } label: { Label("두 페이지 (펼침)", systemImage: "book.pages") }
 
-                            Button {
-                                readingState.readerLayout = .compare
-                                readingState.showAnnotatedNotes = false
-                            } label: { Label("판본 비교", systemImage: "rectangle.split.2x1") }
-                        }
-                    } else {
-                        // 일반 판본: 페이지 레이아웃 선택
-                        Section("페이지") {
-                            Picker("페이지", selection: Binding(
-                                get: { readingState.readerLayout },
-                                set: { readingState.readerLayout = $0 })) {
-                                ForEach(ReaderLayout.allCases) { l in
-                                    Label(l.label, systemImage: l.systemImage).tag(l)
+                                Button {
+                                    readingState.readerLayout = .single
+                                    readingState.showAnnotatedNotes = true
+                                } label: { Label("본문·주석", systemImage: "books.vertical") }
+
+                                Button {
+                                    readingState.readerLayout = .compare
+                                    readingState.showAnnotatedNotes = false
+                                } label: { Label("판본 비교", systemImage: "rectangle.split.2x1") }
+                            }
+                        } else {
+                            Section("페이지") {
+                                Picker("페이지", selection: Binding(
+                                    get: { readingState.readerLayout },
+                                    set: { readingState.readerLayout = $0 })) {
+                                    ForEach(ReaderLayout.allCases) { l in
+                                        Label(l.label, systemImage: l.systemImage).tag(l)
+                                    }
                                 }
                             }
                         }
                     }
-                }
-                if canDual && readingState.readerLayout == .compare {
-                    Section {
-                        Button {
-                            readingState.compareLinked.toggle()
-                        } label: {
-                            Label(readingState.compareLinked ? "두 열 연동됨" : "두 열 분리됨",
-                                  systemImage: readingState.compareLinked ? "link.circle.fill" : "link.circle")
+                    if canDual && readingState.readerLayout == .compare {
+                        Section {
+                            Button {
+                                readingState.compareLinked.toggle()
+                            } label: {
+                                Label(readingState.compareLinked ? "두 열 연동됨" : "두 열 분리됨",
+                                      systemImage: readingState.compareLinked ? "link.circle.fill" : "link.circle")
+                            }
                         }
                     }
+                    Section("도구") {
+                        Button("오늘의 미사", systemImage: "sun.max") { showMass = true }
+                        Button("찾기", systemImage: "magnifyingglass") { showSearch = true }
+                        Button("사전", systemImage: "character.book.closed") { navigation.lookUp() }
+                        Button("책갈피", systemImage: "bookmark") { showBookmarks = true }
+                        Button("노트", systemImage: "note.text") { showNotes = true }
+                    }
+                } label: {
+                    Image(systemName: "ellipsis.circle")
+                        .font(.system(size: 15, weight: .semibold))
                 }
-                Section("도구") {
-                    Button("오늘의 미사", systemImage: "sun.max") { showMass = true }
-                    Button("찾기", systemImage: "magnifyingglass") { showSearch = true }
-                    Button("사전", systemImage: "character.book.closed") { navigation.lookUp() }
-                    Button("책갈피", systemImage: "bookmark") { showBookmarks = true }
-                    Button("노트", systemImage: "note.text") { showNotes = true }
-                    Button("보기 설정", systemImage: "textformat.size") { showAppearance = true }
-                }
-            } label: {
-                Image(systemName: "ellipsis.circle")
             }
         }
     }
