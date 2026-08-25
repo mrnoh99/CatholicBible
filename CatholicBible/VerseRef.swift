@@ -14,7 +14,7 @@ import Foundation
 struct VerseRef: Codable, Hashable, Identifiable, Sendable {
     let bookID: String
     let chapter: Int
-    let verse: Int
+    let verse: String
 
     var id: String { "\(bookID)-\(chapter)-\(verse)" }
 

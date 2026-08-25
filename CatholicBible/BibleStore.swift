@@ -39,10 +39,10 @@ private nonisolated struct AnnotationFile: Decodable, Sendable {
 }
 
 nonisolated struct Verse: Identifiable, Hashable, Sendable {
-    let number: Int
+    let number: String
     let text: String
 
-    var id: Int { number }
+    var id: String { number }
 }
 
 nonisolated struct SectionTitle: Identifiable, Hashable, Sendable {

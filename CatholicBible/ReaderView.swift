@@ -490,7 +490,7 @@ struct ReaderPane: View {
                         LazyVStack(alignment: .leading, spacing: settings.lineSpacing * 0.9) {
                             ForEach(verses) { verse in
                                 VStack(alignment: .leading, spacing: settings.lineSpacing * 0.9) {
-                                    if let title = titleMap[String(verse.number)] {
+                                    if let title = titleMap[verse.number] {
                                         SectionTitleView(text: title, bookID: book.id, chapter: chapter,
                                                          linkable: true)
                                     }
@@ -876,7 +876,7 @@ struct SpreadReader: View {
             if isFirst { chapterHeader }
             if let verses {
                 ForEach(verses) { verse in
-                    if let title = titleMap[String(verse.number)] {
+                    if let title = titleMap[verse.number] {
                         SectionTitleView(text: title, bookID: book.id, chapter: chapter,
                                                          linkable: true)
                     }

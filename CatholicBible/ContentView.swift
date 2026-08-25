@@ -63,8 +63,10 @@ struct VerseHighlight: Equatable {
     }
 
     /// 지금 보고 있는 (책·장)의 이 절이 강조 구간에 드는가.
-    func matches(bookID: String, chapter: Int, verse: Int) -> Bool {
-        self.bookID == bookID && segments.contains { $0.chapter == chapter && verse >= $0.low && verse <= $0.high }
+    func matches(bookID: String, chapter: Int, verse: String) -> Bool {
+        guard self.bookID == bookID else { return false }
+        guard let verseNum = Int(verse) else { return false }
+        return segments.contains { $0.chapter == chapter && verseNum >= $0.low && verseNum <= $0.high }
     }
 }
 
