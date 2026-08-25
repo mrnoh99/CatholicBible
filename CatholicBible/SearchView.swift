@@ -1083,8 +1083,8 @@ struct SearchView: View {
                         }
                     } else {
                         // specific verse
-                        if let hit = verses.first(where: { $0.number == verse }) {
-                            hits.append(SearchHit(editionID: edition.id, bookID: bookID, chapter: chapter, verse: verse,
+                        if let hit = verses.first(where: { $0.number == String(verse) }) {
+                            hits.append(SearchHit(editionID: edition.id, bookID: bookID, chapter: chapter, verse: String(verse),
                                                  text: hit.text, annotationNumber: nil))
                         }
                     }
@@ -1829,8 +1829,8 @@ struct SearchView: View {
                                     }
                                 } else {
                                     // specific verse
-                                    if let hit = verses.first(where: { $0.number == verse }) {
-                                        hits.append(SearchHit(editionID: edition.id, bookID: bookID, chapter: chapter, verse: verse,
+                                    if let hit = verses.first(where: { $0.number == String(verse) }) {
+                                        hits.append(SearchHit(editionID: edition.id, bookID: bookID, chapter: chapter, verse: String(verse),
                                                              text: hit.text, annotationNumber: nil))
                                     }
                                 }
@@ -1879,8 +1879,8 @@ struct SearchView: View {
                                 hits.append(SearchHit(editionID: edition.id, bookID: bookID, chapter: chapter, verse: hit.number,
                                                      text: hit.text, annotationNumber: nil))
                             }
-                        } else if let hit = verses.first(where: { $0.number == verse }) {
-                            hits.append(SearchHit(editionID: edition.id, bookID: bookID, chapter: chapter, verse: verse,
+                        } else if let hit = verses.first(where: { $0.number == String(verse) }) {
+                            hits.append(SearchHit(editionID: edition.id, bookID: bookID, chapter: chapter, verse: String(verse),
                                                  text: hit.text, annotationNumber: nil))
                         }
                     }
@@ -2268,8 +2268,8 @@ struct SearchView: View {
                         }
                     } else {
                         // specific verse
-                        if let hit = verses.first(where: { $0.number == verse }) {
-                            hits.append(SearchHit(editionID: edition.id, bookID: bookID, chapter: chapter, verse: verse,
+                        if let hit = verses.first(where: { $0.number == String(verse) }) {
+                            hits.append(SearchHit(editionID: edition.id, bookID: bookID, chapter: chapter, verse: String(verse),
                                                  text: hit.text, annotationNumber: nil))
                         }
                     }

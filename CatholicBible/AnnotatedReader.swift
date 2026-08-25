@@ -279,9 +279,9 @@ struct AnnotatedReader: View {
 
     /// 대기 이동 직후 강조 시작 절로 한 번 스크롤(레이아웃 뒤로 미룸). 한 번 하면 지운다.
     private func performScroll(_ proxy: ScrollViewProxy, verses: [Verse]) {
-        guard let n = scrollTarget, verses.contains(where: { $0.number == n }) else { return }
+        guard let n = scrollTarget, verses.contains(where: { $0.number == String(n) }) else { return }
         DispatchQueue.main.async {
-            withAnimation(.easeInOut(duration: 0.25)) { proxy.scrollTo(n, anchor: .center) }
+            withAnimation(.easeInOut(duration: 0.25)) { proxy.scrollTo(String(n), anchor: .center) }
             scrollTarget = nil
         }
     }
