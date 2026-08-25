@@ -1306,10 +1306,10 @@ struct BookPickerView: View {
                         .foregroundStyle(.secondary)
                 }
             } else {
-                ForEach(Testament.allCases) { testament in
-                    let books = filteredBooks.filter { $0.testament == testament }
+                ForEach(BookCategory.allCases) { category in
+                    let books = filteredBooks.filter { $0.category == category }
                     if !books.isEmpty {
-                        Section(testament.title) {
+                        Section(category.title) {
                             ForEach(books) { book in row(book) }
                         }
                     }
