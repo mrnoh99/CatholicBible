@@ -394,23 +394,24 @@ struct SectionTitleView: View {
             } else {
                 // 단순 텍스트
                 Text(text)
-                    .font(.system(size: settings.fontSize * 1.05, weight: .semibold, design: .default))
+                    .font(.system(size: settings.fontSize * 1.2, weight: .bold, design: .default))
                     .foregroundStyle(.blue)
                     .textSelection(.enabled)
                     .lineLimit(nil)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.vertical, max(4, settings.lineSpacing * 0.5))
+        .padding(.top, max(12, settings.lineSpacing * 1.2))
+        .padding(.bottom, max(8, settings.lineSpacing * 0.8))
     }
 
     private var titleFont: UIFont {
-        let size = settings.fontSize * 1.05
+        let size = settings.fontSize * 1.2
         switch settings.fontChoice {
         case .myeongjo:
-            return UIFont(name: "NanumMyeongjo", size: size) ?? .systemFont(ofSize: size)
+            return UIFont(name: "NanumMyeongjo", size: size) ?? .systemFont(ofSize: size, weight: .bold)
         case .gothic:
-            return .systemFont(ofSize: size, weight: .semibold)
+            return .systemFont(ofSize: size, weight: .bold)
         }
     }
 }
