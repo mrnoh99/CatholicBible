@@ -56,7 +56,7 @@ nonisolated struct SearchHit: Identifiable, Hashable, Sendable {
     let editionID: String
     let bookID: String
     let chapter: Int
-    let verse: Int
+    let verse: String
     let text: String
     let annotationNumber: String?  // 주석 검색 결과의 주석 번호
 
@@ -432,9 +432,9 @@ final class BibleStore {
             let chapterNumbers = chapters.keys.compactMap { Int($0) }.sorted()
             for chapterNumber in chapterNumbers {
                 guard let verses = chapters[String(chapterNumber)] else { continue }
-                let verseNumbers = verses.keys.compactMap { Int($0) }.sorted()
-                for verseNumber in verseNumbers {
-                    guard let verseText = verses[String(verseNumber)] else { continue }
+                let verseKeys = verses.keys.sorted { compareVerseKeys($0, $1) }
+                for verseKey in verseKeys {
+                    guard let verseText = verses[verseKey] else { continue }
                     let matches = !orTerms.isEmpty
                         ? orTerms.contains { verseText.range(of: $0, options: [.caseInsensitive, .diacriticInsensitive]) != nil }
                         : andTerms.allSatisfy { verseText.range(of: $0, options: [.caseInsensitive, .diacriticInsensitive]) != nil }
@@ -442,7 +442,7 @@ final class BibleStore {
                     if matches {
                         if matched >= offset && hits.count < limit {
                             hits.append(SearchHit(editionID: editionID, bookID: bookID,
-                                                chapter: chapterNumber, verse: verseNumber,
+                                                chapter: chapterNumber, verse: verseKey,
                                                 text: verseText, annotationNumber: nil))
                         }
                         matched += 1
@@ -469,7 +469,7 @@ final class BibleStore {
                 guard let verseText = verses[String(v)] else { continue }
                 if matched >= offset && hits.count < limit {
                     hits.append(SearchHit(editionID: editionID, bookID: bookID,
-                                        chapter: chapter, verse: v,
+                                        chapter: chapter, verse: String(v),
                                         text: verseText, annotationNumber: nil))
                 }
                 matched += 1
@@ -711,10 +711,9 @@ final class BibleStore {
                 for chapterKey in chapterNumbers {
                     guard let verses = chapters[chapterKey] else { continue }
                     guard let chapterNumber = Int(chapterKey) else { continue }
-                    let verseNumbers = verses.keys.sorted()
+                    let verseNumbers = verses.keys.sorted { compareVerseKeys($0, $1) }
                     for verseKey in verseNumbers {
                         guard let annotationText = verses[verseKey] else { continue }
-                        guard let verseNumber = Int(verseKey) else { continue }
 
                         let matches: Bool
                         if isPhrase {
@@ -728,7 +727,7 @@ final class BibleStore {
                         if matches {
                             if matched >= offset && hits.count < limit {
                                 hits.append(SearchHit(editionID: edition.id, bookID: bookID,
-                                                    chapter: chapterNumber, verse: verseNumber,
+                                                    chapter: chapterNumber, verse: verseKey,
                                                     text: annotationText, annotationNumber: verseKey))
                             }
                             matched += 1
