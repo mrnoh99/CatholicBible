@@ -1562,34 +1562,93 @@ struct AppearanceControls: View {
                 Section("테마") {
                     Picker("배경", selection: $settings.theme) {
                         ForEach(ReaderTheme.allCases) { theme in
-                            Text(theme.label).tag(theme)
+                            HStack(spacing: 8) {
+                                Circle()
+                                    .fill(theme.background)
+                                    .stroke(theme.secondary.opacity(0.3), lineWidth: 1.5)
+                                    .frame(width: 28, height: 28)
+
+                                Text(theme.label)
+                                    .font(.system(size: 15, weight: .regular, design: .default))
+                            }
+                            .tag(theme)
                         }
                     }
-                    .pickerStyle(.segmented)
+                    .pickerStyle(.navigationLink)
+                } header: {
+                    Label("테마 선택", systemImage: "paintpalette")
+                        .font(.system(size: 14, weight: .semibold, design: .default))
                 }
-                Section("글자") {
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text("글자 크기").font(.caption).foregroundStyle(.secondary)
-                        HStack {
-                            Text("가").font(.footnote)
+
+                Section("글자 크기") {
+                    VStack(spacing: 12) {
+                        HStack(spacing: 12) {
+                            Text("A")
+                                .font(.system(size: 14, weight: .regular))
+                                .foregroundStyle(.secondary)
                             Slider(value: $settings.fontSize, in: ReaderSettings.fontSizeRange, step: 1)
-                            Text("가").font(.title2)
+                            Text("A")
+                                .font(.system(size: 20, weight: .regular))
+                                .foregroundStyle(.secondary)
+                        }
+
+                        HStack {
+                            Text("현재 크기")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                            Spacer()
+                            Text("\(Int(settings.fontSize))pt")
+                                .font(.system(size: 13, weight: .semibold, design: .monospaced))
+                                .foregroundStyle(.secondary)
                         }
                     }
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text("줄 간격").font(.caption).foregroundStyle(.secondary)
+                } header: {
+                    Label("가독성", systemImage: "textformat.size")
+                        .font(.system(size: 14, weight: .semibold, design: .default))
+                }
+
+                Section("줄 간격") {
+                    VStack(spacing: 12) {
                         Slider(value: $settings.lineSpacingFactor, in: 0.35...1.1)
+
+                        HStack {
+                            Text("좁음")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                            Spacer()
+                            Text("넓음")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
                     }
+                }
+
+                Section("한글 서체") {
                     Picker("한글 서체", selection: $settings.fontChoice) {
                         ForEach(FontChoice.allCases) { choice in
-                            Text(choice.label).tag(choice)
+                            Text(choice.label)
+                                .font(.system(size: 15, weight: .regular, design: .default))
+                                .tag(choice)
                         }
                     }
-                    .pickerStyle(.segmented)
+                    .pickerStyle(.navigationLink)
+                } header: {
+                    Label("글꼴", systemImage: "character.textbox")
+                        .font(.system(size: 14, weight: .semibold, design: .default))
+                }
+
+                Section("영문 서체") {
                     Picker("영문 서체", selection: $settings.englishFontChoice) {
-                        ForEach(EnglishFontChoice.allCases) { choice in Text(choice.label).tag(choice) }
+                        ForEach(EnglishFontChoice.allCases) { choice in
+                            Text(choice.label)
+                                .font(.system(size: 15, weight: .regular, design: .default))
+                                .tag(choice)
+                        }
                     }
-                    .pickerStyle(.segmented)
+                    .pickerStyle(.navigationLink)
+                } header: {
+                    Label("영문 글꼴", systemImage: "a")
+                        .font(.system(size: 14, weight: .semibold, design: .default))
                 }
             }
             .navigationTitle("보기 설정")
@@ -1597,6 +1656,7 @@ struct AppearanceControls: View {
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("닫기") { dismiss() }
+                        .font(.system(size: 15, weight: .semibold, design: .default))
                 }
             }
         }
