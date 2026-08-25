@@ -390,10 +390,10 @@ struct ICloudBackupListView: View {
     private func restoreFromICloud(_ backup: BackupInfo) {
         isDownloading = true
         Task {
-            let result = await backupManager.downloadFromICloud(backup, to: backupManager.listBackups().isEmpty ? FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0] : FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0])
+            let downloadResult = await backupManager.downloadFromICloud(backup)
 
             DispatchQueue.main.async {
-                switch result {
+                switch downloadResult {
                 case .success():
                     let restoreResult = backupManager.restore(from: backup.path, to: annotationStore)
                     switch restoreResult {

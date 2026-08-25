@@ -149,6 +149,15 @@ final class BackupManager {
         iCloudBackupDir != nil
     }
 
+    // MARK: - Private Helpers
+
+    private func copyBackupItem(from source: URL, to destination: URL) throws {
+        if FileManager.default.fileExists(atPath: destination.path) {
+            try FileManager.default.removeItem(at: destination)
+        }
+        try FileManager.default.copyItem(at: source, to: destination)
+    }
+
     // MARK: - iCloud 동기화
 
     func syncToICloud(backupPath: URL) async -> Result<Void, Error> {
@@ -162,14 +171,7 @@ final class BackupManager {
         do {
             let backupName = backupPath.lastPathComponent
             let iCloudBackupPath = iCloudDir.appendingPathComponent(backupName, isDirectory: true)
-
-            // 기존 백업이 있으면 제거
-            if FileManager.default.fileExists(atPath: iCloudBackupPath.path) {
-                try FileManager.default.removeItem(at: iCloudBackupPath)
-            }
-
-            // 백업 폴더 복사
-            try FileManager.default.copyItem(at: backupPath, to: iCloudBackupPath)
+            try copyBackupItem(from: backupPath, to: iCloudBackupPath)
             lastICloudSyncDate = Date()
             return .success(())
         } catch {
@@ -241,20 +243,13 @@ final class BackupManager {
         return allBackups.sorted { ($0.date) > ($1.date) }
     }
 
-    func downloadFromICloud(_ backup: BackupInfo, to localDir: URL) async -> Result<Void, Error> {
+    func downloadFromICloud(_ backup: BackupInfo) async -> Result<Void, Error> {
         isSyncing = true
         defer { isSyncing = false }
 
         do {
-            let localBackupPath = localDir.appendingPathComponent(backup.name, isDirectory: true)
-
-            // 기존 백업이 있으면 제거
-            if FileManager.default.fileExists(atPath: localBackupPath.path) {
-                try FileManager.default.removeItem(at: localBackupPath)
-            }
-
-            // iCloud에서 복사
-            try FileManager.default.copyItem(at: backup.path, to: localBackupPath)
+            let localBackupPath = backupDir.appendingPathComponent(backup.name, isDirectory: true)
+            try copyBackupItem(from: backup.path, to: localBackupPath)
             return .success(())
         } catch {
             return .failure(SyncError.downloadFailed)
