@@ -385,7 +385,7 @@ struct SectionTitleView: View {
                     currentBook: bookID,
                     chapter: chapter,
                     font: titleFont,
-                    color: UIColor(.blue),
+                    color: UIColor(settings.theme.headingText),
                     linkColor: UIColor(Color.accentColor),
                     lineSpacing: settings.lineSpacing,
                     searchQuery: searchQuery,
@@ -394,24 +394,24 @@ struct SectionTitleView: View {
             } else {
                 // 단순 텍스트
                 Text(text)
-                    .font(.system(size: settings.fontSize * 1.2, weight: .bold, design: .default))
-                    .foregroundStyle(.blue)
+                    .font(.system(size: settings.fontSize * 1.15, weight: .semibold, design: .default))
+                    .foregroundStyle(settings.theme.headingText)
                     .textSelection(.enabled)
                     .lineLimit(nil)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.top, max(12, settings.lineSpacing * 1.2))
-        .padding(.bottom, max(8, settings.lineSpacing * 0.8))
+        .padding(.top, max(14, settings.lineSpacing * 1.3))
+        .padding(.bottom, max(10, settings.lineSpacing * 0.9))
     }
 
     private var titleFont: UIFont {
-        let size = settings.fontSize * 1.2
+        let size = settings.fontSize * 1.15
         switch settings.fontChoice {
         case .myeongjo:
-            return UIFont(name: "NanumMyeongjo", size: size) ?? .systemFont(ofSize: size, weight: .bold)
+            return UIFont(name: "NanumMyeongjo", size: size) ?? .systemFont(ofSize: size, weight: .semibold)
         case .gothic:
-            return .systemFont(ofSize: size, weight: .bold)
+            return .systemFont(ofSize: size, weight: .semibold)
         }
     }
 }

@@ -548,16 +548,27 @@ struct ReaderPane: View {
     }
 
     private var chapterHeader: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text(store.bookName(edition: edition, book: book))
-                .font(settings.fontChoice.font(size: settings.fontSize * 0.8, relativeTo: .subheadline))
-                .foregroundStyle(settings.theme.secondary)
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 0) {
+                Text(store.bookName(edition: edition, book: book))
+                    .font(.system(size: settings.fontSize * 0.85, weight: .regular, design: .default))
+                    .foregroundStyle(settings.theme.secondary)
+                Spacer()
+            }
+
             Text(book.chapterLabel(max(chapter, 1)))
-                .font(settings.fontChoice.font(size: settings.fontSize * 1.9, relativeTo: .largeTitle, bold: true))
+                .font(.system(size: settings.fontSize * 1.85, weight: .bold, design: .default))
                 .foregroundStyle(settings.theme.text)
-            Rectangle().fill(settings.theme.secondary.opacity(0.35)).frame(width: 40, height: 1)
+
+            HStack(spacing: 8) {
+                Capsule()
+                    .fill(Color.accentColor.opacity(0.4))
+                    .frame(width: 44, height: 3)
+                Spacer()
+            }
         }
-        .padding(.top, 24)
+        .padding(.top, 28)
+        .padding(.bottom, 8)
     }
 
     private var copyrightFooter: some View {
@@ -604,28 +615,39 @@ struct ChapterNavBar: View {
 
     var body: some View {
         if book.chapterCount > 1 && chapter > 0 {
-            HStack(spacing: 10) {
-                Button { step(-1) } label: { Image(systemName: "chevron.left") }
-                    .disabled(chapter <= 1)
+            HStack(spacing: 12) {
+                Button { step(-1) } label: {
+                    Image(systemName: "chevron.left")
+                        .font(.system(size: 15, weight: .semibold))
+                }
+                .disabled(chapter <= 1)
+                .opacity(chapter <= 1 ? 0.4 : 1)
+
                 Slider(value: Binding(get: { Double(chapter) },
                                       set: { move(to: Int($0.rounded())) }),
                        in: 1...Double(book.chapterCount), step: 1)
                     .accessibilityLabel("장 이동")
                     .accessibilityValue(book.chapterLabel(chapter))
-                Button { step(1) } label: { Image(systemName: "chevron.right") }
-                    .disabled(chapter >= book.chapterCount)
+
+                Button { step(1) } label: {
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 15, weight: .semibold))
+                }
+                .disabled(chapter >= book.chapterCount)
+                .opacity(chapter >= book.chapterCount ? 0.4 : 1)
+
                 Button { showPicker = true } label: {
                     Text(book.chapterLabel(chapter))
-                        .font(.caption.monospacedDigit())
-                        .frame(minWidth: 40)
+                        .font(.system(size: 13, weight: .semibold, design: .monospaced))
+                        .frame(minWidth: 44, alignment: .center)
                 }
                 .foregroundStyle(settings.theme.secondary)
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 7)
-            .background(settings.theme.background.opacity(0.94))
+            .padding(.horizontal, 12)
+            .padding(.vertical, 10)
+            .background(settings.theme.background.opacity(0.95))
             .overlay(alignment: .top) {
-                Rectangle().fill(settings.theme.secondary.opacity(0.2)).frame(height: 0.5)
+                Rectangle().fill(settings.theme.secondary.opacity(0.15)).frame(height: 1)
             }
             .sheet(isPresented: $showPicker) {
                 ChapterPickerView(book: book, current: max(chapter, 1)) { picked in
@@ -1227,25 +1249,30 @@ struct VerseRowView: View {
     }
 
     private func handleLabel(bookmarked: Bool, hasNote: Bool) -> some View {
-        Text("\(verse.number)")
-            .font(settings.fontChoice.font(size: settings.fontSize * 0.62))
-            .foregroundStyle(bookmarked || hasNote ? Color.accentColor : settings.theme.secondary)
+        let textColor = bookmarked || hasNote ? Color.accentColor : settings.theme.secondary
+        return Text("\(verse.number)")
+            .font(settings.fontChoice.font(size: settings.fontSize * 0.62, bold: bookmarked || hasNote))
+            .foregroundStyle(textColor)
             .frame(minWidth: settings.fontSize * 1.1, alignment: .trailing)
+            .opacity(bookmarked || hasNote ? 1 : 0.7)
     }
 
     @ViewBuilder
     private func indicators(bookmarked: Bool, hasNote: Bool) -> some View {
-        HStack(spacing: 3) {
+        HStack(spacing: 6) {
             if hasNote {
-                Image(systemName: "note.text").font(.caption2)
-                    .foregroundStyle(Color.accentColor.opacity(0.75))
+                Image(systemName: "note.text.badge.fill")
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(Color.accentColor)
             }
             if bookmarked {
-                Image(systemName: "bookmark.fill").font(.caption2)
-                    .foregroundStyle(Color.accentColor.opacity(0.8))
+                Image(systemName: "bookmark.fill")
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(Color.accentColor)
             }
         }
-        .padding(.trailing, 2)
+        .padding(.trailing, 4)
+        .padding(.top, 2)
         .accessibilityHidden(true)
     }
 }
