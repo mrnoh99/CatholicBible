@@ -1117,7 +1117,8 @@ struct VerseRowView: View {
     /// 선택 메뉴의 ‘찾아보기’로 시스템 사전이 열린다. 주석 성경에서는 각주 마커가
     /// 본문과 다른 색·위첨자로 표시되고, 탭하면 해당 주석이 열린다.
     private var verseTextView: some View {
-        SelectableVerseText(text: verse.text,
+        let formattedText = formatVerseTextWithParenthetical(verse.text)
+        return SelectableVerseText(text: formattedText,
                             font: uiBodyFont,
                             color: UIColor(settings.theme.text),
                             lineSpacing: settings.lineSpacing,
@@ -1126,6 +1127,30 @@ struct VerseRowView: View {
                             chapter: chapter,
                             onOpenURL: { openURL($0) },
                             searchQuery: navigation.searchQuery)
+    }
+
+    private func formatVerseTextWithParenthetical(_ text: String) -> String {
+        // Parenthetical 절 마커(예: 1(1), 2(3) 등) 앞에 줄바꿈 추가
+        // 패턴: 공백 + 숫자 + 괄호 (예: " 1(", " 12(")
+        do {
+            let pattern = "\\s+(\\d+\\()"
+            let regex = try NSRegularExpression(pattern: pattern, options: [])
+            let range = NSRange(text.startIndex..., in: text)
+            let matches = regex.matches(in: text, options: [], range: range)
+
+            var result = text
+            // 뒤에서 앞으로 순회하여 문자열 인덱스 변화 방지
+            for match in matches.reversed() {
+                if let range = Range(match.range, in: text) {
+                    let startIndex = range.lowerBound
+                    let markerStart = text.index(after: startIndex)
+                    result.replaceSubrange(startIndex..<markerStart, with: "\n")
+                }
+            }
+            return result
+        } catch {
+            return text
+        }
     }
 
     private var uiBodyFont: UIFont {
