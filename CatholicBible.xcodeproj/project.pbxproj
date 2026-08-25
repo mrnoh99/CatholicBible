@@ -12,7 +12,6 @@
 		CB001F2FB4000000001F /* BibleText_b200.json in Resources */ = {isa = PBXBuildFile; fileRef = CB000E2FB4000000000E /* BibleText_b200.json */; };
 		CB00212FB40000000021 /* BibleText_knb.json in Resources */ = {isa = PBXBuildFile; fileRef = CB00102FB40000000010 /* BibleText_knb.json */; };
 		CB00222FB40000000022 /* BibleText_knbnotes.json in Resources */ = {isa = PBXBuildFile; fileRef = CB00112FB40000000011 /* BibleText_knbnotes.json */; };
-		CB00232FB40000000023 /* BibleText_nab.json in Resources */ = {isa = PBXBuildFile; fileRef = CB00122FB40000000012 /* BibleText_nab.json */; };
 		CB00242FB40000000024 /* BibleText_nabre.json in Resources */ = {isa = PBXBuildFile; fileRef = CB00132FB40000000013 /* BibleText_nabre.json */; };
 		CB00252FB40000000025 /* BibleText_ncb.json in Resources */ = {isa = PBXBuildFile; fileRef = CB00142FB40000000014 /* BibleText_ncb.json */; };
 		CB00262FB40000000026 /* BibleText_pscms.json in Resources */ = {isa = PBXBuildFile; fileRef = CB00152FB40000000015 /* BibleText_pscms.json */; };
@@ -29,7 +28,6 @@
 		CB000E2FB4000000000E /* BibleText_b200.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "CatholicBible/Resources/BibleText_b200.json"; sourceTree = SOURCE_ROOT; };
 		CB00102FB40000000010 /* BibleText_knb.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "CatholicBible/Resources/BibleText_knb.json"; sourceTree = SOURCE_ROOT; };
 		CB00112FB40000000011 /* BibleText_knbnotes.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "CatholicBible/Resources/BibleText_knbnotes.json"; sourceTree = SOURCE_ROOT; };
-		CB00122FB40000000012 /* BibleText_nab.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "CatholicBible/Resources/BibleText_nab.json"; sourceTree = SOURCE_ROOT; };
 		CB00132FB40000000013 /* BibleText_nabre.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "CatholicBible/Resources/BibleText_nabre.json"; sourceTree = SOURCE_ROOT; };
 		CB00142FB40000000014 /* BibleText_ncb.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "CatholicBible/Resources/BibleText_ncb.json"; sourceTree = SOURCE_ROOT; };
 		CB00152FB40000000015 /* BibleText_pscms.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "CatholicBible/Resources/BibleText_pscms.json"; sourceTree = SOURCE_ROOT; };
@@ -146,7 +144,6 @@
 				CB001F2FB4000000001F /* BibleText_b200.json in Resources */,
 				CB00212FB40000000021 /* BibleText_knb.json in Resources */,
 				CB00222FB40000000022 /* BibleText_knbnotes.json in Resources */,
-				CB00232FB40000000023 /* BibleText_nab.json in Resources */,
 				CB00242FB40000000024 /* BibleText_nabre.json in Resources */,
 				CB00252FB40000000025 /* BibleText_ncb.json in Resources */,
 				CB00262FB40000000026 /* BibleText_pscms.json in Resources */,
