@@ -10,32 +10,39 @@
 import Foundation
 import Observation
 
-/// BibleText_<판본>.json 파일 구조
+/// BibleText_<판본>.json 파일 구조 (통합된 새 구조)
 private nonisolated struct BibleTextFile: Decodable, Sendable {
-    let translation: String
-    let source: String
-    /// 판본 고유의 책 표시 이름 (예: 공동번역 "출애굽기", NAB "Genesis")
+    struct ChapterData: Decodable, Sendable {
+        let verses: [String: String]  // 절 번호(문자열) → 본문
+        let headings: [String: String]?  // 절 번호(문자열) → 제목
+    }
+
+    struct Metadata: Decodable, Sendable {
+        let edition: String
+        let source: String?
+        let hasHeadings: Bool?
+    }
+
+    let metadata: Metadata?
+    let translation: String?
+    let source: String?
     let bookNames: [String: String]?
-    /// 책 id → 장 번호(문자열) → 절 번호(문자열) → 본문
-    let books: [String: [String: [String: String]]]
-    /// 소제목 데이터 (책 id → 장 번호(문자열) → 절 번호(문자열) → 제목)
-    let headings: [String: [String: [String: String]]]?
+    /// 책 id → 장 번호(문자열) → ChapterData (verses + headings)
+    let books: [String: [String: ChapterData]]
 }
 
-/// 주석 JSON 파일 구조
+/// 주석 JSON 파일 구조 (통합된 새 구조)
 private nonisolated struct AnnotationFile: Decodable, Sendable {
-    struct Annotation: Decodable, Sendable {
-        let n: String  // 절 번호
-        let text: String  // 주석 내용
+    struct Metadata: Decodable, Sendable {
+        let edition: String?
+        let annotationType: String?
     }
 
-    struct Title: Decodable, Sendable {
-        let v: Int  // 절 번호
-        let text: String  // 제목 텍스트
-    }
-
-    let annotations: [String: [String: [Annotation]]]?  // 책 id → 장 → [주석]
-    let titles: [String: [String: [Title]]]?  // 책 id → 장 → [제목]
+    let metadata: Metadata?
+    /// 책 id → 장(String) → 절(String) → 주석 텍스트
+    let annotations: [String: [String: [String: String]]]?
+    /// 책 id → 장(String) → 절(String) → 제목 텍스트
+    let titles: [String: [String: [String: String]]]?
 }
 
 nonisolated struct Verse: Identifiable, Hashable, Sendable {
@@ -103,42 +110,35 @@ final class BibleStore {
                 else { continue }
 
                 var indexed: [String: [Int: [Verse]]] = [:]
+                var headingsFromFile: [String: [String: [String: String]]] = [:]
+
                 for (bookID, chapters) in file.books {
                     var chapterMap: [Int: [Verse]] = [:]
-                    for (chapterKey, verses) in chapters {
+                    var bookHeadings: [String: [String: String]] = [:]
+
+                    for (chapterKey, chapterData) in chapters {
                         guard let chapterNumber = Int(chapterKey) else { continue }
-                        let mapped = verses
+
+                        // Verse 로드 (새 구조: chapterData.verses)
+                        let mapped = chapterData.verses
                             .map { key, text in Verse(number: key, text: text) }
                             .sorted { self.compareVerseKeys($0.number, $1.number) }
 
                         // 중복 절 제거 (같은 번호가 여러 번 나타나면 첫 번째만 유지)
                         var seen = Set<String>()
                         chapterMap[chapterNumber] = mapped.filter { seen.insert($0.number).inserted }
+
+                        // Heading 로드 (새 구조: chapterData.headings)
+                        if let chapterHeadings = chapterData.headings, !chapterHeadings.isEmpty {
+                            bookHeadings[chapterKey] = chapterHeadings
+                        }
                     }
+
                     if !chapterMap.isEmpty { indexed[bookID] = chapterMap }
+                    if !bookHeadings.isEmpty { headingsFromFile[bookID] = bookHeadings }
                 }
 
-                // 파일에 포함된 제목 로드 (BibleText_*.json의 headings 필드)
-                var headingsFromFile: [String: [String: [String: String]]] = [:]
-                if let fileHeadings = file.headings {
-                    for (bookID, chapters) in fileHeadings {
-                        var bookHeadings: [String: [String: String]] = [:]
-                        for (chapterKey, verses) in chapters {
-                            var verseHeadings: [String: String] = [:]
-                            for (verseKey, headingText) in verses {
-                                verseHeadings[verseKey] = headingText
-                            }
-                            if !verseHeadings.isEmpty {
-                                bookHeadings[chapterKey] = verseHeadings
-                            }
-                        }
-                        if !bookHeadings.isEmpty {
-                            headingsFromFile[bookID] = bookHeadings
-                        }
-                    }
-                }
-
-                // 주석 로드
+                // 주석 로드 (새 구조: Notes 파일도 객체 기반)
                 var annotations: [String: [String: [String: String]]] = [:]
                 var titles: [String: [String: [String: String]]] = [:]
                 let annotationFileName = BibleStore.annotationFileName(for: editionID)
@@ -148,42 +148,14 @@ final class BibleStore {
                    let annotationFile = try? JSONDecoder().decode(AnnotationFile.self, from: annotationData) {
                     print("✅ \(editionID) 주석 로드 성공")
 
-                    // 주석 로드
+                    // 주석 로드 (새 구조: 이미 객체 형식)
                     if let annots = annotationFile.annotations {
-                        for (bookID, chapters) in annots {
-                            var bookAnnotations: [String: [String: String]] = [:]
-                            for (chapterKey, annots) in chapters {
-                                var verseAnnotations: [String: String] = [:]
-                                for annot in annots {
-                                    verseAnnotations[annot.n] = annot.text
-                                }
-                                if !verseAnnotations.isEmpty {
-                                    bookAnnotations[chapterKey] = verseAnnotations
-                                }
-                            }
-                            if !bookAnnotations.isEmpty {
-                                annotations[bookID] = bookAnnotations
-                            }
-                        }
+                        annotations = annots
                     }
 
-                    // 소제목 로드
+                    // 소제목 로드 (새 구조: 이미 객체 형식)
                     if let ttls = annotationFile.titles {
-                        for (bookID, chapters) in ttls {
-                            var bookTitles: [String: [String: String]] = [:]
-                            for (chapterKey, titleList) in chapters {
-                                var verseTitles: [String: String] = [:]
-                                for title in titleList {
-                                    verseTitles[String(title.v)] = title.text
-                                }
-                                if !verseTitles.isEmpty {
-                                    bookTitles[chapterKey] = verseTitles
-                                }
-                            }
-                            if !bookTitles.isEmpty {
-                                titles[bookID] = bookTitles
-                            }
-                        }
+                        titles = ttls
                     }
                 }
 
@@ -238,11 +210,27 @@ final class BibleStore {
                     print("[BibleStore] Edition '\(editionID)' has \(titleCount) titles")
                 }
 
-                result[editionID] = EditionText(translation: file.translation,
-                                                source: file.source,
+                // Translation과 source 처리 (새 구조 또는 레거시 호환)
+                let translation = file.translation ?? file.metadata?.edition ?? editionID
+                let source = file.source ?? file.metadata?.source ?? ""
+
+                // rawBooks를 위해 chapterData에서 verse 추출
+                var rawBooks: [String: [String: [String: String]]] = [:]
+                for (bookID, chapters) in file.books {
+                    var bookVerses: [String: [String: String]] = [:]
+                    for (chapterKey, chapterData) in chapters {
+                        bookVerses[chapterKey] = chapterData.verses
+                    }
+                    if !bookVerses.isEmpty {
+                        rawBooks[bookID] = bookVerses
+                    }
+                }
+
+                result[editionID] = EditionText(translation: translation,
+                                                source: source,
                                                 bookNames: file.bookNames ?? [:],
                                                 books: indexed,
-                                                rawBooks: file.books,
+                                                rawBooks: rawBooks,
                                                 annotations: annotations,
                                                 titles: titles)
             }
