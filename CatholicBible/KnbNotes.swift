@@ -149,8 +149,6 @@ enum ScriptureRefNormalizer {
                 } else {
                     normalized.append(part.replacingOccurrences(of: trimmed, with: finalRef))
                 }
-            } else if let contextBook = contextBook {
-                normalized.append(part.replacingOccurrences(of: trimmed, with: "\(contextBook) \(finalRef)"))
             } else {
                 normalized.append(part)
             }
