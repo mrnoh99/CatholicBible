@@ -1567,7 +1567,7 @@ struct AppearanceControls: View {
         @Bindable var settings = settings
         NavigationStack {
             Form {
-                Section("테마") {
+                Section {
                     Picker("배경", selection: $settings.theme) {
                         ForEach(ReaderTheme.allCases) { theme in
                             HStack(spacing: 8) {
@@ -1588,7 +1588,7 @@ struct AppearanceControls: View {
                         .font(.system(size: 14, weight: .semibold, design: .default))
                 }
 
-                Section("글자 크기") {
+                Section {
                     VStack(spacing: 12) {
                         HStack(spacing: 12) {
                             Text("A")
@@ -1631,7 +1631,7 @@ struct AppearanceControls: View {
                     }
                 }
 
-                Section("한글 서체") {
+                Section {
                     Picker("한글 서체", selection: $settings.fontChoice) {
                         ForEach(FontChoice.allCases) { choice in
                             Text(choice.label)
@@ -1645,7 +1645,7 @@ struct AppearanceControls: View {
                         .font(.system(size: 14, weight: .semibold, design: .default))
                 }
 
-                Section("영문 서체") {
+                Section {
                     Picker("영문 서체", selection: $settings.englishFontChoice) {
                         ForEach(EnglishFontChoice.allCases) { choice in
                             Text(choice.label)
