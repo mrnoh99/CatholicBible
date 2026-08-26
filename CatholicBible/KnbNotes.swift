@@ -193,7 +193,10 @@ enum ScriptureRefNormalizer {
                     let fullMatch = ns.substring(with: match.range)
                     // 앞에 "현재책"을 추가하되 중복 제거
                     if !fullMatch.hasPrefix(currentBook) {
-                        let replacement = "\(currentBook) \(chapterStr)\(fullMatch)"
+                        // verse (예: "5절")만 사용해서 LinkableRef 형태로 변환
+                        // fullMatch (예: "5절의")의 뒤 부분은 따로 보존
+                        let suffix = String(fullMatch.dropFirst(verse.count))  // "의" 등
+                        let replacement = "\(currentBook) \(chapterStr)\(verse)\(suffix)"
                         result = (result as NSString).replacingCharacters(in: match.range, with: replacement)
                     }
                 }
