@@ -238,7 +238,7 @@ struct AnnotatedReader: View {
                     textColumn(verses)
                     Divider()
                     AnnotationsPane(notes: notes, xrefs: xrefs,
-                                    emptyHint: emptyNotesHint, bookID: book.id, wide: true,
+                                    emptyHint: emptyNotesHint, bookID: book.id, chapter: chapter, wide: true,
                                     searchQuery: navigation.searchQuery, editionID: editionID)
                         .frame(maxWidth: .infinity)
                 }
@@ -248,7 +248,7 @@ struct AnnotatedReader: View {
                         versesBlock(verses)
                         Divider().padding(.vertical, 16)
                         AnnotationsPane(notes: notes, xrefs: xrefs,
-                                        emptyHint: emptyNotesHint, bookID: book.id,
+                                        emptyHint: emptyNotesHint, bookID: book.id, chapter: chapter,
                                         searchQuery: navigation.searchQuery, editionID: editionID)
                     }
                     .frame(maxWidth: 720, alignment: .leading)
@@ -555,6 +555,7 @@ struct AnnotationsPane: View {
     let xrefs: [ChapterNote]
     let emptyHint: String
     var bookID: String = ""
+    var chapter: Int = 0
     var wide: Bool = false
     var searchQuery: String = ""
     var selectedAnnotationNumber: String? = nil
@@ -577,11 +578,13 @@ struct AnnotationsPane: View {
                           notes: tab == 1 ? xrefs : notes,
                           emptyHint: tab == 1 ? "이 장에는 상호참조가 없습니다." : emptyHint,
                           bookID: bookID,
+                          chapter: chapter,
                           searchQuery: searchQuery,
                           selectedAnnotationNumber: selectedAnnotationNumber,
                           editionID: editionID)
             } else {
                 NotesList(title: "주석", notes: notes, emptyHint: emptyHint, bookID: bookID,
+                          chapter: chapter,
                           searchQuery: searchQuery,
                           selectedAnnotationNumber: selectedAnnotationNumber,
                           editionID: editionID)
