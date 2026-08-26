@@ -659,13 +659,7 @@ struct NotesList: View {
             } else {
                 ForEach(notes) { note in
                     HStack(alignment: .firstTextBaseline, spacing: 8) {
-                        let displayNumber: String = {
-                            if let book = Bible.book(bookID) {
-                                return "\(book.name) \(note.n)"
-                            }
-                            return note.n
-                        }()
-                        Text(displayNumber)
+                        Text(note.n)
                             .font(settings.fontChoice.font(size: settings.fontSize * 0.72, bold: true))
                             .foregroundStyle(Color.accentColor)
                             .frame(minWidth: settings.fontSize * 1.3, alignment: .trailing)
