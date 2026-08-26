@@ -2212,11 +2212,21 @@ struct SearchView: View {
 
                 for term in terms {
                     if editionsToSearch.count > 1 {
-                        let termHits = await store.searchAll(term, editions: editionsToSearch, mode: .text)
-                        allHits.append(contentsOf: termHits)
+                        if scope == .commentary {
+                            let termHits = await store.searchAllAnnotationsWithOffset(term, editions: editionsToSearch, offset: 0, limit: 10000)
+                            allHits.append(contentsOf: termHits)
+                        } else {
+                            let termHits = await store.searchAll(term, editions: editionsToSearch, mode: .text)
+                            allHits.append(contentsOf: termHits)
+                        }
                     } else if let edition = editionsToSearch.first {
-                        let termHits = await store.search(term, edition: edition, mode: .text)
-                        allHits.append(contentsOf: termHits)
+                        if scope == .commentary {
+                            let termHits = await store.searchAnnotationsWithOffset(term, edition: edition, offset: 0, limit: 10000)
+                            allHits.append(contentsOf: termHits)
+                        } else {
+                            let termHits = await store.search(term, edition: edition, mode: .text)
+                            allHits.append(contentsOf: termHits)
+                        }
                     }
                 }
 
@@ -2238,33 +2248,27 @@ struct SearchView: View {
             } else {
                 // Original behavior for non-operator queries
                 if scope == .commentary {
-                    // 주석 검색: 본문과 주석의 총 개수를 먼저 구하기
-                    var textCount = 0
+                    // 주석 검색: 주석만 검색
                     var annotationCount = 0
 
                     if editionsToSearch.count > 1 {
-                        textCount = await store.searchAllCount(searchText, editions: editionsToSearch, mode: .text)
                         annotationCount = await store.searchAllAnnotationsCount(searchText, editions: editionsToSearch)
                     } else if let edition = editionsToSearch.first {
-                        textCount = await store.searchCount(searchText, edition: edition, mode: .text)
                         annotationCount = await store.searchAnnotationsCount(searchText, edition: edition)
                     }
 
-                    totalSearchCount = textCount + annotationCount
+                    totalSearchCount = annotationCount
 
                     // 처음 searchPageSize만큼 로드
-                    var textHits: [SearchHit] = []
                     var annotationHits: [SearchHit] = []
 
                     if editionsToSearch.count > 1 {
-                        textHits = await store.searchAllWithOffset(searchText, editions: editionsToSearch, mode: .text, offset: 0, limit: searchPageSize)
                         annotationHits = await store.searchAllAnnotationsWithOffset(searchText, editions: editionsToSearch, offset: 0, limit: searchPageSize)
                     } else if let edition = editionsToSearch.first {
-                        textHits = await store.searchWithOffset(searchText, edition: edition, mode: .text, offset: 0, limit: searchPageSize)
                         annotationHits = await store.searchAnnotationsWithOffset(searchText, edition: edition, offset: 0, limit: searchPageSize)
                     }
 
-                    hits = textHits + annotationHits
+                    hits = annotationHits
                 } else {
                     // 본문 검색
                     if editionsToSearch.count > 1 {
