@@ -209,18 +209,30 @@ struct ContentView: View {
                 .navigationTitle("서재")
                 .toolbar {
                     ToolbarItemGroup(placement: .primaryAction) {
-                        Button(systemImage: "sun.max") { showMass = true }
-                            .help("오늘의 미사")
-                        Button(systemImage: "magnifyingglass") { showSearch = true }
-                            .help("검색")
-                        Button(systemImage: "character.book.closed") { navigation.lookUp() }
-                            .help("사전")
-                        Button(systemImage: "bookmark") { showBookmarks = true }
-                            .help("책갈피")
-                        Button(systemImage: "note.text") { showNotes = true }
-                            .help("노트")
-                        Button(systemImage: "gear") { showSettings = true }
-                            .help("설정")
+                        Button(action: { showMass = true }) {
+                            Image(systemName: "sun.max")
+                        }
+                        .help("오늘의 미사")
+                        Button(action: { showSearch = true }) {
+                            Image(systemName: "magnifyingglass")
+                        }
+                        .help("검색")
+                        Button(action: { navigation.lookUp() }) {
+                            Image(systemName: "character.book.closed")
+                        }
+                        .help("사전")
+                        Button(action: { showBookmarks = true }) {
+                            Image(systemName: "bookmark")
+                        }
+                        .help("책갈피")
+                        Button(action: { showNotes = true }) {
+                            Image(systemName: "note.text")
+                        }
+                        .help("노트")
+                        Button(action: { showSettings = true }) {
+                            Image(systemName: "gear")
+                        }
+                        .help("설정")
                     }
                 }
         } detail: {
