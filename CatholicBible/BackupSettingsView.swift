@@ -63,7 +63,25 @@ struct BackupSettingsView: View {
 
                 Section("iCloud 백업") {
                     if backupManager.isICloudAvailable() {
+                        HStack(spacing: 8) {
+                            Image(systemName: backupManager.isICloudConnected ? "icloud.fill" : "icloud.slash.fill")
+                                .foregroundStyle(backupManager.isICloudConnected ? .blue : .gray)
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("iCloud 상태")
+                                    .font(.caption.weight(.semibold))
+                                Text(backupManager.isICloudConnected ? "연결됨" : "연결 안됨")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                            Spacer()
+                        }
+                        .padding(.vertical, 8)
+                        .padding(.horizontal, 10)
+                        .background(Color(.systemGray6))
+                        .cornerRadius(8)
+
                         Toggle("iCloud 동기화", isOn: $backupManager.isICloudEnabled)
+                            .disabled(!backupManager.isICloudConnected)
 
                         if let syncError = backupManager.lastSyncError {
                             HStack(spacing: 8) {
@@ -113,9 +131,14 @@ struct BackupSettingsView: View {
                                     .font(.caption)
                             }
                         }
+                        .disabled(!backupManager.isICloudConnected)
                     } else {
-                        Text("iCloud를 사용할 수 없습니다")
-                            .foregroundStyle(.secondary)
+                        HStack(spacing: 8) {
+                            Image(systemName: "icloud.slash.fill")
+                                .foregroundStyle(.gray)
+                            Text("iCloud를 사용할 수 없습니다")
+                                .foregroundStyle(.secondary)
+                        }
                     }
                 }
 

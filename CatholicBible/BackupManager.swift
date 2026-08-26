@@ -103,10 +103,12 @@ final class BackupManager {
 
     var isSyncing = false
     var lastSyncError: SyncError? = nil
+    var isICloudConnected = false
 
     private let backupDir: URL
     private let iCloudBackupDir: URL?
     private let deviceId: String
+    private var iCloudMonitorTask: Task<Void, Never>?
 
     init() {
         let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
@@ -129,8 +131,29 @@ final class BackupManager {
                 .appendingPathComponent(deviceId, isDirectory: true)
             try? FileManager.default.createDirectory(at: iCloudBackupDirURL, withIntermediateDirectories: true)
             self.iCloudBackupDir = iCloudBackupDirURL
+            self.isICloudConnected = true
         } else {
             self.iCloudBackupDir = nil
+            self.isICloudConnected = false
+        }
+
+        // iCloud 연결 상태 모니터링 시작
+        startICloudMonitoring()
+    }
+
+    deinit {
+        iCloudMonitorTask?.cancel()
+    }
+
+    private func startICloudMonitoring() {
+        iCloudMonitorTask = Task {
+            while !Task.isCancelled {
+                let connected = FileManager.default.url(forUbiquityContainerIdentifier: nil) != nil
+                await MainActor.run {
+                    self.isICloudConnected = connected
+                }
+                try? await Task.sleep(for: .seconds(30))
+            }
         }
     }
 
