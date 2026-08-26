@@ -176,10 +176,24 @@ final class BackupManager {
     // MARK: - Private Helpers
 
     private func copyBackupItem(from source: URL, to destination: URL) throws {
+        // Create temporary path to avoid corruption if copy fails
+        let tempPath = destination.deletingLastPathComponent().appendingPathComponent(destination.lastPathComponent + ".tmp")
+
+        // Remove temp file if it exists from previous failed attempt
+        if FileManager.default.fileExists(atPath: tempPath.path) {
+            try? FileManager.default.removeItem(at: tempPath)
+        }
+
+        // Copy to temporary location first
+        try FileManager.default.copyItem(at: source, to: tempPath)
+
+        // If destination exists, remove it before moving temp to destination
         if FileManager.default.fileExists(atPath: destination.path) {
             try FileManager.default.removeItem(at: destination)
         }
-        try FileManager.default.copyItem(at: source, to: destination)
+
+        // Move from temp to final destination
+        try FileManager.default.moveItem(at: tempPath, to: destination)
     }
 
     // MARK: - iCloud 동기화
