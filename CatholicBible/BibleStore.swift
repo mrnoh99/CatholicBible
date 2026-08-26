@@ -50,9 +50,14 @@ private nonisolated struct AnnotationFile: Decodable, Sendable {
         let annotationType: String?
     }
 
+    struct AnnotationEntry: Decodable, Sendable {
+        let n: String  // 주석 번호
+        let text: String  // 주석 텍스트
+    }
+
     let metadata: Metadata?
-    /// 책 id → 장(String) → 절(String) → 주석 텍스트
-    let annotations: [String: [String: [String: String]]]?
+    /// 책 id → 장(String) → [주석 항목]
+    let annotations: [String: [String: [AnnotationEntry]]]?
     /// 책 id → 장(String) → 절(String) → 제목 텍스트
     let titles: [String: [String: [String: String]]]?
 }
@@ -173,9 +178,23 @@ final class BibleStore {
                    let annotationFile = try? JSONDecoder().decode(AnnotationFile.self, from: annotationData) {
                     print("✅ \(editionID) 주석 로드 성공")
 
-                    // 주석 로드 (새 구조: 이미 객체 형식)
+                    // 주석 로드 (새 구조: AnnotationEntry 배열을 텍스트 사전으로 변환)
                     if let annots = annotationFile.annotations {
-                        annotations = annots
+                        for (bookID, chapters) in annots {
+                            var bookAnnotations: [String: [String: String]] = [:]
+                            for (chapterKey, entries) in chapters {
+                                var chapterAnnotations: [String: String] = [:]
+                                for entry in entries {
+                                    chapterAnnotations[entry.n] = entry.text
+                                }
+                                if !chapterAnnotations.isEmpty {
+                                    bookAnnotations[chapterKey] = chapterAnnotations
+                                }
+                            }
+                            if !bookAnnotations.isEmpty {
+                                annotations[bookID] = bookAnnotations
+                            }
+                        }
                     }
 
                     // 소제목 로드 (새 구조: 이미 객체 형식)
@@ -241,7 +260,7 @@ final class BibleStore {
                 let annotationCount = annotations.values.reduce(0) { $0 + $1.values.reduce(0) { $0 + $1.count } }
                 let titleCount = titles.values.reduce(0) { $0 + $1.values.reduce(0) { $0 + $1.count } }
                 if annotationCount > 0 {
-                    print("✅ \(editionID) 주석 개수: \(annotationCount)개")
+                    print("✅ \(editionID) 주석 개수: \(annotationCount)개, 책: \(annotations.count)개")
                 } else {
                     print("⚠️ \(editionID) 주석: 없음")
                 }
