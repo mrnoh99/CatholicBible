@@ -479,12 +479,7 @@ struct MarkerNoteSheet: View {
                     .padding(20)
             }
             .background(settings.theme.background.ignoresSafeArea())
-            .navigationTitle({
-                if let book = Bible.book(bookID) {
-                    return "\(book.name) \(n)"
-                }
-                return "주석 \(n)"
-            }())
+            .navigationTitle("주석 \(n)")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .topBarTrailing) { Button("닫기") { dismiss() } } }
             .preferredColorScheme(settings.theme.colorScheme)
