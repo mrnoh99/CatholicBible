@@ -8,6 +8,18 @@
 
 import SwiftUI
 
+enum SearchType: String, CaseIterable, Identifiable {
+    case bibleText
+    case commentary
+    var id: String { rawValue }
+    var label: String {
+        switch self {
+        case .bibleText: return "성경본문검색"
+        case .commentary: return "주석검색"
+        }
+    }
+}
+
 enum SearchScope: String, CaseIterable, Identifiable {
     case current
     case all
@@ -64,6 +76,7 @@ struct SearchView: View {
     @State private var selectedEditionIDs: Set<String> = ["knb"]
     @State private var selectedAnnotationEditionIDs: Set<String> = []
     @State private var isCommentarySearchEnabled = false
+    @State private var searchType: SearchType = .bibleText
 
     // 여러 참조 선택을 위한 목록
     @State private var referenceList: [(bookID: String, chapter: Int, verse: Int)] = []
@@ -134,6 +147,7 @@ struct SearchView: View {
                     VStack(spacing: 16) {
                         searchInputSection
                         searchButtonsSection
+                        searchTypeSection
                         searchConditionsSection
                         searchHistorySection
                     }
@@ -644,7 +658,44 @@ struct SearchView: View {
         .padding(.horizontal, 16)
     }
 
+    private var searchTypeSection: some View {
+        HStack(spacing: 8) {
+            ForEach(SearchType.allCases) { type in
+                Button(action: {
+                    searchType = type
+                    if type == .bibleText {
+                        isCommentarySearchEnabled = false
+                        scope = .current
+                    } else {
+                        isCommentarySearchEnabled = true
+                        scope = .commentary
+                    }
+                }) {
+                    Text(type.label)
+                        .font(.system(size: 14, weight: .semibold))
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 8)
+                        .background(searchType == type ? Color.blue : Color(.systemGray6))
+                        .foregroundStyle(searchType == type ? .white : .primary)
+                        .cornerRadius(8)
+                }
+            }
+        }
+        .padding(.horizontal, 16)
+    }
+
     private var searchConditionsSection: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            if searchType == .bibleText {
+                biblTextSearchSection
+            } else {
+                commentarySearchSection
+            }
+        }
+        .padding(.horizontal, 16)
+    }
+
+    private var biblTextSearchSection: some View {
         VStack(alignment: .leading, spacing: 16) {
             VStack(alignment: .leading, spacing: 12) {
                 Text("검색 조건")
@@ -657,31 +708,6 @@ struct SearchView: View {
                 }
                 .pickerStyle(.segmented)
 
-                Divider()
-
-                if mode == .text {
-                    HStack(spacing: 8) {
-                        Image(systemName: isCommentarySearchEnabled ? "checkmark.square.fill" : "square")
-                            .font(.system(size: 16))
-                            .foregroundStyle(isCommentarySearchEnabled ? .blue : .secondary)
-
-                        Button(action: {
-                            isCommentarySearchEnabled.toggle()
-                        }) {
-                            Text("주석 검색")
-                                .font(.system(size: 14))
-                                .foregroundStyle(.primary)
-                        }
-                        .buttonStyle(.plain)
-
-                        Spacer()
-                    }
-                    .contentShape(Rectangle())
-                    .onTapGesture {
-                        isCommentarySearchEnabled.toggle()
-                    }
-                }
-
                 if mode == .reference {
                     Divider()
                     referenceSearchSection
@@ -692,9 +718,107 @@ struct SearchView: View {
             .background(Color(.systemGray6))
             .cornerRadius(12)
 
-            editionSelectionSection
+            bibleEditionSelectionSection
         }
-        .padding(.horizontal, 16)
+    }
+
+    private var commentarySearchSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("주석 판본 선택")
+                .font(.system(size: 16, weight: .semibold))
+                .padding(.horizontal, 12)
+                .padding(.top, 12)
+
+            VStack(alignment: .leading, spacing: 8) {
+                // 주석성경
+                Button(action: {
+                    if selectedAnnotationEditionIDs.contains("knbnotes") {
+                        selectedAnnotationEditionIDs.remove("knbnotes")
+                    } else {
+                        selectedAnnotationEditionIDs.insert("knbnotes")
+                    }
+                }) {
+                    HStack(spacing: 6) {
+                        Image(systemName: selectedAnnotationEditionIDs.contains("knbnotes") ? "checkmark.square.fill" : "square")
+                            .font(.system(size: 14))
+                            .foregroundStyle(selectedAnnotationEditionIDs.contains("knbnotes") ? .blue : .secondary)
+                        Text("주석성경")
+                            .font(.body)
+                            .foregroundStyle(.primary)
+                        Spacer()
+                    }
+                }
+                .buttonStyle(.plain)
+
+                // NABRE주석
+                Button(action: {
+                    if selectedAnnotationEditionIDs.contains("nabre") {
+                        selectedAnnotationEditionIDs.remove("nabre")
+                    } else {
+                        selectedAnnotationEditionIDs.insert("nabre")
+                    }
+                }) {
+                    HStack(spacing: 6) {
+                        Image(systemName: selectedAnnotationEditionIDs.contains("nabre") ? "checkmark.square.fill" : "square")
+                            .font(.system(size: 14))
+                            .foregroundStyle(selectedAnnotationEditionIDs.contains("nabre") ? .blue : .secondary)
+                        Text("NABRE주석")
+                            .font(.body)
+                            .foregroundStyle(.primary)
+                        Spacer()
+                    }
+                }
+                .buttonStyle(.plain)
+            }
+            .padding(.horizontal, 12)
+            .padding(.bottom, 12)
+        }
+        .background(Color(.systemGray6))
+        .cornerRadius(12)
+    }
+
+    private var bibleEditionSelectionSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Text("판본 선택")
+                    .font(.system(size: 16, weight: .semibold))
+                Spacer()
+                HStack(spacing: 8) {
+                    Button("전체선택") {
+                        selectedEditionIDs = Set(store.loadedEditions.map { $0.id })
+                    }
+                    .font(.body.weight(.semibold))
+                    .foregroundStyle(.blue)
+
+                    Button("선택해지") {
+                        selectedEditionIDs.removeAll()
+                    }
+                    .font(.body.weight(.semibold))
+                    .foregroundStyle(.red)
+                }
+            }
+            .padding(.horizontal, 12)
+            .padding(.top, 12)
+
+            VStack(alignment: .leading, spacing: 8) {
+                ForEach(Array(store.loadedEditions.enumerated()), id: \.element.id) { index, edition in
+                    if index % 2 == 0 {
+                        HStack(spacing: 12) {
+                            editionItem(edition: edition, mode: mode)
+
+                            if index + 1 < store.loadedEditions.count {
+                                editionItem(edition: store.loadedEditions[index + 1], mode: mode)
+                            }
+                            Spacer()
+                        }
+                    }
+                }
+            }
+            .padding(.horizontal, 12)
+            .padding(.bottom, 12)
+        }
+        .background(Color(.systemGray6))
+        .cornerRadius(12)
     }
 
     private var referenceSearchSection: some View {
@@ -805,77 +929,6 @@ struct SearchView: View {
         }
     }
 
-    private var editionSelectionSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                Text(isCommentarySearchEnabled ? "주석 판본 선택" : "판본 선택")
-                    .font(.system(size: 16, weight: .semibold))
-                Spacer()
-                if !isCommentarySearchEnabled {
-                    HStack(spacing: 8) {
-                        Button("전체선택") {
-                            selectedEditionIDs = Set(store.loadedEditions.map { $0.id })
-                        }
-                        .font(.body.weight(.semibold))
-                        .foregroundStyle(.blue)
-
-                        Button("선택해지") {
-                            selectedEditionIDs.removeAll()
-                        }
-                        .font(.body.weight(.semibold))
-                        .foregroundStyle(.red)
-                    }
-                }
-            }
-            .padding(.horizontal, 12)
-            .padding(.top, 12)
-
-            VStack(alignment: .leading, spacing: 8) {
-                if isCommentarySearchEnabled {
-                    // 주석 판본만 표시
-                    ForEach(store.loadedEditions.filter { hasAnnotationSupport($0) }, id: \.id) { edition in
-                        Button(action: {
-                            if selectedAnnotationEditionIDs.contains(edition.id) {
-                                selectedAnnotationEditionIDs.remove(edition.id)
-                            } else {
-                                selectedAnnotationEditionIDs.insert(edition.id)
-                            }
-                        }) {
-                            HStack(spacing: 6) {
-                                Image(systemName: selectedAnnotationEditionIDs.contains(edition.id) ? "checkmark.square.fill" : "square")
-                                    .font(.system(size: 14))
-                                    .foregroundStyle(selectedAnnotationEditionIDs.contains(edition.id) ? .blue : .secondary)
-                                Text(edition.shortName)
-                                    .font(.body)
-                                    .foregroundStyle(.primary)
-                                Spacer()
-                            }
-                        }
-                        .buttonStyle(.plain)
-                    }
-                } else {
-                    // 일반 판본 표시 (기존 로직)
-                    ForEach(Array(store.loadedEditions.enumerated()), id: \.element.id) { index, edition in
-                        if index % 2 == 0 {
-                            HStack(spacing: 12) {
-                                editionItem(edition: edition, mode: mode)
-
-                                if index + 1 < store.loadedEditions.count {
-                                    editionItem(edition: store.loadedEditions[index + 1], mode: mode)
-                                }
-                                Spacer()
-                            }
-                        }
-                    }
-                }
-            }
-            .padding(.horizontal, 12)
-            .padding(.bottom, 12)
-        }
-        .background(Color(.systemGray6))
-        .cornerRadius(12)
-        .padding(.horizontal, 16)
-    }
 
     private func editionItem(edition: Edition, mode: SearchMode) -> some View {
         VStack(alignment: .leading, spacing: 4) {
