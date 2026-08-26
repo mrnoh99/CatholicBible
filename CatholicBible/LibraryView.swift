@@ -106,7 +106,12 @@ struct LibraryView: View {
             case .psalter:
                 Section("목차") {
                     ForEach(edition.scope.books) { book in
-                        bookRow(book, edition: edition)
+                        bookRow(
+                            book: book,
+                            displayName: store.bookShortName(edition: edition, book: book),
+                            fullName: store.bookName(edition: edition, book: book),
+                            available: store.hasText(edition: edition, book: book)
+                        )
                     }
                 }
             }
