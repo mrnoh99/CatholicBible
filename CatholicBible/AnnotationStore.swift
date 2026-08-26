@@ -20,6 +20,8 @@ final class AnnotationStore {
 
     private(set) var bookmarks: Set<VerseRef> = []
     private(set) var notes: [Note] = []
+    private var notesByVerse: [VerseRef: Note] = [:]
+    private var sortedNotesByRecency: [Note]?
 
     private let notesURL: URL
     let mediaDir: URL
@@ -31,6 +33,11 @@ final class AnnotationStore {
         try? FileManager.default.createDirectory(at: mediaDir, withIntermediateDirectories: true)
         loadBookmarks()
         loadNotes()
+    }
+
+    private func rebuildCache() {
+        notesByVerse = Dictionary(uniqueKeysWithValues: notes.map { ($0.verse, $0) })
+        sortedNotesByRecency = notes.sorted { $0.modified > $1.modified }
     }
 
     // MARK: - 책갈피 (판본 공통)
@@ -72,11 +79,11 @@ final class AnnotationStore {
     // MARK: - 노트 (판본 공통)
 
     func note(for ref: VerseRef) -> Note? {
-        notes.first { $0.verse == ref }
+        notesByVerse[ref]
     }
 
     func hasNote(_ ref: VerseRef) -> Bool {
-        guard let n = notes.first(where: { $0.verse == ref }) else { return false }
+        guard let n = notesByVerse[ref] else { return false }
         return !n.isEmpty
     }
 
@@ -93,30 +100,40 @@ final class AnnotationStore {
             if updated.isEmpty {
                 deleteMedia(of: notes[idx])
                 notes.remove(at: idx)
+                notesByVerse.removeValue(forKey: updated.verse)
             } else {
                 notes[idx] = updated
+                notesByVerse[updated.verse] = updated
             }
         } else if !updated.isEmpty {
             notes.insert(updated, at: 0)
+            notesByVerse[updated.verse] = updated
         }
+        sortedNotesByRecency = nil
         persistNotes()
     }
 
     func delete(_ note: Note) {
         deleteMedia(of: note)
         notes.removeAll { $0.id == note.id }
+        notesByVerse.removeValue(forKey: note.verse)
+        sortedNotesByRecency = nil
         persistNotes()
     }
 
     /// 최근 수정순 노트 목록
     var notesByRecency: [Note] {
-        notes.sorted { $0.modified > $1.modified }
+        if let cached = sortedNotesByRecency { return cached }
+        let sorted = notes.sorted { $0.modified > $1.modified }
+        sortedNotesByRecency = sorted
+        return sorted
     }
 
     private func loadNotes() {
         guard let data = try? Data(contentsOf: notesURL),
               let saved = try? JSONDecoder().decode([Note].self, from: data) else { return }
         notes = saved
+        rebuildCache()
     }
 
     private func persistNotes() {

@@ -41,6 +41,9 @@ struct AnnotatedReader: View {
     @State private var xrefTarget: XrefTarget?
     /// 각주 마커 팝업 대상
     @State private var noteTarget: MarkerNoteTarget?
+    /// 제목 맵 캐시
+    @State private var cachedTitleMap: [String: String] = [:]
+    @State private var cachedTitleMapChapter: Int = -1
     /// 부모(ReaderView 등)가 설치한 각주 마커 처리 액션에 위임하기 위해 보관
     @Environment(\.openURL) private var parentOpenURL
 
@@ -292,7 +295,18 @@ struct AnnotatedReader: View {
         if verses.isEmpty {
             MissingTextView(edition: edition, book: book).padding(.top, 32)
         } else {
-            let titleMap = getTitleMap()
+            let titleMap: [String: String] = {
+                if cachedTitleMapChapter == chapter {
+                    return cachedTitleMap
+                } else {
+                    let map = getTitleMap()
+                    DispatchQueue.main.async {
+                        cachedTitleMap = map
+                        cachedTitleMapChapter = chapter
+                    }
+                    return map
+                }
+            }()
             LazyVStack(alignment: .leading, spacing: settings.lineSpacing * 0.9) {
                 ForEach(verses) { verse in
                     VStack(alignment: .leading, spacing: settings.lineSpacing * 0.9) {

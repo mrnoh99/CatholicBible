@@ -96,6 +96,11 @@ struct SearchView: View {
 
     // 결과 내 검색
     @State private var resultFilterQuery = ""
+    private var filteredResults: [SearchHit] {
+        resultFilterQuery.isEmpty ? results : results.filter { hit in
+            hit.text.localizedCaseInsensitiveContains(resultFilterQuery)
+        }
+    }
 
     // Lazy Loading 관련
     @State private var totalSearchCount = 0 {
@@ -500,9 +505,6 @@ struct SearchView: View {
 
                             Divider()
 
-                            let filteredResults = resultFilterQuery.isEmpty ? results : results.filter { hit in
-                                hit.text.localizedCaseInsensitiveContains(resultFilterQuery)
-                            }
 
                             if filteredResults.isEmpty && !resultFilterQuery.isEmpty {
                                 VStack {

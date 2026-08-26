@@ -46,6 +46,9 @@ struct ScriptureCitation: Codable, Hashable, Sendable {
 
 /// 한국어 성구 약칭 → 책 id 파서 (예: "1코린 12,31-13,13").
 enum ScriptureReference {
+    private static let parentRegex = try? NSRegularExpression(pattern: "\\([^)]*\\)")
+    private static let chapterVerseRegex = try? NSRegularExpression(pattern: "^(\\d+)(?:\\s*,\\s*(\\d+))?(?:\\s*[-–]\\s*(\\d+)(?:\\s*,\\s*(\\d+))?)?")
+
     /// 약칭/이름 → 책 id (긴 것부터 매칭). Bible 목차에서 자동 생성 + 소수 별칭.
     private static let aliasToID: [(alias: String, id: String)] = {
         var map: [String: String] = [:]
@@ -79,13 +82,13 @@ enum ScriptureReference {
         guard let match = aliasToID.first(where: { s.hasPrefix($0.alias) }) else { return nil }
         s = String(s.dropFirst(match.alias.count)).trimmingCharacters(in: .whitespaces)
         // 시편 히브리어 병기 "15(14)" 등 괄호 번호 제거
-        if let paren = try? NSRegularExpression(pattern: "\\([^)]*\\)") {
+        if let paren = parentRegex {
             s = paren.stringByReplacingMatches(in: s, range: NSRange(location: 0, length: (s as NSString).length), withTemplate: "")
         }
 
         // 장,절 파싱: "18,1-10" / "12,31-13,13" / "150" / "3,16.18"
         let ns = s as NSString
-        guard let chapterVerse = try? NSRegularExpression(pattern: "^(\\d+)(?:\\s*,\\s*(\\d+))?(?:\\s*[-–]\\s*(\\d+)(?:\\s*,\\s*(\\d+))?)?") else {
+        guard let chapterVerse = chapterVerseRegex else {
             return nil
         }
         guard let m = chapterVerse.firstMatch(in: s, range: NSRange(location: 0, length: ns.length)) else {
@@ -119,7 +122,7 @@ enum ScriptureReference {
         var s = reference.trimmingCharacters(in: .whitespaces)
         guard let match = aliasToID.first(where: { s.hasPrefix($0.alias) }) else { return nil }
         s = String(s.dropFirst(match.alias.count))
-        if let paren = try? NSRegularExpression(pattern: "\\([^)]*\\)") {
+        if let paren = parentRegex {
             s = paren.stringByReplacingMatches(in: s, range: NSRange(location: 0, length: (s as NSString).length), withTemplate: "")
         }
         let big = Int.max

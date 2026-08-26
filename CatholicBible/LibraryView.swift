@@ -47,14 +47,26 @@ struct LibraryView: View {
     @Environment(ReadingState.self) private var readingState
     @Environment(ReaderNavigation.self) private var navigation
 
+    private var oldTestamentCategories: [BookCategory] {
+        BookCategory.allCases.filter { $0.testament == .old }
+    }
+
+    private var newTestamentCategories: [BookCategory] {
+        BookCategory.allCases.filter { $0.testament == .new }
+    }
+
     var body: some View {
-        @Bindable var navigation = navigation
-        @Bindable var readingState = readingState
         let edition = readingState.selectedEdition
 
-        List(selection: $navigation.selectedBookID) {
+        List(selection: Binding(
+            get: { navigation.selectedBookID },
+            set: { navigation.selectedBookID = $0 }
+        )) {
             Section {
-                Picker("판본", selection: $readingState.selectedEditionID) {
+                Picker("판본", selection: Binding(
+                    get: { readingState.selectedEditionID },
+                    set: { readingState.selectedEditionID = $0 }
+                )) {
                     ForEach(Editions.all) { edition in
                         Text(edition.name).tag(edition.id)
                     }
@@ -66,19 +78,25 @@ struct LibraryView: View {
 
             switch edition.scope {
             case .full:
-                ForEach(Testament.allCases) { testament in
-                    Section {
-                        ForEach(BookCategory.allCases.filter { $0.testament == testament }) { category in
-                            categorySection(category, edition: edition)
-                        }
-                    } header: {
-                        Text(testament.title)
-                            .font(.headline)
+                Section {
+                    ForEach(oldTestamentCategories) { category in
+                        categorySection(category, edition: edition)
                     }
+                } header: {
+                    Text(Testament.old.title)
+                        .font(.headline)
+                }
+                Section {
+                    ForEach(newTestamentCategories) { category in
+                        categorySection(category, edition: edition)
+                    }
+                } header: {
+                    Text(Testament.new.title)
+                        .font(.headline)
                 }
             case .newTestament:
                 Section {
-                    ForEach(BookCategory.allCases.filter { $0.testament == .new }) { category in
+                    ForEach(newTestamentCategories) { category in
                         categorySection(category, edition: edition)
                     }
                 } header: {
@@ -156,9 +174,17 @@ struct LibraryView: View {
     @ViewBuilder
     private func categorySection(_ category: BookCategory, edition: Edition) -> some View {
         let books = Bible.books(in: category)
-        if books.count > 1 {
+        let bookData = books.map { book in
+            (book: book, displayName: store.bookShortName(edition: edition, book: book),
+             fullName: store.bookName(edition: edition, book: book),
+             available: store.hasText(edition: edition, book: book))
+        }
+        if bookData.count > 1 {
             DisclosureGroup {
-                ForEach(books) { book in bookRow(book, edition: edition) }
+                ForEach(bookData, id: \.book.id) { data in
+                    bookRow(book: data.book, displayName: data.displayName,
+                           fullName: data.fullName, available: data.available)
+                }
             } label: {
                 HStack(spacing: 8) {
                     Image(systemName: category == .gospels ? "book.pages" : "book")
@@ -172,14 +198,15 @@ struct LibraryView: View {
                 }
             }
         } else {
-            ForEach(books) { book in bookRow(book, edition: edition) }
+            ForEach(bookData, id: \.book.id) { data in
+                bookRow(book: data.book, displayName: data.displayName,
+                       fullName: data.fullName, available: data.available)
+            }
         }
     }
 
-    private func bookRow(_ book: BibleBook, edition: Edition) -> some View {
-        let displayName = store.bookShortName(edition: edition, book: book)
-        let fullName = store.bookName(edition: edition, book: book)
-        let available = store.hasText(edition: edition, book: book)
+    private func bookRow(book: BibleBook, displayName: String, fullName: String, available: Bool) -> some View {
+        let _ = (displayName, fullName, available)
 
         return HStack(spacing: 10) {
             VStack(alignment: .leading, spacing: 2) {

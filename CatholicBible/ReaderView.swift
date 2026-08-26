@@ -45,6 +45,16 @@ struct ReaderView: View {
     /// 연동 비교에서 두 열이 맞추는 '맨 위 절'.
     @State private var compareTopVerse: Int?
 
+    private var selectedEditionIDBinding: Binding<String> {
+        Binding(get: { readingState.selectedEditionID },
+                set: { readingState.selectedEditionID = $0 })
+    }
+
+    private var secondaryEditionIDBinding: Binding<String> {
+        Binding(get: { readingState.secondaryEditionID },
+                set: { readingState.secondaryEditionID = $0 })
+    }
+
     private var canDual: Bool { hSize == .regular }
     /// 좁은 화면(iPhone)에서는 항상 한 페이지
     private var layout: ReaderLayout { canDual ? readingState.readerLayout : .single }
@@ -55,14 +65,12 @@ struct ReaderView: View {
     }
 
     var body: some View {
-        @Bindable var rs = readingState
-
         VStack(spacing: 0) {
             ZStack {
                 settings.theme.background.ignoresSafeArea()
                 if showAnnotated {
                     // 주석 성경: 왼쪽 본문 · 오른쪽 주석 (입문 접근 포함)
-                    AnnotatedReader(editionID: $rs.selectedEditionID,
+                    AnnotatedReader(editionID: selectedEditionIDBinding,
                                     bookID: primaryBookBinding,
                                     sharedChapter: $primaryChapter,
                                     ownerBookID: book.id,
@@ -72,13 +80,13 @@ struct ReaderView: View {
                     switch layout {
                     case .single:
                         ReaderPane(role: .primary,
-                                   editionID: $rs.selectedEditionID,
+                                   editionID: selectedEditionIDBinding,
                                    bookID: primaryBookBinding,
                                    linkedChapter: $primaryChapter,
                                    ownerBookID: book.id,
                                    onOpenNote: openNote)
                     case .spread:
-                        SpreadReader(editionID: $rs.selectedEditionID,
+                        SpreadReader(editionID: selectedEditionIDBinding,
                                      bookID: primaryBookBinding,
                                      sharedChapter: $primaryChapter,
                                      ownerBookID: book.id,
@@ -89,7 +97,7 @@ struct ReaderView: View {
                         VStack(spacing: 0) {
                             HStack(spacing: 0) {
                                 ReaderPane(role: .primary,
-                                           editionID: $rs.selectedEditionID,
+                                           editionID: selectedEditionIDBinding,
                                            bookID: primaryBookBinding,
                                            linkedChapter: $compareChapter,
                                            showChapterBar: !linked,
@@ -98,7 +106,7 @@ struct ReaderView: View {
                                            onOpenNote: openNote)
                                 Divider()
                                 ReaderPane(role: .secondary,
-                                           editionID: $rs.secondaryEditionID,
+                                           editionID: secondaryEditionIDBinding,
                                            bookID: linked ? primaryBookBinding : secondaryBookBinding,
                                            onClose: { readingState.readerLayout = .single },
                                            linkedChapter: linked ? $compareChapter : nil,
