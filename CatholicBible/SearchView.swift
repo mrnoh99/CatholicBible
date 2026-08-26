@@ -787,13 +787,13 @@ struct SearchView: View {
                     Button("전체선택") {
                         selectedEditionIDs = Set(store.loadedEditions.map { $0.id })
                     }
-                    .font(.body.weight(.semibold))
+                    .font(.system(size: 14, weight: .semibold))
                     .foregroundStyle(.blue)
 
                     Button("선택해지") {
                         selectedEditionIDs.removeAll()
                     }
-                    .font(.body.weight(.semibold))
+                    .font(.system(size: 14, weight: .semibold))
                     .foregroundStyle(.red)
                 }
             }

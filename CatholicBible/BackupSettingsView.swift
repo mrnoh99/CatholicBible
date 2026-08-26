@@ -75,10 +75,10 @@ struct BackupSettingsView: View {
                             }
                             Spacer()
                         }
-                        .padding(.vertical, 8)
-                        .padding(.horizontal, 10)
+                        .padding(.vertical, 12)
+                        .padding(.horizontal, 12)
                         .background(Color(.systemGray6))
-                        .cornerRadius(8)
+                        .cornerRadius(12)
 
                         Toggle("iCloud 동기화", isOn: $backupManager.isICloudEnabled)
                             .disabled(!backupManager.isICloudConnected)
@@ -96,10 +96,10 @@ struct BackupSettingsView: View {
                                 }
                                 Spacer()
                             }
-                            .padding(.vertical, 8)
-                            .padding(.horizontal, 10)
+                            .padding(.vertical, 12)
+                            .padding(.horizontal, 12)
                             .background(Color.orange.opacity(0.1))
-                            .cornerRadius(8)
+                            .cornerRadius(12)
                         }
 
                         if let lastSync = backupManager.lastICloudSyncDate {
