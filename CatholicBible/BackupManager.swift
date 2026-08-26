@@ -102,6 +102,7 @@ final class BackupManager {
     }
 
     var isSyncing = false
+    var lastSyncError: SyncError? = nil
 
     private let backupDir: URL
     private let iCloudBackupDir: URL?
@@ -190,13 +191,14 @@ final class BackupManager {
             let metadataFile = url.appendingPathComponent("metadata.json")
             guard let metadataData = try? Data(contentsOf: metadataFile),
                   let metadata = try? JSONSerialization.jsonObject(with: metadataData) as? [String: Any] else {
+                print("[BackupManager] Warning: Corrupted iCloud backup metadata at \(url.lastPathComponent)")
                 return nil
             }
 
             return BackupInfo(
                 path: url,
                 name: url.lastPathComponent,
-                date: metadata["date"] as? String ?? "",
+                date: metadata["date"] as? String ?? "Unknown",
                 bookmarksCount: metadata["bookmarksCount"] as? Int ?? 0,
                 notesCount: metadata["notesCount"] as? Int ?? 0,
                 deviceName: getDeviceName(),
@@ -224,6 +226,7 @@ final class BackupManager {
                 let metadataFile = backupDir.appendingPathComponent("metadata.json")
                 guard let metadataData = try? Data(contentsOf: metadataFile),
                       let metadata = try? JSONSerialization.jsonObject(with: metadataData) as? [String: Any] else {
+                    print("[BackupManager] Warning: Corrupted backup at \(backupDir.lastPathComponent) on device \(deviceDir.lastPathComponent)")
                     continue
                 }
 
@@ -231,7 +234,7 @@ final class BackupManager {
                 allBackups.append(BackupInfo(
                     path: backupDir,
                     name: backupDir.lastPathComponent,
-                    date: metadata["date"] as? String ?? "",
+                    date: metadata["date"] as? String ?? "Unknown",
                     bookmarksCount: metadata["bookmarksCount"] as? Int ?? 0,
                     notesCount: metadata["notesCount"] as? Int ?? 0,
                     deviceName: metadata["deviceName"] as? String,
@@ -325,7 +328,14 @@ final class BackupManager {
             // iCloud 동기화 활성화 시 비동기로 업로드
             if isICloudEnabled {
                 Task {
-                    _ = await self.syncToICloud(backupPath: backupPath)
+                    let syncResult = await self.syncToICloud(backupPath: backupPath)
+                    await MainActor.run {
+                        if case .failure(let error) = syncResult {
+                            self.lastSyncError = error as? SyncError ?? .syncFailed(error.localizedDescription)
+                        } else {
+                            self.lastSyncError = nil
+                        }
+                    }
                 }
             }
 
@@ -339,32 +349,49 @@ final class BackupManager {
 
     func restore(from backupPath: URL, to annotationStore: AnnotationStore) -> Result<Void, Error> {
         do {
-            // 책갈피 복원
+            // 책갈피 복원 (중복 방지)
             let bookmarksFile = backupPath.appendingPathComponent("bookmarks.json")
             if FileManager.default.fileExists(atPath: bookmarksFile.path) {
                 let data = try Data(contentsOf: bookmarksFile)
                 let bookmarks = try JSONDecoder().decode([VerseRef].self, from: data)
+
+                // 기존 책갈피와 비교하여 새로운 것만 추가
+                let existingBookmarks = Set(annotationStore.sortedBookmarks.map { "\($0.book),\($0.chapter),\($0.verse)" })
                 for bookmark in bookmarks {
-                    annotationStore.addBookmark(bookmark)
+                    let key = "\(bookmark.book),\(bookmark.chapter),\(bookmark.verse)"
+                    if !existingBookmarks.contains(key) {
+                        annotationStore.addBookmark(bookmark)
+                    }
                 }
             }
 
-            // 노트 복원
+            // 노트 복원 (중복 방지)
             let notesFile = backupPath.appendingPathComponent("notes.json")
             if FileManager.default.fileExists(atPath: notesFile.path) {
                 let data = try Data(contentsOf: notesFile)
                 let notes = try JSONDecoder().decode([Note].self, from: data)
+
+                // 기존 노트와 비교하여 새로운 것만 추가
+                let existingNoteIds = Set(annotationStore.notes.map { $0.id })
                 for note in notes {
-                    annotationStore.save(note)
+                    if !existingNoteIds.contains(note.id) {
+                        annotationStore.save(note)
+                    }
                 }
             }
 
-            // 미디어 파일 복원
+            // 미디어 파일 복원 (기존 파일이 있으면 건너뜀)
             let mediaBackupDir = backupPath.appendingPathComponent("NoteMedia")
             if FileManager.default.fileExists(atPath: mediaBackupDir.path) {
+                try FileManager.default.createDirectory(at: annotationStore.mediaDir, withIntermediateDirectories: true)
+
                 let mediaFiles = try FileManager.default.contentsOfDirectory(at: mediaBackupDir, includingPropertiesForKeys: nil)
                 for file in mediaFiles {
-                    try FileManager.default.copyItem(at: file, to: annotationStore.mediaDir.appendingPathComponent(file.lastPathComponent))
+                    let targetPath = annotationStore.mediaDir.appendingPathComponent(file.lastPathComponent)
+                    // 기존 파일이 없을 때만 복사
+                    if !FileManager.default.fileExists(atPath: targetPath.path) {
+                        try FileManager.default.copyItem(at: file, to: targetPath)
+                    }
                 }
             }
 
@@ -385,13 +412,14 @@ final class BackupManager {
             let metadataFile = url.appendingPathComponent("metadata.json")
             guard let metadataData = try? Data(contentsOf: metadataFile),
                   let metadata = try? JSONSerialization.jsonObject(with: metadataData) as? [String: Any] else {
+                print("[BackupManager] Warning: Corrupted backup metadata at \(url.lastPathComponent)")
                 return nil
             }
 
             return BackupInfo(
                 path: url,
                 name: url.lastPathComponent,
-                date: metadata["date"] as? String ?? "",
+                date: metadata["date"] as? String ?? "Unknown",
                 bookmarksCount: metadata["bookmarksCount"] as? Int ?? 0,
                 notesCount: metadata["notesCount"] as? Int ?? 0,
                 deviceName: getDeviceName(),

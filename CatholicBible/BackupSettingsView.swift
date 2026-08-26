@@ -18,6 +18,8 @@ struct BackupSettingsView: View {
     @State private var showBackupList = false
     @State private var showICloudBackups = false
     @State private var iCloudBackups: [BackupInfo] = []
+    @State private var showSyncError = false
+    @State private var syncErrorMessage = ""
 
     var body: some View {
         NavigationStack {
@@ -62,6 +64,25 @@ struct BackupSettingsView: View {
                 Section("iCloud 백업") {
                     if backupManager.isICloudAvailable() {
                         Toggle("iCloud 동기화", isOn: $backupManager.isICloudEnabled)
+
+                        if let syncError = backupManager.lastSyncError {
+                            HStack(spacing: 8) {
+                                Image(systemName: "exclamationmark.triangle.fill")
+                                    .foregroundStyle(.orange)
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text("동기화 오류")
+                                        .font(.caption.weight(.semibold))
+                                    Text(syncError.errorDescription ?? "알 수 없는 오류")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
+                                Spacer()
+                            }
+                            .padding(.vertical, 8)
+                            .padding(.horizontal, 10)
+                            .background(Color.orange.opacity(0.1))
+                            .cornerRadius(8)
+                        }
 
                         if let lastSync = backupManager.lastICloudSyncDate {
                             HStack {
