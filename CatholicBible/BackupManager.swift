@@ -391,9 +391,9 @@ final class BackupManager {
                 let bookmarks = try JSONDecoder().decode([VerseRef].self, from: data)
 
                 // 기존 책갈피와 비교하여 새로운 것만 추가
-                let existingBookmarks = Set(annotationStore.sortedBookmarks.map { "\($0.book),\($0.chapter),\($0.verse)" })
+                let existingBookmarks = Set(annotationStore.sortedBookmarks.map { "\($0.bookID),\($0.chapter),\($0.verse)" })
                 for bookmark in bookmarks {
-                    let key = "\(bookmark.book),\(bookmark.chapter),\(bookmark.verse)"
+                    let key = "\(bookmark.bookID),\(bookmark.chapter),\(bookmark.verse)"
                     if !existingBookmarks.contains(key) {
                         annotationStore.addBookmark(bookmark)
                     }
