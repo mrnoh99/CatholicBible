@@ -659,8 +659,7 @@ struct NotesList: View {
             } else {
                 ForEach(notes) { note in
                     HStack(alignment: .firstTextBaseline, spacing: 8) {
-                        let bookAbbrv = Bible.book(bookID)?.abbrev ?? ""
-                        Text(bookAbbrv.isEmpty ? note.n : "\(bookAbbrv) \(note.n)")
+                        Text(note.n)
                             .font(settings.fontChoice.font(size: settings.fontSize * 0.72, bold: true))
                             .foregroundStyle(Color.accentColor)
                             .frame(minWidth: settings.fontSize * 1.3, alignment: .trailing)
