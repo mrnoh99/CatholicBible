@@ -3,7 +3,8 @@
     "edition": "nab",
     "source": "https://bible.usccb.org/bible",
     "language": "en",
-    "editionName": "NAB (New American Bible)"
+    "editionName": "NAB (New American Bible)",
+    "hasHeadings": true
   },
   "books": {
     "Gn": {
