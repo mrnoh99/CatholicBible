@@ -44,7 +44,8 @@ final class BackupManager {
     private static let backupFrequencyKey = "backupManager.backupFrequency"
     private static let iCloudEnabledKey = "backupManager.iCloudEnabled"
     private static let lastICloudSyncKey = "backupManager.lastICloudSync"
-    private static let iCloudBackupDirName = "CatholicBibleBackups"
+    private static let iCloudContainerId = "iCloud.com.jsnoh.CatholicBibleV3"
+    private static let iCloudBackupDirName = "CatholicBible Backups"
     private static let deviceIdKey = "backupManager.deviceId"
 
     var isAutoBackupEnabled: Bool {
@@ -124,11 +125,11 @@ final class BackupManager {
             self.deviceId = newId
         }
 
-        // iCloud Drive 설정 (기기별 폴더)
-        if let iCloudContainerURL = FileManager.default.url(forUbiquityContainerIdentifier: nil) {
+        // iCloud Drive 설정
+        if let iCloudContainerURL = FileManager.default.url(forUbiquityContainerIdentifier: Self.iCloudContainerId) {
             let iCloudBackupDirURL = iCloudContainerURL
+                .appendingPathComponent("Documents", isDirectory: true)
                 .appendingPathComponent(Self.iCloudBackupDirName, isDirectory: true)
-                .appendingPathComponent(deviceId, isDirectory: true)
             try? FileManager.default.createDirectory(at: iCloudBackupDirURL, withIntermediateDirectories: true)
             self.iCloudBackupDir = iCloudBackupDirURL
             self.isICloudConnected = true
@@ -148,7 +149,7 @@ final class BackupManager {
     private func startICloudMonitoring() {
         iCloudMonitorTask = Task {
             while !Task.isCancelled {
-                let connected = FileManager.default.url(forUbiquityContainerIdentifier: nil) != nil
+                let connected = FileManager.default.url(forUbiquityContainerIdentifier: Self.iCloudContainerId) != nil
                 await MainActor.run {
                     self.isICloudConnected = connected
                 }
@@ -245,39 +246,36 @@ final class BackupManager {
     }
 
     func listAllDeviceBackups() -> [BackupInfo] {
-        guard let iCloudContainerURL = FileManager.default.url(forUbiquityContainerIdentifier: nil) else { return [] }
-        let backupRootDir = iCloudContainerURL.appendingPathComponent(Self.iCloudBackupDirName, isDirectory: true)
+        guard let iCloudContainerURL = FileManager.default.url(forUbiquityContainerIdentifier: Self.iCloudContainerId) else { return [] }
+        let backupRootDir = iCloudContainerURL
+            .appendingPathComponent("Documents", isDirectory: true)
+            .appendingPathComponent(Self.iCloudBackupDirName, isDirectory: true)
 
-        guard let devices = try? FileManager.default.contentsOfDirectory(at: backupRootDir, includingPropertiesForKeys: nil) else {
+        guard let backups = try? FileManager.default.contentsOfDirectory(at: backupRootDir, includingPropertiesForKeys: [.contentModificationDateKey]) else {
             return []
         }
 
         var allBackups: [BackupInfo] = []
 
-        for deviceDir in devices {
-            guard let backups = try? FileManager.default.contentsOfDirectory(at: deviceDir, includingPropertiesForKeys: [.contentModificationDateKey]) else {
+        for backupDir in backups {
+            let metadataFile = backupDir.appendingPathComponent("metadata.json")
+            guard let metadataData = try? Data(contentsOf: metadataFile),
+                  let metadata = try? JSONSerialization.jsonObject(with: metadataData) as? [String: Any] else {
+                print("[BackupManager] Warning: Corrupted backup at \(backupDir.lastPathComponent)")
                 continue
             }
 
-            for backupDir in backups {
-                let metadataFile = backupDir.appendingPathComponent("metadata.json")
-                guard let metadataData = try? Data(contentsOf: metadataFile),
-                      let metadata = try? JSONSerialization.jsonObject(with: metadataData) as? [String: Any] else {
-                    print("[BackupManager] Warning: Corrupted backup at \(backupDir.lastPathComponent) on device \(deviceDir.lastPathComponent)")
-                    continue
-                }
-
-                let isCurrentDevice = deviceDir.lastPathComponent == deviceId
-                allBackups.append(BackupInfo(
-                    path: backupDir,
-                    name: backupDir.lastPathComponent,
-                    date: metadata["date"] as? String ?? "Unknown",
-                    bookmarksCount: metadata["bookmarksCount"] as? Int ?? 0,
-                    notesCount: metadata["notesCount"] as? Int ?? 0,
-                    deviceName: metadata["deviceName"] as? String,
-                    isFromCurrentDevice: isCurrentDevice
-                ))
-            }
+            let backupDeviceId = metadata["deviceId"] as? String ?? ""
+            let isCurrentDevice = backupDeviceId == deviceId
+            allBackups.append(BackupInfo(
+                path: backupDir,
+                name: backupDir.lastPathComponent,
+                date: metadata["date"] as? String ?? "Unknown",
+                bookmarksCount: metadata["bookmarksCount"] as? Int ?? 0,
+                notesCount: metadata["notesCount"] as? Int ?? 0,
+                deviceName: metadata["deviceName"] as? String,
+                isFromCurrentDevice: isCurrentDevice
+            ))
         }
 
         return allBackups.sorted { ($0.date) > ($1.date) }
