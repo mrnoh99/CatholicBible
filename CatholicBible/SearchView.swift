@@ -1104,7 +1104,7 @@ struct SearchView: View {
             let searchText = input.split(separator: " ", maxSplits: 1).map(String.init)
             let textToSearch = searchText.count > 1 ? searchText[1] : input
 
-            if textToSearch.count >= 2 {
+            if textToSearch.count >= 1 {
                 query = textToSearch
                 runSearch()
             } else {
@@ -1672,7 +1672,7 @@ struct SearchView: View {
             let (parsedText, isExactMatch) = parseExactMatchQuery(isExplicitPartial ? String(fullQuery.dropFirst()) : fullQuery)
             let text = parsedText
 
-            guard text.count >= 2 else {
+            guard text.count >= 1 else {
                 results = []; hasSearched = false; isSearching = false
                 return
             }
@@ -2161,7 +2161,7 @@ struct SearchView: View {
         let hasOperators = containsLogicalOperators(searchText)
 
         // Validate minimum length only for non-operator queries
-        if !hasOperators && searchText.count < 2 {
+        if !hasOperators && searchText.count < 1 {
             results = []; hasSearched = false; isSearching = false
             return
         }

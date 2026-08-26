@@ -462,7 +462,7 @@ final class BibleStore {
 
     func search(_ query: String, edition: Edition, mode: SearchMode = .text, limit: Int = 200) async -> [SearchHit] {
         let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard trimmed.count >= 2, let text = editions[edition.id] else { return [] }
+        guard trimmed.count >= 1, let text = editions[edition.id] else { return [] }
         let snapshot = text.rawBooks
         let order = edition.scope.books.map(\.id)
         let editionID = edition.id
@@ -566,7 +566,7 @@ final class BibleStore {
     func searchAll(_ query: String, editions searchEditions: [Edition],
                    mode: SearchMode = .text, limit: Int = 400) async -> [SearchHit] {
         let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard trimmed.count >= 2 else { return [] }
+        guard trimmed.count >= 1 else { return [] }
         let perEdition = max(40, limit / max(1, searchEditions.count))
         var all: [SearchHit] = []
         for edition in searchEditions {
@@ -583,7 +583,7 @@ final class BibleStore {
     /// 검색 결과 총 개수만 파악 (첫 번째 판본)
     func searchCount(_ query: String, edition: Edition, mode: SearchMode = .text) async -> Int {
         let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard trimmed.count >= 2, let text = editions[edition.id] else { return 0 }
+        guard trimmed.count >= 1, let text = editions[edition.id] else { return 0 }
         let snapshot = text.rawBooks
         let order = edition.scope.books.map(\.id)
 
@@ -601,7 +601,7 @@ final class BibleStore {
     func searchWithOffset(_ query: String, edition: Edition, mode: SearchMode = .text,
                         offset: Int = 0, limit: Int = 50) async -> [SearchHit] {
         let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard trimmed.count >= 2, let text = editions[edition.id] else { return [] }
+        guard trimmed.count >= 1, let text = editions[edition.id] else { return [] }
         let snapshot = text.rawBooks
         let order = edition.scope.books.map(\.id)
         let editionID = edition.id
@@ -619,7 +619,7 @@ final class BibleStore {
     /// 여러 판본에서 검색 결과 총 개수만 파악
     func searchAllCount(_ query: String, editions searchEditions: [Edition], mode: SearchMode = .text) async -> Int {
         let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard trimmed.count >= 2 else { return 0 }
+        guard trimmed.count >= 1 else { return 0 }
         var total = 0
         for edition in searchEditions {
             guard editions[edition.id] != nil else { continue }
@@ -633,7 +633,7 @@ final class BibleStore {
     func searchAllWithOffset(_ query: String, editions searchEditions: [Edition],
                            mode: SearchMode = .text, offset: Int = 0, limit: Int = 50) async -> [SearchHit] {
         let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard trimmed.count >= 2 else { return [] }
+        guard trimmed.count >= 1 else { return [] }
         var all: [SearchHit] = []
         var currentOffset = offset
         let perEdition = limit
@@ -713,7 +713,7 @@ final class BibleStore {
         }
         print("🔍 검색 시도: '\(query)' in \(edition.id)")
         let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard trimmed.count >= 2 else { return 0 }
+        guard trimmed.count >= 1 else { return 0 }
         let order = edition.scope.books.map(\.id)
 
         return await Task.detached(priority: .userInitiated) {
@@ -754,7 +754,7 @@ final class BibleStore {
     func searchAnnotationsWithOffset(_ query: String, edition: Edition, offset: Int = 0, limit: Int = 50) async -> [SearchHit] {
         guard !query.isEmpty, let text = editions[edition.id] else { return [] }
         let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard trimmed.count >= 2 else { return [] }
+        guard trimmed.count >= 1 else { return [] }
         let order = edition.scope.books.map(\.id)
 
         return await Task.detached(priority: .userInitiated) {
@@ -805,7 +805,7 @@ final class BibleStore {
     /// 여러 판본에서 주석 검색 결과 총 개수 파악
     func searchAllAnnotationsCount(_ query: String, editions searchEditions: [Edition]) async -> Int {
         let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard trimmed.count >= 2 else { return 0 }
+        guard trimmed.count >= 1 else { return 0 }
         var total = 0
         for edition in searchEditions {
             guard editions[edition.id] != nil else { continue }
@@ -819,7 +819,7 @@ final class BibleStore {
     func searchAllAnnotationsWithOffset(_ query: String, editions searchEditions: [Edition],
                                        offset: Int = 0, limit: Int = 50) async -> [SearchHit] {
         let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard trimmed.count >= 2 else { return [] }
+        guard trimmed.count >= 1 else { return [] }
         var all: [SearchHit] = []
         var currentOffset = offset
         let perEdition = limit
