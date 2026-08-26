@@ -505,6 +505,20 @@ enum ScriptureRefNormalizer {
             }
         }
 
+        // searchKeywords로 확인 (예: "히브리서" → "히브리인들에게 보낸 서간")
+        for book in Bible.books {
+            for keyword in book.searchKeywords {
+                if searchStr.hasPrefix(keyword) {
+                    // 키워드가 참조의 일부가 아닌지 확인 (예: "히브" in "히브리"가 아닌지)
+                    let afterKeyword = String(searchStr.dropFirst(keyword.count))
+                    if afterKeyword.isEmpty || afterKeyword.first?.isWhitespace ?? false || afterKeyword.first?.isNumber ?? false {
+                        let trimmed = afterKeyword.trimmingCharacters(in: .whitespaces)
+                        return (book.name, trimmed)
+                    }
+                }
+            }
+        }
+
         // 책 이름이 없으면 참조는 숫자로 시작하거나 장만 있어야 함
         // (예: "2,4-23", "38─39", "74,14-17", "104")
         return (nil, ref)
