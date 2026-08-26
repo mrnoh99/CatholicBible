@@ -86,7 +86,9 @@ struct DailyMassView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    Button("전례력", systemImage: "calendar") { showCalendar = true }
+                    Button(action: { showCalendar = true }) {
+                        Label("전례력", systemImage: "calendar")
+                    }
                 }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("닫기") { dismiss() }

@@ -66,7 +66,7 @@ struct NotesListView: View {
                             .scaleEffect(0.8)
                     } else {
                         Menu {
-                            Button("파일로 내보내기(백업)", systemImage: "square.and.arrow.up") {
+                            Button(action: {
                                 isExporting = true
                                 Task {
                                     if let data = annotations.exportBackup() {
@@ -80,9 +80,11 @@ struct NotesListView: View {
                                     }
                                     isExporting = false
                                 }
+                            }) {
+                                Label("파일로 내보내기(백업)", systemImage: "square.and.arrow.up")
                             }
-                            Button("파일에서 가져오기(복원)", systemImage: "square.and.arrow.down") {
-                                showImporter = true
+                            Button(action: { showImporter = true }) {
+                                Label("파일에서 가져오기(복원)", systemImage: "square.and.arrow.down")
                             }
                         } label: {
                             Label("백업", systemImage: "externaldrive")

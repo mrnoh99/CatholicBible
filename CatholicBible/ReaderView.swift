@@ -275,11 +275,21 @@ struct ReaderView: View {
                         }
                     }
                     Section("도구") {
-                        Button("오늘의 미사", systemImage: "sun.max") { showMass = true }
-                        Button("찾기", systemImage: "magnifyingglass") { showSearch = true }
-                        Button("사전", systemImage: "character.book.closed") { navigation.lookUp() }
-                        Button("책갈피", systemImage: "bookmark") { showBookmarks = true }
-                        Button("노트", systemImage: "note.text") { showNotes = true }
+                        Button(action: { showMass = true }) {
+                            Label("오늘의 미사", systemImage: "sun.max")
+                        }
+                        Button(action: { showSearch = true }) {
+                            Label("찾기", systemImage: "magnifyingglass")
+                        }
+                        Button(action: { navigation.lookUp() }) {
+                            Label("사전", systemImage: "character.book.closed")
+                        }
+                        Button(action: { showBookmarks = true }) {
+                            Label("책갈피", systemImage: "bookmark")
+                        }
+                        Button(action: { showNotes = true }) {
+                            Label("노트", systemImage: "note.text")
+                        }
                     }
                 } label: {
                     Image(systemName: "ellipsis.circle")
@@ -1236,18 +1246,18 @@ struct VerseRowView: View {
     /// 절 번호(또는 점)를 눌러 여는 동작 메뉴
     private func actionMenu(bookmarked: Bool, hasNote: Bool) -> some View {
         Menu {
-            Button(bookmarked ? "책갈피 지우기" : "책갈피",
-                   systemImage: bookmarked ? "bookmark.slash" : "bookmark") {
-                annotations.toggleBookmark(ref)
+            Button(action: { annotations.toggleBookmark(ref) }) {
+                Label(bookmarked ? "책갈피 지우기" : "책갈피",
+                      systemImage: bookmarked ? "bookmark.slash" : "bookmark")
             }
-            Button(hasNote ? "노트 보기·편집" : "노트 추가", systemImage: "note.text") {
-                onOpenNote(ref, verse.text)
+            Button(action: { onOpenNote(ref, verse.text) }) {
+                Label(hasNote ? "노트 보기·편집" : "노트 추가", systemImage: "note.text")
             }
-            Button("사전 열기", systemImage: "character.book.closed") {
-                if let onLookUp { onLookUp() } else { navigation.lookUp() }
+            Button(action: { if let onLookUp { onLookUp() } else { navigation.lookUp() } }) {
+                Label("사전 열기", systemImage: "character.book.closed")
             }
-            Button("복사", systemImage: "doc.on.doc") {
-                UIPasteboard.general.string = "\(verse.text) (\(ref.reference))"
+            Button(action: { UIPasteboard.general.string = "\(verse.text) (\(ref.reference))" }) {
+                Label("복사", systemImage: "doc.on.doc")
             }
         } label: {
             handleLabel(bookmarked: bookmarked, hasNote: hasNote)

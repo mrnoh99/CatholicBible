@@ -375,11 +375,14 @@ private struct AttachmentCell: View {
             .onTapGesture { onOpen(attachment, image) }
             // 길게 누르기: 열기/삭제 선택
             .contextMenu {
-                Button(attachment.kind == .drawing ? "이어 쓰기" : "크게 보기",
-                       systemImage: attachment.kind == .drawing ? "pencil" : "arrow.up.left.and.arrow.down.right") {
-                    onOpen(attachment, image)
+                Button(action: { onOpen(attachment, image) }) {
+                    Label(attachment.kind == .drawing ? "이어 쓰기" : "크게 보기",
+                          systemImage: attachment.kind == .drawing ? "pencil" : "arrow.up.left.and.arrow.down.right")
                 }
-                Button("삭제", systemImage: "trash", role: .destructive, action: onDelete)
+                Button(action: onDelete) {
+                    Label("삭제", systemImage: "trash")
+                }
+                .tint(.red)
             }
     }
 
