@@ -479,7 +479,12 @@ struct MarkerNoteSheet: View {
                     .padding(20)
             }
             .background(settings.theme.background.ignoresSafeArea())
-            .navigationTitle("주석 \(n)")
+            .navigationTitle({
+                if let book = Bible.book(bookID) {
+                    return "\(book.name) \(n)"
+                }
+                return "주석 \(n)"
+            }())
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .topBarTrailing) { Button("닫기") { dismiss() } } }
             .preferredColorScheme(settings.theme.colorScheme)
@@ -659,7 +664,13 @@ struct NotesList: View {
             } else {
                 ForEach(notes) { note in
                     HStack(alignment: .firstTextBaseline, spacing: 8) {
-                        Text(note.n)
+                        let displayNumber: String = {
+                            if let book = Bible.book(bookID) {
+                                return "\(book.name) \(note.n)"
+                            }
+                            return note.n
+                        }()
+                        Text(displayNumber)
                             .font(settings.fontChoice.font(size: settings.fontSize * 0.72, bold: true))
                             .foregroundStyle(Color.accentColor)
                             .frame(minWidth: settings.fontSize * 1.3, alignment: .trailing)
