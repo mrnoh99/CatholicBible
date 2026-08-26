@@ -2183,9 +2183,16 @@ struct SearchView: View {
         }
 
         // 판본 선택 확인
-        guard !selectedEditionIDs.isEmpty else {
-            results = []; hasSearched = true; isSearching = false
-            return
+        if scope == .commentary {
+            guard !selectedAnnotationEditionIDs.isEmpty else {
+                results = []; hasSearched = true; isSearching = false
+                return
+            }
+        } else {
+            guard !selectedEditionIDs.isEmpty else {
+                results = []; hasSearched = true; isSearching = false
+                return
+            }
         }
 
         isSearching = true

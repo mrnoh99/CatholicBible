@@ -232,25 +232,25 @@ struct ReaderView: View {
                     if canDual {
                         if isAnnotated {
                             Section("보기") {
-                                Button {
+                                Button(action: {
                                     readingState.readerLayout = .single
                                     readingState.showAnnotatedNotes = false
-                                } label: { Label("한 페이지", systemImage: "rectangle.portrait") }
+                                }) { Label("한 페이지", systemImage: "rectangle.portrait") }
 
-                                Button {
+                                Button(action: {
                                     readingState.readerLayout = .spread
                                     readingState.showAnnotatedNotes = false
-                                } label: { Label("두 페이지 (펼침)", systemImage: "book.pages") }
+                                }) { Label("두 페이지 (펼침)", systemImage: "book.pages") }
 
-                                Button {
+                                Button(action: {
                                     readingState.readerLayout = .single
                                     readingState.showAnnotatedNotes = true
-                                } label: { Label("본문·주석", systemImage: "books.vertical") }
+                                }) { Label("본문·주석", systemImage: "books.vertical") }
 
-                                Button {
+                                Button(action: {
                                     readingState.readerLayout = .compare
                                     readingState.showAnnotatedNotes = false
-                                } label: { Label("판본 비교", systemImage: "rectangle.split.2x1") }
+                                }) { Label("판본 비교", systemImage: "rectangle.split.2x1") }
                             }
                         } else {
                             Section("페이지") {
@@ -266,9 +266,7 @@ struct ReaderView: View {
                     }
                     if canDual && readingState.readerLayout == .compare {
                         Section {
-                            Button {
-                                readingState.compareLinked.toggle()
-                            } label: {
+                            Button(action: { readingState.compareLinked.toggle() }) {
                                 Label(readingState.compareLinked ? "두 열 연동됨" : "두 열 분리됨",
                                       systemImage: readingState.compareLinked ? "link.circle.fill" : "link.circle")
                             }
