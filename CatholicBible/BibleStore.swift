@@ -31,6 +31,18 @@ private nonisolated struct BibleTextFile: Decodable, Sendable {
     let books: [String: [String: ChapterData]]
 }
 
+/// 소제목 JSON 파일 구조
+private nonisolated struct HeadingsFile: Decodable, Sendable {
+    struct Metadata: Decodable, Sendable {
+        let edition: String?
+        let source: String?
+        let description: String?
+    }
+
+    let metadata: Metadata?
+    let headings: [String: [String: [String: String]]]
+}
+
 /// 주석 JSON 파일 구조 (통합된 새 구조)
 private nonisolated struct AnnotationFile: Decodable, Sendable {
     struct Metadata: Decodable, Sendable {
@@ -129,6 +141,7 @@ final class BibleStore {
                         chapterMap[chapterNumber] = mapped.filter { seen.insert($0.number).inserted }
 
                         // Heading 로드 (새 구조: chapterData.headings)
+                        // 참고: ncb는 이제 headings가 없음
                         if let chapterHeadings = chapterData.headings, !chapterHeadings.isEmpty {
                             bookHeadings[chapterKey] = chapterHeadings
                         }
@@ -136,6 +149,18 @@ final class BibleStore {
 
                     if !chapterMap.isEmpty { indexed[bookID] = chapterMap }
                     if !bookHeadings.isEmpty { headingsFromFile[bookID] = bookHeadings }
+                }
+
+                // 새로운 headings 파일 로드 (KnbHeadings_ko.json)
+                // knb, knbnotes, ncb 모두 이 파일을 사용
+                let shouldLoadCommonHeadings = ["knb", "knbnotes", "ncb"].contains(editionID)
+                if shouldLoadCommonHeadings && headingsFromFile.isEmpty {
+                    if let headingsURL = Bundle.main.url(forResource: "KnbHeadings_ko", withExtension: "json"),
+                       let headingsData = try? Data(contentsOf: headingsURL),
+                       let headingsFile = try? JSONDecoder().decode(HeadingsFile.self, from: headingsData) {
+                        headingsFromFile = headingsFile.headings
+                        print("📖 \(editionID) headings 로드: KnbHeadings_ko.json")
+                    }
                 }
 
                 // 주석 로드 (새 구조: Notes 파일도 객체 기반)
@@ -193,6 +218,20 @@ final class BibleStore {
                                     if titles[bookID]![chapterKey]![verseKey] == nil {
                                         titles[bookID]![chapterKey]![verseKey] = cleanHeading
                                     }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // knb와 ncb는 headings에서 주석 마크(번호) 제거
+                // knbnotes는 주석 마크 유지
+                if editionID == "knb" || editionID == "ncb" {
+                    for bookID in titles.keys {
+                        for chapterKey in titles[bookID]!.keys {
+                            for verseKey in titles[bookID]![chapterKey]!.keys {
+                                if let text = titles[bookID]![chapterKey]![verseKey] {
+                                    titles[bookID]![chapterKey]![verseKey] = Self.removeAnnotationMarkers(from: text)
                                 }
                             }
                         }
@@ -401,6 +440,22 @@ final class BibleStore {
         }
 
         return a < b
+    }
+
+    private static nonisolated func removeAnnotationMarkers(from text: String) -> String {
+        // 주석 마크 제거: "천지 창조 1)" → "천지 창조"
+        // 형식: "제목 번호)" 또는 "제목 번호)..." 등
+        let pattern = "\\s+\\d+\\).*"
+        guard let regex = try? NSRegularExpression(pattern: pattern, options: []) else {
+            return text
+        }
+        let range = NSRange(text.startIndex..., in: text)
+        if let match = regex.firstMatch(in: text, options: [], range: range) {
+            if let matchRange = Range(match.range, in: text) {
+                return String(text[..<matchRange.lowerBound]).trimmingCharacters(in: .whitespaces)
+            }
+        }
+        return text
     }
 
     // MARK: - 검색 (현재 판본 안에서)
