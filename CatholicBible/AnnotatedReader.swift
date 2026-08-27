@@ -101,7 +101,7 @@ struct AnnotatedReader: View {
                 }
             }
             .fullScreenCover(isPresented: $showIntros) {
-                IntroductionsView(currentBookID: bookID, editionID: editionID)
+                IntroductionsView(currentBookID: bookID, editionID: editionID, fullWidth: fullWidth)
                     .environment(knb)
                     .environment(settings)
                     .environment(store)
@@ -705,6 +705,7 @@ struct NotesList: View {
 struct IntroductionsView: View {
     let currentBookID: String
     var editionID: String = "knbnotes"
+    var fullWidth: Bool = false
     @Environment(KnbNotesStore.self) private var knb
     @Environment(ReaderSettings.self) private var settings
     @Environment(BibleStore.self) private var store
