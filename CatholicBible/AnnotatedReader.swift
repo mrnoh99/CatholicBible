@@ -19,6 +19,8 @@ struct AnnotatedReader: View {
     var ownerBookID: String = ""
     /// 헤더를 표시할지 (False면 상단 툴바에서 판본·책을 선택).
     var showHeader: Bool = true
+    /// 한 페이지 모드에서 전체 너비 사용 (기본: false - 720 제한)
+    var fullWidth: Bool = false
     let onOpenNote: (VerseRef, String) -> Void
 
     @Environment(BibleStore.self) private var store
@@ -251,8 +253,8 @@ struct AnnotatedReader: View {
                                         emptyHint: emptyNotesHint, bookID: book.id, chapter: chapter,
                                         searchQuery: navigation.searchQuery, editionID: editionID)
                     }
-                    .frame(maxWidth: 720, alignment: .leading)
-                    .padding(.horizontal, 28).padding(.bottom, 40)
+                    .frame(maxWidth: fullWidth ? .infinity : 720, alignment: .leading)
+                    .padding(.horizontal, fullWidth ? 16 : 28).padding(.bottom, 40)
                     .frame(maxWidth: .infinity)
                 }
             }
@@ -269,8 +271,8 @@ struct AnnotatedReader: View {
                 VStack(alignment: .leading, spacing: 0) {
                     versesBlock(verses)
                 }
-                .frame(maxWidth: 720, alignment: .leading)
-                .padding(.horizontal, 28).padding(.bottom, 40)
+                .frame(maxWidth: fullWidth ? .infinity : 720, alignment: .leading)
+                .padding(.horizontal, fullWidth ? 16 : 28).padding(.bottom, 40)
                 .frame(maxWidth: .infinity)
             }
             .onChange(of: scrollTarget) { _, _ in performScroll(proxy, verses: verses) }
@@ -882,8 +884,8 @@ struct IntroDetailView: View {
     private var bodyColumn: some View {
         ScrollView {
             bodyText
-                .padding(.horizontal, 28).padding(.vertical, 24)
-                .frame(maxWidth: 720, alignment: .leading)
+                .padding(.horizontal, fullWidth ? 16 : 28).padding(.vertical, 24)
+                .frame(maxWidth: fullWidth ? .infinity : 720, alignment: .leading)
                 .frame(maxWidth: .infinity)
         }
     }

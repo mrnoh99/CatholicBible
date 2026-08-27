@@ -75,6 +75,7 @@ struct ReaderView: View {
                                     sharedChapter: $primaryChapter,
                                     ownerBookID: book.id,
                                     showHeader: true,
+                                    fullWidth: true,
                                     onOpenNote: openNote)
                 } else {
                     switch layout {
