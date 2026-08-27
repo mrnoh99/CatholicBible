@@ -17,7 +17,7 @@
 		<key>iCloud.com.jsnoh.CatholicBibleV3</key>
 		<dict>
 			<key>NSUbiquitousContainerIsDocumentScopePublic</key>
-			<false/>
+			<true/>
 			<key>NSUbiquitousContainerSupportedFileNames</key>
 			<array>
 				<string>*.backup</string>
