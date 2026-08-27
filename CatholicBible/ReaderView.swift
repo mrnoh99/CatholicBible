@@ -300,10 +300,8 @@ struct ReaderView: View {
                     Image(systemName: "ellipsis.circle")
                         .font(.system(size: 15, weight: .semibold))
                 }
-            }
         }
     }
-}
 
 // MARK: - 독립 열 (판본·책·장을 스스로 관리)
 
