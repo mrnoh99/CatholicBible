@@ -56,7 +56,7 @@ private nonisolated struct AnnotationFile: Decodable, Sendable {
     }
 
     struct TitleEntry: Decodable, Sendable {
-        let v: String  // 절 번호
+        let v: Int  // 절 번호
         let text: String  // 제목 텍스트
     }
 
@@ -65,10 +65,11 @@ private nonisolated struct AnnotationFile: Decodable, Sendable {
     let annotations: [String: [String: [AnnotationEntry]]]?
     /// 책 id → 장(String) → [제목 항목]
     let titles: [String: [String: [TitleEntry]]]?
-    /// 머릿말 (무시)
-    let intros: [String: [String: String]]?
-    /// 출처 (무시)
-    let source: String?
+
+    enum CodingKeys: String, CodingKey {
+        case metadata, annotations, titles
+        // intros와 source는 무시됨 - 디코딩할 때 제외
+    }
 }
 
 nonisolated struct Verse: Identifiable, Hashable, Sendable {
@@ -215,7 +216,8 @@ final class BibleStore {
                                 for (chapterKey, entries) in chapters {
                                     var chapterTitles: [String: String] = [:]
                                     for entry in entries {
-                                        chapterTitles[entry.v] = entry.text
+                                        // v는 Int이므로 String으로 변환
+                                        chapterTitles[String(entry.v)] = entry.text
                                     }
                                     if !chapterTitles.isEmpty {
                                         bookTitles[chapterKey] = chapterTitles
