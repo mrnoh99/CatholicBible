@@ -134,8 +134,7 @@ struct ReaderView: View {
         .toolbar { readerToolbar }
         .preferredColorScheme(settings.theme.colorScheme)
         .sheet(isPresented: $showAppearance) {
-            injectShared(AppearanceControls())
-                .presentationDetents([.large])
+            injectShared(AppSettingsView())
         }
         .sheet(isPresented: $showSearch) {
             injectShared(SearchView().environment(navigation))
