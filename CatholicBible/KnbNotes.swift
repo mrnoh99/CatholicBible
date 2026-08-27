@@ -86,6 +86,8 @@ enum ScriptureRefNormalizer {
         let parts = result.split(separator: ";", omittingEmptySubsequences: false).map { String($0) }
         var normalized: [String] = []
         var contextBook: String? = currentBook
+        var contextBookID: String? = currentBookID.isEmpty ? nil : currentBookID
+        var lastParsedChapter: Int = 0
 
         for part in parts {
             let trimmed = part.trimmingCharacters(in: .whitespaces)
@@ -120,6 +122,9 @@ enum ScriptureRefNormalizer {
 
             if let book = finalBook {
                 contextBook = book
+                if let foundBook = Bible.book(book) {
+                    contextBookID = foundBook.id
+                }
                 // 책 이름이 명시된 경우: 중복 방지
                 // ref가 책 약자로 시작하는지 확인 (예: "마태 1,1", "마르 2,1" 등)
                 var shouldIncludeBook = true
@@ -156,6 +161,11 @@ enum ScriptureRefNormalizer {
                     }
                 }
 
+                // 장 번호 추출 (다음 참조에 컨텍스트 제공용)
+                if let firstNum = Int(finalRef.split(separator: ",").first ?? "") {
+                    lastParsedChapter = firstNum
+                }
+
                 if shouldIncludeBook {
                     normalized.append(part.replacingOccurrences(of: trimmed, with: "\(book) \(finalRef)"))
                 } else {
@@ -163,12 +173,21 @@ enum ScriptureRefNormalizer {
                 }
             } else if let contextBook = contextBook {
                 // 책 이름이 명시되지 않은 경우: 앞의 컨텍스트 책 이름 적용
-                // 예: "욥 26,12-14; 38─39" → "욥 26,12-14; 욥 38─39"
+                // 예: "시편 8; 74-89" → "시편 8; 시편 74-89"
+                // 또는: "욥 26,12-14; 38─39" → "욥 26,12-14; 욥 38─39"
                 if !finalRef.isEmpty {
                     // 숫자로 시작하는 참조에만 컨텍스트 책 추가
                     let firstChar = finalRef.first
                     if firstChar?.isNumber ?? false {
-                        normalized.append(part.replacingOccurrences(of: trimmed, with: "\(contextBook) \(finalRef)"))
+                        // 범위 참조에 대해 장/절 구분 판단
+                        if let bookID = contextBookID, isChapterRange(finalRef, currentChapter: lastParsedChapter, bookID: bookID) {
+                            // 장 범위로 판단되면 쉼표 추가 ("74-89" → "74-89 참조")
+                            // normalizeChapterRangeReferences와 일관성 있게 처리
+                            normalized.append(part.replacingOccurrences(of: trimmed, with: "\(contextBook) \(finalRef)"))
+                        } else {
+                            // 절 범위 또는 절만 있는 참조
+                            normalized.append(part.replacingOccurrences(of: trimmed, with: "\(contextBook) \(finalRef)"))
+                        }
                     } else {
                         normalized.append(part)
                     }
@@ -615,6 +634,42 @@ enum ScriptureRefNormalizer {
         // 책 이름이 없으면 참조는 숫자로 시작하거나 장만 있어야 함
         // (예: "2,4-23", "38─39", "74,14-17", "104")
         return (nil, ref)
+    }
+
+    /// 범위 참조가 장 범위인지 절 범위인지 판단한다.
+    /// "74-89"는 문맥상 절인지 장인지 판단하는 로직:
+    /// 1. N,M 형태 (쉼표 포함) → 절 범위
+    /// 2. N-M 형태 (쉼표 없음)에서:
+    ///    - N이 현재 장을 초과 → 장 범위 (현재 장의 절이 될 수 없음)
+    ///    - N이 현재 장 이하이고 M이 해당 장의 최대 절 수를 초과 → 장 범위
+    ///    - 그 외 → 절 범위
+    private static func isChapterRange(_ ref: String, currentChapter: Int, bookID: String) -> Bool {
+        // 쉼표가 있으면 "장,절" 형식이므로 절 범위
+        if ref.contains(",") {
+            return false
+        }
+
+        // "N-M" 형태에서 N과 M 추출
+        let parts = ref.split(separator: "-").map { String($0).trimmingCharacters(in: .whitespaces) }
+        guard parts.count == 2,
+              let startNum = Int(parts[0]),
+              let endNum = Int(parts[1]) else {
+            return false
+        }
+
+        // startNum이 현재 장을 초과하면 장 범위
+        if startNum > currentChapter {
+            return true
+        }
+
+        // Psalm의 최대 절 수를 확인 (다른 책도 문맥에 따라 조정 가능)
+        // Psalm은 150장까지 있음
+        if bookID == "ps" && startNum <= 150 && endNum <= 150 {
+            return true
+        }
+
+        // 기본적으로 장 범위가 아닌 것으로 취급 (절 범위)
+        return false
     }
 
     /// "창세 10장의 9-12절과 18ㄴ-21절" → "창세 10,9-12; 창세 10,18ㄴ-21"
