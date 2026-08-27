@@ -228,14 +228,7 @@ struct ReaderView: View {
         }
 
         ToolbarItem(placement: .navigationBarTrailing) {
-            HStack(spacing: 12) {
-                Button { showAppearance = true } label: {
-                    Image(systemName: "textformat.size")
-                        .font(.system(size: 15, weight: .semibold))
-                }
-                .help("보기 설정")
-
-                Menu {
+            Menu {
                     let isAnnotated = Editions.edition(readingState.selectedEditionID)?.isAnnotated ?? false
 
                     if canDual {
@@ -296,6 +289,11 @@ struct ReaderView: View {
                         }
                         Button(action: { showNotes = true }) {
                             Label("노트", systemImage: "note.text")
+                        }
+                    }
+                    Section {
+                        Button(action: { showAppearance = true }) {
+                            Label("설정", systemImage: "gear")
                         }
                     }
                 } label: {
