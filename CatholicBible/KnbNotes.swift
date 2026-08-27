@@ -319,20 +319,45 @@ enum ScriptureRefNormalizer {
     private static func normalizeIntroductionReferences(_ text: String, currentBook: String) -> String {
         var result = text
 
-        // 패턴: "('입문' 숫자[의 숫자] [참조]?)"
+        // 패턴 1: "('입문' 숫자[의 숫자] [참조]?)"
         // 예: ('입문' 6 참조), ('입문' 4의 2), ('입문' 5)
-        let pattern = "\\('입문'\\s+\\d+(?:의\\s*\\d+)?(?:\\s*참조)?\\)"
-        guard let regex = try? NSRegularExpression(pattern: pattern) else {
-            return result
+        let pattern1 = "\\('입문'\\s+\\d+(?:의\\s*\\d+)?(?:\\s*참조)?\\)"
+        if let regex = try? NSRegularExpression(pattern: pattern1) {
+            let ns = text as NSString
+            let matches = regex.matches(in: text, range: NSRange(location: 0, length: ns.length))
+
+            for match in matches.reversed() {
+                let replacement = "(\(currentBook) 입문)"
+                result = (result as NSString).replacingCharacters(in: match.range, with: replacement)
+            }
         }
 
-        let ns = text as NSString
-        let matches = regex.matches(in: text, range: NSRange(location: 0, length: ns.length))
+        // 패턴 2: "(입문 참조)" 또는 "(입문)" - 현재 책이 명시되지 않은 경우
+        let pattern2 = "\\(입문(?:\\s*참조)?\\)"
+        if let regex = try? NSRegularExpression(pattern: pattern2) {
+            let ns = result as NSString
+            let matches = regex.matches(in: result, range: NSRange(location: 0, length: ns.length))
 
-        for match in matches.reversed() {
-            // 모든 입문 참조를 현재 책의 입문으로 정규화
-            let replacement = "(\(currentBook) 입문)"
-            result = (result as NSString).replacingCharacters(in: match.range, with: replacement)
+            for match in matches.reversed() {
+                let replacement = "(\(currentBook) 입문)"
+                result = (result as NSString).replacingCharacters(in: match.range, with: replacement)
+            }
+        }
+
+        // 패턴 3: 책 이름 다음에 오는 "입문" 참조 (예: "창세 입문 참조")
+        let pattern3 = "(\(NSRegularExpression.escapedPattern(for: currentBook)))\\s+(입문(?:\\s*참조)?)"
+        if let regex = try? NSRegularExpression(pattern: pattern3) {
+            let ns = result as NSString
+            let matches = regex.matches(in: result, range: NSRange(location: 0, length: ns.length))
+
+            for match in matches.reversed() {
+                if match.numberOfRanges >= 3 {
+                    let book = ns.substring(with: match.range(at: 1))
+                    let intro = ns.substring(with: match.range(at: 2))
+                    let replacement = "(\(book) 입문)"
+                    result = (result as NSString).replacingCharacters(in: match.range, with: replacement)
+                }
+            }
         }
 
         return result
