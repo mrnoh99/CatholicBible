@@ -66,8 +66,13 @@ struct BackupSettingsView: View {
                             Text("저장 위치")
                                 .font(.caption.weight(.semibold))
                                 .foregroundStyle(.secondary)
-                            Text(backupManager.getBackupDirectoryName())
-                                .font(.body.weight(.semibold))
+                            if backupManager.hasCustomBackupDirectory() {
+                                Text(backupManager.getBackupDirectoryName())
+                                    .font(.body.weight(.semibold))
+                            } else {
+                                Text("Backups")
+                                    .font(.body.weight(.semibold))
+                            }
                         }
                         Spacer()
                     }
