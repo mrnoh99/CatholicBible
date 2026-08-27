@@ -234,14 +234,14 @@ struct ContentView: View {
                         }
                         .help("설정")
                         Menu {
-                            Button(action: { showSettings = true }) {
-                                Label("설정", systemImage: "gear")
-                            }
                             Button(action: { showBookmarks = true }) {
                                 Label("책갈피", systemImage: "bookmark")
                             }
                             Button(action: { showNotes = true }) {
                                 Label("노트", systemImage: "note.text")
+                            }
+                            Button(action: { showSettings = true }) {
+                                Label("설정", systemImage: "gear")
                             }
                         } label: {
                             Image(systemName: "ellipsis.circle")
