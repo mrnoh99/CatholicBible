@@ -60,6 +60,10 @@ private nonisolated struct AnnotationFile: Decodable, Sendable {
     let annotations: [String: [String: [AnnotationEntry]]]?
     /// 책 id → 장(String) → 절(String) → 제목 텍스트
     let titles: [String: [String: [String: String]]]?
+    /// 머릿말 (무시)
+    let intros: [String: [String: String]]?
+    /// 출처 (무시)
+    let source: String?
 }
 
 nonisolated struct Verse: Identifiable, Hashable, Sendable {
@@ -173,34 +177,41 @@ final class BibleStore {
                 var titles: [String: [String: [String: String]]] = [:]
                 let annotationFileName = BibleStore.annotationFileName(for: editionID)
                 print("📝 주석 로드 시도: \(editionID) → \(annotationFileName).json")
-                if let annotationURL = Bundle.main.url(forResource: annotationFileName, withExtension: "json"),
-                   let annotationData = try? Data(contentsOf: annotationURL),
-                   let annotationFile = try? JSONDecoder().decode(AnnotationFile.self, from: annotationData) {
-                    print("✅ \(editionID) 주석 로드 성공")
 
-                    // 주석 로드 (새 구조: AnnotationEntry 배열을 텍스트 사전으로 변환)
-                    if let annots = annotationFile.annotations {
-                        for (bookID, chapters) in annots {
-                            var bookAnnotations: [String: [String: String]] = [:]
-                            for (chapterKey, entries) in chapters {
-                                var chapterAnnotations: [String: String] = [:]
-                                for entry in entries {
-                                    chapterAnnotations[entry.n] = entry.text
+                if let annotationURL = Bundle.main.url(forResource: annotationFileName, withExtension: "json"),
+                   let annotationData = try? Data(contentsOf: annotationURL) {
+                    do {
+                        let annotationFile = try JSONDecoder().decode(AnnotationFile.self, from: annotationData)
+                        print("✅ \(editionID) 주석 로드 성공")
+
+                        // 주석 로드 (새 구조: AnnotationEntry 배열을 텍스트 사전으로 변환)
+                        if let annots = annotationFile.annotations {
+                            for (bookID, chapters) in annots {
+                                var bookAnnotations: [String: [String: String]] = [:]
+                                for (chapterKey, entries) in chapters {
+                                    var chapterAnnotations: [String: String] = [:]
+                                    for entry in entries {
+                                        chapterAnnotations[entry.n] = entry.text
+                                    }
+                                    if !chapterAnnotations.isEmpty {
+                                        bookAnnotations[chapterKey] = chapterAnnotations
+                                    }
                                 }
-                                if !chapterAnnotations.isEmpty {
-                                    bookAnnotations[chapterKey] = chapterAnnotations
+                                if !bookAnnotations.isEmpty {
+                                    annotations[bookID] = bookAnnotations
                                 }
-                            }
-                            if !bookAnnotations.isEmpty {
-                                annotations[bookID] = bookAnnotations
                             }
                         }
-                    }
 
-                    // 소제목 로드 (새 구조: 이미 객체 형식)
-                    if let ttls = annotationFile.titles {
-                        titles = ttls
+                        // 소제목 로드 (새 구조: 이미 객체 형식)
+                        if let ttls = annotationFile.titles {
+                            titles = ttls
+                        }
+                    } catch {
+                        print("❌ \(editionID) 주석 디코딩 실패: \(error)")
                     }
+                } else {
+                    print("❌ \(editionID) 주석 파일 읽기 실패")
                 }
 
 
