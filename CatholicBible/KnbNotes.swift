@@ -43,8 +43,13 @@ enum ScriptureRefNormalizer {
         // 1단계: "책 장의 절과 절" 형태를 정규화
         result = normalizeChapterRanges(result)
 
-        // 2단계: "절 참조" 패턴 정규화 (괄호나 "참조" 포함)
+        // 1.5단계: "절 범위 참조" 패턴 정규화 (예: "(1,1─2,4ㄱ)")
         let currentBook = currentBookID.isEmpty ? nil : Bible.book(currentBookID)?.name
+        if let currentBook = currentBook, chapter > 0 {
+            result = normalizeVerseRangeReferences(result, currentBook: currentBook)
+        }
+
+        // 2단계: "절 참조" 패턴 정규화 (괄호나 "참조" 포함)
         if let currentBook = currentBook {
             result = normalizeVerseOnlyReferences(result, currentBook: currentBook, chapter: chapter)
         }
@@ -149,6 +154,20 @@ enum ScriptureRefNormalizer {
                 } else {
                     normalized.append(part.replacingOccurrences(of: trimmed, with: finalRef))
                 }
+            } else if let contextBook = contextBook {
+                // 책 이름이 명시되지 않은 경우: 앞의 컨텍스트 책 이름 적용
+                // 예: "욥 26,12-14; 38─39" → "욥 26,12-14; 욥 38─39"
+                if !finalRef.isEmpty {
+                    // 숫자로 시작하는 참조에만 컨텍스트 책 추가
+                    let firstChar = finalRef.first
+                    if firstChar?.isNumber ?? false {
+                        normalized.append(part.replacingOccurrences(of: trimmed, with: "\(contextBook) \(finalRef)"))
+                    } else {
+                        normalized.append(part)
+                    }
+                } else {
+                    normalized.append(part)
+                }
             } else {
                 normalized.append(part)
             }
@@ -199,6 +218,47 @@ enum ScriptureRefNormalizer {
                         let replacement = "\(currentBook) \(chapterStr)\(verse)\(suffix)"
                         result = (result as NSString).replacingCharacters(in: match.range, with: replacement)
                     }
+                }
+            }
+        }
+
+        return result
+    }
+
+    /// 절 범위 참조를 정규화한다.
+    /// 예: "(1,1─2,4ㄱ)" → "(책 1,1─2,4ㄱ)" 또는 원래대로 유지
+    /// 장과 절이 명시된 범위 형식을 처리
+    private static func normalizeVerseRangeReferences(_ text: String, currentBook: String) -> String {
+        var result = text
+
+        // 패턴: "(숫자,숫자[한글]─숫자,숫자[한글])" 또는 유사한 형식
+        // 예: (1,1─2,4ㄱ), (2,4ㄴ-23) 등
+        let pattern = "\\((\\d+,[\\d,ㄱ-ㅁ\\-─]+)\\)"
+        guard let regex = try? NSRegularExpression(pattern: pattern) else {
+            return result
+        }
+
+        let ns = text as NSString
+        let matches = regex.matches(in: text, range: NSRange(location: 0, length: ns.length))
+
+        for match in matches.reversed() {
+            if match.numberOfRanges >= 2 {
+                let refContent = ns.substring(with: match.range(at: 1))
+                let fullMatch = ns.substring(with: match.range)
+
+                // 이미 책 이름이 있는지 확인
+                var hasBook = false
+                for book in Bible.books {
+                    if refContent.hasPrefix(book.name) || refContent.hasPrefix(book.abbrev) {
+                        hasBook = true
+                        break
+                    }
+                }
+
+                if !hasBook {
+                    // 책 이름 추가
+                    let replacement = "(\(currentBook) \(refContent))"
+                    result = (result as NSString).replacingCharacters(in: match.range, with: replacement)
                 }
             }
         }
