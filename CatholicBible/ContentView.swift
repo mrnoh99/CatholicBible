@@ -201,7 +201,6 @@ struct ContentView: View {
     @State private var showNotes = false
     @State private var showMass = false
     @State private var showSettings = false
-    @State private var showMore = false
 
     var body: some View {
         @Bindable var nav = navigation
@@ -234,22 +233,16 @@ struct ContentView: View {
                             Image(systemName: "gear")
                         }
                         .help("설정")
-                        DisclosureGroup(isExpanded: $showMore) {
-                            VStack(spacing: 8) {
-                                Button(action: { showBookmarks = true }) {
-                                    Label("책갈피", systemImage: "bookmark")
-                                        .frame(maxWidth: .infinity, alignment: .leading)
-                                }
-                                Button(action: { showNotes = true }) {
-                                    Label("노트", systemImage: "note.text")
-                                        .frame(maxWidth: .infinity, alignment: .leading)
-                                }
-                                Button(action: { showSettings = true }) {
-                                    Label("설정", systemImage: "gear")
-                                        .frame(maxWidth: .infinity, alignment: .leading)
-                                }
+                        Menu {
+                            Button(action: { showBookmarks = true }) {
+                                Label("책갈피", systemImage: "bookmark")
                             }
-                            .padding(.vertical, 4)
+                            Button(action: { showNotes = true }) {
+                                Label("노트", systemImage: "note.text")
+                            }
+                            Button(action: { showSettings = true }) {
+                                Label("설정", systemImage: "gear")
+                            }
                         } label: {
                             Image(systemName: "ellipsis.circle")
                         }
