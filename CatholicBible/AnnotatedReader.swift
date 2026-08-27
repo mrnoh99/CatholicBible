@@ -884,8 +884,8 @@ struct IntroDetailView: View {
     private var bodyColumn: some View {
         ScrollView {
             bodyText
-                .padding(.horizontal, fullWidth ? 16 : 28).padding(.vertical, 24)
-                .frame(maxWidth: fullWidth ? .infinity : 720, alignment: .leading)
+                .padding(.horizontal, self.fullWidth ? 16 : 28).padding(.vertical, 24)
+                .frame(maxWidth: self.fullWidth ? .infinity : 720, alignment: .leading)
                 .frame(maxWidth: .infinity)
         }
     }
