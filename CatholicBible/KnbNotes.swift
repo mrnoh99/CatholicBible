@@ -227,13 +227,13 @@ enum ScriptureRefNormalizer {
 
     /// 절 범위 참조를 정규화한다.
     /// 예: "(1,1─2,4ㄱ)" → "(책 1,1─2,4ㄱ)" 또는 원래대로 유지
-    /// 장과 절이 명시된 범위 형식을 처리
+    /// 장과 절이 명시된 범위 형식을 처리 (ㄱ-ㅂ = a-f 절 구분)
     private static func normalizeVerseRangeReferences(_ text: String, currentBook: String) -> String {
         var result = text
 
         // 패턴: "(숫자,숫자[한글]─숫자,숫자[한글])" 또는 유사한 형식
-        // 예: (1,1─2,4ㄱ), (2,4ㄴ-23) 등
-        let pattern = "\\((\\d+,[\\d,ㄱ-ㅁ\\-─]+)\\)"
+        // 예: (1,1─2,4ㄱ), (2,4ㄴ-23), (3,5ㅂ) 등
+        let pattern = "\\((\\d+,[\\d,ㄱ-ㅂ\\-─]+)\\)"
         guard let regex = try? NSRegularExpression(pattern: pattern) else {
             return result
         }
