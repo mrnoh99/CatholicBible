@@ -344,6 +344,8 @@ struct ReaderPane: View {
     @State private var isInitialized = false
     /// picker에서 책과 장을 함께 선택할 때 자동 복원을 스킵하기 위한 플래그
     @State private var skipChapterRestore = false
+    /// 캐시된 소제목 맵 (성능 최적화)
+    @State private var cachedTitleMap: [String: String] = [:]
 
     private var edition: Edition { Editions.edition(editionID) ?? Editions.all[0] }
     private var book: BibleBook { Bible.book(bookID) ?? Bible.books[0] }
@@ -354,21 +356,9 @@ struct ReaderPane: View {
         chapter > 0
     }
 
-    /// 절 번호 → 소제목 맵
+    /// 절 번호 → 소제목 맵 (캐시됨)
     private var titleMap: [String: String] {
-        guard showsTitles else {
-            return [:]
-        }
-
-        // JSON headings 필드에서 로드
-        let titles = store.titles(edition: edition, book: book, chapter: chapter)
-        var titleMap: [String: String] = [:]
-
-        for title in titles {
-            titleMap[title.verse] = title.text
-        }
-
-        return titleMap
+        showsTitles ? cachedTitleMap : [:]
     }
 
     /// 표시 중인 장. 연동 시 공유 장, 아니면 이 열의 자기 장.
@@ -393,6 +383,7 @@ struct ReaderPane: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .onAppear {
             initChapterIfNeeded()
+            updateTitleMapCache()
             isInitialized = true
         }
         .onChange(of: bookID) { _, _ in
@@ -408,6 +399,7 @@ struct ReaderPane: View {
         }
         .onChange(of: editionID) { _, _ in
             if !isFollower { setChapter(min(max(chapter, 1), book.chapterCount)) }
+            updateTitleMapCache()
         }
         .onChange(of: chapter) { _, new in
             guard new > 0, !isFollower else { return }
@@ -416,6 +408,7 @@ struct ReaderPane: View {
                 scrollTarget = 1
             }
             readingState.savePosition(edition: edition, book: book, chapter: new)
+            updateTitleMapCache()
         }
         .modifier(PendingChapterModifier(active: role == .primary, apply: applyPending))
         .sheet(isPresented: $showBookPicker) {
@@ -464,6 +457,19 @@ struct ReaderPane: View {
         guard (1...book.chapterCount).contains(next) else { return }
         scrollTarget = 1
         withAnimation(.easeInOut(duration: 0.2)) { setChapter(next) }
+    }
+
+    private func updateTitleMapCache() {
+        guard chapter > 0 else {
+            cachedTitleMap = [:]
+            return
+        }
+        let titles = store.titles(edition: edition, book: book, chapter: chapter)
+        var newMap: [String: String] = [:]
+        for title in titles {
+            newMap[title.verse] = title.text
+        }
+        cachedTitleMap = newMap
     }
 
     // MARK: 헤더 (판본 · 책 선택)
