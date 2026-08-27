@@ -97,9 +97,9 @@ final class ReaderNavigation {
     var selectedAnnotationNumber: String?
 
     /// 네비게이션 히스토리
-    private var history: [NavigationHistoryItem] = []
+    var history: [NavigationHistoryItem] = []
     /// 현재 히스토리 위치 (history 배열의 인덱스)
-    private var historyIndex: Int = -1
+    var historyIndex: Int = -1
 
     /// 한 절 또는 연속 범위로 연다(검색·책갈피 등).
     func open(bookID: String, chapter: Int, verse: Int? = nil,
