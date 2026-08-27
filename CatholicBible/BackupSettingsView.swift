@@ -16,10 +16,6 @@ struct BackupSettingsView: View {
     @State private var isBackuping = false
     @State private var backups: [BackupInfo] = []
     @State private var showBackupList = false
-    @State private var showICloudBackups = false
-    @State private var iCloudBackups: [BackupInfo] = []
-    @State private var showSyncError = false
-    @State private var syncErrorMessage = ""
 
     var body: some View {
         NavigationStack {
@@ -61,87 +57,6 @@ struct BackupSettingsView: View {
                     .disabled(isBackuping)
                 }
 
-                Section("iCloud 백업") {
-                    if backupManager.isICloudAvailable() {
-                        HStack(spacing: 8) {
-                            Image(systemName: backupManager.isICloudConnected ? "icloud.fill" : "icloud.slash.fill")
-                                .foregroundStyle(backupManager.isICloudConnected ? .blue : .gray)
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text("iCloud 상태")
-                                    .font(.caption.weight(.semibold))
-                                Text(backupManager.isICloudConnected ? "연결됨" : "연결 안됨")
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                            }
-                            Spacer()
-                        }
-                        .padding(.vertical, 12)
-                        .padding(.horizontal, 12)
-                        .background(Color(.systemGray6))
-                        .cornerRadius(12)
-
-                        Toggle("iCloud 동기화", isOn: $backupManager.isICloudEnabled)
-                            .disabled(!backupManager.isICloudConnected)
-
-                        if let syncError = backupManager.lastSyncError {
-                            HStack(spacing: 8) {
-                                Image(systemName: "exclamationmark.triangle.fill")
-                                    .foregroundStyle(.orange)
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text("동기화 오류")
-                                        .font(.caption.weight(.semibold))
-                                    Text(syncError.errorDescription ?? "알 수 없는 오류")
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
-                                }
-                                Spacer()
-                            }
-                            .padding(.vertical, 12)
-                            .padding(.horizontal, 12)
-                            .background(Color.orange.opacity(0.1))
-                            .cornerRadius(12)
-                        }
-
-                        if let lastSync = backupManager.lastICloudSyncDate {
-                            HStack {
-                                Text("마지막 동기화")
-                                Spacer()
-                                Text(lastSync.formatted(date: .abbreviated, time: .shortened))
-                                    .foregroundStyle(.secondary)
-                                    .font(.caption)
-                            }
-                        }
-
-                        HStack {
-                            Text("기기 ID")
-                            Spacer()
-                            Text(backupManager.getDeviceIdentifier().prefix(8) + "...")
-                                .foregroundStyle(.secondary)
-                                .font(.caption)
-                                .monospaced()
-                        }
-
-                        Button(action: { loadICloudBackups(); showICloudBackups = true }) {
-                            HStack {
-                                Image(systemName: "icloud")
-                                Text("iCloud 백업 관리")
-                                Spacer()
-                                Text("\(iCloudBackups.count)")
-                                    .foregroundStyle(.secondary)
-                                    .font(.caption)
-                            }
-                        }
-                        .disabled(!backupManager.isICloudConnected)
-                    } else {
-                        HStack(spacing: 8) {
-                            Image(systemName: "icloud.slash.fill")
-                                .foregroundStyle(.gray)
-                            Text("iCloud를 사용할 수 없습니다")
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-                }
-
                 Section("백업 관리") {
                     Button(action: { loadBackups(); showBackupList = true }) {
                         HStack {
@@ -154,23 +69,8 @@ struct BackupSettingsView: View {
                         }
                     }
                 }
-
-                Section("정보") {
-                    HStack {
-                        Text("책갈피")
-                        Spacer()
-                        Text("\(annotationStore.sortedBookmarks.count)개")
-                            .foregroundStyle(.secondary)
-                    }
-                    HStack {
-                        Text("노트")
-                        Spacer()
-                        Text("\(annotationStore.notes.count)개")
-                            .foregroundStyle(.secondary)
-                    }
-                }
             }
-            .navigationTitle("백업 설정")
+            .navigationTitle("백업")
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("완료") { dismiss() }
@@ -179,22 +79,22 @@ struct BackupSettingsView: View {
             .sheet(isPresented: $showBackupList) {
                 BackupListView(backups: $backups, backupManager: backupManager, annotationStore: annotationStore)
             }
-            .sheet(isPresented: $showICloudBackups) {
-                ICloudBackupListView(backups: $iCloudBackups, backupManager: backupManager, annotationStore: annotationStore)
-            }
-            .alert("백업", isPresented: $showBackupResult) {
+            .alert("백업 완료", isPresented: $showBackupResult) {
                 Button("확인") { }
             } message: {
                 Text(backupResultMessage)
+            }
+            .onAppear {
+                loadBackups()
             }
         }
     }
 
     private func performBackup() {
         isBackuping = true
-        DispatchQueue.global().asyncAfter(deadline: .now() + 0.5) {
+        Task {
             let result = backupManager.backup(annotationStore: annotationStore)
-            DispatchQueue.main.async {
+            await MainActor.run {
                 isBackuping = false
                 switch result {
                 case .success(let url):
@@ -210,10 +110,6 @@ struct BackupSettingsView: View {
 
     private func loadBackups() {
         backups = backupManager.listBackups()
-    }
-
-    private func loadICloudBackups() {
-        iCloudBackups = backupManager.listAllDeviceBackups()
     }
 }
 
@@ -322,136 +218,6 @@ struct BackupListView: View {
         let result = backupManager.deleteBackup(backup)
         if case .success = result {
             backups.removeAll { $0.id == backup.id }
-        }
-    }
-}
-
-struct ICloudBackupListView: View {
-    @Binding var backups: [BackupInfo]
-    let backupManager: BackupManager
-    let annotationStore: AnnotationStore
-    @Environment(\.dismiss) private var dismiss
-    @State private var selectedBackup: BackupInfo?
-    @State private var showDownloadConfirm = false
-    @State private var showRestoreResult = false
-    @State private var resultMessage = ""
-    @State private var isDownloading = false
-
-    var body: some View {
-        NavigationStack {
-            Group {
-                if backups.isEmpty {
-                    ContentUnavailableView(
-                        "iCloud 백업 없음",
-                        systemImage: "icloud",
-                        description: Text("iCloud에 백업이 없습니다.")
-                    )
-                } else {
-                    List {
-                        ForEach(backups) { backup in
-                            backupRow(backup)
-                        }
-                    }
-                }
-            }
-            .navigationTitle("iCloud 백업 관리")
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button("완료") { dismiss() }
-                }
-            }
-        }
-        .alert("복원 확인", isPresented: $showDownloadConfirm) {
-            Button("복원", role: .destructive) {
-                if let backup = selectedBackup {
-                    restoreFromICloud(backup)
-                }
-            }
-            Button("취소", role: .cancel) { }
-        } message: {
-            if let backup = selectedBackup {
-                Text("'\(backup.deviceName ?? "unknown")'의 백업을 복원하시겠습니까?\n책갈피: \(backup.bookmarksCount)개, 노트: \(backup.notesCount)개")
-            }
-        }
-        .alert("복원 결과", isPresented: $showRestoreResult) {
-            Button("확인") { }
-        } message: {
-            Text(resultMessage)
-        }
-    }
-
-    private func backupRow(_ backup: BackupInfo) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            HStack {
-                VStack(alignment: .leading, spacing: 2) {
-                    HStack {
-                        Text(backup.date)
-                            .font(.subheadline.weight(.semibold))
-                        if !backup.isFromCurrentDevice {
-                            Label("다른 기기", systemImage: "iphone")
-                                .font(.caption2)
-                                .foregroundStyle(.blue)
-                                .padding(.horizontal, 6)
-                                .padding(.vertical, 2)
-                                .background(Color.blue.opacity(0.1))
-                                .cornerRadius(4)
-                        } else {
-                            Label("현재 기기", systemImage: "checkmark.circle.fill")
-                                .font(.caption2)
-                                .foregroundStyle(.green)
-                                .padding(.horizontal, 6)
-                                .padding(.vertical, 2)
-                                .background(Color.green.opacity(0.1))
-                                .cornerRadius(4)
-                        }
-                    }
-                    HStack(spacing: 12) {
-                        VStack(alignment: .leading, spacing: 1) {
-                            Text("기기: \(backup.deviceName ?? "unknown")")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                            Text("\(backup.bookmarksCount) 책갈피 • \(backup.notesCount) 노트")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-                }
-                Spacer()
-            }
-
-            HStack(spacing: 8) {
-                Button(action: { selectedBackup = backup; showDownloadConfirm = true }) {
-                    Label("복원", systemImage: "arrow.down.doc")
-                        .font(.caption2)
-                }
-                .buttonStyle(.bordered)
-                .disabled(isDownloading)
-            }
-        }
-        .padding(.vertical, 4)
-    }
-
-    private func restoreFromICloud(_ backup: BackupInfo) {
-        isDownloading = true
-        Task {
-            let downloadResult = await backupManager.downloadFromICloud(backup)
-
-            DispatchQueue.main.async {
-                switch downloadResult {
-                case .success():
-                    let restoreResult = backupManager.restore(from: backup.path, to: annotationStore)
-                    switch restoreResult {
-                    case .success():
-                        resultMessage = "'\(backup.deviceName ?? "unknown")'의 백업이 복원되었습니다."
-                    case .failure(let error):
-                        resultMessage = "복원 실패: \(error.localizedDescription)"
-                    }
-                case .failure(let error):
-                    resultMessage = "백업 다운로드 실패: \(error.localizedDescription)"
-                }
-                isDownloading = false
-                showRestoreResult = true
-            }
         }
     }
 }

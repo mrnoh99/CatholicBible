@@ -16,23 +16,6 @@ enum BackupFrequency: String, CaseIterable {
     var id: String { self.rawValue }
 }
 
-enum SyncError: LocalizedError {
-    case iCloudUnavailable
-    case syncFailed(String)
-    case downloadFailed
-
-    var errorDescription: String? {
-        switch self {
-        case .iCloudUnavailable:
-            return "iCloud를 사용할 수 없습니다"
-        case .syncFailed(let msg):
-            return "동기화 실패: \(msg)"
-        case .downloadFailed:
-            return "다운로드 실패"
-        }
-    }
-}
-
 @Observable
 final class BackupManager {
     static let shared = BackupManager()
@@ -42,10 +25,6 @@ final class BackupManager {
     private static let lastBackupKey = "backupManager.lastBackupDate"
     private static let autoBackupEnabledKey = "backupManager.autoBackupEnabled"
     private static let backupFrequencyKey = "backupManager.backupFrequency"
-    private static let iCloudEnabledKey = "backupManager.iCloudEnabled"
-    private static let lastICloudSyncKey = "backupManager.lastICloudSync"
-    private static let iCloudContainerId = "iCloud.com.jsnoh.CatholicBibleV3"
-    private static let iCloudBackupDirName = "CatholicBible Backups"
     private static let deviceIdKey = "backupManager.deviceId"
 
     var isAutoBackupEnabled: Bool {
@@ -80,36 +59,8 @@ final class BackupManager {
         }
     }
 
-    var isICloudEnabled: Bool {
-        get {
-            Self.defaults.bool(forKey: Self.iCloudEnabledKey)
-        }
-        set {
-            Self.defaults.set(newValue, forKey: Self.iCloudEnabledKey)
-        }
-    }
-
-    var lastICloudSyncDate: Date? {
-        get {
-            Self.defaults.object(forKey: Self.lastICloudSyncKey) as? Date
-        }
-        set {
-            if let date = newValue {
-                Self.defaults.set(date, forKey: Self.lastICloudSyncKey)
-            } else {
-                Self.defaults.removeObject(forKey: Self.lastICloudSyncKey)
-            }
-        }
-    }
-
-    var isSyncing = false
-    var lastSyncError: SyncError? = nil
-    var isICloudConnected = false
-
     private let backupDir: URL
-    private let iCloudBackupDir: URL?
     private let deviceId: String
-    private var iCloudMonitorTask: Task<Void, Never>?
 
     init() {
         let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
@@ -124,47 +75,6 @@ final class BackupManager {
             Self.defaults.set(newId, forKey: Self.deviceIdKey)
             self.deviceId = newId
         }
-
-        // iCloud Drive 설정
-        if let iCloudContainerURL = FileManager.default.url(forUbiquityContainerIdentifier: Self.iCloudContainerId) {
-            print("✅ iCloud 컨테이너 찾음: \(iCloudContainerURL.path)")
-            let iCloudBackupDirURL = iCloudContainerURL
-                .appendingPathComponent("Documents", isDirectory: true)
-                .appendingPathComponent(Self.iCloudBackupDirName, isDirectory: true)
-            do {
-                try FileManager.default.createDirectory(at: iCloudBackupDirURL, withIntermediateDirectories: true)
-                print("✅ iCloud 백업 폴더 생성: \(iCloudBackupDirURL.path)")
-            } catch {
-                print("❌ iCloud 백업 폴더 생성 실패: \(error)")
-            }
-            self.iCloudBackupDir = iCloudBackupDirURL
-            self.isICloudConnected = true
-        } else {
-            print("❌ iCloud 컨테이너를 찾을 수 없음: \(Self.iCloudContainerId)")
-            print("   → Entitlements 확인: com.apple.developer.icloud-container-identifiers")
-            print("   → 앱 재설치 또는 빌드 후 시도 필요")
-            self.iCloudBackupDir = nil
-            self.isICloudConnected = false
-        }
-
-        // iCloud 연결 상태 모니터링 시작
-        startICloudMonitoring()
-    }
-
-    deinit {
-        iCloudMonitorTask?.cancel()
-    }
-
-    private func startICloudMonitoring() {
-        iCloudMonitorTask = Task {
-            while !Task.isCancelled {
-                let connected = FileManager.default.url(forUbiquityContainerIdentifier: Self.iCloudContainerId) != nil
-                await MainActor.run {
-                    self.isICloudConnected = connected
-                }
-                try? await Task.sleep(for: .seconds(30))
-            }
-        }
     }
 
     // MARK: - 기기 정보
@@ -177,130 +87,22 @@ final class BackupManager {
         UIDevice.current.name
     }
 
-    // MARK: - iCloud 확인
-
-    func isICloudAvailable() -> Bool {
-        iCloudBackupDir != nil
-    }
-
     // MARK: - Private Helpers
 
     private func copyBackupItem(from source: URL, to destination: URL) throws {
-        // Create temporary path to avoid corruption if copy fails
         let tempPath = destination.deletingLastPathComponent().appendingPathComponent(destination.lastPathComponent + ".tmp")
 
-        // Remove temp file if it exists from previous failed attempt
         if FileManager.default.fileExists(atPath: tempPath.path) {
             try? FileManager.default.removeItem(at: tempPath)
         }
 
-        // Copy to temporary location first
         try FileManager.default.copyItem(at: source, to: tempPath)
 
-        // If destination exists, remove it before moving temp to destination
         if FileManager.default.fileExists(atPath: destination.path) {
             try FileManager.default.removeItem(at: destination)
         }
 
-        // Move from temp to final destination
         try FileManager.default.moveItem(at: tempPath, to: destination)
-    }
-
-    // MARK: - iCloud 동기화
-
-    func syncToICloud(backupPath: URL) async -> Result<Void, Error> {
-        guard let iCloudDir = iCloudBackupDir else {
-            return .failure(SyncError.iCloudUnavailable)
-        }
-
-        isSyncing = true
-        defer { isSyncing = false }
-
-        do {
-            let backupName = backupPath.lastPathComponent
-            let iCloudBackupPath = iCloudDir.appendingPathComponent(backupName, isDirectory: true)
-            try copyBackupItem(from: backupPath, to: iCloudBackupPath)
-            lastICloudSyncDate = Date()
-            return .success(())
-        } catch {
-            return .failure(SyncError.syncFailed(error.localizedDescription))
-        }
-    }
-
-    func listICloudBackups() -> [BackupInfo] {
-        guard let iCloudDir = iCloudBackupDir else { return [] }
-
-        guard let contents = try? FileManager.default.contentsOfDirectory(at: iCloudDir, includingPropertiesForKeys: [.contentModificationDateKey]) else {
-            return []
-        }
-
-        return contents.compactMap { url in
-            let metadataFile = url.appendingPathComponent("metadata.json")
-            guard let metadataData = try? Data(contentsOf: metadataFile),
-                  let metadata = try? JSONSerialization.jsonObject(with: metadataData) as? [String: Any] else {
-                print("[BackupManager] Warning: Corrupted iCloud backup metadata at \(url.lastPathComponent)")
-                return nil
-            }
-
-            return BackupInfo(
-                path: url,
-                name: url.lastPathComponent,
-                date: metadata["date"] as? String ?? "Unknown",
-                bookmarksCount: metadata["bookmarksCount"] as? Int ?? 0,
-                notesCount: metadata["notesCount"] as? Int ?? 0,
-                deviceName: getDeviceName(),
-                isFromCurrentDevice: true
-            )
-        }.sorted { ($0.date) > ($1.date) }
-    }
-
-    func listAllDeviceBackups() -> [BackupInfo] {
-        guard let iCloudContainerURL = FileManager.default.url(forUbiquityContainerIdentifier: Self.iCloudContainerId) else { return [] }
-        let backupRootDir = iCloudContainerURL
-            .appendingPathComponent("Documents", isDirectory: true)
-            .appendingPathComponent(Self.iCloudBackupDirName, isDirectory: true)
-
-        guard let backups = try? FileManager.default.contentsOfDirectory(at: backupRootDir, includingPropertiesForKeys: [.contentModificationDateKey]) else {
-            return []
-        }
-
-        var allBackups: [BackupInfo] = []
-
-        for backupDir in backups {
-            let metadataFile = backupDir.appendingPathComponent("metadata.json")
-            guard let metadataData = try? Data(contentsOf: metadataFile),
-                  let metadata = try? JSONSerialization.jsonObject(with: metadataData) as? [String: Any] else {
-                print("[BackupManager] Warning: Corrupted backup at \(backupDir.lastPathComponent)")
-                continue
-            }
-
-            let backupDeviceId = metadata["deviceId"] as? String ?? ""
-            let isCurrentDevice = backupDeviceId == deviceId
-            allBackups.append(BackupInfo(
-                path: backupDir,
-                name: backupDir.lastPathComponent,
-                date: metadata["date"] as? String ?? "Unknown",
-                bookmarksCount: metadata["bookmarksCount"] as? Int ?? 0,
-                notesCount: metadata["notesCount"] as? Int ?? 0,
-                deviceName: metadata["deviceName"] as? String,
-                isFromCurrentDevice: isCurrentDevice
-            ))
-        }
-
-        return allBackups.sorted { ($0.date) > ($1.date) }
-    }
-
-    func downloadFromICloud(_ backup: BackupInfo) async -> Result<Void, Error> {
-        isSyncing = true
-        defer { isSyncing = false }
-
-        do {
-            let localBackupPath = backupDir.appendingPathComponent(backup.name, isDirectory: true)
-            try copyBackupItem(from: backup.path, to: localBackupPath)
-            return .success(())
-        } catch {
-            return .failure(SyncError.downloadFailed)
-        }
     }
 
     // MARK: - 자동 백업 체크
@@ -368,21 +170,6 @@ final class BackupManager {
             try metadataData.write(to: backupPath.appendingPathComponent("metadata.json"))
 
             lastBackupDate = Date()
-
-            // iCloud 동기화 활성화 시 비동기로 업로드
-            if isICloudEnabled {
-                Task {
-                    let syncResult = await self.syncToICloud(backupPath: backupPath)
-                    await MainActor.run {
-                        if case .failure(let error) = syncResult {
-                            self.lastSyncError = error as? SyncError ?? .syncFailed(error.localizedDescription)
-                        } else {
-                            self.lastSyncError = nil
-                        }
-                    }
-                }
-            }
-
             return .success(backupPath)
         } catch {
             return .failure(error)
@@ -432,7 +219,6 @@ final class BackupManager {
                 let mediaFiles = try FileManager.default.contentsOfDirectory(at: mediaBackupDir, includingPropertiesForKeys: nil)
                 for file in mediaFiles {
                     let targetPath = annotationStore.mediaDir.appendingPathComponent(file.lastPathComponent)
-                    // 기존 파일이 없을 때만 복사
                     if !FileManager.default.fileExists(atPath: targetPath.path) {
                         try FileManager.default.copyItem(at: file, to: targetPath)
                     }

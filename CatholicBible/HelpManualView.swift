@@ -352,49 +352,6 @@ struct HelpManualView: View {
                     }
                 }
 
-                Section {
-                    VStack(alignment: .leading, spacing: 12) {
-                        Text("iCloud 동기화")
-                            .font(.headline.weight(.semibold))
-                        Text("iOS 기기에 iCloud 계정이 설정되어 있으면 iCloud 동기화를 사용할 수 있습니다.")
-                            .font(.callout)
-                        Text("설정 > 백업 > iCloud 백업 섹션에서:")
-                            .font(.callout)
-                        Text("• 'iCloud 동기화' 토글을 켜면 백업이 자동으로 iCloud Drive에 저장됩니다")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                        Text("• 마지막 동기화 시간이 표시됩니다")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                        Text("• 기기 ID로 여러 기기를 구분합니다")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                }
-
-                Section {
-                    VStack(alignment: .leading, spacing: 12) {
-                        Text("다중 기기에서 복원")
-                            .font(.headline.weight(.semibold))
-                        Text("여러 기기에서 앱을 사용 중이거나 새 기기로 전환할 때:")
-                            .font(.callout)
-                        Text("1. 새 기기에 앱을 설치")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                        Text("2. 설정 > 백업 > iCloud 백업 관리 열기")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                        Text("3. 복원할 기기를 선택 (이전 기기 이름으로 표시)")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                        Text("4. '복원' 버튼을 탭하여 복원 시작")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                        Text("5. 백업이 자동으로 다운로드되고 복원됩니다")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                }
 
                 Spacer()
             }
@@ -487,9 +444,6 @@ struct HelpManualView: View {
                             .font(.caption)
                             .foregroundStyle(.secondary)
                         Text("• 정기적으로 백업을 생성하여 데이터 손실에 대비하세요")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                        Text("• iCloud를 활성화하면 여러 기기 간에 데이터를 동기화할 수 있습니다")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                         Text("• 오늘의 미사에서 매일의 전례 독서를 확인할 수 있습니다")
