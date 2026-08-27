@@ -10,3 +10,4 @@ scripts/__pycache__/
 
 # 참고용 대용량 PDF (앱 리소스 아님)
 *.pdf
+*.backup
