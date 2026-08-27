@@ -290,8 +290,6 @@ struct ReaderView: View {
                         Button(action: { showNotes = true }) {
                             Label("노트", systemImage: "note.text")
                         }
-                    }
-                    Section {
                         Button(action: { showAppearance = true }) {
                             Label("설정", systemImage: "gear")
                         }
