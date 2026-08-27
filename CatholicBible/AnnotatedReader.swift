@@ -738,7 +738,7 @@ struct IntroductionsView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .topBarTrailing) { Button("닫기") { dismiss() } } }
             .fullScreenCover(item: $selected) { intro in
-                IntroDetailView(intro: intro, editionID: editionID)
+                IntroDetailView(intro: intro, editionID: editionID, fullWidth: self.fullWidth)
                     .environment(settings)
                     .environment(store)
                     .environment(annotations)
@@ -777,6 +777,7 @@ struct IntroductionsView: View {
 struct IntroDetailView: View {
     let intro: Introduction
     var editionID: String = "knbnotes"
+    var fullWidth: Bool = false
     @Environment(ReaderSettings.self) private var settings
     @Environment(BibleStore.self) private var store
     @Environment(AnnotationStore.self) private var annotations
@@ -884,8 +885,8 @@ struct IntroDetailView: View {
     private var bodyColumn: some View {
         ScrollView {
             bodyText
-                .padding(.horizontal, self.fullWidth ? 16 : 28).padding(.vertical, 24)
-                .frame(maxWidth: self.fullWidth ? .infinity : 720, alignment: .leading)
+                .padding(.horizontal, fullWidth ? 16 : 28).padding(.vertical, 24)
+                .frame(maxWidth: fullWidth ? .infinity : 720, alignment: .leading)
                 .frame(maxWidth: .infinity)
         }
     }
