@@ -26,6 +26,7 @@ final class BackupManager {
     private static let autoBackupEnabledKey = "backupManager.autoBackupEnabled"
     private static let backupFrequencyKey = "backupManager.backupFrequency"
     private static let deviceIdKey = "backupManager.deviceId"
+    private static let customBackupDirKey = "backupManager.customBackupDir"
 
     var isAutoBackupEnabled: Bool {
         get {
@@ -59,8 +60,22 @@ final class BackupManager {
         }
     }
 
+    var customBackupDirBookmark: Data? {
+        get {
+            Self.defaults.data(forKey: Self.customBackupDirKey)
+        }
+        set {
+            if let data = newValue {
+                Self.defaults.set(data, forKey: Self.customBackupDirKey)
+            } else {
+                Self.defaults.removeObject(forKey: Self.customBackupDirKey)
+            }
+        }
+    }
+
     private let backupDir: URL
     private let deviceId: String
+    private var customBackupDir: URL?
 
     init() {
         let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
@@ -75,6 +90,60 @@ final class BackupManager {
             Self.defaults.set(newId, forKey: Self.deviceIdKey)
             self.deviceId = newId
         }
+
+        // 저장된 커스텀 폴더 복원 시도
+        if let bookmark = self.customBackupDirBookmark {
+            do {
+                var isStale = false
+                let url = try URL(resolvingBookmarkData: bookmark, bookmarkDataIsStale: &isStale)
+                if isStale {
+                    let newBookmark = try url.bookmarkData(options: .minimalBookmark)
+                    Self.defaults.set(newBookmark, forKey: Self.customBackupDirKey)
+                }
+                self.customBackupDir = url
+            } catch {
+                print("❌ 저장된 백업 폴더 복원 실패: \(error)")
+            }
+        }
+    }
+
+    // MARK: - 백업 폴더 설정
+
+    func setCustomBackupDirectory(_ url: URL) {
+        do {
+            // 선택된 폴더에 접근 권한 확인
+            _ = try url.resourceValues(forKeys: [.isDirectoryKey])
+            let bookmark = try url.bookmarkData(options: .minimalBookmark)
+            self.customBackupDirBookmark = bookmark
+            self.customBackupDir = url
+            print("✅ 백업 폴더 설정 완료: \(url.lastPathComponent)")
+        } catch {
+            print("❌ 백업 폴더 설정 실패: \(error)")
+        }
+    }
+
+    func getBackupDirectory() -> URL {
+        if let custom = customBackupDir {
+            return custom
+        }
+        return backupDir
+    }
+
+    func getBackupDirectoryName() -> String {
+        if let custom = customBackupDir {
+            return custom.lastPathComponent
+        }
+        return "로컬 백업"
+    }
+
+    func clearCustomBackupDirectory() {
+        self.customBackupDirBookmark = nil
+        self.customBackupDir = nil
+        print("✅ 커스텀 백업 폴더 설정 해제")
+    }
+
+    func hasCustomBackupDirectory() -> Bool {
+        customBackupDir != nil
     }
 
     // MARK: - 기기 정보
@@ -131,7 +200,8 @@ final class BackupManager {
     func backup(annotationStore: AnnotationStore) -> Result<URL, Error> {
         let timestamp = ISO8601DateFormatter().string(from: Date()).prefix(19).replacingOccurrences(of: ":", with: "-")
         let backupName = "backup_\(timestamp)"
-        let backupPath = backupDir.appendingPathComponent(backupName, isDirectory: true)
+        let selectedDir = getBackupDirectory()
+        let backupPath = selectedDir.appendingPathComponent(backupName, isDirectory: true)
 
         do {
             try FileManager.default.createDirectory(at: backupPath, withIntermediateDirectories: true)
@@ -234,7 +304,8 @@ final class BackupManager {
     // MARK: - 백업 관리
 
     func listBackups() -> [BackupInfo] {
-        guard let contents = try? FileManager.default.contentsOfDirectory(at: backupDir, includingPropertiesForKeys: [.contentModificationDateKey]) else {
+        let selectedDir = getBackupDirectory()
+        guard let contents = try? FileManager.default.contentsOfDirectory(at: selectedDir, includingPropertiesForKeys: [.contentModificationDateKey]) else {
             return []
         }
 

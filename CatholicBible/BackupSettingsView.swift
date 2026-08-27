@@ -16,6 +16,8 @@ struct BackupSettingsView: View {
     @State private var isBackuping = false
     @State private var backups: [BackupInfo] = []
     @State private var showBackupList = false
+    @State private var showFolderPicker = false
+    @State private var backupFolderName = ""
 
     var body: some View {
         NavigationStack {
@@ -57,6 +59,39 @@ struct BackupSettingsView: View {
                     .disabled(isBackuping)
                 }
 
+                Section("백업 위치") {
+                    HStack {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("저장 위치")
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(.secondary)
+                            Text(backupManager.getBackupDirectoryName())
+                                .font(.body.weight(.semibold))
+                        }
+                        Spacer()
+                    }
+
+                    Button(action: { showFolderPicker = true }) {
+                        HStack {
+                            Image(systemName: "folder.badge.plus")
+                            Text("폴더 선택")
+                        }
+                    }
+
+                    if backupManager.hasCustomBackupDirectory() {
+                        Button(action: {
+                            backupManager.clearCustomBackupDirectory()
+                            updateBackupFolderName()
+                        }) {
+                            HStack {
+                                Image(systemName: "arrow.counterclockwise")
+                                Text("기본 위치로 복원")
+                                    .foregroundStyle(.red)
+                            }
+                        }
+                    }
+                }
+
                 Section("백업 관리") {
                     Button(action: { loadBackups(); showBackupList = true }) {
                         HStack {
@@ -84,8 +119,28 @@ struct BackupSettingsView: View {
             } message: {
                 Text(backupResultMessage)
             }
+            .fileImporter(
+                isPresented: $showFolderPicker,
+                allowedContentTypes: [.folder],
+                allowsMultipleSelection: false,
+                onCompletion: { result in
+                    switch result {
+                    case .success(let urls):
+                        if let selectedFolder = urls.first {
+                            if selectedFolder.startAccessingSecurityScopedResource() {
+                                backupManager.setCustomBackupDirectory(selectedFolder)
+                                updateBackupFolderName()
+                                loadBackups()
+                            }
+                        }
+                    case .failure(let error):
+                        print("폴더 선택 실패: \(error)")
+                    }
+                }
+            )
             .onAppear {
                 loadBackups()
+                updateBackupFolderName()
             }
         }
     }
@@ -110,6 +165,10 @@ struct BackupSettingsView: View {
 
     private func loadBackups() {
         backups = backupManager.listBackups()
+    }
+
+    private func updateBackupFolderName() {
+        backupFolderName = backupManager.getBackupDirectoryName()
     }
 }
 
