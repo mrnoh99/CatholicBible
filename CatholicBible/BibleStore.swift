@@ -55,11 +55,16 @@ private nonisolated struct AnnotationFile: Decodable, Sendable {
         let text: String  // 주석 텍스트
     }
 
+    struct TitleEntry: Decodable, Sendable {
+        let v: String  // 절 번호
+        let text: String  // 제목 텍스트
+    }
+
     let metadata: Metadata?
     /// 책 id → 장(String) → [주석 항목]
     let annotations: [String: [String: [AnnotationEntry]]]?
-    /// 책 id → 장(String) → 절(String) → 제목 텍스트
-    let titles: [String: [String: [String: String]]]?
+    /// 책 id → 장(String) → [제목 항목]
+    let titles: [String: [String: [TitleEntry]]]?
     /// 머릿말 (무시)
     let intros: [String: [String: String]]?
     /// 출처 (무시)
@@ -203,9 +208,23 @@ final class BibleStore {
                             }
                         }
 
-                        // 소제목 로드 (새 구조: 이미 객체 형식)
+                        // 소제목 로드 (새 구조: TitleEntry 배열을 텍스트 사전으로 변환)
                         if let ttls = annotationFile.titles {
-                            titles = ttls
+                            for (bookID, chapters) in ttls {
+                                var bookTitles: [String: [String: String]] = [:]
+                                for (chapterKey, entries) in chapters {
+                                    var chapterTitles: [String: String] = [:]
+                                    for entry in entries {
+                                        chapterTitles[entry.v] = entry.text
+                                    }
+                                    if !chapterTitles.isEmpty {
+                                        bookTitles[chapterKey] = chapterTitles
+                                    }
+                                }
+                                if !bookTitles.isEmpty {
+                                    titles[bookID] = bookTitles
+                                }
+                            }
                         }
                     } catch {
                         print("❌ \(editionID) 주석 디코딩 실패: \(error)")
