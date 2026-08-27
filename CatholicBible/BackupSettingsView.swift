@@ -66,13 +66,10 @@ struct BackupSettingsView: View {
                             Text("저장 위치")
                                 .font(.caption.weight(.semibold))
                                 .foregroundStyle(.secondary)
-                            if backupManager.hasCustomBackupDirectory() {
-                                Text(backupManager.getBackupDirectoryName())
-                                    .font(.body.weight(.semibold))
-                            } else {
-                                Text("Backups")
-                                    .font(.body.weight(.semibold))
-                            }
+                            Text(backupManager.getBackupDirectory().path)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                                .lineLimit(2)
                         }
                         Spacer()
                     }
@@ -81,19 +78,6 @@ struct BackupSettingsView: View {
                         HStack {
                             Image(systemName: "folder.badge.plus")
                             Text("폴더 선택")
-                        }
-                    }
-
-                    if backupManager.hasCustomBackupDirectory() {
-                        Button(action: {
-                            backupManager.clearCustomBackupDirectory()
-                            updateBackupFolderName()
-                        }) {
-                            HStack {
-                                Image(systemName: "arrow.counterclockwise")
-                                Text("기본 위치로 복원")
-                                    .foregroundStyle(.red)
-                            }
                         }
                     }
                 }
