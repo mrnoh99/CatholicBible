@@ -657,7 +657,11 @@ enum ScriptureRefNormalizer {
 
     /// 성경 참조 텍스트를 AttributedString으로 변환하여 cross-link를 추가한다.
     static func attributed(_ text: String) -> AttributedString {
-        let normalized = normalize(text)
+        var normalized = normalize(text)
+        // 입문 본문용: "절" 마커 추가 (예: "창세 1,1" → "창세 1,1절")
+        // ScriptureRefLink의 koreanRegex가 "절"을 요구하므로 필요함
+        normalized = addVerseMarkers(normalized)
+
         var result = AttributedString()
 
         // 참조별로 파싱
@@ -689,6 +693,53 @@ enum ScriptureRefNormalizer {
                 }
             } else {
                 result += AttributedString(String(part))
+            }
+        }
+
+        return result
+    }
+
+    /// 정규화된 텍스트에 "절" 마커를 추가한다.
+    /// 예: "창세 1,1" → "창세 1,1절", "1,1" → "1,1절"
+    /// ScriptureRefLink의 koreanRegex가 절 마커를 요구하므로 필요
+    private static func addVerseMarkers(_ text: String) -> String {
+        var result = text
+
+        // 패턴 1: "책이름 장,절" → "책이름 장,절절"
+        // 책 이름으로 시작하는 참조에 절 마커 추가
+        for book in Bible.books {
+            let pattern = "(\(NSRegularExpression.escapedPattern(for: book.name)))\\s+(\\d+,\\d+[ㄱ-ㅂ]?)(?!절)"
+            if let regex = try? NSRegularExpression(pattern: pattern) {
+                let ns = text as NSString
+                let matches = regex.matches(in: result, range: NSRange(location: 0, length: (result as NSString).length))
+
+                for match in matches.reversed() {
+                    if match.numberOfRanges >= 3 {
+                        let bookName = ns.substring(with: match.range(at: 1))
+                        let ref = ns.substring(with: match.range(at: 2))
+                        let replacement = "\(bookName) \(ref)절"
+                        result = (result as NSString).replacingCharacters(in: match.range, with: replacement)
+                    }
+                }
+            }
+        }
+
+        // 패턴 2: "장,절" (괄호나 세미콜론 뒤) → "장,절절"
+        // 책 이름 없이 장,절로만 된 참조에 절 마커 추가
+        let pattern2 = "(?:^|[\\(;\\s])(\\d+,\\d+[ㄱ-ㅂ]?)(?!절)"
+        if let regex = try? NSRegularExpression(pattern: pattern2) {
+            let ns = result as NSString
+            let matches = regex.matches(in: result, range: NSRange(location: 0, length: ns.length))
+
+            for match in matches.reversed() {
+                if match.numberOfRanges >= 2 && match.range(at: 1).location != NSNotFound {
+                    let ref = ns.substring(with: match.range(at: 1))
+                    // 앞의 문자 확인
+                    let fullRange = match.range
+                    let prefix = fullRange.location > 0 ? ns.substring(with: NSRange(location: fullRange.location, length: 1)) : " "
+                    let replacement = "\(prefix)\(ref)절"
+                    result = (result as NSString).replacingCharacters(in: fullRange, with: replacement)
+                }
             }
         }
 
