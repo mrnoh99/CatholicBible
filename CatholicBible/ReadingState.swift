@@ -114,9 +114,4 @@ final class ReadingState {
         Self.defaults.set(chapter, forKey: Self.chapterPrefix + edition.id + "." + book.id)
         lastBookIDs[edition.id] = book.id
     }
-
-    func clearLastReading() {
-        lastBookIDs.removeAll()
-        Self.defaults.removePersistentDomain(forName: Bundle.main.bundleIdentifier ?? "")
-    }
 }

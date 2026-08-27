@@ -316,7 +316,6 @@ struct ShelfView: View {
     @Environment(LiturgyStore.self) private var liturgy
 
     @State private var showMass = false
-    @State private var showDeleteConfirm = false
 
     private let columns = [GridItem(.adaptive(minimum: 280), spacing: 20)]
 
@@ -374,14 +373,6 @@ struct ShelfView: View {
         .fullScreenCover(isPresented: $showMass) {
             DailyMassView().environment(navigation)
                 .injectSharedStores(store, settings, readingState, annotations, knbNotes, liturgy)
-        }
-        .alert("이어 읽기 삭제", isPresented: $showDeleteConfirm) {
-            Button("삭제", role: .destructive) {
-                readingState.clearLastReading()
-            }
-            Button("취소", role: .cancel) { }
-        } message: {
-            Text("이어 읽기 기록을 삭제하시겠습니까?")
         }
     }
 
@@ -450,47 +441,37 @@ struct ShelfView: View {
         let edition = readingState.selectedEdition
         if let lastID = readingState.lastBookID(edition: edition),
            let book = Bible.book(lastID), edition.scope.contains(book) {
-            ZStack(alignment: .topTrailing) {
-                Button {
-                    navigation.open(bookID: book.id,
-                                    chapter: readingState.lastChapter(edition: edition, book: book))
-                } label: {
-                    HStack(spacing: 12) {
-                        Image(systemName: "book.fill")
-                            .font(.system(size: 18, weight: .semibold))
+            Button {
+                navigation.open(bookID: book.id,
+                                chapter: readingState.lastChapter(edition: edition, book: book))
+            } label: {
+                HStack(spacing: 12) {
+                    Image(systemName: "book.fill")
+                        .font(.system(size: 18, weight: .semibold))
 
-                        VStack(alignment: .leading, spacing: 3) {
-                            Text("이어 읽기")
-                                .font(.system(size: 16, weight: .semibold, design: .default))
-                            Text("\(edition.shortName) · \(store.bookShortName(edition: edition, book: book)) \(book.chapterLabel(readingState.lastChapter(edition: edition, book: book)))")
-                                .font(.system(size: 13, weight: .regular, design: .default))
-                                .opacity(0.8)
-                        }
-
-                        Spacer()
-                        Image(systemName: "chevron.right")
-                            .font(.system(size: 13, weight: .semibold))
-                            .opacity(0.6)
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text("이어 읽기")
+                            .font(.system(size: 16, weight: .semibold, design: .default))
+                        Text("\(edition.shortName) · \(store.bookShortName(edition: edition, book: book)) \(book.chapterLabel(readingState.lastChapter(edition: edition, book: book)))")
+                            .font(.system(size: 13, weight: .regular, design: .default))
+                            .opacity(0.8)
                     }
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 14)
-                    .background(
-                        RoundedRectangle(cornerRadius: 14)
-                            .fill(Color.accentColor.opacity(0.1))
-                            .stroke(Color.accentColor.opacity(0.2), lineWidth: 1.5)
-                    )
-                    .foregroundStyle(Color.accentColor)
-                }
-                .buttonStyle(.plain)
 
-                Button(action: { showDeleteConfirm = true }) {
-                    Image(systemName: "xmark.circle.fill")
-                        .font(.system(size: 20))
-                        .foregroundStyle(Color.accentColor.opacity(0.8))
+                    Spacer()
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 13, weight: .semibold))
+                        .opacity(0.6)
                 }
-                .buttonStyle(.plain)
-                .padding(8)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 14)
+                .background(
+                    RoundedRectangle(cornerRadius: 14)
+                        .fill(Color.accentColor.opacity(0.1))
+                        .stroke(Color.accentColor.opacity(0.2), lineWidth: 1.5)
+                )
+                .foregroundStyle(Color.accentColor)
             }
+            .buttonStyle(.plain)
         }
     }
 }
