@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import UniformTypeIdentifiers
 
 struct BackupSettingsView: View {
     @Environment(AnnotationStore.self) private var annotationStore
