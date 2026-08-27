@@ -302,6 +302,7 @@ struct ReaderView: View {
                 }
         }
     }
+}
 
 // MARK: - 독립 열 (판본·책·장을 스스로 관리)
 
