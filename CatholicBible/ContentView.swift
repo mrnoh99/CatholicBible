@@ -238,7 +238,8 @@ struct ContentView: View {
                             Image(systemName: "ellipsis.circle")
                         }
                         .help("더보기")
-                        .popover(isPresented: $showMoreMenu) {
+                        .onTapGesture { }
+                        .popover(isPresented: $showMoreMenu, arrowEdge: .top) {
                             VStack(spacing: 12) {
                                 Button(action: {
                                     showBookmarks = true
@@ -247,6 +248,7 @@ struct ContentView: View {
                                     Label("책갈피", systemImage: "bookmark")
                                         .frame(maxWidth: .infinity, alignment: .leading)
                                 }
+                                .buttonStyle(.plain)
                                 Button(action: {
                                     showNotes = true
                                     showMoreMenu = false
@@ -254,6 +256,7 @@ struct ContentView: View {
                                     Label("노트", systemImage: "note.text")
                                         .frame(maxWidth: .infinity, alignment: .leading)
                                 }
+                                .buttonStyle(.plain)
                                 Button(action: {
                                     showSettings = true
                                     showMoreMenu = false
@@ -261,6 +264,7 @@ struct ContentView: View {
                                     Label("설정", systemImage: "gear")
                                         .frame(maxWidth: .infinity, alignment: .leading)
                                 }
+                                .buttonStyle(.plain)
                             }
                             .padding(12)
                             .frame(width: 150)
