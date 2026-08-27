@@ -233,19 +233,27 @@ struct ContentView: View {
                             Image(systemName: "gear")
                         }
                         .help("설정")
-                        Menu {
-                            Button(action: { showBookmarks = true }) {
-                                Label("책갈피", systemImage: "bookmark")
+                        Menu(content: {
+                            Section {
+                                Button {
+                                    showBookmarks = true
+                                } label: {
+                                    Label("책갈피", systemImage: "bookmark")
+                                }
+                                Button {
+                                    showNotes = true
+                                } label: {
+                                    Label("노트", systemImage: "note.text")
+                                }
+                                Button {
+                                    showSettings = true
+                                } label: {
+                                    Label("설정", systemImage: "gear")
+                                }
                             }
-                            Button(action: { showNotes = true }) {
-                                Label("노트", systemImage: "note.text")
-                            }
-                            Button(action: { showSettings = true }) {
-                                Label("설정", systemImage: "gear")
-                            }
-                        } label: {
+                        }, label: {
                             Image(systemName: "ellipsis.circle")
-                        }
+                        })
                         .help("더보기")
                     }
                 }
