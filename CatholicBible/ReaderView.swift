@@ -193,6 +193,13 @@ struct ReaderView: View {
 
     @ToolbarContentBuilder
     private var readerToolbar: some ToolbarContent {
+        ToolbarItem(placement: .navigationBarLeading) {
+            Button { navigation.selectedBookID = nil } label: {
+                Label("첫화면으로", systemImage: "house.fill")
+            }
+            .help("첫화면으로")
+        }
+
         ToolbarItem(placement: .principal) {
             HStack(spacing: 8) {
                 Button { navigation.goBack() } label: {
