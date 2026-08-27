@@ -84,6 +84,7 @@ struct ReaderView: View {
                                    bookID: primaryBookBinding,
                                    linkedChapter: $primaryChapter,
                                    ownerBookID: book.id,
+                                   fullWidth: true,
                                    onOpenNote: openNote)
                     case .spread:
                         SpreadReader(editionID: selectedEditionIDBinding,
@@ -326,6 +327,8 @@ struct ReaderPane: View {
     var ownerBookID: String = ""
     /// 연동 비교에서 두 열이 맞추는 '맨 위 절'. nil이면 스크롤 연동 안 함(각 열 독립).
     var syncVerse: Binding<Int?>? = nil
+    /// 한 페이지 모드에서 전체 너비 사용 (기본: false - 720 제한)
+    var fullWidth: Bool = false
     let onOpenNote: (VerseRef, String) -> Void
 
     @Environment(BibleStore.self) private var store
@@ -545,8 +548,8 @@ struct ReaderPane: View {
                         copyrightFooter
                     }
                 }
-                .frame(maxWidth: 720, alignment: .leading)
-                .padding(.horizontal, 28)
+                .frame(maxWidth: fullWidth ? .infinity : 720, alignment: .leading)
+                .padding(.horizontal, fullWidth ? 16 : 28)
                 .padding(.bottom, 40)
                 .frame(maxWidth: .infinity)
             }
