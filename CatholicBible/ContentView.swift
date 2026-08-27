@@ -201,6 +201,7 @@ struct ContentView: View {
     @State private var showNotes = false
     @State private var showMass = false
     @State private var showSettings = false
+    @State private var showMoreMenu = false
 
     var body: some View {
         @Bindable var nav = navigation
@@ -233,20 +234,37 @@ struct ContentView: View {
                             Image(systemName: "gear")
                         }
                         .help("설정")
-                        Menu {
-                            Button(action: { showBookmarks = true }) {
-                                Label("책갈피", systemImage: "bookmark")
-                            }
-                            Button(action: { showNotes = true }) {
-                                Label("노트", systemImage: "note.text")
-                            }
-                            Button(action: { showSettings = true }) {
-                                Label("설정", systemImage: "gear")
-                            }
-                        } label: {
+                        Button(action: { showMoreMenu.toggle() }) {
                             Image(systemName: "ellipsis.circle")
                         }
                         .help("더보기")
+                        .popover(isPresented: $showMoreMenu) {
+                            VStack(spacing: 12) {
+                                Button(action: {
+                                    showBookmarks = true
+                                    showMoreMenu = false
+                                }) {
+                                    Label("책갈피", systemImage: "bookmark")
+                                        .frame(maxWidth: .infinity, alignment: .leading)
+                                }
+                                Button(action: {
+                                    showNotes = true
+                                    showMoreMenu = false
+                                }) {
+                                    Label("노트", systemImage: "note.text")
+                                        .frame(maxWidth: .infinity, alignment: .leading)
+                                }
+                                Button(action: {
+                                    showSettings = true
+                                    showMoreMenu = false
+                                }) {
+                                    Label("설정", systemImage: "gear")
+                                        .frame(maxWidth: .infinity, alignment: .leading)
+                                }
+                            }
+                            .padding(12)
+                            .frame(width: 150)
+                        }
                     }
                 }
         } detail: {
