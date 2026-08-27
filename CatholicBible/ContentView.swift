@@ -235,13 +235,19 @@ struct ContentView: View {
                         .help("설정")
                         Menu(content: {
                             Section {
-                                Button(action: { showBookmarks = true }) {
+                                Button {
+                                    showBookmarks = true
+                                } label: {
                                     Label("책갈피", systemImage: "bookmark")
                                 }
-                                Button(action: { showNotes = true }) {
+                                Button {
+                                    showNotes = true
+                                } label: {
                                     Label("노트", systemImage: "note.text")
                                 }
-                                Button(action: { showSettings = true }) {
+                                Button {
+                                    showSettings = true
+                                } label: {
                                     Label("설정", systemImage: "gear")
                                 }
                             }
