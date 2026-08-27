@@ -441,9 +441,9 @@ struct ShelfView: View {
         let edition = readingState.selectedEdition
         if let lastID = readingState.lastBookID(edition: edition),
            let book = Bible.book(lastID), edition.scope.contains(book) {
+            let chapter = readingState.lastChapter(edition: edition, book: book)
             Button {
-                navigation.open(bookID: book.id,
-                                chapter: readingState.lastChapter(edition: edition, book: book))
+                navigation.open(bookID: book.id, chapter: chapter)
             } label: {
                 HStack(spacing: 12) {
                     Image(systemName: "book.fill")
@@ -452,7 +452,7 @@ struct ShelfView: View {
                     VStack(alignment: .leading, spacing: 3) {
                         Text("이어 읽기")
                             .font(.system(size: 16, weight: .semibold, design: .default))
-                        Text("\(edition.shortName) · \(store.bookShortName(edition: edition, book: book)) \(book.chapterLabel(readingState.lastChapter(edition: edition, book: book)))")
+                        Text("\(edition.shortName) · \(store.bookShortName(edition: edition, book: book)) \(book.chapterLabel(chapter))")
                             .font(.system(size: 13, weight: .regular, design: .default))
                             .opacity(0.8)
                     }
