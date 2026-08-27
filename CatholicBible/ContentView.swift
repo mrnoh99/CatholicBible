@@ -201,7 +201,6 @@ struct ContentView: View {
     @State private var showNotes = false
     @State private var showMass = false
     @State private var showSettings = false
-    @State private var showMoreMenu = false
 
     var body: some View {
         @Bindable var nav = navigation
@@ -234,66 +233,20 @@ struct ContentView: View {
                             Image(systemName: "gear")
                         }
                         .help("설정")
-                        ZStack(alignment: .topTrailing) {
-                            Button(action: { showMoreMenu.toggle() }) {
-                                Image(systemName: "ellipsis.circle")
+                        Menu {
+                            Button(action: { showBookmarks = true }) {
+                                Label("책갈피", systemImage: "bookmark")
                             }
-                            .help("더보기")
-
-                            if showMoreMenu {
-                                VStack(alignment: .leading, spacing: 0) {
-                                    Button(action: {
-                                        showBookmarks = true
-                                        showMoreMenu = false
-                                    }) {
-                                        HStack {
-                                            Image(systemName: "bookmark")
-                                            Text("책갈피")
-                                        }
-                                        .frame(maxWidth: .infinity, alignment: .leading)
-                                        .padding(.horizontal, 12)
-                                        .padding(.vertical, 10)
-                                    }
-                                    .foregroundStyle(.primary)
-
-                                    Divider()
-
-                                    Button(action: {
-                                        showNotes = true
-                                        showMoreMenu = false
-                                    }) {
-                                        HStack {
-                                            Image(systemName: "note.text")
-                                            Text("노트")
-                                        }
-                                        .frame(maxWidth: .infinity, alignment: .leading)
-                                        .padding(.horizontal, 12)
-                                        .padding(.vertical, 10)
-                                    }
-                                    .foregroundStyle(.primary)
-
-                                    Divider()
-
-                                    Button(action: {
-                                        showSettings = true
-                                        showMoreMenu = false
-                                    }) {
-                                        HStack {
-                                            Image(systemName: "gear")
-                                            Text("설정")
-                                        }
-                                        .frame(maxWidth: .infinity, alignment: .leading)
-                                        .padding(.horizontal, 12)
-                                        .padding(.vertical, 10)
-                                    }
-                                    .foregroundStyle(.primary)
-                                }
-                                .background(Color(UIColor.secondarySystemBackground))
-                                .cornerRadius(8)
-                                .shadow(radius: 4)
-                                .offset(x: -8, y: 32)
+                            Button(action: { showNotes = true }) {
+                                Label("노트", systemImage: "note.text")
                             }
+                            Button(action: { showSettings = true }) {
+                                Label("설정", systemImage: "gear")
+                            }
+                        } label: {
+                            Image(systemName: "ellipsis.circle")
                         }
+                        .help("더보기")
                     }
                 }
         } detail: {
