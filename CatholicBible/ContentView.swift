@@ -324,20 +324,19 @@ struct ShelfView: View {
             settings.theme.background.ignoresSafeArea()
             ScrollView {
                 VStack(spacing: 28) {
-                    VStack(spacing: 8) {
+                    VStack(spacing: 4) {
                         Text("가톨릭 성경 서재")
                             .font(.system(size: 34, weight: .bold, design: .default))
                             .foregroundStyle(settings.theme.text)
-                            .frame(maxWidth: .infinity, alignment: .leading)
                         Text("천주교회의 아홉가지 책과 전례 독서")
                             .font(.system(size: 15, weight: .regular, design: .default))
                             .foregroundStyle(settings.theme.secondary)
-                            .frame(maxWidth: .infinity, alignment: .leading)
                     }
+                    .frame(maxWidth: .infinity, alignment: .center)
                     .padding(.top, 48)
                     .padding(.horizontal, 32)
 
-                    VStack(spacing: 20) {
+                    HStack(spacing: 16) {
                         massCard
                         continueReadingCard
                     }
