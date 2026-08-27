@@ -129,9 +129,11 @@ struct BackupSettingsView: View {
                     case .success(let urls):
                         if let selectedFolder = urls.first {
                             if selectedFolder.startAccessingSecurityScopedResource() {
-                                backupManager.setCustomBackupDirectory(selectedFolder)
-                                updateBackupFolderName()
-                                loadBackups()
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                                    backupManager.setCustomBackupDirectory(selectedFolder)
+                                    updateBackupFolderName()
+                                    loadBackups()
+                                }
                             }
                         }
                     case .failure(let error):
@@ -225,7 +227,7 @@ struct BackupListView: View {
     }
 
     private func backupRow(_ backup: BackupInfo) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: 8) {
             HStack {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(backup.date)
@@ -235,11 +237,6 @@ struct BackupListView: View {
                         .foregroundStyle(.secondary)
                 }
                 Spacer()
-            }
-            .contentShape(Rectangle())
-            .onTapGesture {
-                selectedBackup = backup
-                showDeleteConfirm = true
             }
 
             HStack(spacing: 8) {
@@ -251,13 +248,17 @@ struct BackupListView: View {
 
                 Button(action: {
                     selectedBackup = backup
-                    showDeleteConfirm = true
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                        showDeleteConfirm = true
+                    }
                 }) {
                     Label("삭제", systemImage: "trash")
                         .font(.caption2)
                 }
                 .buttonStyle(.bordered)
                 .tint(.red)
+
+                Spacer()
             }
         }
         .padding(.vertical, 4)
