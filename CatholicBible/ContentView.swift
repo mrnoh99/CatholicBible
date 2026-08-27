@@ -221,38 +221,21 @@ struct ContentView: View {
                             Image(systemName: "character.book.closed")
                         }
                         .help("사전")
-                        Button(action: { showBookmarks = true }) {
-                            Image(systemName: "bookmark")
-                        }
-                        .help("책갈피")
-                        Button(action: { showNotes = true }) {
-                            Image(systemName: "note.text")
-                        }
-                        .help("노트")
-                        Button(action: { showSettings = true }) {
-                            Image(systemName: "gear")
-                        }
-                        .help("설정")
-                        Menu {
-                            Button {
-                                showBookmarks = true
-                            } label: {
-                                Label("책갈피", systemImage: "bookmark")
-                            }
-                            Button {
-                                showNotes = true
-                            } label: {
-                                Label("노트", systemImage: "note.text")
-                            }
-                            Button {
-                                showSettings = true
-                            } label: {
-                                Label("설정", systemImage: "gear")
-                            }
+                        Button {
+                            showBookmarks = true
                         } label: {
-                            Image(systemName: "ellipsis.circle")
+                            Label("책갈피", systemImage: "bookmark")
                         }
-                        .help("더보기")
+                        Button {
+                            showNotes = true
+                        } label: {
+                            Label("노트", systemImage: "note.text")
+                        }
+                        Button {
+                            showSettings = true
+                        } label: {
+                            Label("설정", systemImage: "gear")
+                        }
                     }
                 }
         } detail: {
