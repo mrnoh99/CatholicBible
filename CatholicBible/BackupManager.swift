@@ -127,13 +127,22 @@ final class BackupManager {
 
         // iCloud Drive 설정
         if let iCloudContainerURL = FileManager.default.url(forUbiquityContainerIdentifier: Self.iCloudContainerId) {
+            print("✅ iCloud 컨테이너 찾음: \(iCloudContainerURL.path)")
             let iCloudBackupDirURL = iCloudContainerURL
                 .appendingPathComponent("Documents", isDirectory: true)
                 .appendingPathComponent(Self.iCloudBackupDirName, isDirectory: true)
-            try? FileManager.default.createDirectory(at: iCloudBackupDirURL, withIntermediateDirectories: true)
+            do {
+                try FileManager.default.createDirectory(at: iCloudBackupDirURL, withIntermediateDirectories: true)
+                print("✅ iCloud 백업 폴더 생성: \(iCloudBackupDirURL.path)")
+            } catch {
+                print("❌ iCloud 백업 폴더 생성 실패: \(error)")
+            }
             self.iCloudBackupDir = iCloudBackupDirURL
             self.isICloudConnected = true
         } else {
+            print("❌ iCloud 컨테이너를 찾을 수 없음: \(Self.iCloudContainerId)")
+            print("   → Entitlements 확인: com.apple.developer.icloud-container-identifiers")
+            print("   → 앱 재설치 또는 빌드 후 시도 필요")
             self.iCloudBackupDir = nil
             self.isICloudConnected = false
         }
