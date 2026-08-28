@@ -291,11 +291,23 @@ private struct ReadingCard: View {
     @Environment(BibleStore.self) private var store
     @Environment(ReaderSettings.self) private var settings
 
+    @State private var cachedItems: [(chapter: Int, verse: Verse)]?
+    @State private var cacheKey: String?
+
     private var edition: Edition { Editions.edition(editionID) ?? Editions.edition("knb") ?? Editions.all[0] }
+
+    private var previewItemsCached: [(chapter: Int, verse: Verse)] {
+        let key = "\(reading.reference):\(editionID)"
+        if cacheKey == key && cachedItems != nil { return cachedItems! }
+        let items = previewItems(reading)
+        cacheKey = key
+        cachedItems = items
+        return items
+    }
 
     var body: some View {
         let book = previewBook(reading)
-        let items = expanded ? previewItems(reading) : []
+        let items = expanded ? previewItemsCached(reading) : []
         let multiChapter = Set(items.map { $0.chapter }).count > 1
         VStack(alignment: .leading, spacing: 8) {
             HStack(alignment: .firstTextBaseline) {
@@ -383,6 +395,7 @@ private struct ReadingCard: View {
 
     /// 「성경」(knb)에서 참조에 해당하는 절만 골라 (장, 절) 목록으로 돌려준다.
     /// 참조 문자열을 구간으로 풀어(불연속·여러 장·여러 인용 지원) 그 구간의 절만 담는다.
+    /// 성능 최적화: 절 숫자 파싱과 필터링을 한 번에 수행
     private func previewItems(_ reading: MassReading) -> [(chapter: Int, verse: Verse)] {
         guard let edition = Editions.edition(editionID) ?? Editions.edition("knb") else { return [] }
         // 참조 문자열 파싱 우선, 실패하면 citation의 단순 범위로 대체.
@@ -398,10 +411,19 @@ private struct ReadingCard: View {
         var out: [(Int, Verse)] = []
         var seen = Set<String>()
         for seg in segs {
-            for v in store.verses(edition: edition, book: book, chapter: seg.chapter) {
-                let verseNum = Int(v.number) ?? Int(v.number.split(separator: "(").first ?? "") ?? Int.max
+            let versesInChapter = store.verses(edition: edition, book: book, chapter: seg.chapter)
+            for v in versesInChapter {
+                let verseNum: Int
+                if let n = Int(v.number) {
+                    verseNum = n
+                } else if let first = v.number.split(separator: "(").first, let n = Int(first) {
+                    verseNum = n
+                } else {
+                    continue
+                }
                 if verseNum >= seg.low && verseNum <= seg.high {
-                    if seen.insert("\(seg.chapter):\(v.number)").inserted { out.append((seg.chapter, v)) }
+                    let key = "\(seg.chapter):\(v.number)"
+                    if seen.insert(key).inserted { out.append((seg.chapter, v)) }
                 }
             }
         }
