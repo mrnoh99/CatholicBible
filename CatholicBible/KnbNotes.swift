@@ -1012,11 +1012,14 @@ enum ScriptureRefNormalizer {
             return URL(string: url)
         }
 
-        // 성경 참조 파싱: "1,1-10" → 장 1, 절 1-10
+        // 성경 참조 파싱: "1,1-10절" → 장 1, 절 1-10 (절 마커 제거)
         let parts = reference.split(separator: ",")
         guard let chapter = Int(parts.first ?? "") else { return nil }
 
-        let verse = parts.count > 1 ? String(parts[1]) : "1"
+        var verse = parts.count > 1 ? String(parts[1]) : "1"
+        // "절" 마커 제거 (예: "1절" → "1", "1-10절" → "1-10")
+        verse = verse.replacingOccurrences(of: "절", with: "")
+
         let url = "catholicbible://verse?b=\(book.id)&c=\(chapter)&v=\(verse)"
         return URL(string: url)
     }
