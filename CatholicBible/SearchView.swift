@@ -2277,11 +2277,21 @@ struct SearchView: View {
 
                     hits = annotationHits
                 } else {
-                    // 본문 검색
+                    // 본문 검색: 정확한 총 개수 먼저 파악
+                    var textCount = 0
                     if editionsToSearch.count > 1 {
-                        hits = await store.searchAll(searchText, editions: editionsToSearch, mode: .text)
+                        textCount = await store.searchAllCount(searchText, editions: editionsToSearch, mode: .text)
                     } else if let edition = editionsToSearch.first {
-                        hits = await store.search(searchText, edition: edition, mode: .text)
+                        textCount = await store.searchCount(searchText, edition: edition, mode: .text)
+                    }
+
+                    totalSearchCount = textCount
+
+                    // 처음 검색 결과 로드 (첫 50개)
+                    if editionsToSearch.count > 1 {
+                        hits = await store.searchAllWithOffset(searchText, editions: editionsToSearch, mode: .text, offset: 0, limit: searchPageSize)
+                    } else if let edition = editionsToSearch.first {
+                        hits = await store.searchWithOffset(searchText, edition: edition, mode: .text, offset: 0, limit: searchPageSize)
                     }
                 }
             }
@@ -2292,7 +2302,6 @@ struct SearchView: View {
             if scope == .commentary {
                 currentOffset = hits.count
             } else {
-                totalSearchCount = hits.count
                 currentOffset = hits.count
             }
             addToTextSearchHistory(searchText)
