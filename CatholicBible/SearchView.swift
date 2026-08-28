@@ -2444,7 +2444,10 @@ struct SearchView: View {
             allReferences.append(currentRef)
         }
 
-        query = allReferences.joined(separator: "; ")
+        // 참조 목록이나 선택이 있을 때만 query 업데이트 (기존 입력값 보존)
+        if !allReferences.isEmpty {
+            query = allReferences.joined(separator: "; ")
+        }
     }
 
     private func loadSearchHistory() {
