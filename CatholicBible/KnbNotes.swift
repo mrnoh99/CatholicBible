@@ -972,9 +972,12 @@ enum ScriptureRefNormalizer {
         }
 
         // 패턴 0b: "책이름 장,절-절" (같은 장) → 각 절 뒤에 마커 추가
-        // 예: "욥기 26,12-14" → "욥기 26,12절-14절"
+        // 예: "욥기 26,12-14" → "욥기 26,12절-14절", "이사 34,11-14" → "이사 34,11절-14절"
+        // 정식명칭과 약칭 모두 지원
         for book in Bible.books {
-            let pattern = "(\(NSRegularExpression.escapedPattern(for: book.name)))\\s+(\\d+),(\\d+)-(\\d+)(?![\\d절-])"
+            let namePattern = NSRegularExpression.escapedPattern(for: book.name)
+            let abbrevPattern = NSRegularExpression.escapedPattern(for: book.abbrev)
+            let pattern = "((?:\(namePattern)|\(abbrevPattern)))\\s+(\\d+),(\\d+)-(\\d+)(?![\\d절-])"
             if let regex = try? NSRegularExpression(pattern: pattern) {
                 let ns = result as NSString
                 let matches = regex.matches(in: result, range: NSRange(location: 0, length: (result as NSString).length))
@@ -993,9 +996,12 @@ enum ScriptureRefNormalizer {
         }
 
         // 패턴 0c: "책이름 장-장" (장 범위, "장" 마커 포함) → "책이름 장,1절-장,1절"
-        // 예: "욥기 38장-39장" → "욥기 38,1절-39,1절"
+        // 예: "욥기 38장-39장" → "욥기 38,1절-39,1절", "이사 38장-39장" → "이사 38,1절-39,1절"
+        // 정식명칭과 약칭 모두 지원
         for book in Bible.books {
-            let pattern = "(\(NSRegularExpression.escapedPattern(for: book.name)))\\s+(\\d+)장-(\\d+)장"
+            let namePattern = NSRegularExpression.escapedPattern(for: book.name)
+            let abbrevPattern = NSRegularExpression.escapedPattern(for: book.abbrev)
+            let pattern = "((?:\(namePattern)|\(abbrevPattern)))\\s+(\\d+)장-(\\d+)장"
             if let regex = try? NSRegularExpression(pattern: pattern) {
                 let ns = result as NSString
                 let matches = regex.matches(in: result, range: NSRange(location: 0, length: (result as NSString).length))
@@ -1013,9 +1019,11 @@ enum ScriptureRefNormalizer {
         }
 
         // 패턴 1: "책이름 장,절" → "책이름 장,절절"
-        // 책 이름으로 시작하는 참조에 절 마커 추가
+        // 책 이름으로 시작하는 참조에 절 마커 추가 (정식명칭과 약칭 모두 지원)
         for book in Bible.books {
-            let pattern = "(\(NSRegularExpression.escapedPattern(for: book.name)))\\s+(\\d+,\\d+)(?![\\d절-])"
+            let namePattern = NSRegularExpression.escapedPattern(for: book.name)
+            let abbrevPattern = NSRegularExpression.escapedPattern(for: book.abbrev)
+            let pattern = "((?:\(namePattern)|\(abbrevPattern)))\\s+(\\d+,\\d+)(?![\\d절-])"
             if let regex = try? NSRegularExpression(pattern: pattern) {
                 let ns = result as NSString
                 let matches = regex.matches(in: result, range: NSRange(location: 0, length: (result as NSString).length))
@@ -1032,10 +1040,13 @@ enum ScriptureRefNormalizer {
         }
 
         // 패턴 1b: "책이름 장" (절 없음) → "책이름 장,1절"
-        // 예: "시편 8" → "시편 8,1절"
+        // 예: "시편 8" → "시편 8,1절", "시 8" → "시 8,1절"
         // 단, 세미콜론, 괄호 닫기, 문자 등이 뒤따르는 경우만 (숫자가 아닌 경우)
+        // 정식명칭과 약칭 모두 지원
         for book in Bible.books {
-            let pattern = "(\(NSRegularExpression.escapedPattern(for: book.name)))\\s+(\\d+)(?![,\\d절장-]|$)"
+            let namePattern = NSRegularExpression.escapedPattern(for: book.name)
+            let abbrevPattern = NSRegularExpression.escapedPattern(for: book.abbrev)
+            let pattern = "((?:\(namePattern)|\(abbrevPattern)))\\s+(\\d+)(?![,\\d절장-]|$)"
             if let regex = try? NSRegularExpression(pattern: pattern) {
                 let ns = result as NSString
                 let matches = regex.matches(in: result, range: NSRange(location: 0, length: (result as NSString).length))
