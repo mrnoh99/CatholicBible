@@ -485,7 +485,9 @@ struct MarkerNoteSheet: View {
         NavigationStack {
             ScrollView {
                 // 단어 선택(네이티브) 가능한 뷰로 렌더한다.
-                SelectableNoteText(text: text, currentBook: bookID, chapter: chapter,
+                let normalizedText = ScriptureRefNormalizer.normalize(text, currentBookID: bookID, chapter: chapter)
+                let textWithMarkers = ScriptureRefNormalizer.addVerseMarkers(normalizedText)
+                SelectableNoteText(text: textWithMarkers, currentBook: bookID, chapter: chapter,
                                    font: bodyUIFont,
                                    color: UIColor(settings.theme.text),
                                    linkColor: UIColor(Color.accentColor),
