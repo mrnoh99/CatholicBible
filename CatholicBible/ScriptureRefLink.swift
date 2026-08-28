@@ -185,7 +185,7 @@ enum ScriptureRef {
     /// NSAttributedString 에 성경 인용 링크(catholicbible://xref)를 입힌다.
     /// (선택 가능한 UITextView 용 — 단어 선택과 링크 탭을 함께 지원.)
     static func addLinks(to attr: NSMutableAttributedString, currentBook: String?,
-                         color: UIColor) {
+                         color: UIColor, chapter: Int = 0) {
         guard let regex else { return }
         let s = attr.string as NSString
         var lastBook = currentBook
@@ -218,7 +218,7 @@ enum ScriptureRef {
             }
         }
         addKoreanLinks(to: attr, currentBook: lastBook, color: color)
-        addEnglishContextualLinks(to: attr, currentBook: lastBook, color: color)
+        addEnglishContextualLinks(to: attr, currentBook: lastBook, color: color, chapter: chapter)
     }
 
     /// 한국어 인용(창세 2,4 / 1코린 15,22 / 창세 1,1-2,3 / 7,56; 10,11-16)을 링크로.
@@ -358,13 +358,14 @@ enum ScriptureRef {
     /// v/vv = 현재 장의 절, chap/chaps = 현재 책의 장 (NABRE 주석에서 사용)
     private static func addEnglishContextualLinks(to attr: NSMutableAttributedString,
                                                   currentBook: String?,
-                                                  color: UIColor) {
+                                                  color: UIColor,
+                                                  chapter: Int = 0) {
         guard let bookID = currentBook else { return }
         let s = attr.string as NSString
         var processed: [NSRange] = []
 
-        // 현재 장 번호를 한 번만 계산
-        let currentChapter = extractCurrentChapter(from: s) ?? 1
+        // 현재 장 번호: 전달된 값이 있으면 사용, 없으면 텍스트에서 추출
+        let currentChapter = (chapter > 0) ? chapter : (extractCurrentChapter(from: s) ?? 1)
 
         // Pattern 1: "v. N" 또는 "v. N-N" (현재 장의 절)
         // 예: "v. 22", "v. 1-5"
@@ -497,7 +498,7 @@ struct SelectableNoteText: UIViewRepresentable {
         let attr = NSMutableAttributedString(string: text, attributes: [
             .font: font, .foregroundColor: color, .paragraphStyle: para,
         ])
-        ScriptureRef.addLinks(to: attr, currentBook: currentBook, color: linkColor)
+        ScriptureRef.addLinks(to: attr, currentBook: currentBook, color: linkColor, chapter: chapter)
         addMarkerLinks(to: attr, color: linkColor)  // 주석 마커 링크도 추가
 
         if !searchQuery.isEmpty {
