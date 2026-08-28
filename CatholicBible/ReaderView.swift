@@ -131,6 +131,11 @@ struct ReaderView: View {
         }
         .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
+        .onChange(of: readingState.readerLayout) { _, newLayout in
+            if newLayout == .compare && compareChapter == 0 {
+                compareChapter = primaryChapter
+            }
+        }
         .toolbar { readerToolbar }
         .preferredColorScheme(settings.theme.colorScheme)
         .sheet(isPresented: $showAppearance) {
