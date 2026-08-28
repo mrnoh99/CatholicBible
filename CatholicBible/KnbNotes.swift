@@ -995,7 +995,7 @@ enum ScriptureRefNormalizer {
         // 패턴 1: "책이름 장,절" → "책이름 장,절절"
         // 책 이름으로 시작하는 참조에 절 마커 추가
         for book in Bible.books {
-            let pattern = "(\(NSRegularExpression.escapedPattern(for: book.name)))\\s+(\\d+,\\d+)(?!절|-)"
+            let pattern = "(\(NSRegularExpression.escapedPattern(for: book.name)))\\s+(\\d+,\\d+)(?![\\d절-])"
             if let regex = try? NSRegularExpression(pattern: pattern) {
                 let ns = result as NSString
                 let matches = regex.matches(in: result, range: NSRange(location: 0, length: (result as NSString).length))
@@ -1041,7 +1041,7 @@ enum ScriptureRefNormalizer {
 
         // 패턴 2: "장,절" (괄호나 세미콜론 뒤, 범위 아님) → "장,절절"
         // 책 이름 없이 장,절로만 된 참조에 절 마커 추가
-        let pattern2 = "(?:^|[\\(;\\s])(\\d+,\\d+)(?!절|-)"
+        let pattern2 = "(?:^|[\\(;\\s])(\\d+,\\d+)(?![\\d절-])"
         if let regex = try? NSRegularExpression(pattern: pattern2) {
             let ns = result as NSString
             let matches = regex.matches(in: result, range: NSRange(location: 0, length: ns.length))
