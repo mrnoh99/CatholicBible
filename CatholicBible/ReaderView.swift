@@ -976,7 +976,7 @@ struct SpreadReader: View {
                 ForEach(verses) { verse in
                     if let title = titleMap[verse.number] {
                         SectionTitleView(text: title, bookID: book.id, chapter: chapter,
-                                                         linkable: false)
+                                                         linkable: true)
                     }
                     VerseRowView(edition: edition, book: book, chapter: chapter,
                                  verse: verse,
