@@ -218,6 +218,7 @@ enum ScriptureRef {
             }
         }
         addKoreanLinks(to: attr, currentBook: lastBook, color: color)
+        addEnglishContextualLinks(to: attr, currentBook: lastBook, color: color)
     }
 
     /// 한국어 인용(창세 2,4 / 1코린 15,22 / 창세 1,1-2,3 / 7,56; 10,11-16)을 링크로.
@@ -351,6 +352,99 @@ enum ScriptureRef {
                 }
             }
         }
+    }
+
+    /// 영어 컨텍스트 참조(v. 9-10, vv. 6-7, chap. 10, chaps. 10-11)를 링크로.
+    /// v/vv = 현재 장의 절, chap/chaps = 현재 책의 장 (NABRE 주석에서 사용)
+    private static func addEnglishContextualLinks(to attr: NSMutableAttributedString,
+                                                  currentBook: String?,
+                                                  color: UIColor) {
+        guard let bookID = currentBook else { return }
+        let s = attr.string as NSString
+        var processed: [NSRange] = []
+
+        // Pattern 1: "v. N" 또는 "v. N-N" (현재 장의 절)
+        // 예: "v. 22", "v. 1-5"
+        if let versePattern = try? NSRegularExpression(pattern: "\\bv\\.\\s+(\\d{1,3})(?:\\s*[-–]\\s*(\\d{1,3}))?\\b") {
+            for m in versePattern.matches(in: attr.string, range: NSRange(location: 0, length: s.length)) {
+                if processed.contains(where: { NSIntersectionRange(m.range, $0).length > 0 }) { continue }
+
+                guard let v = Int(s.substring(with: m.range(at: 1))),
+                      let chapter = currentChapterFromContext(s: s, matchRange: m.range) else { continue }
+
+                let endVerse = m.numberOfRanges > 2 && m.range(at: 2).location != NSNotFound
+                    ? Int(s.substring(with: m.range(at: 2))) ?? v : v
+
+                if let url = URL(string: "catholicbible://xref?b=\(bookID)&c=\(chapter)&v=\(v)&ec=\(chapter)&ev=\(endVerse)") {
+                    attr.addAttributes([.link: url, .foregroundColor: color, .underlineStyle: NSUnderlineStyle.single.rawValue], range: m.range)
+                    processed.append(m.range)
+                }
+            }
+        }
+
+        // Pattern 2: "vv. N, N" 또는 "vv. N-N" (현재 장의 여러 절)
+        // 예: "vv. 11, 12", "vv. 1-5"
+        if let versesPattern = try? NSRegularExpression(pattern: "\\bvv\\.\\s+(\\d{1,3})\\s*(?:,|[-–])\\s*(\\d{1,3})") {
+            for m in versesPattern.matches(in: attr.string, range: NSRange(location: 0, length: s.length)) {
+                if processed.contains(where: { NSIntersectionRange(m.range, $0).length > 0 }) { continue }
+
+                guard let v = Int(s.substring(with: m.range(at: 1))),
+                      let endV = Int(s.substring(with: m.range(at: 2))),
+                      let chapter = currentChapterFromContext(s: s, matchRange: m.range) else { continue }
+
+                if let url = URL(string: "catholicbible://xref?b=\(bookID)&c=\(chapter)&v=\(v)&ec=\(chapter)&ev=\(endV)") {
+                    attr.addAttributes([.link: url, .foregroundColor: color, .underlineStyle: NSUnderlineStyle.single.rawValue], range: m.range)
+                    processed.append(m.range)
+                }
+            }
+        }
+
+        // Pattern 3: "chap. N" (현재 책의 단일 장)
+        // 예: "chap. 10"
+        if let chapPattern = try? NSRegularExpression(pattern: "\\bchap\\.\\s+(\\d{1,3})\\b") {
+            for m in chapPattern.matches(in: attr.string, range: NSRange(location: 0, length: s.length)) {
+                if processed.contains(where: { NSIntersectionRange(m.range, $0).length > 0 }) { continue }
+
+                guard let chapter = Int(s.substring(with: m.range(at: 1))) else { continue }
+
+                if let url = URL(string: "catholicbible://xref?b=\(bookID)&c=\(chapter)&v=1&ec=\(chapter)&ev=1") {
+                    attr.addAttributes([.link: url, .foregroundColor: color, .underlineStyle: NSUnderlineStyle.single.rawValue], range: m.range)
+                    processed.append(m.range)
+                }
+            }
+        }
+
+        // Pattern 4: "chaps. N-N" 또는 "chaps. N–N" (현재 책의 장 범위)
+        // 예: "chaps. 10-11", "chaps. 10–11"
+        if let chapsPattern = try? NSRegularExpression(pattern: "\\bchaps\\.\\s+(\\d{1,3})\\s*[-–]\\s*(\\d{1,3})\\b") {
+            for m in chapsPattern.matches(in: attr.string, range: NSRange(location: 0, length: s.length)) {
+                if processed.contains(where: { NSIntersectionRange(m.range, $0).length > 0 }) { continue }
+
+                guard let startChap = Int(s.substring(with: m.range(at: 1))),
+                      let endChap = Int(s.substring(with: m.range(at: 2))) else { continue }
+
+                if let url = URL(string: "catholicbible://xref?b=\(bookID)&c=\(startChap)&v=1&ec=\(endChap)&ev=1") {
+                    attr.addAttributes([.link: url, .foregroundColor: color, .underlineStyle: NSUnderlineStyle.single.rawValue], range: m.range)
+                    processed.append(m.range)
+                }
+            }
+        }
+    }
+
+    /// 문맥에서 현재 장 번호 추론 (절 참조에서 사용)
+    private static func currentChapterFromContext(s: NSString, matchRange: NSRange) -> Int? {
+        // 절 참조 앞에서 "장 N:" 패턴 찾기
+        let contextStart = max(0, matchRange.location - 200)
+        let contextRange = NSRange(location: contextStart, length: matchRange.location - contextStart)
+        let contextText = s.substring(with: contextRange)
+
+        if let chapterPattern = try? NSRegularExpression(pattern: "(\\d{1,3}):\\s*\\d{1,3}") {
+            if let lastMatch = chapterPattern.matches(in: contextText, range: NSRange(location: 0, length: contextText.count)).last,
+               let chapter = Int(contextText.substring(with: lastMatch.range(at: 1))) {
+                return chapter
+            }
+        }
+        return 1
     }
 }
 
