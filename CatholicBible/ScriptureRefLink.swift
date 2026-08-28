@@ -13,6 +13,29 @@ import UIKit
 // MARK: - 인용 파서
 
 enum ScriptureRef {
+    /// 영어 주석(NABRE)의 참조 형식을 정규화
+    /// 예: "chap 10 - chap 11" → "chaps. 10-11"
+    static func normalizeEnglishReferences(_ text: String, currentBookAbbrev: String? = nil) -> String {
+        var result = text
+
+        // 모든 대시 유형을 표준 하이픈으로 통일
+        result = result
+            .replacingOccurrences(of: "─", with: "-")  // en-dash
+            .replacingOccurrences(of: "—", with: "-")  // em-dash
+            .replacingOccurrences(of: "−", with: "-")  // minus sign
+
+        // Pattern: "chap N - chap N" → "chaps. N-N"
+        // 예: "chap 10 - chap 11" → "chaps. 10-11"
+        if let pattern = try? NSRegularExpression(pattern: "\\bchap\\s+(\\d{1,3})\\s*[-–]\\s*chap\\s+(\\d{1,3})\\b") {
+            result = pattern.stringByReplacingMatches(in: result, range: NSRange(location: 0, length: (result as NSString).length), withTemplate: "chaps. $1-$2")
+        }
+
+        // Pattern: "Gn chap N" → "Gn chaps. N" 또는 "Gn N" (문맥에 따라)
+        // 이미 다른 패턴에서 처리됨
+
+        return result
+    }
+
     /// USCCB 영어 약어 → 앱 책 id (fetch_cbck_bible.BOOKS 의 id 와 일치)
     static let abbrev: [String: String] = [
         "Gn": "gn", "Ex": "ex", "Lv": "lv", "Nm": "nm", "Dt": "dt", "Jos": "jos",

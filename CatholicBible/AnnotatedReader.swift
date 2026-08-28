@@ -486,9 +486,9 @@ struct MarkerNoteSheet: View {
         NavigationStack {
             ScrollView {
                 // 단어 선택(네이티브) 가능한 뷰로 렌더한다.
-                // 한글 주석(knbnotes)만 normalize 적용; NABRE는 원문 유지
+                // 한글 주석(knbnotes)만 normalize 적용; NABRE는 영문 참조 정규화만 적용
                 let textToDisplay = if editionID == "nabre" {
-                    text
+                    ScriptureRef.normalizeEnglishReferences(text)
                 } else {
                     let normalizedText = ScriptureRefNormalizer.normalize(text, currentBookID: bookID, chapter: chapter)
                     ScriptureRefNormalizer.addVerseMarkers(normalizedText)
@@ -691,9 +691,9 @@ struct NotesList: View {
                             .foregroundStyle(Color.accentColor)
                             .frame(minWidth: settings.fontSize * 1.3, alignment: .trailing)
                         // 단어 선택(네이티브)과 성경 인용 링크 탭을 함께 지원.
-                        // 한글 주석(knbnotes)만 normalize 적용; NABRE는 원문 유지
+                        // 한글 주석(knbnotes)만 normalize 적용; NABRE는 영문 참조 정규화만 적용
                         let textToDisplay = if editionID == "nabre" {
-                            note.text
+                            ScriptureRef.normalizeEnglishReferences(note.text)
                         } else {
                             let normalizedText = ScriptureRefNormalizer.normalize(note.text, currentBookID: bookID, chapter: chapter)
                             ScriptureRefNormalizer.addVerseMarkers(normalizedText)
