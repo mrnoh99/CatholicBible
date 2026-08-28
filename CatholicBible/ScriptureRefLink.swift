@@ -429,9 +429,9 @@ enum ScriptureRef {
             }
         }
 
-        // Pattern 1: "v. N" 또는 "v. N-N" (현재 장의 절)
-        // 예: "v. 22", "v. 1-5"
-        if let versePattern = try? NSRegularExpression(pattern: "\\bv\\.\\s+(\\d{1,3})(?:\\s*[-–]\\s*(\\d{1,3}))?\\b") {
+        // Pattern 1: "v. N" 또는 "v N" 또는 "v. N-N" (현재 장의 절)
+        // 예: "v. 22", "v 22", "v. 1-5"
+        if let versePattern = try? NSRegularExpression(pattern: "\\bv\\.?\\s*(\\d{1,3})(?:\\s*[-–]\\s*(\\d{1,3}))?\\b") {
             for m in versePattern.matches(in: attr.string, range: NSRange(location: 0, length: s.length)) {
                 if processed.contains(where: { NSIntersectionRange(m.range, $0).length > 0 }) { continue }
 
@@ -446,9 +446,9 @@ enum ScriptureRef {
             }
         }
 
-        // Pattern 2: "vv. N, N" 또는 "vv. N-N" (현재 장의 여러 절)
-        // 예: "vv. 11, 12", "vv. 1-5", "vv. 9–10"
-        if let versesPattern = try? NSRegularExpression(pattern: "\\bvv\\.\\s+(\\d{1,3})\\s*(?:,|[-–])\\s*(\\d{1,3})\\b") {
+        // Pattern 2: "vv. N, N" 또는 "vv N, N" 또는 "vv. N-N" (현재 장의 여러 절)
+        // 예: "vv. 11, 12", "vv 11, 12", "vv. 1-5", "vv. 9–10"
+        if let versesPattern = try? NSRegularExpression(pattern: "\\bvv\\.?\\s*(\\d{1,3})\\s*(?:,|[-–])\\s*(\\d{1,3})\\b") {
             for m in versesPattern.matches(in: attr.string, range: NSRange(location: 0, length: s.length)) {
                 if processed.contains(where: { NSIntersectionRange(m.range, $0).length > 0 }) { continue }
 

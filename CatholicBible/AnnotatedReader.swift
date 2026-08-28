@@ -546,13 +546,14 @@ struct NotesColumn: View {
     let emptyHint: String
     /// 인용의 '이어지는 절' 기준 책 id (링크 연결용).
     var bookID: String = ""
+    var chapter: Int = 0
     var editionID: String = "knbnotes"
     @Environment(ReaderSettings.self) private var settings
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
-                NotesList(title: title, notes: notes, emptyHint: emptyHint, bookID: bookID, editionID: editionID)
+                NotesList(title: title, notes: notes, emptyHint: emptyHint, bookID: bookID, chapter: chapter, editionID: editionID)
             }
             .padding(.horizontal, 22).padding(.vertical, 24)
             .frame(maxWidth: .infinity, alignment: .leading)
