@@ -46,6 +46,18 @@ struct AnnotatedReader: View {
     /// 제목 맵 캐시
     @State private var cachedTitleMap: [String: String] = [:]
     @State private var cachedTitleMapChapter: Int = -1
+    @State private var cachedTitleMapEditionID: String = ""
+    @State private var cachedTitleMapBookID: String = ""
+    /// 절 목록 캐시 (성능 최적화)
+    @State private var cachedVerses: [Verse] = []
+    @State private var cachedVersesChapter: Int = -1
+    @State private var cachedVersesEditionID: String = ""
+    @State private var cachedVersesBookID: String = ""
+    /// 주석 캐시 (성능 최적화)
+    @State private var cachedNotes: [KnbNote] = []
+    @State private var cachedNotesChapter: Int = -1
+    @State private var cachedNotesEditionID: String = ""
+    @State private var cachedNotesBookID: String = ""
     /// 부모(ReaderView 등)가 설치한 각주 마커 처리 액션에 위임하기 위해 보관
     @Environment(\.openURL) private var parentOpenURL
 
@@ -81,10 +93,21 @@ struct AnnotatedReader: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .onAppear {
                 initChapterIfNeeded()
+                updateVersesCache()
+                updateNotesCache()
+                updateTitleMapCache()
                 isInitialized = true
             }
             .onChange(of: bookID) { _, _ in
                 setChapter(readingState.lastChapter(edition: edition, book: book))
+                updateVersesCache()
+                updateNotesCache()
+                updateTitleMapCache()
+            }
+            .onChange(of: editionID) { _, _ in
+                updateVersesCache()
+                updateNotesCache()
+                updateTitleMapCache()
             }
             .onChange(of: chapter) { _, new in
                 guard new > 0 else { return }
@@ -92,6 +115,9 @@ struct AnnotatedReader: View {
                     scrollTarget = 1
                 }
                 readingState.savePosition(edition: edition, book: book, chapter: new)
+                updateVersesCache()
+                updateNotesCache()
+                updateTitleMapCache()
             }
             .onChange(of: navigation.pendingChapter) { _, _ in applyPending() }
             .sheet(isPresented: $showBookPicker) {
@@ -235,10 +261,9 @@ struct AnnotatedReader: View {
     // MARK: 본문 | 주석
 
     private var content: some View {
-        let verses = chapter > 0 ? store.verses(edition: edition, book: book, chapter: chapter) : []
-        let ch = max(chapter, 1)
-        let notes = knb.notes(edition: editionID, bookID: book.id, chapter: ch)
-        let xrefs = knb.crossrefs(edition: editionID, bookID: book.id, chapter: ch)
+        let verses = cachedVerses
+        let notes = cachedNotes
+        let xrefs = chapter > 0 ? knb.crossrefs(edition: editionID, bookID: book.id, chapter: chapter) : []
         return Group {
             if wide {
                 HStack(spacing: 0) {
@@ -302,22 +327,10 @@ struct AnnotatedReader: View {
         if verses.isEmpty {
             MissingTextView(edition: edition, book: book).padding(.top, 32)
         } else {
-            let titleMap: [String: String] = {
-                if cachedTitleMapChapter == chapter {
-                    return cachedTitleMap
-                } else {
-                    let map = getTitleMap()
-                    DispatchQueue.main.async {
-                        cachedTitleMap = map
-                        cachedTitleMapChapter = chapter
-                    }
-                    return map
-                }
-            }()
             LazyVStack(alignment: .leading, spacing: settings.lineSpacing * 0.9) {
                 ForEach(verses) { verse in
                     VStack(alignment: .leading, spacing: settings.lineSpacing * 0.9) {
-                        if let title = titleMap[String(verse.number)] {
+                        if let title = cachedTitleMap[String(verse.number)] {
                             SectionTitleView(text: title, bookID: book.id, chapter: chapter,
                                              linkable: true, searchQuery: navigation.searchQuery)
                         }
@@ -933,5 +946,54 @@ struct IntroDetailView: View {
                            lineSpacing: settings.lineSpacing,
                            onOpenURL: { handleURL($0) })
             .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    // MARK: - 캐시 업데이트
+
+    private func updateVersesCache() {
+        if cachedVersesChapter == chapter && cachedVersesEditionID == editionID && cachedVersesBookID == book.id {
+            return
+        }
+        cachedVersesChapter = chapter
+        cachedVersesEditionID = editionID
+        cachedVersesBookID = book.id
+        if chapter > 0 {
+            cachedVerses = store.verses(edition: edition, book: book, chapter: chapter)
+        } else {
+            cachedVerses = []
+        }
+    }
+
+    private func updateNotesCache() {
+        if cachedNotesChapter == chapter && cachedNotesEditionID == editionID && cachedNotesBookID == book.id {
+            return
+        }
+        cachedNotesChapter = chapter
+        cachedNotesEditionID = editionID
+        cachedNotesBookID = book.id
+        if chapter > 0 {
+            cachedNotes = knb.notes(edition: editionID, bookID: book.id, chapter: chapter)
+        } else {
+            cachedNotes = []
+        }
+    }
+
+    private func updateTitleMapCache() {
+        guard chapter > 0 else {
+            cachedTitleMap = [:]
+            return
+        }
+        if cachedTitleMapChapter == chapter && cachedTitleMapEditionID == editionID && cachedTitleMapBookID == book.id {
+            return
+        }
+        cachedTitleMapChapter = chapter
+        cachedTitleMapEditionID = editionID
+        cachedTitleMapBookID = book.id
+        let titles = store.titles(edition: edition, book: book, chapter: chapter)
+        var newMap: [String: String] = [:]
+        for title in titles {
+            newMap[title.verse] = title.text
+        }
+        cachedTitleMap = newMap
     }
 }
