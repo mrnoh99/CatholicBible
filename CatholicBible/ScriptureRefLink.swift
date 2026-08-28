@@ -390,6 +390,10 @@ enum ScriptureRef {
         // 현재 장 번호: 전달된 값이 있으면 사용, 없으면 텍스트에서 추출
         let currentChapter = (chapter > 0) ? chapter : (extractCurrentChapter(from: s) ?? 1)
 
+        // 주석 텍스트에서 명시적인 책 참조를 찾아 컨텍스트 책 결정
+        // 예: "Gn 1:28" 또는 "see Gn 10-11" 같은 명시적 참조가 있으면 그 책을 사용
+        let contextBook = extractContextBook(from: s, defaultBook: bookID) ?? bookID
+
         // Pattern 0: "BookAbbrv chaps. N-N" (명시적 책 + 장 범위)
         // 예: "Gn chaps. 10-11", "Mt chaps. 5-6"
         if let bookChapsPattern = try? NSRegularExpression(pattern: "\\b([1-4]?\\s*[A-Z][A-Za-z]{1,4})\\s+chaps?\\.\\s+(\\d{1,3})\\s*[-–]\\s*(\\d{1,3})\\b") {
@@ -458,7 +462,7 @@ enum ScriptureRef {
             }
         }
 
-        // Pattern 3: "chap. N" (현재 책의 단일 장)
+        // Pattern 3: "chap. N" (문맥의 책의 단일 장)
         // 예: "chap. 10"
         if let chapPattern = try? NSRegularExpression(pattern: "\\bchap\\.\\s+(\\d{1,3})\\b") {
             for m in chapPattern.matches(in: attr.string, range: NSRange(location: 0, length: s.length)) {
@@ -466,14 +470,14 @@ enum ScriptureRef {
 
                 guard let chapter = Int(s.substring(with: m.range(at: 1))) else { continue }
 
-                if let url = URL(string: "catholicbible://xref?b=\(bookID)&c=\(chapter)&v=1&ec=\(chapter)&ev=1") {
+                if let url = URL(string: "catholicbible://xref?b=\(contextBook)&c=\(chapter)&v=1&ec=\(chapter)&ev=1") {
                     attr.addAttributes([.link: url, .foregroundColor: color, .underlineStyle: NSUnderlineStyle.single.rawValue], range: m.range)
                     processed.append(m.range)
                 }
             }
         }
 
-        // Pattern 4: "chaps. N-N" 또는 "chaps. N–N" (현재 책의 장 범위)
+        // Pattern 4: "chaps. N-N" 또는 "chaps. N–N" (문맥의 책의 장 범위)
         // 예: "chaps. 10-11", "chaps. 10–11"
         if let chapsPattern = try? NSRegularExpression(pattern: "\\bchaps\\.\\s+(\\d{1,3})\\s*[-–]\\s*(\\d{1,3})\\b") {
             for m in chapsPattern.matches(in: attr.string, range: NSRange(location: 0, length: s.length)) {
@@ -482,12 +486,31 @@ enum ScriptureRef {
                 guard let startChap = Int(s.substring(with: m.range(at: 1))),
                       let endChap = Int(s.substring(with: m.range(at: 2))) else { continue }
 
-                if let url = URL(string: "catholicbible://xref?b=\(bookID)&c=\(startChap)&v=1&ec=\(endChap)&ev=1") {
+                if let url = URL(string: "catholicbible://xref?b=\(contextBook)&c=\(startChap)&v=1&ec=\(endChap)&ev=1") {
                     attr.addAttributes([.link: url, .foregroundColor: color, .underlineStyle: NSUnderlineStyle.single.rawValue], range: m.range)
                     processed.append(m.range)
                 }
             }
         }
+    }
+
+    /// 주석 텍스트에서 명시적 책 참조 추출
+    /// 예: "Gn 1:28", "see Gn 10-11" 등의 명시적 참조가 있으면 그 책 ID 반환
+    private static func extractContextBook(from s: NSString, defaultBook: String) -> String? {
+        // 텍스트 첫 300자에서 "BookAbbrv N:N" 형식의 명시적 참조 찾기
+        let searchLength = min(300, s.length)
+        let searchText = s.substring(to: searchLength)
+
+        if let explicitPattern = try? NSRegularExpression(pattern: "\\b([1-4]?\\s*[A-Z][A-Za-z]{1,4})\\s+\\d{1,3}:\\d{1,3}") {
+            if let match = explicitPattern.firstMatch(in: searchText, range: NSRange(location: 0, length: searchLength)) {
+                let abbrv = (s.substring(with: match.range(at: 1)) as NSString).trimmingCharacters(in: .whitespaces)
+                if let bookID = ScriptureRef.abbrev[abbrv] {
+                    return bookID
+                }
+            }
+        }
+
+        return nil
     }
 
     /// 주석 텍스트에서 현재 장 번호 추출 (영문 형식: "1:1", "1:7" 등)
