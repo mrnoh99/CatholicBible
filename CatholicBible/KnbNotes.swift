@@ -946,7 +946,7 @@ enum ScriptureRefNormalizer {
     /// 정규화된 텍스트에 "절" 마커를 추가한다.
     /// 예: "창세 1,1" → "창세 1,1절", "1,1" → "1,1절", "창세 1,1-2,4" → "창세 1,1절-2,4절"
     /// ScriptureRefLink의 koreanRegex가 절 마커를 요구하므로 필요
-    private static func addVerseMarkers(_ text: String) -> String {
+    static func addVerseMarkers(_ text: String) -> String {
         var result = text
 
         // 패턴 0: "책이름 장,절-장,절" 범위 (다른 장) → 각 절 뒤에 마커 추가

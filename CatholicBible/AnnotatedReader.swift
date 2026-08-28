@@ -684,7 +684,8 @@ struct NotesList: View {
                             .frame(minWidth: settings.fontSize * 1.3, alignment: .trailing)
                         // 단어 선택(네이티브)과 성경 인용 링크 탭을 함께 지원.
                         let normalizedText = ScriptureRefNormalizer.normalize(note.text, currentBookID: bookID, chapter: chapter)
-                        SelectableNoteText(text: normalizedText, currentBook: bookID, chapter: chapter,
+                        let textWithMarkers = ScriptureRefNormalizer.addVerseMarkers(normalizedText)
+                        SelectableNoteText(text: textWithMarkers, currentBook: bookID, chapter: chapter,
                                            font: noteUIFont,
                                            color: UIColor(settings.theme.text),
                                            linkColor: UIColor(Color.accentColor),
@@ -898,9 +899,10 @@ struct IntroDetailView: View {
             displayText = "본문이 비어 있습니다."
         } else {
             // Introduction body도 성경 참조 정규화 (chapter 정보 없으므로 0 전달)
-            displayText = ScriptureRefNormalizer.normalize(intro.body,
+            let normalized = ScriptureRefNormalizer.normalize(intro.body,
                                                            currentBookID: intro.bookID ?? "",
                                                            chapter: 0)
+            displayText = ScriptureRefNormalizer.addVerseMarkers(normalized)
         }
 
         return SelectableNoteText(text: displayText,
