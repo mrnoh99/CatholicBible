@@ -117,7 +117,7 @@ struct AnnotatedReader: View {
                     .environment(knb)
             }
             .fullScreenCover(item: $noteTarget) { t in
-                MarkerNoteSheet(n: t.n, text: t.text, bookID: t.bookID, chapter: t.chapter)
+                MarkerNoteSheet(n: t.n, text: t.text, bookID: t.bookID, chapter: t.chapter, editionID: editionID)
                     .environment(store)
                     .environment(settings)
                     .environment(annotations)
@@ -439,6 +439,7 @@ struct MarkerNoteSheet: View {
     let text: String
     let bookID: String  // 소제목 링크의 각주 마커를 위해 필요
     let chapter: Int    // 소제목 링크의 각주 마커를 위해 필요
+    let editionID: String = "knbnotes"  // 한글/영문 주석 구분용
     @Environment(\.dismiss) private var dismiss
     @Environment(ReaderSettings.self) private var settings
     @Environment(BibleStore.self) private var store
@@ -485,9 +486,14 @@ struct MarkerNoteSheet: View {
         NavigationStack {
             ScrollView {
                 // 단어 선택(네이티브) 가능한 뷰로 렌더한다.
-                let normalizedText = ScriptureRefNormalizer.normalize(text, currentBookID: bookID, chapter: chapter)
-                let textWithMarkers = ScriptureRefNormalizer.addVerseMarkers(normalizedText)
-                SelectableNoteText(text: textWithMarkers, currentBook: bookID, chapter: chapter,
+                // 한글 주석(knbnotes)만 normalize 적용; NABRE는 원문 유지
+                let textToDisplay = if editionID == "nabre" {
+                    text
+                } else {
+                    let normalizedText = ScriptureRefNormalizer.normalize(text, currentBookID: bookID, chapter: chapter)
+                    ScriptureRefNormalizer.addVerseMarkers(normalizedText)
+                }
+                SelectableNoteText(text: textToDisplay, currentBook: bookID, chapter: chapter,
                                    font: bodyUIFont,
                                    color: UIColor(settings.theme.text),
                                    linkColor: UIColor(Color.accentColor),
@@ -511,7 +517,7 @@ struct MarkerNoteSheet: View {
             }
             // 중첩된 presentation 상황에서 sheet 표시 지연을 피하기 위해 fullScreenCover 사용
             .fullScreenCover(item: $noteTarget) { t in
-                MarkerNoteSheet(n: t.n, text: t.text, bookID: t.bookID, chapter: t.chapter)
+                MarkerNoteSheet(n: t.n, text: t.text, bookID: t.bookID, chapter: t.chapter, editionID: editionID)
                     .environment(store)
                     .environment(settings)
                     .environment(annotations)
@@ -685,9 +691,14 @@ struct NotesList: View {
                             .foregroundStyle(Color.accentColor)
                             .frame(minWidth: settings.fontSize * 1.3, alignment: .trailing)
                         // 단어 선택(네이티브)과 성경 인용 링크 탭을 함께 지원.
-                        let normalizedText = ScriptureRefNormalizer.normalize(note.text, currentBookID: bookID, chapter: chapter)
-                        let textWithMarkers = ScriptureRefNormalizer.addVerseMarkers(normalizedText)
-                        SelectableNoteText(text: textWithMarkers, currentBook: bookID, chapter: chapter,
+                        // 한글 주석(knbnotes)만 normalize 적용; NABRE는 원문 유지
+                        let textToDisplay = if editionID == "nabre" {
+                            note.text
+                        } else {
+                            let normalizedText = ScriptureRefNormalizer.normalize(note.text, currentBookID: bookID, chapter: chapter)
+                            ScriptureRefNormalizer.addVerseMarkers(normalizedText)
+                        }
+                        SelectableNoteText(text: textToDisplay, currentBook: bookID, chapter: chapter,
                                            font: noteUIFont,
                                            color: UIColor(settings.theme.text),
                                            linkColor: UIColor(Color.accentColor),
