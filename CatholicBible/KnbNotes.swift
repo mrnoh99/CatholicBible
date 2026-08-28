@@ -974,7 +974,7 @@ enum ScriptureRefNormalizer {
         // 패턴 0b: "책이름 장,절-절" (같은 장) → 각 절 뒤에 마커 추가
         // 예: "욥기 26,12-14" → "욥기 26,12절-14절"
         for book in Bible.books {
-            let pattern = "(\(NSRegularExpression.escapedPattern(for: book.name)))\\s+(\\d+),(\\d+)-(\\d+)(?!절|,)"
+            let pattern = "(\(NSRegularExpression.escapedPattern(for: book.name)))\\s+(\\d+),(\\d+)-(\\d+)(?![\\d절-])"
             if let regex = try? NSRegularExpression(pattern: pattern) {
                 let ns = result as NSString
                 let matches = regex.matches(in: result, range: NSRange(location: 0, length: (result as NSString).length))
