@@ -482,17 +482,21 @@ struct MarkerNoteSheet: View {
         return .discarded
     }
 
+    private func processNoteText(_ text: String, editionID: String, bookID: String, chapter: Int) -> String {
+        if editionID == "nabre" {
+            return ScriptureRef.normalizeEnglishReferences(text)
+        } else {
+            let normalizedText = ScriptureRefNormalizer.normalize(text, currentBookID: bookID, chapter: chapter)
+            return ScriptureRefNormalizer.addVerseMarkers(normalizedText)
+        }
+    }
+
     var body: some View {
         NavigationStack {
             ScrollView {
                 // 단어 선택(네이티브) 가능한 뷰로 렌더한다.
                 // 한글 주석(knbnotes)만 normalize 적용; NABRE는 영문 참조 정규화만 적용
-                let textToDisplay = if editionID == "nabre" {
-                    ScriptureRef.normalizeEnglishReferences(text)
-                } else {
-                    let normalizedText = ScriptureRefNormalizer.normalize(text, currentBookID: bookID, chapter: chapter)
-                    ScriptureRefNormalizer.addVerseMarkers(normalizedText)
-                }
+                let textToDisplay = processNoteText(text, editionID: editionID, bookID: bookID, chapter: chapter)
                 SelectableNoteText(text: textToDisplay, currentBook: bookID, chapter: chapter,
                                    font: bodyUIFont,
                                    color: UIColor(settings.theme.text),
@@ -672,6 +676,15 @@ struct NotesList: View {
         }
     }
 
+    private func processNoteText(_ text: String, editionID: String, bookID: String, chapter: Int) -> String {
+        if editionID == "nabre" {
+            return ScriptureRef.normalizeEnglishReferences(text)
+        } else {
+            let normalizedText = ScriptureRefNormalizer.normalize(text, currentBookID: bookID, chapter: chapter)
+            return ScriptureRefNormalizer.addVerseMarkers(normalizedText)
+        }
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             if !title.isEmpty {
@@ -691,14 +704,8 @@ struct NotesList: View {
                             .foregroundStyle(Color.accentColor)
                             .frame(minWidth: settings.fontSize * 1.3, alignment: .trailing)
                         // 단어 선택(네이티브)과 성경 인용 링크 탭을 함께 지원.
-                        // 한글 주석(knbnotes)만 normalize 적용; NABRE는 영문 참조 정규화만 적용
-                        let textToDisplay = if editionID == "nabre" {
-                            ScriptureRef.normalizeEnglishReferences(note.text)
-                        } else {
-                            let normalizedText = ScriptureRefNormalizer.normalize(note.text, currentBookID: bookID, chapter: chapter)
-                            ScriptureRefNormalizer.addVerseMarkers(normalizedText)
-                        }
-                        SelectableNoteText(text: textToDisplay, currentBook: bookID, chapter: chapter,
+                        let processedText = processNoteText(note.text, editionID: editionID, bookID: bookID, chapter: chapter)
+                        SelectableNoteText(text: processedText, currentBook: bookID, chapter: chapter,
                                            font: noteUIFont,
                                            color: UIColor(settings.theme.text),
                                            linkColor: UIColor(Color.accentColor),
