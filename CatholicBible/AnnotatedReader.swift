@@ -117,7 +117,7 @@ struct AnnotatedReader: View {
                     .environment(knb)
             }
             .fullScreenCover(item: $noteTarget) { t in
-                MarkerNoteSheet(n: t.n, text: t.text, bookID: t.bookID, chapter: t.chapter, editionID: editionID)
+                MarkerNoteSheet(n: t.n, text: t.text, bookID: t.bookID, chapter: t.chapter)
                     .environment(store)
                     .environment(settings)
                     .environment(annotations)
@@ -439,7 +439,6 @@ struct MarkerNoteSheet: View {
     let text: String
     let bookID: String  // 소제목 링크의 각주 마커를 위해 필요
     let chapter: Int    // 소제목 링크의 각주 마커를 위해 필요
-    let editionID: String = "knbnotes"  // 한글/영문 주석 구분용
     @Environment(\.dismiss) private var dismiss
     @Environment(ReaderSettings.self) private var settings
     @Environment(BibleStore.self) private var store
@@ -482,21 +481,16 @@ struct MarkerNoteSheet: View {
         return .discarded
     }
 
-    private func processNoteText(_ text: String, editionID: String, bookID: String, chapter: Int) -> String {
-        if editionID == "nabre" {
-            return ScriptureRef.normalizeEnglishReferences(text)
-        } else {
-            let normalizedText = ScriptureRefNormalizer.normalize(text, currentBookID: bookID, chapter: chapter)
-            return ScriptureRefNormalizer.addVerseMarkers(normalizedText)
-        }
+    private func processNoteText(_ text: String, bookID: String, chapter: Int) -> String {
+        let normalizedText = ScriptureRefNormalizer.normalize(text, currentBookID: bookID, chapter: chapter)
+        return ScriptureRefNormalizer.addVerseMarkers(normalizedText)
     }
 
     var body: some View {
         NavigationStack {
             ScrollView {
                 // 단어 선택(네이티브) 가능한 뷰로 렌더한다.
-                // 한글 주석(knbnotes)만 normalize 적용; NABRE는 영문 참조 정규화만 적용
-                let textToDisplay = processNoteText(text, editionID: editionID, bookID: bookID, chapter: chapter)
+                let textToDisplay = processNoteText(text, bookID: bookID, chapter: chapter)
                 SelectableNoteText(text: textToDisplay, currentBook: bookID, chapter: chapter,
                                    font: bodyUIFont,
                                    color: UIColor(settings.theme.text),
@@ -521,7 +515,7 @@ struct MarkerNoteSheet: View {
             }
             // 중첩된 presentation 상황에서 sheet 표시 지연을 피하기 위해 fullScreenCover 사용
             .fullScreenCover(item: $noteTarget) { t in
-                MarkerNoteSheet(n: t.n, text: t.text, bookID: t.bookID, chapter: t.chapter, editionID: editionID)
+                MarkerNoteSheet(n: t.n, text: t.text, bookID: t.bookID, chapter: t.chapter)
                     .environment(store)
                     .environment(settings)
                     .environment(annotations)
