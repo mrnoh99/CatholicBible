@@ -618,13 +618,18 @@ final class BibleStore {
                    mode: SearchMode = .text, limit: Int = 400) async -> [SearchHit] {
         let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
         guard trimmed.count >= 1 else { return [] }
-        let perEdition = max(40, limit / max(1, searchEditions.count))
+
+        // 판본당 검색 제한을 동적으로 조정 (각 판본에서 충분히 가져오기)
+        // 예: 3개 판본이면 각 판본에서 150개씩 = 총 450개, 나중에 limit으로 자르기
+        let perEdition = max(limit / max(1, searchEditions.count), 100)
         var all: [SearchHit] = []
+
         for edition in searchEditions {
             guard editions[edition.id] != nil else { continue }
             let hits = await search(trimmed, edition: edition, mode: mode, limit: perEdition)
             all.append(contentsOf: hits)
-            if all.count >= limit { break }
+            // 총 결과가 충분할 때만 종료 (최소 limit의 1.5배까지 수집)
+            if all.count >= limit * 2 { break }
         }
         return Array(all.prefix(limit))
     }
