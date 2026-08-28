@@ -275,7 +275,7 @@ struct ReaderView: View {
                     }
                     Section("도구") {
                         Button(action: { showMass = true }) {
-                            Label("오늘의 미사", systemImage: "sun.max")
+                            Label("매일미사", systemImage: "sun.max")
                         }
                         Button(action: { showSearch = true }) {
                             Label("찾기", systemImage: "magnifyingglass")
@@ -1157,7 +1157,7 @@ struct VerseRowView: View {
     let verse: Verse
     let highlighted: Bool
     let onOpenNote: (VerseRef, String) -> Void
-    /// '사전 열기' 처리를 상위가 직접 하고 싶을 때(예: 전체 화면인 오늘의 미사).
+    /// '사전 열기' 처리를 상위가 직접 하고 싶을 때(예: 전체 화면인 매일미사).
     /// nil이면 공용 navigation.lookUp()을 쓴다.
     var onLookUp: (() -> Void)? = nil
 

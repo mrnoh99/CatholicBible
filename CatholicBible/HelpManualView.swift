@@ -169,9 +169,9 @@ struct HelpManualView: View {
 
                 Section {
                     VStack(alignment: .leading, spacing: 12) {
-                        Text("오늘의 미사")
+                        Text("매일미사")
                             .font(.headline.weight(.semibold))
-                        Text("하단 탭바의 '미사' 탭에서 오늘의 미사 독서를 볼 수 있습니다.")
+                        Text("하단 탭바의 '미사' 탭에서 매일미사 독서를 볼 수 있습니다.")
                             .font(.callout)
                         Text("제1독서, 화답송, 제2독서, 복음을 확인할 수 있으며, 날짜를 이동하여 다른 날의 미사 독서를 볼 수 있습니다.")
                             .font(.callout)
@@ -446,7 +446,7 @@ struct HelpManualView: View {
                         Text("• 정기적으로 백업을 생성하여 데이터 손실에 대비하세요")
                             .font(.caption)
                             .foregroundStyle(.secondary)
-                        Text("• 오늘의 미사에서 매일의 전례 독서를 확인할 수 있습니다")
+                        Text("• 매일미사에서 매일의 전례 독서를 확인할 수 있습니다")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }

@@ -2,7 +2,7 @@
 //  DailyMassView.swift
 //  CatholicBible
 //
-//  '오늘의 미사': 전례일 이름·전례색·독서 주기(가/나/다해)와 그 날 독서
+//  '매일미사': 전례일 이름·전례색·독서 주기(가/나/다해)와 그 날 독서
 //  (제1독서·화답송·제2독서·복음)를 보여 준다. 표시법은 형제 앱 GospelForIpad의
 //  '오늘의 말씀'을 따른다(날짜 이동 + 전례일 이름 + 성구). 각 독서의 성구를
 //  누르면 리더가 해당 본문을 연다. 본문 미리보기는 번들된 「성경」에서 가져온다.
@@ -80,9 +80,9 @@ struct DailyMassView: View {
                 .textSelection(.enabled)
             }
             .background(settings.theme.background.ignoresSafeArea())
-            // 오늘의 미사를 다시 열면 이전 강조는 지운다(다음 독서를 고를 때까지 유지되던 것).
+            // 매일미사를 다시 열면 이전 강조는 지운다(다음 독서를 고를 때까지 유지되던 것).
             .onAppear { navigation.activeHighlight = nil }
-            .navigationTitle("오늘의 미사")
+            .navigationTitle("매일미사")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
@@ -258,7 +258,7 @@ struct DailyMassView: View {
     /// 성구를 리더로 연다(시트를 닫고 사이드바 선택을 옮긴다).
     private func open(_ reading: MassReading) {
         guard let c = reading.primaryCitation, Bible.book(c.bookID) != nil else { return }
-        // 오늘의 미사에서 고른 본문 판본으로 리더를 연다(사이드바 판본이 아니라).
+        // 매일미사에서 고른 본문 판본으로 리더를 연다(사이드바 판본이 아니라).
         // 화답송은 화답송 전용 판본(전례 시편 등)으로 연다.
         readingState.selectedEditionID = editionID(for: reading)
         // 참조 문자열에서 불연속 구간까지 살린 강조를 만든다(빠진 절은 칠하지 않음).
@@ -285,7 +285,7 @@ private struct ReadingCard: View {
     let openReading: (MassReading) -> Void
     /// 절의 노트 추가·편집 요청
     let onOpenNote: (VerseRef, String) -> Void
-    /// 사전 열기 요청(오늘의 미사 화면이 직접 사전을 띄운다)
+    /// 사전 열기 요청(매일미사 화면이 직접 사전을 띄운다)
     let onLookUp: () -> Void
 
     @Environment(BibleStore.self) private var store

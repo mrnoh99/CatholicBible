@@ -85,7 +85,7 @@ final class ReaderNavigation {
     /// 대기값을 먹지 않도록, 목표 책과 일치하는 리더만 소비하게 한다.
     var pendingBookID: String?
     /// 지속되는 강조. 판본을 바꾸거나 장을 넘겨도 유지되고,
-    /// 오늘의 미사를 다시 열면(또는 다른 독서를 고르면) 교체·해제된다.
+    /// 매일미사를 다시 열면(또는 다른 독서를 고르면) 교체·해제된다.
     var activeHighlight: VerseHighlight?
     /// 사전 시트 요청 (nil이 아니면 사전이 열린다)
     var dictionaryRequest: DictionaryRequest?
@@ -212,7 +212,7 @@ struct ContentView: View {
                         Button(action: { showMass = true }) {
                             Image(systemName: "sun.max")
                         }
-                        .help("오늘의 미사")
+                        .help("매일미사")
                         Button(action: { showSearch = true }) {
                             Image(systemName: "magnifyingglass")
                         }
@@ -255,7 +255,7 @@ struct ContentView: View {
                             Spacer()
 
                             Button("", systemImage: "sun.max") { showMass = true }
-                                .help("오늘의 미사")
+                                .help("매일미사")
                             Button("", systemImage: "magnifyingglass") { showSearch = true }
                                 .help("검색")
                             Button("", systemImage: "character.book.closed") { navigation.lookUp() }
@@ -376,7 +376,7 @@ struct ShelfView: View {
         }
     }
 
-    /// 오늘의 미사·전례력으로 가는 카드
+    /// 매일미사·전례력으로 가는 카드
     @ViewBuilder
     private var massCard: some View {
         Button { showMass = true } label: {
@@ -389,7 +389,7 @@ struct ShelfView: View {
                     .clipShape(RoundedRectangle(cornerRadius: 12))
 
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("오늘의 미사")
+                    Text("매일미사")
                         .font(.system(size: 17, weight: .semibold, design: .default))
                         .foregroundStyle(settings.theme.text)
                     Text(LiturgicalCalendar.liturgicalDayName())
