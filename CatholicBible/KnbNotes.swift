@@ -47,6 +47,10 @@ enum ScriptureRefNormalizer {
             .replacingOccurrences(of: "—", with: "-")  // em-dash
             .replacingOccurrences(of: "−", with: "-")  // minus sign
 
+        // 0.5단계: 한글 자모(ㄱ, ㄴ, ㄷ, ㄹ, ㄹ등)를 제거 (예: "1,1-2,4ㄱ" → "1,1-2,4")
+        // 이 단계는 한글 자모가 참조 매칭을 방해하는 것을 방지
+        result = result.replacingOccurrences(of: "[ㄱ-ㅎ]", with: "", options: .regularExpression)
+
         // 1단계: "책 장의 절과 절" 형태를 정규화
         result = normalizeChapterRanges(result)
 
