@@ -1023,6 +1023,7 @@ struct SearchView: View {
                                 HStack(spacing: 4) {
                                     Button {
                                         query = item
+                                        performReferenceSearch(item, scope: .current)
                                     } label: {
                                         Text(item)
                                             .lineLimit(1)
