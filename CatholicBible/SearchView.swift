@@ -2004,6 +2004,12 @@ struct SearchView: View {
         let input = query.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !input.isEmpty else { return }
 
+        // 검색 버튼 누를 때마다 이전 결과 초기화 (새로운 검색 시작)
+        results = []
+        previousResults = []
+        hasSearched = false
+        scope = .current  // 기본 범위로 리셋
+
         print("[DEBUG] performSearchAction: input='\(input)', currentScope=\(scope)")
 
         // Auto-detect format and execute search directly
