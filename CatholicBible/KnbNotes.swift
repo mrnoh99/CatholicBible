@@ -47,15 +47,10 @@ enum ScriptureRefNormalizer {
             .replacingOccurrences(of: "—", with: "-")  // em-dash
             .replacingOccurrences(of: "−", with: "-")  // minus sign
 
-        // 0.5단계: 한글 자모를 라틴 문자로 변환 (예: "1,1-2,4ㄱ" → "1,1-2,4a")
-        // 한글 자모는 구약 성경의 소구분 마커 (ㄱ:a, ㄴ:b, ㄷ:c, ㄹ:d, ㅁ:e, ㅂ:f)
-        result = result
-            .replacingOccurrences(of: "ㄱ", with: "a")
-            .replacingOccurrences(of: "ㄴ", with: "b")
-            .replacingOccurrences(of: "ㄷ", with: "c")
-            .replacingOccurrences(of: "ㄹ", with: "d")
-            .replacingOccurrences(of: "ㅁ", with: "e")
-            .replacingOccurrences(of: "ㅂ", with: "f")
+        // 0.5단계: 한글 자모(ㄱ, ㄴ, ㄷ, ㄹ, ㅁ, ㅂ) 제거 (예: "1,1-2,4ㄱ" → "1,1-2,4")
+        // 이 자모들은 절 마커 앞에 와서 정규식 매칭을 방해함
+        // addVerseMarkers()가 "절"을 올바르게 추가할 수 있도록 해줌
+        result = result.replacingOccurrences(of: "[ㄱ-ㅂ]", with: "", options: .regularExpression)
 
         // 1단계: "책 장의 절과 절" 형태를 정규화
         result = normalizeChapterRanges(result)
