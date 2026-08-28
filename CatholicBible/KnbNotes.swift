@@ -992,6 +992,26 @@ enum ScriptureRefNormalizer {
             }
         }
 
+        // 패턴 0c: "책이름 장-장" (장 범위, "장" 마커 포함) → "책이름 장,1절-장,1절"
+        // 예: "욥기 38장-39장" → "욥기 38,1절-39,1절"
+        for book in Bible.books {
+            let pattern = "(\(NSRegularExpression.escapedPattern(for: book.name)))\\s+(\\d+)장-(\\d+)장"
+            if let regex = try? NSRegularExpression(pattern: pattern) {
+                let ns = result as NSString
+                let matches = regex.matches(in: result, range: NSRange(location: 0, length: (result as NSString).length))
+
+                for match in matches.reversed() {
+                    if match.numberOfRanges >= 4 {
+                        let bookName = ns.substring(with: match.range(at: 1))
+                        let ch1 = ns.substring(with: match.range(at: 2))
+                        let ch2 = ns.substring(with: match.range(at: 3))
+                        let replacement = "\(bookName) \(ch1),1절-\(ch2),1절"
+                        result = (result as NSString).replacingCharacters(in: match.range, with: replacement)
+                    }
+                }
+            }
+        }
+
         // 패턴 1: "책이름 장,절" → "책이름 장,절절"
         // 책 이름으로 시작하는 참조에 절 마커 추가
         for book in Bible.books {
