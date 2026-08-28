@@ -344,6 +344,10 @@ struct ReaderPane: View {
     @State private var skipChapterRestore = false
     /// 캐시된 소제목 맵 (성능 최적화)
     @State private var cachedTitleMap: [String: String] = [:]
+    /// 캐시된 절 목록 (성능 최적화 - 반복적인 store.verses() 호출 방지)
+    @State private var cachedVerses: [Verse] = []
+    @State private var cachedChapter: Int = -1
+    @State private var cachedEditionID: String = ""
 
     private var edition: Edition { Editions.edition(editionID) ?? Editions.all[0] }
     private var book: BibleBook { Bible.book(bookID) ?? Bible.books[0] }
@@ -382,6 +386,7 @@ struct ReaderPane: View {
         .onAppear {
             initChapterIfNeeded()
             updateTitleMapCache()
+            updateVersesCache()
             isInitialized = true
         }
         .onChange(of: bookID) { _, _ in
@@ -398,6 +403,7 @@ struct ReaderPane: View {
         .onChange(of: editionID) { _, _ in
             if !isFollower { setChapter(min(max(chapter, 1), book.chapterCount)) }
             updateTitleMapCache()
+            updateVersesCache()
         }
         .onChange(of: chapter) { _, new in
             guard new > 0, !isFollower else { return }
@@ -407,6 +413,7 @@ struct ReaderPane: View {
             }
             readingState.savePosition(edition: edition, book: book, chapter: new)
             updateTitleMapCache()
+            updateVersesCache()
         }
         .modifier(PendingChapterModifier(active: role == .primary, apply: applyPending))
         .sheet(isPresented: $showBookPicker) {
@@ -470,6 +477,20 @@ struct ReaderPane: View {
         cachedTitleMap = newMap
     }
 
+    private func updateVersesCache() {
+        let key = "\(editionID).\(book.id).\(chapter)"
+        if cachedChapter == chapter && cachedEditionID == editionID {
+            return
+        }
+        cachedChapter = chapter
+        cachedEditionID = editionID
+        if chapter > 0 {
+            cachedVerses = store.verses(edition: edition, book: book, chapter: chapter)
+        } else {
+            cachedVerses = []
+        }
+    }
+
     // MARK: 헤더 (판본 · 책 선택)
 
     private var paneHeader: some View {
@@ -515,7 +536,7 @@ struct ReaderPane: View {
     // MARK: 본문
 
     private var versesScroll: some View {
-        let verses = chapter > 0 ? store.verses(edition: edition, book: book, chapter: chapter) : []
+        let verses = cachedVerses
         return ScrollViewReader { proxy in
             ScrollView {
                 VStack(alignment: .leading, spacing: 0) {
