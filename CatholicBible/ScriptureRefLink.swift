@@ -390,6 +390,41 @@ enum ScriptureRef {
         // 현재 장 번호: 전달된 값이 있으면 사용, 없으면 텍스트에서 추출
         let currentChapter = (chapter > 0) ? chapter : (extractCurrentChapter(from: s) ?? 1)
 
+        // Pattern 0: "BookAbbrv chaps. N-N" (명시적 책 + 장 범위)
+        // 예: "Gn chaps. 10-11", "Mt chaps. 5-6"
+        if let bookChapsPattern = try? NSRegularExpression(pattern: "\\b([1-4]?\\s*[A-Z][A-Za-z]{1,4})\\s+chaps?\\.\\s+(\\d{1,3})\\s*[-–]\\s*(\\d{1,3})\\b") {
+            for m in bookChapsPattern.matches(in: attr.string, range: NSRange(location: 0, length: s.length)) {
+                if processed.contains(where: { NSIntersectionRange(m.range, $0).length > 0 }) { continue }
+
+                let abbrv = s.substring(with: m.range(at: 1)).trimmingCharacters(in: .whitespaces)
+                guard let refBookID = ScriptureRef.abbrev[abbrv],
+                      let startChap = Int(s.substring(with: m.range(at: 2))),
+                      let endChap = Int(s.substring(with: m.range(at: 3))) else { continue }
+
+                if let url = URL(string: "catholicbible://xref?b=\(refBookID)&c=\(startChap)&v=1&ec=\(endChap)&ev=1") {
+                    attr.addAttributes([.link: url, .foregroundColor: color, .underlineStyle: NSUnderlineStyle.single.rawValue], range: m.range)
+                    processed.append(m.range)
+                }
+            }
+        }
+
+        // Pattern 0b: "BookAbbrv chap. N" (명시적 책 + 단일 장)
+        // 예: "Gn chap. 10", "Mt chap. 5"
+        if let bookChapPattern = try? NSRegularExpression(pattern: "\\b([1-4]?\\s*[A-Z][A-Za-z]{1,4})\\s+chap\\.\\s+(\\d{1,3})\\b") {
+            for m in bookChapPattern.matches(in: attr.string, range: NSRange(location: 0, length: s.length)) {
+                if processed.contains(where: { NSIntersectionRange(m.range, $0).length > 0 }) { continue }
+
+                let abbrv = s.substring(with: m.range(at: 1)).trimmingCharacters(in: .whitespaces)
+                guard let refBookID = ScriptureRef.abbrev[abbrv],
+                      let chap = Int(s.substring(with: m.range(at: 2))) else { continue }
+
+                if let url = URL(string: "catholicbible://xref?b=\(refBookID)&c=\(chap)&v=1&ec=\(chap)&ev=1") {
+                    attr.addAttributes([.link: url, .foregroundColor: color, .underlineStyle: NSUnderlineStyle.single.rawValue], range: m.range)
+                    processed.append(m.range)
+                }
+            }
+        }
+
         // Pattern 1: "v. N" 또는 "v. N-N" (현재 장의 절)
         // 예: "v. 22", "v. 1-5"
         if let versePattern = try? NSRegularExpression(pattern: "\\bv\\.\\s+(\\d{1,3})(?:\\s*[-–]\\s*(\\d{1,3}))?\\b") {
