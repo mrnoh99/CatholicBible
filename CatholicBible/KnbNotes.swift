@@ -82,124 +82,10 @@ enum ScriptureRefNormalizer {
             result = normalizeCommaDotFormatReferences(result, currentBook: currentBook)
         }
 
-        // 4단계: 세미콜론 구분 참조 정규화 (기존 로직)
-        let parts = result.split(separator: ";", omittingEmptySubsequences: false).map { String($0) }
-        var normalized: [String] = []
-        var contextBook: String? = currentBook
-        var contextBookID: String? = currentBookID.isEmpty ? nil : currentBookID
-        var lastParsedChapter: Int = 0
+        // 4단계: 세미콜론 구분 참조 정규화 (강화된 로직)
+        result = normalizeSemicolonSeparatedReferences(result, currentBook: currentBook, currentBookID: currentBookID)
 
-        for part in parts {
-            let trimmed = part.trimmingCharacters(in: .whitespaces)
-            if trimmed.isEmpty {
-                normalized.append(part)
-                continue
-            }
-
-            let (book, ref) = extractBookAndRef(from: trimmed)
-
-            // 책 이름이나 약자가 명시되지 않은 경우, ref에 약자가 있는지 다시 확인
-            var finalBook = book
-            var finalRef = ref
-
-            if book == nil && !ref.isEmpty {
-                // ref의 앞에 있는 구두점 제거하고 첫 단어가 책 약자인지 확인
-                var refToCheck = ref
-                while !refToCheck.isEmpty && !refToCheck.first!.isLetter {
-                    refToCheck.removeFirst()
-                }
-
-                let refWords = refToCheck.split(separator: " ", maxSplits: 1).map { String($0) }
-                if !refWords.isEmpty {
-                    let firstWord = refWords[0]
-                    if let foundBook = Bible.books.first(where: { $0.abbrev == firstWord || $0.searchKeywords.contains(firstWord) }) {
-                        // 약자를 찾았으므로 책 이름을 사용하되, 약자는 유지
-                        finalBook = foundBook.name
-                        finalRef = ref  // 약자를 포함한 원본 ref 유지
-                    }
-                }
-            }
-
-            if let book = finalBook {
-                contextBook = book
-                if let foundBook = Bible.book(book) {
-                    contextBookID = foundBook.id
-                }
-                // 책 이름이 명시된 경우: 중복 방지
-                // ref가 책 약자로 시작하는지 확인 (예: "마태 1,1", "마르 2,1" 등)
-                var shouldIncludeBook = true
-                let refWords = finalRef.split(separator: " ").map { String($0) }
-                if !refWords.isEmpty {
-                    let firstWord = refWords[0]
-                    // 참조의 첫 단어가 어떤 책의 약자나 검색 키워드와 일치하면 중복으로 판단
-                    if Bible.books.contains(where: { $0.abbrev == firstWord || $0.searchKeywords.contains(firstWord) }) {
-                        shouldIncludeBook = false
-                    }
-
-                    // ref의 어느 부분이든 책 이름이나 약자가 있으면, 그 부분부터 시작하는 참조로 재처리
-                    // 예: "복음서 사도 4,31" → "사도 4,31" 사용
-                    if shouldIncludeBook && refWords.count > 1 {
-                        for i in 1..<refWords.count {
-                            let potentialBookRef = refWords[i...].joined(separator: " ")
-                            let currentWord = refWords[i]
-
-                            // 약자 또는 searchKeywords 확인
-                            if let foundBook = Bible.books.first(where: {
-                                $0.abbrev == currentWord || $0.searchKeywords.contains(currentWord)
-                            }) {
-                                finalRef = potentialBookRef
-                                shouldIncludeBook = false
-                                break
-                            }
-                            // 전체 책 이름 확인
-                            if let foundBook = Bible.books.first(where: { potentialBookRef.hasPrefix($0.name) }) {
-                                finalRef = potentialBookRef
-                                shouldIncludeBook = false
-                                break
-                            }
-                        }
-                    }
-                }
-
-                // 장 번호 추출 (다음 참조에 컨텍스트 제공용)
-                if let firstNum = Int(finalRef.split(separator: ",").first ?? "") {
-                    lastParsedChapter = firstNum
-                }
-
-                if shouldIncludeBook {
-                    normalized.append(part.replacingOccurrences(of: trimmed, with: "\(book) \(finalRef)"))
-                } else {
-                    normalized.append(part.replacingOccurrences(of: trimmed, with: finalRef))
-                }
-            } else if let contextBook = contextBook {
-                // 책 이름이 명시되지 않은 경우: 앞의 컨텍스트 책 이름 적용
-                // 예: "시편 8; 74-89" → "시편 8; 시편 74-89"
-                // 또는: "욥 26,12-14; 38─39" → "욥 26,12-14; 욥 38─39"
-                if !finalRef.isEmpty {
-                    // 숫자로 시작하는 참조에만 컨텍스트 책 추가
-                    let firstChar = finalRef.first
-                    if firstChar?.isNumber ?? false {
-                        // 범위 참조에 대해 장/절 구분 판단
-                        if let bookID = contextBookID, isChapterRange(finalRef, currentChapter: lastParsedChapter, bookID: bookID) {
-                            // 장 범위로 판단되면 쉼표 추가 ("74-89" → "74-89 참조")
-                            // normalizeChapterRangeReferences와 일관성 있게 처리
-                            normalized.append(part.replacingOccurrences(of: trimmed, with: "\(contextBook) \(finalRef)"))
-                        } else {
-                            // 절 범위 또는 절만 있는 참조
-                            normalized.append(part.replacingOccurrences(of: trimmed, with: "\(contextBook) \(finalRef)"))
-                        }
-                    } else {
-                        normalized.append(part)
-                    }
-                } else {
-                    normalized.append(part)
-                }
-            } else {
-                normalized.append(part)
-            }
-        }
-
-        return normalized.joined(separator: ";")
+        return result
     }
 
     /// 절만 있는 참조를 정규화한다.
@@ -715,6 +601,130 @@ enum ScriptureRefNormalizer {
         }
 
         return result
+    }
+
+    /// Phase 1: 세미콜론으로 분리된 참조의 문맥 상속 로직 강화
+    /// 예: "창세 1,1; 2,4-23" → "창세 1,1; 창세 2,4-23"
+    /// 예: "; 21,1-7에 따르면" → "창기 21,1-7에 따르면" (앞 문맥에서 책 이름 상속)
+    /// 세미콜론 뒤에 책 이름이 없는 경우, 이전 참조의 책 이름을 상속하거나
+    /// 현재 주석의 책 이름을 사용한다.
+    private static func normalizeSemicolonSeparatedReferences(_ text: String, currentBook: String, currentBookID: String) -> String {
+        let parts = text.split(separator: ";", omittingEmptySubsequences: false).map { String($0) }
+        var normalized: [String] = []
+        var contextBook: String? = currentBook.isEmpty ? nil : currentBook
+        var contextBookID: String? = currentBookID.isEmpty ? nil : currentBookID
+        var lastParsedChapter: Int = 0
+
+        for part in parts {
+            let trimmed = part.trimmingCharacters(in: .whitespaces)
+
+            if trimmed.isEmpty {
+                normalized.append(part)
+                continue
+            }
+
+            let (book, ref) = extractBookAndRef(from: trimmed)
+            var finalBook = book
+            var finalRef = ref
+
+            // 1단계: 책 이름이 없으면 ref 시작 부분에 책 약자가 있는지 확인
+            if book == nil && !ref.isEmpty {
+                var refToCheck = ref
+                // 앞의 구두점 제거
+                while !refToCheck.isEmpty && !refToCheck.first!.isLetter {
+                    refToCheck.removeFirst()
+                }
+
+                let refWords = refToCheck.split(separator: " ", maxSplits: 1).map { String($0) }
+                if !refWords.isEmpty {
+                    let firstWord = refWords[0]
+                    if let foundBook = Bible.books.first(where: { $0.abbrev == firstWord || $0.searchKeywords.contains(firstWord) }) {
+                        finalBook = foundBook.name
+                        finalRef = ref
+                    }
+                }
+            }
+
+            // 2단계: 책 이름이 명시된 경우 - contextBook 업데이트
+            if let book = finalBook {
+                contextBook = book
+                if let foundBook = Bible.book(book) {
+                    contextBookID = foundBook.id
+                }
+
+                // 장 번호 추출 (다음 참조에 컨텍스트 제공용)
+                if let firstNum = Int(finalRef.split(separator: ",").first ?? "") {
+                    lastParsedChapter = firstNum
+                }
+
+                // 중복 제거 (ref에 책 약자가 포함된 경우)
+                var shouldIncludeBook = true
+                let refWords = finalRef.split(separator: " ").map { String($0) }
+                if !refWords.isEmpty {
+                    let firstWord = refWords[0]
+                    if Bible.books.contains(where: { $0.abbrev == firstWord || $0.searchKeywords.contains(firstWord) }) {
+                        shouldIncludeBook = false
+                    }
+
+                    // ref 내 다른 책 이름/약자 찾기
+                    if shouldIncludeBook && refWords.count > 1 {
+                        for i in 1..<refWords.count {
+                            let potentialBookRef = refWords[i...].joined(separator: " ")
+                            let currentWord = refWords[i]
+
+                            if let foundBook = Bible.books.first(where: {
+                                $0.abbrev == currentWord || $0.searchKeywords.contains(currentWord)
+                            }) {
+                                finalRef = potentialBookRef
+                                shouldIncludeBook = false
+                                break
+                            }
+                            if let foundBook = Bible.books.first(where: { potentialBookRef.hasPrefix($0.name) }) {
+                                finalRef = potentialBookRef
+                                shouldIncludeBook = false
+                                break
+                            }
+                        }
+                    }
+                }
+
+                if shouldIncludeBook {
+                    normalized.append(part.replacingOccurrences(of: trimmed, with: "\(book) \(finalRef)"))
+                } else {
+                    normalized.append(part.replacingOccurrences(of: trimmed, with: finalRef))
+                }
+            }
+            // 3단계: 책 이름이 없는 경우 - contextBook 상속
+            else if let contextBook = contextBook {
+                if !finalRef.isEmpty {
+                    let firstChar = finalRef.first
+                    if firstChar?.isNumber ?? false {
+                        // 숫자로 시작하는 참조: contextBook 추가
+                        if let bookID = contextBookID, isChapterRange(finalRef, currentChapter: lastParsedChapter, bookID: bookID) {
+                            normalized.append(part.replacingOccurrences(of: trimmed, with: "\(contextBook) \(finalRef)"))
+                        } else {
+                            normalized.append(part.replacingOccurrences(of: trimmed, with: "\(contextBook) \(finalRef)"))
+                        }
+
+                        // 장 번호 업데이트 (같은 책 내 계속된 참조용)
+                        if let firstNum = Int(finalRef.split(separator: ",").first ?? "") {
+                            lastParsedChapter = firstNum
+                        }
+                    } else {
+                        // 숫자로 시작하지 않으면 그대로 유지 (문맥 텍스트)
+                        normalized.append(part)
+                    }
+                } else {
+                    normalized.append(part)
+                }
+            }
+            // 4단계: contextBook도 없으면 그대로 유지
+            else {
+                normalized.append(part)
+            }
+        }
+
+        return normalized.joined(separator: ";")
     }
 
     /// 성경 참조 텍스트를 AttributedString으로 변환하여 cross-link를 추가한다.
