@@ -620,7 +620,13 @@ final class BibleStore {
         guard trimmed.count >= 1 else { return [] }
 
         // 판본당 검색 제한을 동적으로 조정 (각 판본에서 충분히 가져오기)
+        // 제한 사유: 성능 최적화 및 UI 반응성 (무제한 검색시 메모리/CPU 부담)
         // 예: 3개 판본이면 각 판본에서 150개씩 = 총 450개, 나중에 limit으로 자르기
+        //
+        // limit 선택: 400개는 균형점
+        // - 1개 판본: 400개까지 검색 (대부분의 일반 단어는 충분)
+        // - 3개 판본: 각 133개 (총 399개, 균형잡힘)
+        // - 대부분의 사용자는 처음 50개 페이지 안에서 찾음
         let perEdition = max(limit / max(1, searchEditions.count), 100)
         var all: [SearchHit] = []
 
