@@ -76,6 +76,12 @@ enum ScriptureRefNormalizer {
         // 한글 절 구분자 제거 및 범위 형식 통일
         result = normalizeNonStandardRangeFormats(result)
 
+        // 3.72단계: Phase 3 - 절/장 마커 누락 범위 정규화 (76건)
+        // 문맥상 장/절 구분을 판단하여 명확한 마커 추가
+        if let currentBook = currentBook {
+            result = addMissingVerseChapterMarkers(result, currentBook: currentBook, currentBookID: currentBookID, chapter: chapter)
+        }
+
         // 3.75단계: "입문 참조" 패턴 정규화 (예: "('입문' 6 참조)", "('입문' 4의 2)")
         if let currentBook = currentBook {
             result = normalizeIntroductionReferences(result, currentBook: currentBook)
@@ -248,6 +254,93 @@ enum ScriptureRefNormalizer {
         }
 
         return result
+    }
+
+    /// Phase 3: 절/장 마커 누락 범위 정규화 (76건)
+    /// 예: "13-14" → "13절-14절" (문맥상 절 범위)
+    /// 예: "26-27" → "26장-27장" (문맥상 장 범위)
+    /// 문맥상 장/절을 판단하여 명확한 마커를 추가한다.
+    private static func addMissingVerseChapterMarkers(_ text: String, currentBook: String, currentBookID: String, chapter: Int) -> String {
+        var result = text
+
+        // 패턴: "(숫자-숫자 [참조]?)" 또는 "숫자-숫자" 형식
+        // 예: "(13-14)", "13-14 참조", "; 26-27"
+        let pattern = "(?:^|[\\s(;])(\\d+)-(\\d+)(?=[\\s)참조:;.,]|$)"
+        guard let regex = try? NSRegularExpression(pattern: pattern) else {
+            return result
+        }
+
+        let ns = result as NSString
+        let matches = regex.matches(in: result, range: NSRange(location: 0, length: ns.length))
+
+        for match in matches.reversed() {
+            if match.numberOfRanges >= 3 {
+                let startStr = ns.substring(with: match.range(at: 1))
+                let endStr = ns.substring(with: match.range(at: 2))
+
+                guard let startNum = Int(startStr), let endNum = Int(endStr) else {
+                    continue
+                }
+
+                let fullMatch = ns.substring(with: match.range)
+                let prefix = String(fullMatch.first ?? " ")
+
+                // 장/절 판단 로직
+                let isChapterRange = isRangeAChapterRange(startNum, endNum, currentBookID: currentBookID, chapter: chapter)
+
+                let replacement: String
+                if isChapterRange {
+                    // 장 범위: "26-27" → "26장-27장"
+                    replacement = "\(prefix)\(startNum)장-\(endNum)장"
+                } else {
+                    // 절 범위: "13-14" → "13절-14절"
+                    replacement = "\(prefix)\(startNum)절-\(endNum)절"
+                }
+
+                result = (result as NSString).replacingCharacters(in: match.range, with: replacement)
+            }
+        }
+
+        return result
+    }
+
+    /// 숫자 범위가 장 범위인지 절 범위인지 판단한다.
+    /// 판정 기준:
+    /// 1. 범위가 책의 최대 장 수를 초과하면 → 절 범위
+    /// 2. 범위가 책의 최대 장 수 이내이고 현재 장을 초과하면 → 장 범위
+    /// 3. 범위가 현재 장 이내이면 → 절 범위
+    /// 4. 기타 → 절 범위 (보수적 판정)
+    private static func isRangeAChapterRange(_ startNum: Int, _ endNum: Int, currentBookID: String, chapter: Int) -> Bool {
+        // 책 정보 조회
+        guard let book = Bible.book(currentBookID) else {
+            // 책 정보 없으면 보수적으로 절 범위로 판정
+            return false
+        }
+
+        let maxChapters = book.chapters
+
+        // 1. 범위가 최대 장 수를 초과하면 절 범위 (장 수가 이렇게 많을 수 없음)
+        if startNum > maxChapters || endNum > maxChapters {
+            return false
+        }
+
+        // 2. 시작이 현재 장을 초과하면 장 범위 (다음 장들)
+        if startNum > chapter && chapter > 0 {
+            return true
+        }
+
+        // 3. 범위가 현재 장 이내면 절 범위
+        if endNum <= chapter {
+            return false
+        }
+
+        // 4. 기타: 범위가 큰 경우 장 범위로 판정 (20 이상)
+        if endNum - startNum >= 20 {
+            return true
+        }
+
+        // 5. 기본값: 절 범위 (보수적)
+        return false
     }
 
     /// 점 형식 절 참조를 정규화한다.
