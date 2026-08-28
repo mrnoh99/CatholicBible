@@ -344,10 +344,14 @@ struct ReaderPane: View {
     @State private var skipChapterRestore = false
     /// 캐시된 소제목 맵 (성능 최적화)
     @State private var cachedTitleMap: [String: String] = [:]
+    @State private var cachedTitleChapter: Int = -1
+    @State private var cachedTitleEditionID: String = ""
+    @State private var cachedTitleBookID: String = ""
     /// 캐시된 절 목록 (성능 최적화 - 반복적인 store.verses() 호출 방지)
     @State private var cachedVerses: [Verse] = []
     @State private var cachedChapter: Int = -1
     @State private var cachedEditionID: String = ""
+    @State private var cachedBookID: String = ""
 
     private var edition: Edition { Editions.edition(editionID) ?? Editions.all[0] }
     private var book: BibleBook { Bible.book(bookID) ?? Bible.books[0] }
@@ -469,6 +473,12 @@ struct ReaderPane: View {
             cachedTitleMap = [:]
             return
         }
+        if cachedTitleChapter == chapter && cachedTitleEditionID == editionID && cachedTitleBookID == book.id {
+            return
+        }
+        cachedTitleChapter = chapter
+        cachedTitleEditionID = editionID
+        cachedTitleBookID = book.id
         let titles = store.titles(edition: edition, book: book, chapter: chapter)
         var newMap: [String: String] = [:]
         for title in titles {
@@ -478,12 +488,12 @@ struct ReaderPane: View {
     }
 
     private func updateVersesCache() {
-        let key = "\(editionID).\(book.id).\(chapter)"
-        if cachedChapter == chapter && cachedEditionID == editionID {
+        if cachedChapter == chapter && cachedEditionID == editionID && cachedBookID == book.id {
             return
         }
         cachedChapter = chapter
         cachedEditionID = editionID
+        cachedBookID = book.id
         if chapter > 0 {
             cachedVerses = store.verses(edition: edition, book: book, chapter: chapter)
         } else {
