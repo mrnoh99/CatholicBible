@@ -247,11 +247,6 @@ struct ContentView: View {
                     // iPad/Mac에서 상단 메뉴 표시
                     if hSize == .regular {
                         HStack(spacing: 16) {
-                            Text("성경 읽기")
-                                .font(.headline)
-                                .fontWeight(.semibold)
-                                .frame(maxWidth: .infinity, alignment: .center)
-
                             Spacer()
 
                             Button("", systemImage: "sun.max") { showMass = true }
