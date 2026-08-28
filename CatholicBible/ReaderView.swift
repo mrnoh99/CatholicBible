@@ -217,9 +217,6 @@ struct ReaderView: View {
                 .help("이전 페이지")
                 .opacity(navigation.canGoBack ? 1 : 0.4)
 
-                Text("성경 읽기")
-                    .font(.system(size: 16, weight: .semibold, design: .default))
-
                 Button { navigation.goForward() } label: {
                     Image(systemName: "chevron.right")
                         .font(.system(size: 16, weight: .semibold))
