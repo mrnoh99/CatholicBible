@@ -591,12 +591,16 @@ struct ReaderPane: View {
                 guard let sync = syncVerse, let v, v != sync.wrappedValue else { return }
                 sync.wrappedValue = v
             }
-            .onChange(of: syncVerse?.wrappedValue) { _, v in
-                guard let v, v != topVerse else { return }
-                proxy.scrollTo(v, anchor: .top)
-            }
             .onChange(of: scrollTarget) { _, _ in performScroll(proxy, verses: verses) }
             .onChange(of: chapter) { _, _ in topVerse = nil; performScroll(proxy, verses: verses) }
+            .task(id: syncVerse?.wrappedValue) {
+                guard let sync = syncVerse, let v = sync.wrappedValue, v != topVerse else { return }
+                DispatchQueue.main.async {
+                    withAnimation(.easeInOut(duration: 0.15)) {
+                        proxy.scrollTo(String(v), anchor: .top)
+                    }
+                }
+            }
             .onAppear { performScroll(proxy, verses: verses) }
         }
     }
