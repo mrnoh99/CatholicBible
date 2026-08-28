@@ -392,7 +392,7 @@ struct ShelfView: View {
                     Text("매일미사")
                         .font(.system(size: 17, weight: .semibold, design: .default))
                         .foregroundStyle(settings.theme.text)
-                    Text(LiturgicalCalendar.liturgicalDayName())
+                    Text(LiturgicalCalendar.commemorationName() ?? LiturgicalCalendar.liturgicalDayName())
                         .font(.system(size: 14, weight: .regular, design: .default))
                         .foregroundStyle(settings.theme.secondary)
                         .lineLimit(1)

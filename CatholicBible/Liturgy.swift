@@ -324,7 +324,7 @@ final class LiturgyStore {
     /// 그 날 미사 명칭 (저장값 우선, 없으면 전례력 계산).
     func title(_ date: Date) -> String {
         if let t = stored(date)?.title, !t.isEmpty { return t }
-        return LiturgicalCalendar.liturgicalDayName(date)
+        return LiturgicalCalendar.commemorationName(date) ?? LiturgicalCalendar.liturgicalDayName(date)
     }
 
     /// 그 날 전례색 (저장값 우선, 없으면 전례력 계산).
