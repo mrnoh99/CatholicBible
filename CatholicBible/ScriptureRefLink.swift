@@ -363,19 +363,20 @@ enum ScriptureRef {
         let s = attr.string as NSString
         var processed: [NSRange] = []
 
+        // 현재 장 번호를 한 번만 계산
+        let currentChapter = extractCurrentChapter(from: s) ?? 1
+
         // Pattern 1: "v. N" 또는 "v. N-N" (현재 장의 절)
         // 예: "v. 22", "v. 1-5"
         if let versePattern = try? NSRegularExpression(pattern: "\\bv\\.\\s+(\\d{1,3})(?:\\s*[-–]\\s*(\\d{1,3}))?\\b") {
             for m in versePattern.matches(in: attr.string, range: NSRange(location: 0, length: s.length)) {
                 if processed.contains(where: { NSIntersectionRange(m.range, $0).length > 0 }) { continue }
 
-                guard let v = Int(s.substring(with: m.range(at: 1))),
-                      let chapter = currentChapterFromContext(s: s, matchRange: m.range) else { continue }
-
+                guard let v = Int(s.substring(with: m.range(at: 1))) else { continue }
                 let endVerse = m.numberOfRanges > 2 && m.range(at: 2).location != NSNotFound
                     ? Int(s.substring(with: m.range(at: 2))) ?? v : v
 
-                if let url = URL(string: "catholicbible://xref?b=\(bookID)&c=\(chapter)&v=\(v)&ec=\(chapter)&ev=\(endVerse)") {
+                if let url = URL(string: "catholicbible://xref?b=\(bookID)&c=\(currentChapter)&v=\(v)&ec=\(currentChapter)&ev=\(endVerse)") {
                     attr.addAttributes([.link: url, .foregroundColor: color, .underlineStyle: NSUnderlineStyle.single.rawValue], range: m.range)
                     processed.append(m.range)
                 }
@@ -383,16 +384,15 @@ enum ScriptureRef {
         }
 
         // Pattern 2: "vv. N, N" 또는 "vv. N-N" (현재 장의 여러 절)
-        // 예: "vv. 11, 12", "vv. 1-5"
-        if let versesPattern = try? NSRegularExpression(pattern: "\\bvv\\.\\s+(\\d{1,3})\\s*(?:,|[-–])\\s*(\\d{1,3})") {
+        // 예: "vv. 11, 12", "vv. 1-5", "vv. 9–10"
+        if let versesPattern = try? NSRegularExpression(pattern: "\\bvv\\.\\s+(\\d{1,3})\\s*(?:,|[-–])\\s*(\\d{1,3})\\b") {
             for m in versesPattern.matches(in: attr.string, range: NSRange(location: 0, length: s.length)) {
                 if processed.contains(where: { NSIntersectionRange(m.range, $0).length > 0 }) { continue }
 
                 guard let v = Int(s.substring(with: m.range(at: 1))),
-                      let endV = Int(s.substring(with: m.range(at: 2))),
-                      let chapter = currentChapterFromContext(s: s, matchRange: m.range) else { continue }
+                      let endV = Int(s.substring(with: m.range(at: 2))) else { continue }
 
-                if let url = URL(string: "catholicbible://xref?b=\(bookID)&c=\(chapter)&v=\(v)&ec=\(chapter)&ev=\(endV)") {
+                if let url = URL(string: "catholicbible://xref?b=\(bookID)&c=\(currentChapter)&v=\(v)&ec=\(currentChapter)&ev=\(endV)") {
                     attr.addAttributes([.link: url, .foregroundColor: color, .underlineStyle: NSUnderlineStyle.single.rawValue], range: m.range)
                     processed.append(m.range)
                 }
@@ -431,20 +431,18 @@ enum ScriptureRef {
         }
     }
 
-    /// 문맥에서 현재 장 번호 추론 (절 참조에서 사용)
-    private static func currentChapterFromContext(s: NSString, matchRange: NSRange) -> Int? {
-        // 절 참조 앞에서 "장 N:" 패턴 찾기
-        let contextStart = max(0, matchRange.location - 200)
-        let contextRange = NSRange(location: contextStart, length: matchRange.location - contextStart)
-        let contextText = s.substring(with: contextRange)
-
-        if let chapterPattern = try? NSRegularExpression(pattern: "(\\d{1,3}):\\s*\\d{1,3}") {
-            if let lastMatch = chapterPattern.matches(in: contextText, range: NSRange(location: 0, length: contextText.count)).last,
-               let chapter = Int(contextText.substring(with: lastMatch.range(at: 1))) {
+    /// 주석 텍스트에서 현재 장 번호 추출 (영문 형식: "1:1", "1:7" 등)
+    private static func extractCurrentChapter(from s: NSString) -> Int? {
+        // 주석의 첫 부분에서 "N:M" 형식의 장:절 찾기 (첫 100자)
+        let searchStart = min(100, s.length)
+        if let chapterPattern = try? NSRegularExpression(pattern: "^.*?(\\d{1,3}):\\d{1,3}") {
+            if let match = chapterPattern.firstMatch(in: s.substring(to: searchStart),
+                                                      range: NSRange(location: 0, length: min(searchStart, s.length))),
+               let chapter = Int(s.substring(with: match.range(at: 1))) {
                 return chapter
             }
         }
-        return 1
+        return nil
     }
 }
 
