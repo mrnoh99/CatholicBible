@@ -72,6 +72,10 @@ enum ScriptureRefNormalizer {
             result = normalizeDotFormatReferences(result, currentBook: currentBook, chapter: chapter)
         }
 
+        // 3.7단계: Phase 2 - 비표준 범위 형식 정규화 (3,726건)
+        // 한글 절 구분자 제거 및 범위 형식 통일
+        result = normalizeNonStandardRangeFormats(result)
+
         // 3.75단계: "입문 참조" 패턴 정규화 (예: "('입문' 6 참조)", "('입문' 4의 2)")
         if let currentBook = currentBook {
             result = normalizeIntroductionReferences(result, currentBook: currentBook)
@@ -171,6 +175,74 @@ enum ScriptureRefNormalizer {
                     // 책 이름 추가
                     let replacement = "(\(currentBook) \(refContent))"
                     result = (result as NSString).replacingCharacters(in: match.range, with: replacement)
+                }
+            }
+        }
+
+        return result
+    }
+
+    /// Phase 2: 비표준 범위 형식 정규화 (3,726건)
+    /// 예: "2,4ㄱ-23" → "2,4-23" (한글 절 구분자 제거)
+    /// 예: "1,1-4" → "1,1-4" (이미 표준, 유지)
+    /// 한글 절 구분자(ㄱ-ㅣ)를 제거하여 범위 형식을 명확히 한다.
+    private static func normalizeNonStandardRangeFormats(_ text: String) -> String {
+        var result = text
+
+        // 패턴 1: "장,절ㄱ-절ㄴ" 형식 → "장,절-절"
+        // 예: "2,4ㄱ-23" → "2,4-23"
+        // 예: "2,4ㄴ-23" → "2,4-23"
+        let pattern1 = "(\\d+),(\\d+)[ㄱ-ㅣ]-(\\d+)[ㄱ-ㅣ]?"
+        if let regex = try? NSRegularExpression(pattern: pattern1) {
+            let ns = result as NSString
+            let matches = regex.matches(in: result, range: NSRange(location: 0, length: ns.length))
+
+            for match in matches.reversed() {
+                if match.numberOfRanges >= 4 {
+                    let chapter = ns.substring(with: match.range(at: 1))
+                    let startVerse = ns.substring(with: match.range(at: 2))
+                    let endVerse = ns.substring(with: match.range(at: 3))
+                    let replacement = "\(chapter),\(startVerse)-\(endVerse)"
+                    result = (result as NSString).replacingCharacters(in: match.range, with: replacement)
+                }
+            }
+        }
+
+        // 패턴 2: "장ㄱ-절ㄴ" 형식 (장과 절이 모두 한글 구분자) → "장-절"
+        // 예: "3ㄱ-14ㄴ" → "3-14"
+        let pattern2 = "(\\d+)[ㄱ-ㅣ]-(\\d+)[ㄱ-ㅣ]"
+        if let regex = try? NSRegularExpression(pattern: pattern2) {
+            let ns = result as NSString
+            let matches = regex.matches(in: result, range: NSRange(location: 0, length: ns.length))
+
+            for match in matches.reversed() {
+                if match.numberOfRanges >= 3 {
+                    let startNum = ns.substring(with: match.range(at: 1))
+                    let endNum = ns.substring(with: match.range(at: 2))
+                    let replacement = "\(startNum)-\(endNum)"
+                    result = (result as NSString).replacingCharacters(in: match.range, with: replacement)
+                }
+            }
+        }
+
+        // 패턴 3: "절ㄱ" 형식 (단일 절에 한글 구분자) → "절"
+        // 예: "5ㄱ" → "5" (컨텍스트에서 단일 절)
+        let pattern3 = "(\\d+)[ㄱ-ㅣ](?![\\d-])"
+        if let regex = try? NSRegularExpression(pattern: pattern3) {
+            let ns = result as NSString
+            let matches = regex.matches(in: result, range: NSRange(location: 0, length: ns.length))
+
+            for match in matches.reversed() {
+                if match.numberOfRanges >= 2 {
+                    let verse = ns.substring(with: match.range(at: 1))
+                    // 앞의 문맥 확인 (쉼표가 없으면 장, 있으면 절)
+                    let beforeRange = NSRange(location: max(0, match.range.location - 3), length: min(3, match.range.location))
+                    let before = beforeRange.length > 0 ? ns.substring(with: beforeRange) : ""
+
+                    // 쉼표가 직전에 있거나, 괄호/세미콜론 직후면 절
+                    if before.contains(",") || before.hasSuffix("(") || before.hasSuffix(";") {
+                        result = (result as NSString).replacingCharacters(in: match.range, with: verse)
+                    }
                 }
             }
         }
