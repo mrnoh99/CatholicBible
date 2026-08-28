@@ -65,6 +65,13 @@ struct AnnotatedReader: View {
     }
 
     var body: some View {
+        mainView
+            .environment(\.openURL, OpenURLAction { url in
+                handleURLInternal(url)
+            })
+    }
+
+    private var mainView: some View {
         Group {
             VStack(spacing: 0) {
                 if showHeader { header }
@@ -81,7 +88,6 @@ struct AnnotatedReader: View {
             }
             .onChange(of: chapter) { _, new in
                 guard new > 0 else { return }
-                // 장 네비게이션으로 변경: 첫 절로 (위의 네비게이션 chevron은 scrollTarget을 이미 설정함)
                 if isInitialized && scrollTarget == nil {
                     scrollTarget = 1
                 }
@@ -93,7 +99,7 @@ struct AnnotatedReader: View {
                     parseBookSelection(picked)
                     showBookPicker = false
                 }
-                .environment(store)   // Mac Catalyst: 모달 환경 전파 대비
+                .environment(store)
             }
             .fullScreenCover(isPresented: $showChapterPicker) {
                 ChapterPickerView(book: book, current: max(chapter, 1)) { picked in
@@ -125,33 +131,32 @@ struct AnnotatedReader: View {
                     .environment(knb)
             }
         }
-        // 주석·상호참조의 성경 인용(catholicbible://xref)과 각주 마커(catholicbible://note)는
-        // 여기서 중첩 미리보기로 처리하고, 나머지는 부모 처리에 위임한다.
-        .environment(\.openURL, OpenURLAction { url in
-            if url.scheme == "catholicbible", url.host == "xref" {
-                let items = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems ?? []
-                func q(_ k: String) -> String? { items.first { $0.name == k }?.value }
-                if let b = q("b"), let cs = q("c"), let c = Int(cs),
-                   let vs = q("v"), let v = Int(vs) {
-                    xrefTarget = XrefTarget(bookID: b, chapter: c, verse: v,
-                                            endChapter: q("ec").flatMap { Int($0) } ?? 0,
-                                            endVerse: q("ev").flatMap { Int($0) } ?? 0)
-                }
-                return .handled
+    }
+
+    private func handleURLInternal(_ url: URL) -> OpenURLAction.Result {
+        if url.scheme == "catholicbible", url.host == "xref" {
+            let items = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems ?? []
+            func q(_ k: String) -> String? { items.first { $0.name == k }?.value }
+            if let b = q("b"), let cs = q("c"), let c = Int(cs),
+               let vs = q("v"), let v = Int(vs) {
+                xrefTarget = XrefTarget(bookID: b, chapter: c, verse: v,
+                                        endChapter: q("ec").flatMap { Int($0) } ?? 0,
+                                        endVerse: q("ev").flatMap { Int($0) } ?? 0)
             }
-            if url.scheme == "catholicbible", url.host == "note" {
-                let items = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems ?? []
-                func q(_ k: String) -> String? { items.first { $0.name == k }?.value }
-                if let b = q("b"), let cs = q("c"), let c = Int(cs), let n = q("n"),
-                   let text = knb.notes(edition: editionID, bookID: b, chapter: c)
-                    .first(where: { $0.n == n })?.text {
-                    noteTarget = MarkerNoteTarget(n: n, text: text, bookID: b, chapter: c)
-                }
-                return .handled
-            }
-            parentOpenURL(url)          // 나머지는 부모(ReaderView)가 처리
             return .handled
-        })
+        }
+        if url.scheme == "catholicbible", url.host == "note" {
+            let items = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems ?? []
+            func q(_ k: String) -> String? { items.first { $0.name == k }?.value }
+            if let b = q("b"), let cs = q("c"), let c = Int(cs), let n = q("n"),
+               let text = knb.notes(edition: editionID, bookID: b, chapter: c)
+                .first(where: { $0.n == n })?.text {
+                noteTarget = MarkerNoteTarget(n: n, text: text, bookID: b, chapter: c)
+            }
+            return .handled
+        }
+        parentOpenURL(url)
+        return .handled
     }
 
     // MARK: 위치
