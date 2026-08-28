@@ -93,7 +93,9 @@ enum ScriptureRefNormalizer {
         }
 
         // 4단계: 세미콜론 구분 참조 정규화 (강화된 로직)
-        result = normalizeSemicolonSeparatedReferences(result, currentBook: currentBook, currentBookID: currentBookID)
+        if let currentBook = currentBook {
+            result = normalizeSemicolonSeparatedReferences(result, currentBook: currentBook, currentBookID: currentBookID)
+        }
 
         return result
     }
@@ -317,7 +319,7 @@ enum ScriptureRefNormalizer {
             return false
         }
 
-        let maxChapters = book.chapters
+        let maxChapters = book.chapterCount
 
         // 1. 범위가 최대 장 수를 초과하면 절 범위 (장 수가 이렇게 많을 수 없음)
         if startNum > maxChapters || endNum > maxChapters {
