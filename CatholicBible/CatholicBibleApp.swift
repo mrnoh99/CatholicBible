@@ -31,6 +31,10 @@ struct CatholicBibleApp: App {
                     await liturgy.load()
                     checkAutoBackup()
                 }
+                .onOpenURL { url in
+                    // Handle custom catholicbible:// URLs at the app level
+                    // This allows the system to properly route URLs to the app
+                }
         }
     }
 
