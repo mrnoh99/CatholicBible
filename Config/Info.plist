@@ -23,5 +23,16 @@
 	<true/>
 	<key>LSSupportsOpeningDocumentsInPlace</key>
 	<true/>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>CatholicBible</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>catholicbible</string>
+			</array>
+		</dict>
+	</array>
 </dict>
 </plist>
