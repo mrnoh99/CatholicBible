@@ -396,6 +396,55 @@ struct AnnotatedReader: View {
             }
         }
     }
+
+    // MARK: - 캐시 업데이트
+
+    private func updateVersesCache() {
+        if cachedVersesChapter == chapter && cachedVersesEditionID == editionID && cachedVersesBookID == book.id {
+            return
+        }
+        cachedVersesChapter = chapter
+        cachedVersesEditionID = editionID
+        cachedVersesBookID = book.id
+        if chapter > 0 {
+            cachedVerses = store.verses(edition: edition, book: book, chapter: chapter)
+        } else {
+            cachedVerses = []
+        }
+    }
+
+    private func updateNotesCache() {
+        if cachedNotesChapter == chapter && cachedNotesEditionID == editionID && cachedNotesBookID == book.id {
+            return
+        }
+        cachedNotesChapter = chapter
+        cachedNotesEditionID = editionID
+        cachedNotesBookID = book.id
+        if chapter > 0 {
+            cachedNotes = knb.notes(edition: editionID, bookID: book.id, chapter: chapter)
+        } else {
+            cachedNotes = []
+        }
+    }
+
+    private func updateTitleMapCache() {
+        guard chapter > 0 else {
+            cachedTitleMap = [:]
+            return
+        }
+        if cachedTitleMapChapter == chapter && cachedTitleMapEditionID == editionID && cachedTitleMapBookID == book.id {
+            return
+        }
+        cachedTitleMapChapter = chapter
+        cachedTitleMapEditionID = editionID
+        cachedTitleMapBookID = book.id
+        let titles = store.titles(edition: edition, book: book, chapter: chapter)
+        var newMap: [String: String] = [:]
+        for title in titles {
+            newMap[title.verse] = title.text
+        }
+        cachedTitleMap = newMap
+    }
 }
 
 // MARK: - 소제목
