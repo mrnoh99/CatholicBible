@@ -307,7 +307,7 @@ private struct ReadingCard: View {
 
     var body: some View {
         let book = previewBook(reading)
-        let items = expanded ? previewItemsCached(reading) : []
+        let items = expanded ? previewItemsCached : []
         let multiChapter = Set(items.map { $0.chapter }).count > 1
         VStack(alignment: .leading, spacing: 8) {
             HStack(alignment: .firstTextBaseline) {
