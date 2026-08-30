@@ -32,6 +32,9 @@ struct CatholicBibleApp: App {
                     checkAutoBackup()
                 }
         }
+        .onOpenURL { url in
+            // catholicbible:// URL 처리는 각 view에서 처리됨
+        }
     }
 
     private func checkAutoBackup() {
