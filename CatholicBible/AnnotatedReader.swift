@@ -54,7 +54,7 @@ struct AnnotatedReader: View {
     @State private var cachedVersesEditionID: String = ""
     @State private var cachedVersesBookID: String = ""
     /// 주석 캐시 (성능 최적화)
-    @State private var cachedNotes: [KnbNote] = []
+    @State private var cachedNotes: [ChapterNote] = []
     @State private var cachedNotesChapter: Int = -1
     @State private var cachedNotesEditionID: String = ""
     @State private var cachedNotesBookID: String = ""
