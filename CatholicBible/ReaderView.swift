@@ -1141,6 +1141,9 @@ struct SelectableVerseText: UIViewRepresentable {
             tv.linkTextAttributes = [.foregroundColor: markerColor]
         }
 
+        // 본문 내 상호참조(예: "마르 8,11-13") 파싱 및 링크화
+        ScriptureRef.addLinks(to: attr, currentBook: bookID, color: UIColor(Color.accentColor), chapter: chapter)
+
         // 검색 쿼리에 해당하는 단어 하이라이트
         if !searchQuery.isEmpty {
             let ns = text as NSString
