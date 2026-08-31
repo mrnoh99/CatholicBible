@@ -450,6 +450,11 @@ struct ReaderPane: View {
             updateTitleMapCache()
             updateVersesCache()
 
+            // 연동 모드에서 장 변경 시 동기화 초기화
+            if let sync = syncVerse, sync.wrappedValue == nil {
+                sync.wrappedValue = 1
+            }
+
             // Follower가 아닌 경우만 추가 처리
             guard !isFollower else { return }
             // 장 네비게이션으로 변경: 첫 절로 (위의 네비게이션 chevron은 scrollTarget을 이미 설정함)
