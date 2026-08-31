@@ -902,6 +902,7 @@ struct IntroDetailView: View {
     @Environment(\.horizontalSizeClass) private var hSize
     @Environment(\.dismiss) private var dismiss
     @State private var xrefTarget: XrefTarget?
+    @State private var noteTarget: MarkerNoteTarget?
     @State private var showNotes = true
 
     private var wide: Bool { hSize == .regular }
@@ -974,6 +975,14 @@ struct IntroDetailView: View {
             .environment(\.openURL, OpenURLAction { url in handleURL(url); return .handled })
             .fullScreenCover(item: $xrefTarget) { t in
                 RefPreviewSheet(target: t)
+                    .environment(store)
+                    .environment(settings)
+                    .environment(annotations)
+                    .environment(navigation)
+                    .environment(knb)
+            }
+            .fullScreenCover(item: $noteTarget) { t in
+                MarkerNoteSheet(n: t.n, text: t.text, bookID: t.bookID, chapter: t.chapter)
                     .environment(store)
                     .environment(settings)
                     .environment(annotations)
