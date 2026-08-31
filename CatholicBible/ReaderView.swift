@@ -634,8 +634,8 @@ struct ReaderPane: View {
             }
             .onChange(of: scrollTarget) { _, _ in performScroll(proxy, verses: verses) }
             .onChange(of: chapter) { _, _ in topVerse = nil; performScroll(proxy, verses: verses) }
-            .onChange(of: verses.isEmpty) { _, empty in
-                if !empty && topVerse == nil {
+            .onChange(of: verses.count) { _, count in
+                if count > 0 && topVerse == nil {
                     topVerse = verses.first.flatMap { Int($0.number) }
                 }
             }
