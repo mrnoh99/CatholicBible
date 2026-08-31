@@ -630,11 +630,12 @@ struct ReaderPane: View {
             }
             .onChange(of: scrollTarget) { _, _ in performScroll(proxy, verses: verses) }
             .onChange(of: chapter) { _, _ in topVerse = nil; performScroll(proxy, verses: verses) }
-            .task(id: syncVerse?.wrappedValue) {
-                guard let sync = syncVerse, let v = sync.wrappedValue, v != topVerse else { return }
+            .onChange(of: syncVerse?.wrappedValue ?? -1) { _, newSyncVerse in
+                guard let sync = syncVerse, newSyncVerse > 0, newSyncVerse != topVerse else { return }
+                // 동기화된 절이 현재 절과 다르면 스크롤
                 DispatchQueue.main.async {
                     withAnimation(.easeInOut(duration: 0.15)) {
-                        proxy.scrollTo(String(v), anchor: .top)
+                        proxy.scrollTo(String(newSyncVerse), anchor: .top)
                     }
                 }
             }
