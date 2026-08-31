@@ -149,6 +149,10 @@ struct AnnotatedReader: View {
                     .environment(navigation)
                     .environment(knb)
             }
+            .environment(\.openURL, OpenURLAction { url in
+                print("🔗 [openURL handler] called: \(url)")
+                return handleURLInternal(url)
+            })
     }
 
     private func handleURLInternal(_ url: URL) -> OpenURLAction.Result {
