@@ -630,16 +630,27 @@ struct ReaderPane: View {
             }
             .onChange(of: scrollTarget) { _, _ in performScroll(proxy, verses: verses) }
             .onChange(of: chapter) { _, _ in topVerse = nil; performScroll(proxy, verses: verses) }
-            .onChange(of: syncVerse?.wrappedValue ?? -1) { _, newSyncVerse in
-                guard let sync = syncVerse, newSyncVerse > 0, newSyncVerse != topVerse else { return }
-                // 동기화된 절이 현재 절과 다르면 스크롤
-                DispatchQueue.main.async {
-                    withAnimation(.easeInOut(duration: 0.15)) {
-                        proxy.scrollTo(String(newSyncVerse), anchor: .top)
+            .onChange(of: syncVerse?.wrappedValue) { _, newValue in
+                // syncVerse 값이 변경되면 그 절로 스크롤
+                if let v = newValue, v > 0, v != topVerse {
+                    DispatchQueue.main.async {
+                        withAnimation(.easeInOut(duration: 0.15)) {
+                            proxy.scrollTo(String(v), anchor: .top)
+                        }
                     }
                 }
             }
-            .onAppear { performScroll(proxy, verses: verses) }
+            .onAppear {
+                performScroll(proxy, verses: verses)
+                // 초기 동기화 절이 있으면 거기로 스크롤
+                if let sync = syncVerse, let v = sync.wrappedValue, v > 0, v != topVerse {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                        withAnimation(.easeInOut(duration: 0.15)) {
+                            proxy.scrollTo(String(v), anchor: .top)
+                        }
+                    }
+                }
+            }
         }
     }
 
