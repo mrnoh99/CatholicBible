@@ -327,6 +327,9 @@ struct AnnotatedReader: View {
                         if let title = cachedTitleMap[String(verse.number)] {
                             SectionTitleView(text: title, bookID: book.id, chapter: chapter,
                                              linkable: true, searchQuery: navigation.searchQuery)
+                                .environment(\.openURL, OpenURLAction { url in
+                                    handleURLInternal(url)
+                                })
                         }
                         VerseRowView(edition: edition, book: book, chapter: chapter,
                                      verse: verse,
