@@ -634,11 +634,6 @@ struct ReaderPane: View {
             }
             .onChange(of: scrollTarget) { _, _ in performScroll(proxy, verses: verses) }
             .onChange(of: chapter) { _, _ in topVerse = nil; performScroll(proxy, verses: verses) }
-            .onChange(of: verses.count) { _, count in
-                if count > 0 && topVerse == nil {
-                    topVerse = verses.first?.number
-                }
-            }
             .task(id: syncVerse?.wrappedValue) {
                 guard let sync = syncVerse, let v = sync.wrappedValue, v != topVerse else { return }
                 DispatchQueue.main.async {
