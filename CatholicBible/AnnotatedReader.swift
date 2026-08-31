@@ -155,7 +155,9 @@ struct AnnotatedReader: View {
     }
 
     private func handleURLInternal(_ url: URL) -> OpenURLAction.Result {
+        print("📱 [AnnotatedReader] handleURLInternal: \(url.scheme)://\(url.host ?? "?") - \(url)")
         if url.scheme == "catholicbible", url.host == "xref" {
+            print("  ✓ xref handler")
             let items = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems ?? []
             func q(_ k: String) -> String? { items.first { $0.name == k }?.value }
             if let b = q("b"), let cs = q("c"), let c = Int(cs),
@@ -164,19 +166,26 @@ struct AnnotatedReader: View {
                                         endChapter: q("ec").flatMap { Int($0) } ?? 0,
                                         endVerse: q("ev").flatMap { Int($0) } ?? 0)
                 onOpenXref(target)
+                print("  ✓ onOpenXref called")
             }
             return .handled
         }
         if url.scheme == "catholicbible", url.host == "note" {
+            print("  ✓ note handler")
             let items = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems ?? []
             func q(_ k: String) -> String? { items.first { $0.name == k }?.value }
             if let b = q("b"), let cs = q("c"), let c = Int(cs), let n = q("n") {
+                print("  ✓ parsed: book=\(b), ch=\(c), note=\(n)")
                 let note = knb.notes(edition: editionID, bookID: b, chapter: c)
                     .first(where: { $0.n == n })
-                noteTarget = MarkerNoteTarget(n: n, text: note?.text ?? "이 주석을 찾지 못했습니다.", bookID: b, chapter: c)
+                noteTarget = MarkerNoteTarget(n: n, text: note?.text ?? "주석없음", bookID: b, chapter: c)
+                print("  ✓ noteTarget SET")
+            } else {
+                print("  ✗ failed to parse")
             }
             return .handled
         }
+        print("  → parentOpenURL")
         parentOpenURL(url)
         return .handled
     }
@@ -270,9 +279,6 @@ struct AnnotatedReader: View {
                                     searchQuery: navigation.searchQuery, editionID: editionID)
                         .frame(maxWidth: .infinity)
                 }
-                .environment(\.openURL, OpenURLAction { url in
-                    handleURLInternal(url)
-                })
             } else {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 0) {
@@ -286,9 +292,6 @@ struct AnnotatedReader: View {
                     .padding(.horizontal, fullWidth ? 16 : 28).padding(.bottom, 40)
                     .frame(maxWidth: .infinity)
                 }
-                .environment(\.openURL, OpenURLAction { url in
-                    handleURLInternal(url)
-                })
             }
         }
     }
@@ -646,6 +649,7 @@ struct AnnotationsPane: View {
     var editionID: String = "knbnotes"
     @State private var tab = 0        // 0=주석, 1=상호참조
     @Environment(ReaderSettings.self) private var settings
+    @Environment(\.openURL) private var openURL
 
     private var hasXrefs: Bool { !xrefs.isEmpty }
 
@@ -666,12 +670,14 @@ struct AnnotationsPane: View {
                           searchQuery: searchQuery,
                           selectedAnnotationNumber: selectedAnnotationNumber,
                           editionID: editionID)
+                    .environment(\.openURL, openURL)
             } else {
                 NotesList(title: "주석", notes: notes, emptyHint: emptyHint, bookID: bookID,
                           chapter: chapter,
                           searchQuery: searchQuery,
                           selectedAnnotationNumber: selectedAnnotationNumber,
                           editionID: editionID)
+                    .environment(\.openURL, openURL)
             }
         }
     }
