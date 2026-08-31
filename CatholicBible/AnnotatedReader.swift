@@ -271,7 +271,7 @@ struct AnnotatedReader: View {
             } else {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 0) {
-                        versesBlock(verses)
+                        versesBlock(verses, onOpenURL: { handleURLInternal($0) })
                         Divider().padding(.vertical, 16)
                         AnnotationsPane(notes: notes, xrefs: xrefs,
                                         emptyHint: emptyNotesHint, bookID: book.id, chapter: chapter,
@@ -293,7 +293,7 @@ struct AnnotatedReader: View {
         ScrollViewReader { proxy in
             ScrollView {
                 VStack(alignment: .leading, spacing: 0) {
-                    versesBlock(verses)
+                    versesBlock(verses, onOpenURL: { handleURLInternal($0) })
                 }
                 .frame(maxWidth: fullWidth ? .infinity : 720, alignment: .leading)
                 .padding(.horizontal, fullWidth ? 16 : 28).padding(.bottom, 40)
@@ -316,7 +316,7 @@ struct AnnotatedReader: View {
     }
 
     @ViewBuilder
-    private func versesBlock(_ verses: [Verse]) -> some View {
+    private func versesBlock(_ verses: [Verse], onOpenURL: ((URL) -> Void)? = nil) -> some View {
         chapterHeader
         if verses.isEmpty {
             MissingTextView(edition: edition, book: book).padding(.top, 32)
@@ -326,7 +326,8 @@ struct AnnotatedReader: View {
                     VStack(alignment: .leading, spacing: settings.lineSpacing * 0.9) {
                         if let title = cachedTitleMap[String(verse.number)] {
                             SectionTitleView(text: title, bookID: book.id, chapter: chapter,
-                                             linkable: true, searchQuery: navigation.searchQuery)
+                                             linkable: true, searchQuery: navigation.searchQuery,
+                                             onOpenURL: onOpenURL)
                         }
                         VerseRowView(edition: edition, book: book, chapter: chapter,
                                      verse: verse,
@@ -449,9 +450,10 @@ struct SectionTitleView: View {
     let chapter: Int
     var linkable: Bool = true
     var searchQuery: String = ""
+    var onOpenURL: ((URL) -> Void)? = nil
 
     @Environment(ReaderSettings.self) private var settings
-    @Environment(\.openURL) private var openURL
+    @Environment(\.openURL) private var environmentOpenURL
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -466,7 +468,7 @@ struct SectionTitleView: View {
                     linkColor: UIColor(Color.accentColor),
                     lineSpacing: settings.lineSpacing,
                     searchQuery: searchQuery,
-                    onOpenURL: { openURL($0) }
+                    onOpenURL: { onOpenURL?($0) ?? environmentOpenURL($0) }
                 )
             } else {
                 // 단순 텍스트
