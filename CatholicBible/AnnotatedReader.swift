@@ -149,9 +149,6 @@ struct AnnotatedReader: View {
                     .environment(navigation)
                     .environment(knb)
             }
-            .environment(\.openURL, OpenURLAction { url in
-                handleURLInternal(url)
-            })
     }
 
     private func handleURLInternal(_ url: URL) -> OpenURLAction.Result {
@@ -294,6 +291,9 @@ struct AnnotatedReader: View {
                 }
             }
         }
+        .environment(\.openURL, OpenURLAction { url in
+            handleURLInternal(url)
+        })
     }
 
     private var emptyNotesHint: String {
