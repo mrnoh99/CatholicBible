@@ -179,10 +179,8 @@ struct AnnotatedReader: View {
                 print("  ✓ parsed: book=\(b), ch=\(c), note=\(n)")
                 let note = knb.notes(edition: editionID, bookID: b, chapter: c)
                     .first(where: { $0.n == n })
-                DispatchQueue.main.async {
-                    noteTarget = MarkerNoteTarget(n: n, text: note?.text ?? "주석없음", bookID: b, chapter: c)
-                    print("  ✓ noteTarget SET")
-                }
+                noteTarget = MarkerNoteTarget(n: n, text: note?.text ?? "주석없음", bookID: b, chapter: c)
+                print("  ✓ noteTarget SET")
             } else {
                 print("  ✗ failed to parse")
             }
