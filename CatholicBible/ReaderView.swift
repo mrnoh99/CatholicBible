@@ -217,7 +217,12 @@ struct ReaderView: View {
     }
 
     private func openNote(ref: VerseRef, text: String) {
-        readingState.showAnnotatedNotes = true
+        let noteText = knbNotes.notes(edition: readingState.selectedEditionID,
+                                      bookID: ref.bookID,
+                                      chapter: ref.chapter)
+            .first(where: { $0.n == ref.verse })?.text ?? "이 주석을 찾지 못했습니다."
+        markerNote = MarkerNoteTarget(n: ref.verse, text: noteText,
+                                      bookID: ref.bookID, chapter: ref.chapter)
     }
 
     @ToolbarContentBuilder
