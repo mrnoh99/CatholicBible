@@ -185,7 +185,8 @@ struct AnnotatedReader: View {
             return .handled
         }
         print("  → delegating to parentOpenURL")
-        return parentOpenURL(url)
+        parentOpenURL(url)
+        return .systemAction
     }
 
     // MARK: 위치
