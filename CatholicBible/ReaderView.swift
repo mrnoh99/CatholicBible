@@ -445,14 +445,18 @@ struct ReaderPane: View {
             updateVersesCache()
         }
         .onChange(of: chapter) { _, new in
-            guard new > 0, !isFollower else { return }
+            guard new > 0 else { return }
+            // 캐시 업데이트 (모든 pane에서 필요)
+            updateTitleMapCache()
+            updateVersesCache()
+
+            // Follower가 아닌 경우만 추가 처리
+            guard !isFollower else { return }
             // 장 네비게이션으로 변경: 첫 절로 (위의 네비게이션 chevron은 scrollTarget을 이미 설정함)
             if isInitialized && scrollTarget == nil {
                 scrollTarget = 1
             }
             readingState.savePosition(edition: edition, book: book, chapter: new)
-            updateTitleMapCache()
-            updateVersesCache()
         }
         .modifier(PendingChapterModifier(active: role == .primary, apply: applyPending))
         .sheet(isPresented: $showBookPicker) {
