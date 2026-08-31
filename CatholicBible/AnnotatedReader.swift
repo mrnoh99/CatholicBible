@@ -669,16 +669,15 @@ struct AnnotationsPane: View {
                           searchQuery: searchQuery,
                           selectedAnnotationNumber: selectedAnnotationNumber,
                           editionID: editionID)
-                    .environment(\.openURL, openURL)
             } else {
                 NotesList(title: "주석", notes: notes, emptyHint: emptyHint, bookID: bookID,
                           chapter: chapter,
                           searchQuery: searchQuery,
                           selectedAnnotationNumber: selectedAnnotationNumber,
                           editionID: editionID)
-                    .environment(\.openURL, openURL)
             }
         }
+        .environment(\.openURL, openURL)
     }
 
     var body: some View {
