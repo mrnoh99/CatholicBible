@@ -188,9 +188,8 @@ struct AnnotatedReader: View {
             }
             return .handled
         }
-        print("  → parentOpenURL")
-        parentOpenURL(url)
-        return .handled
+        print("  → delegating to parentOpenURL")
+        return parentOpenURL(url)
     }
 
     // MARK: 위치
