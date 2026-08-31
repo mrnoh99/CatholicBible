@@ -141,6 +141,13 @@ struct ReaderView: View {
                 compareChapter = primaryChapter
             }
         }
+        .onChange(of: readingState.compareLinked) { _, linked in
+            // 연동을 활성화할 때 compareTopVerse를 1절로 초기화하여
+            // 재생성된 secondary pane이 올바른 위치에서 시작하도록 함
+            if linked && compareTopVerse == nil {
+                compareTopVerse = 1
+            }
+        }
         .toolbar { readerToolbar }
         .preferredColorScheme(settings.theme.colorScheme)
         .sheet(isPresented: $showAppearance) {
