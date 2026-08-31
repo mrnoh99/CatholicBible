@@ -676,7 +676,7 @@ private struct RangeVerse: Identifiable {
 struct RefPreviewSheet: View {
     @State var target: XrefTarget
     /// 미리보기 판본(따로 저장·유지, 사용자가 고를 수 있음).
-    @AppStorage("xref.editionID") private var editionID = "knb"
+    @AppStorage("xref.editionID") private var editionID = "knbnotes"
     @Environment(BibleStore.self) private var store
     @Environment(ReaderSettings.self) private var settings
     @Environment(AnnotationStore.self) private var annotations
