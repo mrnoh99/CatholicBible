@@ -350,6 +350,7 @@ struct AnnotatedReader: View {
                                      highlighted: navigation.activeHighlight?.matches(bookID: book.id, chapter: chapter, verse: verse.number) ?? false,
                                      onOpenNote: onOpenNote)
                             .environment(\.openURL, OpenURLAction { url in
+                                print("🔗 [VerseRowView] openURL called: \(url)")
                                 return handleURLInternal(url)
                             })
                     }
