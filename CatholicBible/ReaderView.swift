@@ -217,7 +217,7 @@ struct ReaderView: View {
     }
 
     private func openNote(ref: VerseRef, text: String) {
-        noteTarget = NoteTarget(ref: ref, text: text)
+        readingState.showAnnotatedNotes = true
     }
 
     @ToolbarContentBuilder
