@@ -77,7 +77,8 @@ struct ReaderView: View {
                                     ownerBookID: book.id,
                                     showHeader: true,
                                     fullWidth: true,
-                                    onOpenNote: openNote)
+                                    onOpenNote: openNote,
+                                    onOpenXref: { xrefTarget = $0 })
                 } else {
                     switch layout {
                     case .single:

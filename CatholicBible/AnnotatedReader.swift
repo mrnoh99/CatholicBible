@@ -22,6 +22,7 @@ struct AnnotatedReader: View {
     /// 한 페이지 모드에서 전체 너비 사용 (기본: false - 720 제한)
     var fullWidth: Bool = false
     let onOpenNote: (VerseRef, String) -> Void
+    let onOpenXref: (XrefTarget) -> Void
 
     @Environment(BibleStore.self) private var store
     @Environment(ReaderSettings.self) private var settings
@@ -159,9 +160,10 @@ struct AnnotatedReader: View {
             func q(_ k: String) -> String? { items.first { $0.name == k }?.value }
             if let b = q("b"), let cs = q("c"), let c = Int(cs),
                let vs = q("v"), let v = Int(vs) {
-                xrefTarget = XrefTarget(bookID: b, chapter: c, verse: v,
+                let target = XrefTarget(bookID: b, chapter: c, verse: v,
                                         endChapter: q("ec").flatMap { Int($0) } ?? 0,
                                         endVerse: q("ev").flatMap { Int($0) } ?? 0)
+                onOpenXref(target)
             }
             return .handled
         }
