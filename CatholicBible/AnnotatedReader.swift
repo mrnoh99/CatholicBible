@@ -915,19 +915,6 @@ struct IntroDetailView: View {
     }
 
     /// 입문 본문·주석의 성경 인용(catholicbible://xref) 탭 → 구절 미리보기.
-    private func handleURL(_ url: URL) -> OpenURLAction.Result {
-        guard url.scheme == "catholicbible", url.host == "xref" else { return .discarded }
-        let items = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems ?? []
-        func q(_ k: String) -> String? { items.first { $0.name == k }?.value }
-        if let b = q("b"), let cs = q("c"), let c = Int(cs), let vs = q("v"), let v = Int(vs) {
-            xrefTarget = XrefTarget(bookID: b, chapter: c, verse: v,
-                                    endChapter: q("ec").flatMap { Int($0) } ?? 0,
-                                    endVerse: q("ev").flatMap { Int($0) } ?? 0)
-            return .handled
-        }
-        return .discarded
-    }
-
     var body: some View {
         NavigationStack {
             ZStack {
