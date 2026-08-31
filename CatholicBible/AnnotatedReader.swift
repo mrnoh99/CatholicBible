@@ -602,7 +602,7 @@ struct MarkerNoteSheet: View {
             }
             // NavigationStack 내부에서 openURL 환경 오버라이드
             .environment(\.openURL, OpenURLAction { url in
-                handleURL(url)
+                return handleURL(url)
             })
         }
         .presentationDetents([.medium, .large])
