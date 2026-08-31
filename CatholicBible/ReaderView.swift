@@ -1211,19 +1211,33 @@ struct SelectableVerseText: UIViewRepresentable {
         if let markerColor, let regex = Self.markerRegex {
             let ns = text as NSString
             let markerFont = font.withSize(max(font.pointSize * 0.72, 9))
-            for m in regex.matches(in: text, range: NSRange(location: 0, length: ns.length)) {
+            let matches = regex.matches(in: text, range: NSRange(location: 0, length: ns.length))
+            print("📌 [SelectableVerseText] marker regex: found \(matches.count) matches in text")
+            for m in matches {
                 let n = ns.substring(with: m.range(at: 1))
+                let urlString = "catholicbible://note?b=\(bookID)&c=\(chapter)&n=\(n)"
+                print("   📌 marker match: '\(n)' at range \(m.range) → url: \(urlString)")
                 var attrs: [NSAttributedString.Key: Any] = [
                     .foregroundColor: markerColor,
                     .font: markerFont,
                     .baselineOffset: font.pointSize * 0.28,
                 ]
-                if let url = URL(string: "catholicbible://note?b=\(bookID)&c=\(chapter)&n=\(n)") {
+                if let url = URL(string: urlString) {
                     attrs[.link] = url
+                    print("   ✓ link added for marker '\(n)'")
+                } else {
+                    print("   ✗ failed to create URL for marker '\(n)'")
                 }
                 attr.addAttributes(attrs, range: m.range)
             }
             tv.linkTextAttributes = [.foregroundColor: markerColor]
+            print("📌 [SelectableVerseText] linkTextAttributes set")
+        } else {
+            if markerColor == nil {
+                print("📌 [SelectableVerseText] no markerColor, skipping marker setup")
+            } else {
+                print("📌 [SelectableVerseText] regex is nil, cannot process markers")
+            }
         }
 
         // 본문 내 상호참조(예: "마르 8,11-13") 파싱 및 링크화
@@ -1268,9 +1282,15 @@ struct SelectableVerseText: UIViewRepresentable {
         /// 마커 링크 탭 → 기본 동작(Safari 열기) 대신 앱 내 주석 팝업으로 보낸다.
         func textView(_ textView: UITextView, primaryActionFor textItem: UITextItem,
                       defaultAction: UIAction) -> UIAction? {
+            print("🔗 [SelectableVerseText.Coordinator] primaryActionFor called, item content: \(textItem.content)")
             if case .link(let url) = textItem.content {
-                return UIAction { [onOpenURL] _ in onOpenURL?(url) }
+                print("🔗 [SelectableVerseText.Coordinator] link tapped: \(url)")
+                return UIAction { [onOpenURL] _ in
+                    print("🔗 [SelectableVerseText.Coordinator] calling onOpenURL with: \(url)")
+                    onOpenURL?(url)
+                }
             }
+            print("🔗 [SelectableVerseText.Coordinator] not a link, returning defaultAction")
             return defaultAction
         }
     }
