@@ -155,9 +155,7 @@ struct AnnotatedReader: View {
     }
 
     private func handleURLInternal(_ url: URL) -> OpenURLAction.Result {
-        print("🔍 handleURLInternal called with: \(url)")
         if url.scheme == "catholicbible", url.host == "xref" {
-            print("  → handling xref")
             let items = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems ?? []
             func q(_ k: String) -> String? { items.first { $0.name == k }?.value }
             if let b = q("b"), let cs = q("c"), let c = Int(cs),
@@ -166,26 +164,19 @@ struct AnnotatedReader: View {
                                         endChapter: q("ec").flatMap { Int($0) } ?? 0,
                                         endVerse: q("ev").flatMap { Int($0) } ?? 0)
                 onOpenXref(target)
-                print("  ✓ xref target set: \(target.id)")
             }
             return .handled
         }
         if url.scheme == "catholicbible", url.host == "note" {
-            print("  → handling note")
             let items = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems ?? []
             func q(_ k: String) -> String? { items.first { $0.name == k }?.value }
             if let b = q("b"), let cs = q("c"), let c = Int(cs), let n = q("n") {
-                print("  ✓ parsed URL: book=\(b), chapter=\(c), note=\(n)")
                 let note = knb.notes(edition: editionID, bookID: b, chapter: c)
                     .first(where: { $0.n == n })
                 noteTarget = MarkerNoteTarget(n: n, text: note?.text ?? "이 주석을 찾지 못했습니다.", bookID: b, chapter: c)
-                print("  ✓ noteTarget set for note: \(n)")
-            } else {
-                print("  ✗ failed to parse URL parameters")
             }
             return .handled
         }
-        print("  → delegating to parentOpenURL")
         parentOpenURL(url)
         return .handled
     }
@@ -277,9 +268,6 @@ struct AnnotatedReader: View {
                     AnnotationsPane(notes: notes, xrefs: xrefs,
                                     emptyHint: emptyNotesHint, bookID: book.id, chapter: chapter, wide: true,
                                     searchQuery: navigation.searchQuery, editionID: editionID)
-                        .environment(\.openURL, OpenURLAction { url in
-                            handleURLInternal(url)
-                        })
                         .frame(maxWidth: .infinity)
                 }
             } else {
@@ -290,9 +278,6 @@ struct AnnotatedReader: View {
                         AnnotationsPane(notes: notes, xrefs: xrefs,
                                         emptyHint: emptyNotesHint, bookID: book.id, chapter: chapter,
                                         searchQuery: navigation.searchQuery, editionID: editionID)
-                            .environment(\.openURL, OpenURLAction { url in
-                                handleURLInternal(url)
-                            })
                     }
                     .frame(maxWidth: fullWidth ? .infinity : 720, alignment: .leading)
                     .padding(.horizontal, fullWidth ? 16 : 28).padding(.bottom, 40)
