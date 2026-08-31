@@ -170,10 +170,10 @@ struct AnnotatedReader: View {
         if url.scheme == "catholicbible", url.host == "note" {
             let items = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems ?? []
             func q(_ k: String) -> String? { items.first { $0.name == k }?.value }
-            if let b = q("b"), let cs = q("c"), let c = Int(cs), let n = q("n"),
-               let text = knb.notes(edition: editionID, bookID: b, chapter: c)
-                .first(where: { $0.n == n })?.text {
-                noteTarget = MarkerNoteTarget(n: n, text: text, bookID: b, chapter: c)
+            if let b = q("b"), let cs = q("c"), let c = Int(cs), let n = q("n") {
+                let note = knb.notes(edition: editionID, bookID: b, chapter: c)
+                    .first(where: { $0.n == n })
+                noteTarget = MarkerNoteTarget(n: n, text: note?.text ?? "이 주석을 찾지 못했습니다.", bookID: b, chapter: c)
             }
             return .handled
         }
