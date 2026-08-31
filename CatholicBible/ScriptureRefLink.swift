@@ -639,6 +639,7 @@ struct SelectableNoteText: UIViewRepresentable {
         func textView(_ textView: UITextView, shouldInteractWith URL: URL,
                       in characterRange: NSRange, interaction: UITextItemInteraction) -> Bool {
             guard interaction == .invokeDefaultAction else { return true }
+            NSLog("SelectableNoteText: Link tapped: \(URL)")
             onOpenURL?(URL)
             return false
         }

@@ -154,6 +154,7 @@ struct AnnotatedReader: View {
     }
 
     private func handleURLInternal(_ url: URL) -> OpenURLAction.Result {
+        NSLog("AnnotatedReader.handleURLInternal called with: \(url)")
         if url.scheme == "catholicbible", url.host == "xref" {
             let items = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems ?? []
             func q(_ k: String) -> String? { items.first { $0.name == k }?.value }
