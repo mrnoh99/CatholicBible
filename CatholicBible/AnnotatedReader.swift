@@ -84,10 +84,6 @@ struct AnnotatedReader: View {
             chapterBar
         }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .environment(\.openURL, OpenURLAction { url in
-                print("🔗 [openURL handler] called: \(url)")
-                return handleURLInternal(url)
-            })
             .onAppear {
                 initChapterIfNeeded()
                 updateVersesCache()
@@ -153,6 +149,10 @@ struct AnnotatedReader: View {
                     .environment(navigation)
                     .environment(knb)
             }
+            .environment(\.openURL, OpenURLAction { url in
+                print("🔗 [openURL handler] called: \(url)")
+                return handleURLInternal(url)
+            })
     }
 
     private func handleURLInternal(_ url: URL) -> OpenURLAction.Result {
@@ -179,8 +179,10 @@ struct AnnotatedReader: View {
                 print("  ✓ parsed: book=\(b), ch=\(c), note=\(n)")
                 let note = knb.notes(edition: editionID, bookID: b, chapter: c)
                     .first(where: { $0.n == n })
-                noteTarget = MarkerNoteTarget(n: n, text: note?.text ?? "주석없음", bookID: b, chapter: c)
-                print("  ✓ noteTarget SET")
+                DispatchQueue.main.async {
+                    noteTarget = MarkerNoteTarget(n: n, text: note?.text ?? "주석없음", bookID: b, chapter: c)
+                    print("  ✓ noteTarget SET")
+                }
             } else {
                 print("  ✗ failed to parse")
             }
