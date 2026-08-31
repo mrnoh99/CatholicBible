@@ -141,13 +141,6 @@ struct ReaderView: View {
                 compareChapter = primaryChapter
             }
         }
-        .onChange(of: readingState.compareLinked) { _, linked in
-            // 연동을 활성화할 때 compareTopVerse를 1절로 초기화하여
-            // 재생성된 secondary pane이 올바른 위치에서 시작하도록 함
-            if linked && compareTopVerse == nil {
-                compareTopVerse = 1
-            }
-        }
         .toolbar { readerToolbar }
         .preferredColorScheme(settings.theme.colorScheme)
         .sheet(isPresented: $showAppearance) {
@@ -450,11 +443,6 @@ struct ReaderPane: View {
             updateTitleMapCache()
             updateVersesCache()
 
-            // 연동 모드에서 장 변경 시 동기화 초기화
-            if let sync = syncVerse, sync.wrappedValue == nil {
-                sync.wrappedValue = 1
-            }
-
             // Follower가 아닌 경우만 추가 처리
             guard !isFollower else { return }
             // 장 네비게이션으로 변경: 첫 절로 (위의 네비게이션 chevron은 scrollTarget을 이미 설정함)
@@ -646,27 +634,15 @@ struct ReaderPane: View {
             }
             .onChange(of: scrollTarget) { _, _ in performScroll(proxy, verses: verses) }
             .onChange(of: chapter) { _, _ in topVerse = nil; performScroll(proxy, verses: verses) }
-            .onChange(of: syncVerse?.wrappedValue) { _, newValue in
-                // syncVerse 값이 변경되면 그 절로 스크롤
-                if let v = newValue, v > 0, v != topVerse {
-                    DispatchQueue.main.async {
-                        withAnimation(.easeInOut(duration: 0.15)) {
-                            proxy.scrollTo(String(v), anchor: .top)
-                        }
+            .task(id: syncVerse?.wrappedValue) {
+                guard let sync = syncVerse, let v = sync.wrappedValue, v != topVerse else { return }
+                DispatchQueue.main.async {
+                    withAnimation(.easeInOut(duration: 0.15)) {
+                        proxy.scrollTo(String(v), anchor: .top)
                     }
                 }
             }
-            .onAppear {
-                performScroll(proxy, verses: verses)
-                // 초기 동기화 절이 있으면 거기로 스크롤
-                if let sync = syncVerse, let v = sync.wrappedValue, v > 0, v != topVerse {
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                        withAnimation(.easeInOut(duration: 0.15)) {
-                            proxy.scrollTo(String(v), anchor: .top)
-                        }
-                    }
-                }
-            }
+            .onAppear { performScroll(proxy, verses: verses) }
         }
     }
 
