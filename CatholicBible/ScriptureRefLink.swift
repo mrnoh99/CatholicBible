@@ -627,12 +627,20 @@ struct SelectableNoteText: UIViewRepresentable {
         var onOpenURL: ((URL) -> Void)?
         init(onOpenURL: ((URL) -> Void)?) { self.onOpenURL = onOpenURL }
 
+        @available(iOS 17, *)
         func textView(_ textView: UITextView, primaryActionFor textItem: UITextItem,
                       defaultAction: UIAction) -> UIAction? {
             if case .link(let url) = textItem.content {
                 return UIAction { [onOpenURL] _ in onOpenURL?(url) }
             }
             return defaultAction
+        }
+
+        func textView(_ textView: UITextView, shouldInteractWith URL: URL,
+                      in characterRange: NSRange, interaction: UITextItemInteraction) -> Bool {
+            guard interaction == .invokeDefaultAction else { return true }
+            onOpenURL?(URL)
+            return false
         }
     }
 }
