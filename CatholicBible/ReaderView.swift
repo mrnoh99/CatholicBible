@@ -578,6 +578,54 @@ struct ReaderPane: View {
 
     // MARK: 본문
 
+    private func verseRowContent(verse: Verse) -> some View {
+        VStack(alignment: .leading, spacing: settings.lineSpacing * 0.9) {
+            if let title = titleMap[verse.number] {
+                SectionTitleView(text: title, bookID: book.id, chapter: chapter,
+                                 linkable: true)
+                    .environment(\.openURL, OpenURLAction { url in
+                        let items = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems ?? []
+                        func q(_ k: String) -> String? { items.first { $0.name == k }?.value }
+                        if url.scheme == "catholicbible", url.host == "xref" {
+                            if let b = q("b"), let cs = q("c"), let c = Int(cs),
+                               let vs = q("v"), let v = Int(vs) {
+                                onOpenXref(XrefTarget(bookID: b, chapter: c, verse: v,
+                                                      endChapter: q("ec").flatMap { Int($0) } ?? 0,
+                                                      endVerse: q("ev").flatMap { Int($0) } ?? 0))
+                            }
+                            return .handled
+                        }
+                        return .systemAction
+                    })
+            }
+            VerseRowView(edition: edition, book: book, chapter: chapter,
+                         verse: verse,
+                         highlighted: navigation.activeHighlight?.matches(bookID: book.id, chapter: chapter, verse: verse.number) ?? false,
+                         onOpenNote: onOpenNote,
+                         markerColor: UIColor(Color.accentColor))
+                .environment(\.openURL, OpenURLAction { url in
+                    let items = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems ?? []
+                    func q(_ k: String) -> String? { items.first { $0.name == k }?.value }
+                    if url.scheme == "catholicbible", url.host == "xref" {
+                        if let b = q("b"), let cs = q("c"), let c = Int(cs),
+                           let vs = q("v"), let v = Int(vs) {
+                            onOpenXref(XrefTarget(bookID: b, chapter: c, verse: v,
+                                                  endChapter: q("ec").flatMap { Int($0) } ?? 0,
+                                                  endVerse: q("ev").flatMap { Int($0) } ?? 0))
+                        }
+                        return .handled
+                    }
+                    if url.scheme == "catholicbible", url.host == "note" {
+                        if let b = q("b"), let cs = q("c"), let c = Int(cs), let n = q("n") {
+                            onOpenNote(VerseRef(bookID: b, chapter: c, verse: n), "")
+                        }
+                        return .handled
+                    }
+                    return .systemAction
+                })
+        }
+    }
+
     private var versesScroll: some View {
         let verses = cachedVerses
         return ScrollViewReader { proxy in
@@ -589,52 +637,8 @@ struct ReaderPane: View {
                     } else {
                         LazyVStack(alignment: .leading, spacing: settings.lineSpacing * 0.9) {
                             ForEach(verses) { verse in
-                                VStack(alignment: .leading, spacing: settings.lineSpacing * 0.9) {
-                                    if let title = titleMap[verse.number] {
-                                        SectionTitleView(text: title, bookID: book.id, chapter: chapter,
-                                                         linkable: true)
-                                            .environment(\.openURL, OpenURLAction { url in
-                                                let items = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems ?? []
-                                                func q(_ k: String) -> String? { items.first { $0.name == k }?.value }
-                                                if url.scheme == "catholicbible", url.host == "xref" {
-                                                    if let b = q("b"), let cs = q("c"), let c = Int(cs),
-                                                       let vs = q("v"), let v = Int(vs) {
-                                                        onOpenXref(XrefTarget(bookID: b, chapter: c, verse: v,
-                                                                              endChapter: q("ec").flatMap { Int($0) } ?? 0,
-                                                                              endVerse: q("ev").flatMap { Int($0) } ?? 0))
-                                                    }
-                                                    return .handled
-                                                }
-                                                return .systemAction
-                                            })
-                                    }
-                                    VerseRowView(edition: edition, book: book, chapter: chapter,
-                                                 verse: verse,
-                                                 highlighted: navigation.activeHighlight?.matches(bookID: book.id, chapter: chapter, verse: verse.number) ?? false,
-                                                 onOpenNote: onOpenNote,
-                                                 markerColor: UIColor(Color.accentColor))
-                                        .environment(\.openURL, OpenURLAction { url in
-                                            let items = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems ?? []
-                                            func q(_ k: String) -> String? { items.first { $0.name == k }?.value }
-                                            if url.scheme == "catholicbible", url.host == "xref" {
-                                                if let b = q("b"), let cs = q("c"), let c = Int(cs),
-                                                   let vs = q("v"), let v = Int(vs) {
-                                                    onOpenXref(XrefTarget(bookID: b, chapter: c, verse: v,
-                                                                          endChapter: q("ec").flatMap { Int($0) } ?? 0,
-                                                                          endVerse: q("ev").flatMap { Int($0) } ?? 0))
-                                                }
-                                                return .handled
-                                            }
-                                            if url.scheme == "catholicbible", url.host == "note" {
-                                                if let b = q("b"), let cs = q("c"), let c = Int(cs), let n = q("n") {
-                                                    onOpenNote(VerseRef(bookID: b, chapter: c, verse: Int(n) ?? 0), "")
-                                                }
-                                                return .handled
-                                            }
-                                            return .systemAction
-                                        })
-                                }
-                                .id(verse.number)
+                                verseRowContent(verse: verse)
+                                    .id(verse.number)
                             }
                         }
                         .scrollTargetLayout()
@@ -647,8 +651,6 @@ struct ReaderPane: View {
                 .padding(.bottom, 40)
                 .frame(maxWidth: .infinity)
             }
-            // 연동 비교: 맨 위에 보이는 '절'을 읽어(topVerse) 공유하고, 상대가 바뀌면 그 절로 이동.
-            // 절 기준이라 번역마다 길이가 달라도 같은 절끼리 맞춰진다.
             .scrollPosition(id: $topVerse, anchor: .top)
             .onChange(of: topVerse) { _, v in
                 guard let sync = syncVerse, let v, v != sync.wrappedValue else { return }
@@ -1075,7 +1077,7 @@ struct SpreadReader: View {
                             }
                             if url.scheme == "catholicbible", url.host == "note" {
                                 if let b = q("b"), let cs = q("c"), let c = Int(cs), let n = q("n") {
-                                    onOpenNote(VerseRef(bookID: b, chapter: c, verse: Int(n) ?? 0), "")
+                                    onOpenNote(VerseRef(bookID: b, chapter: c, verse: n), "")
                                 }
                                 return .handled
                             }
