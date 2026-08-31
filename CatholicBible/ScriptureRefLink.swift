@@ -674,7 +674,7 @@ private struct RangeVerse: Identifiable {
 // MARK: - 인용 구절 미리보기(판본 선택 가능)
 
 struct RefPreviewSheet: View {
-    let target: XrefTarget
+    @State var target: XrefTarget
     /// 미리보기 판본(따로 저장·유지, 사용자가 고를 수 있음).
     @AppStorage("xref.editionID") private var editionID = "knb"
     @Environment(BibleStore.self) private var store
@@ -797,6 +797,17 @@ struct RefPreviewSheet: View {
             // NavigationStack 내부에서 openURL 환경 오버라이드
             // → NavigationStack 내의 VerseRowView가 올바른 openURL을 받음
             .environment(\.openURL, OpenURLAction { url in
+                if url.scheme == "catholicbible", url.host == "xref" {
+                    let items = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems ?? []
+                    func q(_ k: String) -> String? { items.first { $0.name == k }?.value }
+                    if let b = q("b"), let cs = q("c"), let c = Int(cs),
+                       let vs = q("v"), let v = Int(vs) {
+                        target = XrefTarget(bookID: b, chapter: c, verse: v,
+                                          endChapter: q("ec").flatMap { Int($0) } ?? 0,
+                                          endVerse: q("ev").flatMap { Int($0) } ?? 0)
+                    }
+                    return .handled
+                }
                 if url.scheme == "catholicbible", url.host == "note" {
                     let items = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems ?? []
                     func q(_ k: String) -> String? { items.first { $0.name == k }?.value }
