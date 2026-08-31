@@ -270,6 +270,9 @@ struct AnnotatedReader: View {
                                     searchQuery: navigation.searchQuery, editionID: editionID)
                         .frame(maxWidth: .infinity)
                 }
+                .environment(\.openURL, OpenURLAction { url in
+                    handleURLInternal(url)
+                })
             } else {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 0) {
@@ -283,6 +286,9 @@ struct AnnotatedReader: View {
                     .padding(.horizontal, fullWidth ? 16 : 28).padding(.bottom, 40)
                     .frame(maxWidth: .infinity)
                 }
+                .environment(\.openURL, OpenURLAction { url in
+                    handleURLInternal(url)
+                })
             }
         }
     }
