@@ -1059,7 +1059,8 @@ struct SpreadReader: View {
                     VerseRowView(edition: edition, book: book, chapter: chapter,
                                  verse: verse,
                                  highlighted: navigation.activeHighlight?.matches(bookID: book.id, chapter: chapter, verse: verse.number) ?? false,
-                                 onOpenNote: onOpenNote)
+                                 onOpenNote: onOpenNote,
+                                 markerColor: UIColor(Color.accentColor))
                         .environment(\.openURL, OpenURLAction { url in
                             let items = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems ?? []
                             func q(_ k: String) -> String? { items.first { $0.name == k }?.value }
@@ -1069,6 +1070,12 @@ struct SpreadReader: View {
                                     onOpenXref(XrefTarget(bookID: b, chapter: c, verse: v,
                                                           endChapter: q("ec").flatMap { Int($0) } ?? 0,
                                                           endVerse: q("ev").flatMap { Int($0) } ?? 0))
+                                }
+                                return .handled
+                            }
+                            if url.scheme == "catholicbible", url.host == "note" {
+                                if let b = q("b"), let cs = q("c"), let c = Int(cs), let n = q("n") {
+                                    onOpenNote(VerseRef(bookID: b, chapter: c, verse: Int(n) ?? 0), "")
                                 }
                                 return .handled
                             }
