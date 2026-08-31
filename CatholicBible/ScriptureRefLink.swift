@@ -559,7 +559,6 @@ struct SelectableNoteText: UIViewRepresentable {
     func makeCoordinator() -> Coordinator { Coordinator(onOpenURL: onOpenURL) }
 
     func makeUIView(context: Context) -> UITextView {
-        NSLog("SelectableNoteText.makeUIView called for: \(text.prefix(50))")
         let tv = UITextView()
         tv.isEditable = false
         tv.isSelectable = true
@@ -570,12 +569,10 @@ struct SelectableNoteText: UIViewRepresentable {
         tv.delegate = context.coordinator
         tv.setContentCompressionResistancePriority(.required, for: .vertical)
         tv.setContentHuggingPriority(.required, for: .vertical)
-        NSLog("SelectableNoteText UITextView created, isSelectable=\(tv.isSelectable), delegate=\(context.coordinator != nil)")
         return tv
     }
 
     func updateUIView(_ tv: UITextView, context: Context) {
-        NSLog("SelectableNoteText.updateUIView called, frame=\(tv.frame), isSelectable=\(tv.isSelectable)")
         context.coordinator.onOpenURL = onOpenURL
         let para = NSMutableParagraphStyle()
         para.lineSpacing = lineSpacing
@@ -621,13 +618,9 @@ struct SelectableNoteText: UIViewRepresentable {
     func sizeThatFits(_ proposal: ProposedViewSize, uiView: UITextView,
                       context: Context) -> CGSize? {
         let width = proposal.width ?? uiView.bounds.width
-        guard width > 0, width.isFinite else {
-            NSLog("SelectableNoteText.sizeThatFits: Invalid width - proposal=\(proposal.width ?? -1), bounds.width=\(uiView.bounds.width)")
-            return nil
-        }
+        guard width > 0, width.isFinite else { return nil }
         let fit = uiView.sizeThatFits(CGSize(width: width, height: .greatestFiniteMagnitude))
         let result = CGSize(width: width, height: ceil(fit.height))
-        NSLog("SelectableNoteText.sizeThatFits: proposal=\(proposal.width ?? -1), result=\(result)")
         return result
     }
 
@@ -647,7 +640,6 @@ struct SelectableNoteText: UIViewRepresentable {
         func textView(_ textView: UITextView, shouldInteractWith URL: URL,
                       in characterRange: NSRange, interaction: UITextItemInteraction) -> Bool {
             guard interaction == .invokeDefaultAction else { return true }
-            NSLog("SelectableNoteText: Link tapped: \(URL)")
             onOpenURL?(URL)
             return false
         }

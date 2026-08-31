@@ -38,6 +38,7 @@ struct ReaderView: View {
     @State private var showAppearance = false
     @State private var noteTarget: NoteTarget?
     @State private var markerNote: MarkerNoteTarget?
+    @State private var xrefTarget: XrefTarget?
     /// 첫째 열의 현재 장(판본 전환 시 유지됨).
     @State private var primaryChapter = 0
     /// 두 판본 비교에서 두 열이 공유하는 장(연동 시 양쪽이 같은 장을 본다).
@@ -86,13 +87,15 @@ struct ReaderView: View {
                                    linkedChapter: $primaryChapter,
                                    ownerBookID: book.id,
                                    fullWidth: true,
-                                   onOpenNote: openNote)
+                                   onOpenNote: openNote,
+                                   onOpenXref: { xrefTarget = $0 })
                     case .spread:
                         SpreadReader(editionID: selectedEditionIDBinding,
                                      bookID: primaryBookBinding,
                                      sharedChapter: $primaryChapter,
                                      ownerBookID: book.id,
-                                     onOpenNote: openNote)
+                                     onOpenNote: openNote,
+                                     onOpenXref: { xrefTarget = $0 })
                     case .compare:
                         let linked = readingState.compareLinked
                         let compareBook = Bible.book(navigation.selectedBookID ?? book.id) ?? book
@@ -105,7 +108,8 @@ struct ReaderView: View {
                                            showChapterBar: !linked,
                                            ownerBookID: book.id,
                                            syncVerse: linked ? $compareTopVerse : nil,
-                                           onOpenNote: openNote)
+                                           onOpenNote: openNote,
+                                           onOpenXref: { xrefTarget = $0 })
                                 Divider()
                                 ReaderPane(role: .secondary,
                                            editionID: secondaryEditionIDBinding,
@@ -115,7 +119,8 @@ struct ReaderView: View {
                                            isFollower: linked,
                                            showChapterBar: !linked,
                                            syncVerse: linked ? $compareTopVerse : nil,
-                                           onOpenNote: openNote)
+                                           onOpenNote: openNote,
+                                           onOpenXref: { xrefTarget = $0 })
                                     // 연동 ↔ 분리를 바꾸면 둘째 열을 새로 만들어 위치를 다시 잡는다.
                                     .id(linked)
                             }
@@ -158,20 +163,37 @@ struct ReaderView: View {
                                         verseText: target.text,
                                         existing: annotations.noteOrNew(for: target.ref)))
         }
-        // 각주 마커 'N)' 탭 → 해당 주석 팝업
+        // 각주 마커 'N)' 탭 → 해당 주석 팝업, 소제목 cross link → xref 이동
         .environment(\.openURL, OpenURLAction { url in
-            guard url.scheme == "catholicbible", url.host == "note" else { return .systemAction }
             let items = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems ?? []
             func q(_ k: String) -> String? { items.first { $0.name == k }?.value }
-            if let b = q("b"), let cs = q("c"), let c = Int(cs), let n = q("n") {
-                let note = knbNotes.notes(edition: readingState.selectedEditionID,
-                                          bookID: b, chapter: c).first { $0.n == n }
-                markerNote = MarkerNoteTarget(n: n, text: note?.text ?? "이 주석을 찾지 못했습니다.", bookID: b, chapter: c)
+
+            if url.scheme == "catholicbible", url.host == "xref" {
+                if let b = q("b"), let cs = q("c"), let c = Int(cs),
+                   let vs = q("v"), let v = Int(vs) {
+                    xrefTarget = XrefTarget(bookID: b, chapter: c, verse: v,
+                                            endChapter: q("ec").flatMap { Int($0) } ?? 0,
+                                            endVerse: q("ev").flatMap { Int($0) } ?? 0)
+                }
+                return .handled
             }
-            return .handled
+
+            if url.scheme == "catholicbible", url.host == "note" {
+                if let b = q("b"), let cs = q("c"), let c = Int(cs), let n = q("n") {
+                    let note = knbNotes.notes(edition: readingState.selectedEditionID,
+                                              bookID: b, chapter: c).first { $0.n == n }
+                    markerNote = MarkerNoteTarget(n: n, text: note?.text ?? "이 주석을 찾지 못했습니다.", bookID: b, chapter: c)
+                }
+                return .handled
+            }
+
+            return .systemAction
         })
         .fullScreenCover(item: $markerNote) { mn in
             injectShared(MarkerNoteSheet(n: mn.n, text: mn.text, bookID: mn.bookID, chapter: mn.chapter))
+        }
+        .fullScreenCover(item: $xrefTarget) { t in
+            injectShared(RefPreviewSheet(target: t).environment(navigation))
         }
     }
 
@@ -330,6 +352,7 @@ struct ReaderPane: View {
     /// 한 페이지 모드에서 전체 너비 사용 (기본: false - 720 제한)
     var fullWidth: Bool = false
     let onOpenNote: (VerseRef, String) -> Void
+    let onOpenXref: (XrefTarget) -> Void
 
     @Environment(BibleStore.self) private var store
     @Environment(ReaderSettings.self) private var settings
@@ -565,6 +588,20 @@ struct ReaderPane: View {
                                     if let title = titleMap[verse.number] {
                                         SectionTitleView(text: title, bookID: book.id, chapter: chapter,
                                                          linkable: true)
+                                            .environment(\.openURL, OpenURLAction { url in
+                                                let items = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems ?? []
+                                                func q(_ k: String) -> String? { items.first { $0.name == k }?.value }
+                                                if url.scheme == "catholicbible", url.host == "xref" {
+                                                    if let b = q("b"), let cs = q("c"), let c = Int(cs),
+                                                       let vs = q("v"), let v = Int(vs) {
+                                                        onOpenXref(XrefTarget(bookID: b, chapter: c, verse: v,
+                                                                              endChapter: q("ec").flatMap { Int($0) } ?? 0,
+                                                                              endVerse: q("ev").flatMap { Int($0) } ?? 0))
+                                                    }
+                                                    return .handled
+                                                }
+                                                return .systemAction
+                                            })
                                     }
                                     VerseRowView(edition: edition, book: book, chapter: chapter,
                                                  verse: verse,
@@ -766,6 +803,7 @@ struct SpreadReader: View {
     /// 이 리더가 담당하는 책(대기 이동 가로채기 방지용).
     var ownerBookID: String = ""
     let onOpenNote: (VerseRef, String) -> Void
+    let onOpenXref: (XrefTarget) -> Void
 
     @Environment(BibleStore.self) private var store
     @Environment(ReaderSettings.self) private var settings
@@ -977,6 +1015,20 @@ struct SpreadReader: View {
                     if let title = titleMap[verse.number] {
                         SectionTitleView(text: title, bookID: book.id, chapter: chapter,
                                                          linkable: true)
+                            .environment(\.openURL, OpenURLAction { url in
+                                let items = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems ?? []
+                                func q(_ k: String) -> String? { items.first { $0.name == k }?.value }
+                                if url.scheme == "catholicbible", url.host == "xref" {
+                                    if let b = q("b"), let cs = q("c"), let c = Int(cs),
+                                       let vs = q("v"), let v = Int(vs) {
+                                        onOpenXref(XrefTarget(bookID: b, chapter: c, verse: v,
+                                                              endChapter: q("ec").flatMap { Int($0) } ?? 0,
+                                                              endVerse: q("ev").flatMap { Int($0) } ?? 0))
+                                    }
+                                    return .handled
+                                }
+                                return .systemAction
+                            })
                     }
                     VerseRowView(edition: edition, book: book, chapter: chapter,
                                  verse: verse,
