@@ -271,7 +271,7 @@ struct AnnotatedReader: View {
             } else {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 0) {
-                        versesBlock(verses)
+                        versesBlock(verses, onOpenURL: { handleURLInternal($0) })
                         Divider().padding(.vertical, 16)
                         AnnotationsPane(notes: notes, xrefs: xrefs,
                                         emptyHint: emptyNotesHint, bookID: book.id, chapter: chapter,
@@ -293,7 +293,7 @@ struct AnnotatedReader: View {
         ScrollViewReader { proxy in
             ScrollView {
                 VStack(alignment: .leading, spacing: 0) {
-                    versesBlock(verses)
+                    versesBlock(verses, onOpenURL: { handleURLInternal($0) })
                 }
                 .frame(maxWidth: fullWidth ? .infinity : 720, alignment: .leading)
                 .padding(.horizontal, fullWidth ? 16 : 28).padding(.bottom, 40)
@@ -316,7 +316,7 @@ struct AnnotatedReader: View {
     }
 
     @ViewBuilder
-    private func versesBlock(_ verses: [Verse]) -> some View {
+    private func versesBlock(_ verses: [Verse], onOpenURL: ((URL) -> Void)? = nil) -> some View {
         chapterHeader
         if verses.isEmpty {
             MissingTextView(edition: edition, book: book).padding(.top, 32)
@@ -327,7 +327,7 @@ struct AnnotatedReader: View {
                         if let title = cachedTitleMap[String(verse.number)] {
                             SectionTitleView(text: title, bookID: book.id, chapter: chapter,
                                              linkable: true, searchQuery: navigation.searchQuery,
-                                             onOpenURL: { handleURLInternal($0) })
+                                             onOpenURL: onOpenURL ?? { handleURLInternal($0) })
                         }
                         VerseRowView(edition: edition, book: book, chapter: chapter,
                                      verse: verse,
