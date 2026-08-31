@@ -5,7 +5,7 @@
 //  iPad에 맞춘 2단 구성: 왼쪽 사이드바(판본 선택 + 책 목차) +
 //  오른쪽 화면(서재 또는 ebook 리더).
 //
-//  서재에는 천주교회의 아홉가지 책이 놓인다.
+//  서재에는 천주교회의 여덟가지 책이 놓인다.
 //
 
 import SwiftUI
@@ -323,7 +323,7 @@ struct ShelfView: View {
                         Text("가톨릭 성경 서재")
                             .font(.system(size: 34, weight: .bold, design: .default))
                             .foregroundStyle(settings.theme.text)
-                        Text("천주교회의 아홉가지 책과 전례 독서")
+                        Text("천주교회의 여덟가지 책과 전례 독서")
                             .font(.system(size: 15, weight: .regular, design: .default))
                             .foregroundStyle(settings.theme.secondary)
                     }
