@@ -268,6 +268,9 @@ struct AnnotatedReader: View {
                     AnnotationsPane(notes: notes, xrefs: xrefs,
                                     emptyHint: emptyNotesHint, bookID: book.id, chapter: chapter, wide: true,
                                     searchQuery: navigation.searchQuery, editionID: editionID)
+                        .environment(\.openURL, OpenURLAction { url in
+                            handleURLInternal(url)
+                        })
                         .frame(maxWidth: .infinity)
                 }
             } else {
@@ -278,6 +281,9 @@ struct AnnotatedReader: View {
                         AnnotationsPane(notes: notes, xrefs: xrefs,
                                         emptyHint: emptyNotesHint, bookID: book.id, chapter: chapter,
                                         searchQuery: navigation.searchQuery, editionID: editionID)
+                            .environment(\.openURL, OpenURLAction { url in
+                                handleURLInternal(url)
+                            })
                     }
                     .frame(maxWidth: fullWidth ? .infinity : 720, alignment: .leading)
                     .padding(.horizontal, fullWidth ? 16 : 28).padding(.bottom, 40)
@@ -337,6 +343,9 @@ struct AnnotatedReader: View {
                                      verse: verse,
                                      highlighted: navigation.activeHighlight?.matches(bookID: book.id, chapter: chapter, verse: verse.number) ?? false,
                                      onOpenNote: onOpenNote)
+                            .environment(\.openURL, OpenURLAction { url in
+                                handleURLInternal(url)
+                            })
                     }
                     .id(verse.number)
                 }
