@@ -1279,7 +1279,7 @@ struct SelectableVerseText: UIViewRepresentable {
         var onOpenURL: ((URL) -> Void)?
         init(onOpenURL: ((URL) -> Void)?) { self.onOpenURL = onOpenURL }
 
-        /// 마커 링크 탭 → 기본 동작(Safari 열기) 대신 앱 내 주석 팝업으로 보낸다.
+        /// iOS 17+: 마커 링크 탭 → 앱 내 주석 팝업으로 보낸다.
         func textView(_ textView: UITextView, primaryActionFor textItem: UITextItem,
                       defaultAction: UIAction) -> UIAction? {
             print("🔗 [SelectableVerseText.Coordinator] primaryActionFor called, item content: \(textItem.content)")
@@ -1292,6 +1292,17 @@ struct SelectableVerseText: UIViewRepresentable {
             }
             print("🔗 [SelectableVerseText.Coordinator] not a link, returning defaultAction")
             return defaultAction
+        }
+
+        /// iOS 15-16: shouldInteractWith를 사용한 링크 처리
+        func textView(_ textView: UITextView, shouldInteractWith URL: URL, in characterRange: NSRange, interaction: UITextItemInteraction) -> Bool {
+            print("🔗 [SelectableVerseText.Coordinator] shouldInteractWith called: \(URL)")
+            if interaction == .invokeDefaultAction {
+                print("🔗 [SelectableVerseText.Coordinator] invoking default action for: \(URL)")
+                onOpenURL?(URL)
+                return false  // 기본 동작(Safari 열기) 방지
+            }
+            return true
         }
     }
 }
