@@ -127,7 +127,7 @@ struct ReaderView: View {
                             // 연동 시: 두 열을 함께 움직이는 공용 이동줄 하나만 아래에 둔다.
                             if linked {
                                 ChapterNavBar(book: compareBook, chapter: $compareChapter,
-                                              onChange: { compareTopVerse = nil })  // 장 이동 시 각 열 맨 위
+                                              onChange: { compareTopVerse = nil })
                             }
                         }
                     }
@@ -634,6 +634,11 @@ struct ReaderPane: View {
             }
             .onChange(of: scrollTarget) { _, _ in performScroll(proxy, verses: verses) }
             .onChange(of: chapter) { _, _ in topVerse = nil; performScroll(proxy, verses: verses) }
+            .onChange(of: verses.isEmpty) { _, empty in
+                if !empty && topVerse == nil {
+                    topVerse = verses.first.flatMap { Int($0.number) }
+                }
+            }
             .task(id: syncVerse?.wrappedValue) {
                 guard let sync = syncVerse, let v = sync.wrappedValue, v != topVerse else { return }
                 DispatchQueue.main.async {
