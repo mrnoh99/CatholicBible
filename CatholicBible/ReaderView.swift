@@ -612,6 +612,20 @@ struct ReaderPane: View {
                                                  verse: verse,
                                                  highlighted: navigation.activeHighlight?.matches(bookID: book.id, chapter: chapter, verse: verse.number) ?? false,
                                                  onOpenNote: onOpenNote)
+                                        .environment(\.openURL, OpenURLAction { url in
+                                            let items = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems ?? []
+                                            func q(_ k: String) -> String? { items.first { $0.name == k }?.value }
+                                            if url.scheme == "catholicbible", url.host == "xref" {
+                                                if let b = q("b"), let cs = q("c"), let c = Int(cs),
+                                                   let vs = q("v"), let v = Int(vs) {
+                                                    onOpenXref(XrefTarget(bookID: b, chapter: c, verse: v,
+                                                                          endChapter: q("ec").flatMap { Int($0) } ?? 0,
+                                                                          endVerse: q("ev").flatMap { Int($0) } ?? 0))
+                                                }
+                                                return .handled
+                                            }
+                                            return .systemAction
+                                        })
                                 }
                                 .id(verse.number)
                             }
@@ -1039,6 +1053,20 @@ struct SpreadReader: View {
                                  verse: verse,
                                  highlighted: navigation.activeHighlight?.matches(bookID: book.id, chapter: chapter, verse: verse.number) ?? false,
                                  onOpenNote: onOpenNote)
+                        .environment(\.openURL, OpenURLAction { url in
+                            let items = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems ?? []
+                            func q(_ k: String) -> String? { items.first { $0.name == k }?.value }
+                            if url.scheme == "catholicbible", url.host == "xref" {
+                                if let b = q("b"), let cs = q("c"), let c = Int(cs),
+                                   let vs = q("v"), let v = Int(vs) {
+                                    onOpenXref(XrefTarget(bookID: b, chapter: c, verse: v,
+                                                          endChapter: q("ec").flatMap { Int($0) } ?? 0,
+                                                          endVerse: q("ev").flatMap { Int($0) } ?? 0))
+                                }
+                                return .handled
+                            }
+                            return .systemAction
+                        })
                 }
             } else if isFirst && pages.isEmpty {
                 MissingTextView(edition: edition, book: book).padding(.top, 24)
