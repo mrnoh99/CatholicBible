@@ -1308,6 +1308,8 @@ struct VerseRowView: View {
     /// '사전 열기' 처리를 상위가 직접 하고 싶을 때(예: 전체 화면인 매일미사).
     /// nil이면 공용 navigation.lookUp()을 쓴다.
     var onLookUp: (() -> Void)? = nil
+    /// 각주 마커 색상. nil이면 마커를 표시하지 않는다. AnnotatedReader에서 명시적으로 설정 가능.
+    var markerColor: UIColor? = nil
 
     @Environment(ReaderSettings.self) private var settings
     @Environment(AnnotationStore.self) private var annotations
@@ -1317,18 +1319,19 @@ struct VerseRowView: View {
     private var ref: VerseRef { VerseRef(bookID: book.id, chapter: chapter, verse: verse.number) }
 
     /// 주석 성경일 때만 각주 마커('N)')를 강조·링크로 만든다.
-    private var isAnnotationEdition: Bool { edition.id == "knbnotes" }
+    private var isAnnotationEdition: Bool { markerColor != nil || edition.id == "knbnotes" }
 
     /// 본문 뷰: UIKit 선택 텍스트뷰. 낱말을 선택하면 네이티브 하이라이트가 보이고,
     /// 선택 메뉴의 ‘찾아보기’로 시스템 사전이 열린다. 주석 성경에서는 각주 마커가
     /// 본문과 다른 색·위첨자로 표시되고, 탭하면 해당 주석이 열린다.
     private var verseTextView: some View {
         let formattedText = formatVerseTextWithParenthetical(verse.text)
+        let color = markerColor ?? (isAnnotationEdition ? UIColor(Color.accentColor) : nil)
         return SelectableVerseText(text: formattedText,
                             font: uiBodyFont,
                             color: UIColor(settings.theme.text),
                             lineSpacing: settings.lineSpacing,
-                            markerColor: isAnnotationEdition ? UIColor(Color.accentColor) : nil,
+                            markerColor: color,
                             bookID: book.id,
                             chapter: chapter,
                             onOpenURL: { openURL($0) },

@@ -348,7 +348,8 @@ struct AnnotatedReader: View {
                         VerseRowView(edition: edition, book: book, chapter: chapter,
                                      verse: verse,
                                      highlighted: navigation.activeHighlight?.matches(bookID: book.id, chapter: chapter, verse: verse.number) ?? false,
-                                     onOpenNote: onOpenNote)
+                                     onOpenNote: onOpenNote,
+                                     markerColor: UIColor(Color.accentColor))
                             .environment(\.openURL, OpenURLAction { url in
                                 print("🔗 [VerseRowView] openURL called: \(url)")
                                 return handleURLInternal(url)
