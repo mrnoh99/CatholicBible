@@ -766,29 +766,6 @@ struct RefPreviewSheet: View {
                                              noteTarget = RefNoteTarget(ref: ref, text: text)
                                          },
                                          onLookUp: { dictRequest = DictionaryRequest() })
-                                .environment(\.openURL, OpenURLAction { url in
-                                    if url.scheme == "catholicbible", url.host == "xref" {
-                                        let items = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems ?? []
-                                        func q(_ k: String) -> String? { items.first { $0.name == k }?.value }
-                                        if let b = q("b"), let cs = q("c"), let c = Int(cs),
-                                           let vs = q("v"), let v = Int(vs) {
-                                            target = XrefTarget(bookID: b, chapter: c, verse: v,
-                                                              endChapter: q("ec").flatMap { Int($0) } ?? 0,
-                                                              endVerse: q("ev").flatMap { Int($0) } ?? 0)
-                                        }
-                                        return .handled
-                                    }
-                                    if url.scheme == "catholicbible", url.host == "note" {
-                                        let items = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems ?? []
-                                        func q(_ k: String) -> String? { items.first { $0.name == k }?.value }
-                                        if let n = q("n"), let book, let text = knb.notes(edition: editionID, bookID: book.id, chapter: target.chapter)
-                                            .first(where: { $0.n == n })?.text {
-                                            noteTarget = RefNoteTarget(ref: VerseRef(bookID: book.id, chapter: target.chapter, verse: String(target.verse)), text: text)
-                                        }
-                                        return .handled
-                                    }
-                                    return .passThrough
-                                })
                         }
                     } else {
                         Text("이 판본에는 해당 본문이 없습니다.")
