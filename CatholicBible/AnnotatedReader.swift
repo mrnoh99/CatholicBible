@@ -291,9 +291,6 @@ struct AnnotatedReader: View {
                 }
             }
         }
-        .environment(\.openURL, OpenURLAction { url in
-            handleURLInternal(url)
-        })
     }
 
     private var emptyNotesHint: String {
