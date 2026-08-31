@@ -716,6 +716,8 @@ struct NotesList: View {
     @Environment(ReaderSettings.self) private var settings
     @Environment(\.openURL) private var openURL
 
+    @State private var processedNotesCache: [String: String] = [:]
+
     private var edition: Edition { Editions.edition(editionID) ?? Editions.all[0] }
 
     private var noteUIFont: UIFont {
@@ -762,8 +764,8 @@ struct NotesList: View {
                             .font(settings.fontChoice.font(size: settings.fontSize * 0.72, bold: true))
                             .foregroundStyle(Color.accentColor)
                             .frame(minWidth: settings.fontSize * 1.3, alignment: .trailing)
-                        // 단어 선택(네이티브)과 성경 인용 링크 탭을 함께 지원.
-                        let processedText = processNoteText(note.text, editionID: editionID, bookID: bookID, chapter: chapter)
+                        // 캐시에서 이미 처리된 텍스트를 사용 (성능 개선)
+                        let processedText = processedNotesCache[note.n] ?? processNoteText(note.text, editionID: editionID, bookID: bookID, chapter: chapter)
                         SelectableNoteText(text: processedText, currentBook: bookID, chapter: chapter,
                                            font: noteUIFont,
                                            color: UIColor(settings.theme.text),
@@ -777,6 +779,20 @@ struct NotesList: View {
                 }
             }
         }
+        .onAppear {
+            updateProcessedNotesCache()
+        }
+        .onChange(of: notes) { _, _ in
+            updateProcessedNotesCache()
+        }
+    }
+
+    private func updateProcessedNotesCache() {
+        var cache: [String: String] = [:]
+        for note in notes {
+            cache[note.n] = processNoteText(note.text, editionID: editionID, bookID: bookID, chapter: chapter)
+        }
+        processedNotesCache = cache
     }
 }
 
