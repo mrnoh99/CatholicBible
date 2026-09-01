@@ -585,11 +585,25 @@ struct SelectableNoteText: UIViewRepresentable {
 
     func updateUIView(_ tv: UITextView, context: Context) {
         context.coordinator.onOpenURL = onOpenURL
+
+        // 마크다운 링크([텍스트](URL)) → NSAttributedString 링크로 변환
+        let (processedText, markdownLinks) = processMarkdownLinks(text)
+
         let para = NSMutableParagraphStyle()
         para.lineSpacing = lineSpacing
-        let attr = NSMutableAttributedString(string: text, attributes: [
+        let attr = NSMutableAttributedString(string: processedText, attributes: [
             .font: font, .foregroundColor: color, .paragraphStyle: para,
         ])
+
+        // 마크다운 링크([텍스트](URL)) 처리
+        for link in markdownLinks {
+            if let url = URL(string: link.urlString) {
+                var linkAttrs: [NSAttributedString.Key: Any] = [.link: url]
+                linkAttrs[.foregroundColor] = linkColor
+                attr.addAttributes(linkAttrs, range: link.range)
+            }
+        }
+
         ScriptureRef.addLinks(to: attr, currentBook: currentBook, color: linkColor, chapter: chapter)
         addMarkerLinks(to: attr, color: linkColor)  // 주석 마커 링크도 추가
 
@@ -607,6 +621,46 @@ struct SelectableNoteText: UIViewRepresentable {
 
         tv.linkTextAttributes = [.foregroundColor: linkColor]
         tv.attributedText = attr
+    }
+
+    private static func processMarkdownLinks(_ text: String) -> (String, [MarkdownLink]) {
+        let pattern = "\\[([^\\]]+)\\]\\(([^)]+)\\)"
+        guard let regex = try? NSRegularExpression(pattern: pattern, options: []) else {
+            return (text, [])
+        }
+
+        let ns = text as NSString
+        let matches = regex.matches(in: text, range: NSRange(location: 0, length: ns.length))
+
+        var links: [MarkdownLink] = []
+        var processedText = NSMutableString(string: text)
+        var offset = 0
+
+        for match in matches.reversed() {
+            let fullRange = match.range
+            let textRange = match.range(at: 1)
+            let urlRange = match.range(at: 2)
+
+            let linkText = ns.substring(with: textRange)
+            let urlString = ns.substring(with: urlRange)
+
+            let beforeLength = processedText.length
+            processedText.replaceCharacters(in: fullRange, with: linkText)
+            let afterLength = processedText.length
+
+            let newStart = fullRange.location
+            let newLength = linkText.count
+
+            links.append(MarkdownLink(text: linkText, urlString: urlString, range: NSRange(location: newStart, length: newLength)))
+        }
+
+        return (processedText as String, links.reversed())
+    }
+
+    private struct MarkdownLink {
+        let text: String
+        let urlString: String
+        let range: NSRange
     }
 
     /// 각주 마커('N)')를 NSAttributedString에 링크로 추가
