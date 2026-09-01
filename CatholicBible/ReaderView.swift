@@ -1282,9 +1282,9 @@ struct SelectableVerseText: UIViewRepresentable {
 
         // 검색 쿼리에 해당하는 단어 하이라이트
         if !searchQuery.isEmpty {
-            let ns = text as NSString
+            let ns = processedText as NSString
             let searchLower = searchQuery.lowercased()
-            let textLower = text.lowercased()
+            let textLower = processedText.lowercased()
             var searchRange = NSRange(location: 0, length: 0)
             while searchRange.location + searchRange.length < ns.length {
                 searchRange = (textLower as NSString).range(
