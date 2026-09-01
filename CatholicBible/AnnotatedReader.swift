@@ -103,11 +103,16 @@ struct AnnotatedReader: View {
                 cachedVersesChapter = -1
                 cachedNotesChapter = -1
                 cachedTitleMapChapter = -1
-                // 부모가 sharedChapter를 제공하면 부모가 장 관리를 담당
-                // sharedChapter가 없을 때만 마지막 장을 복원
+                // 부모가 sharedChapter를 제공하는 경우, chapter가 0이 아니면 유지
+                // 부모가 제공하지 않는 경우, 마지막 읽은 장을 복원
                 if sharedChapter == nil {
                     setChapter(readingState.lastChapter(edition: edition, book: book))
+                } else if chapter == 0 {
+                    // 초기화 상태일 때만 마지막 읽은 장으로 복원
+                    setChapter(readingState.lastChapter(edition: edition, book: book))
                 }
+                // 진행 중인 이동이 있으면 적용
+                applyPending()
                 previousBookID = newBookID
                 updateVersesCache()
                 updateNotesCache()
