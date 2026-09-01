@@ -13,6 +13,14 @@ struct LoadingScreen: View {
     let knbNotes: KnbNotesStore
     let liturgy: LiturgyStore
 
+    private var appVersion: String {
+        if let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String,
+           let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String {
+            return "\(version)(build\(build))"
+        }
+        return "v2.0(build01)"
+    }
+
     private var totalProgress: Double {
         // 세 개 저장소의 평균 진행률
         var sum: Double = 0
@@ -93,10 +101,15 @@ struct LoadingScreen: View {
                     .padding(.bottom, 8)
 
                 VStack(spacing: 6) {
-                    Text("Developed by JaiSung NOH MD. for Catholic Bible Reading, 2026")
-                        .font(.system(size: 10, weight: .regular, design: .default))
-                        .foregroundStyle(.secondary)
-                        .lineLimit(2)
+                    VStack(spacing: 2) {
+                        Text("Developed by JaiSung NOH MD.")
+                            .font(.system(size: 10, weight: .regular, design: .default))
+                            .foregroundStyle(.secondary)
+
+                        Text("as a birthday gift - July 30 2026 \(appVersion)")
+                            .font(.system(size: 9, weight: .regular, design: .default))
+                            .foregroundStyle(.secondary.opacity(0.8))
+                    }
 
                     VStack(spacing: 2) {
                         Text("「성경」 ⓒ 한국천주교주교회의")
