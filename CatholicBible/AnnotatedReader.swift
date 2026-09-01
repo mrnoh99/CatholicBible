@@ -131,9 +131,9 @@ struct AnnotatedReader: View {
                     scrollTarget = 1
                 }
                 readingState.savePosition(edition: edition, book: book, chapter: new)
-                updateVersesCache()
-                updateNotesCache()
-                updateTitleMapCache()
+                updateVersesCache(forcing: true)
+                updateNotesCache(forcing: true)
+                updateTitleMapCache(forcing: true)
             }
             .onChange(of: navigation.pendingChapter) { _, _ in applyPending() }
             .sheet(isPresented: $showBookPicker) {
@@ -436,8 +436,8 @@ struct AnnotatedReader: View {
 
     // MARK: - 캐시 업데이트
 
-    private func updateVersesCache() {
-        if cachedVersesChapter == chapter && cachedVersesEditionID == editionID && cachedVersesBookID == book.id {
+    private func updateVersesCache(forcing: Bool = false) {
+        if !forcing && cachedVersesChapter == chapter && cachedVersesEditionID == editionID && cachedVersesBookID == book.id {
             return
         }
         cachedVersesChapter = chapter
@@ -450,8 +450,8 @@ struct AnnotatedReader: View {
         }
     }
 
-    private func updateNotesCache() {
-        if cachedNotesChapter == chapter && cachedNotesEditionID == editionID && cachedNotesBookID == book.id {
+    private func updateNotesCache(forcing: Bool = false) {
+        if !forcing && cachedNotesChapter == chapter && cachedNotesEditionID == editionID && cachedNotesBookID == book.id {
             return
         }
         cachedNotesChapter = chapter
@@ -464,12 +464,12 @@ struct AnnotatedReader: View {
         }
     }
 
-    private func updateTitleMapCache() {
+    private func updateTitleMapCache(forcing: Bool = false) {
         guard chapter > 0 else {
             cachedTitleMap = [:]
             return
         }
-        if cachedTitleMapChapter == chapter && cachedTitleMapEditionID == editionID && cachedTitleMapBookID == book.id {
+        if !forcing && cachedTitleMapChapter == chapter && cachedTitleMapEditionID == editionID && cachedTitleMapBookID == book.id {
             return
         }
         cachedTitleMapChapter = chapter
