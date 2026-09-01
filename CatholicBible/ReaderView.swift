@@ -822,7 +822,7 @@ struct ChapterNavBar: View {
     }
 
     private func move(to n: Int) {
-        guard n != chapter else { return }
+        // 상태 동기화 문제를 피하기 위해 조건 없이 항상 chapter을 업데이트
         onChange()
         setChapter(n)
     }
