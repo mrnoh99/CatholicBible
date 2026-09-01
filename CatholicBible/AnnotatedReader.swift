@@ -40,6 +40,8 @@ struct AnnotatedReader: View {
     @State private var showIntros = false
     /// AnnotatedReader 초기화 완료 후 장 선택 변경만 감지하기 위한 플래그
     @State private var isInitialized = false
+    /// 책 전환 중 상태 동기화를 추적하기 위한 이전 책 ID
+    @State private var previousBookID = ""
     /// 주석·상호참조에서 탭한 인용 구절 미리보기 대상
     @State private var xrefTarget: XrefTarget?
     /// 각주 마커 팝업 대상
@@ -85,14 +87,20 @@ struct AnnotatedReader: View {
         }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .onAppear {
+                previousBookID = bookID
                 initChapterIfNeeded()
                 updateVersesCache()
                 updateNotesCache()
                 updateTitleMapCache()
                 isInitialized = true
             }
-            .onChange(of: bookID) { _, _ in
-                setChapter(readingState.lastChapter(edition: edition, book: book))
+            .onChange(of: bookID) { _, newBookID in
+                // 부모가 sharedChapter를 제공하면 부모가 장 관리를 담당
+                // sharedChapter가 없을 때만 마지막 장을 복원
+                if sharedChapter == nil {
+                    setChapter(readingState.lastChapter(edition: edition, book: book))
+                }
+                previousBookID = newBookID
                 updateVersesCache()
                 updateNotesCache()
                 updateTitleMapCache()
