@@ -33,6 +33,8 @@ struct AnnotatedReader: View {
     @Environment(\.horizontalSizeClass) private var hSize
 
     @State private var localChapter = 0
+    /// 현재 추적 중인 bookID (binding 변경 감지용)
+    @State private var trackedBookID = ""
     /// 대기 이동 직후 한 번 스크롤할 절(강조 색은 navigation.activeHighlight가 담당).
     @State private var scrollTarget: Int?
     @State private var showBookPicker = false
@@ -80,20 +82,50 @@ struct AnnotatedReader: View {
     }
 
     var body: some View {
-        VStack(spacing: 0) {
+        // bookID 변경 감지: binding 변경을 명시적으로 추적하고 상태 초기화
+        if trackedBookID != bookID {
+            // 책이 변경되었으므로 모든 캐시와 상태를 초기화
+            DispatchQueue.main.async {
+                trackedBookID = bookID
+                showChapterPicker = false
+                showBookPicker = false
+                scrollTarget = nil
+                cachedVersesChapter = -1
+                cachedNotesChapter = -1
+                cachedTitleMapChapter = -1
+                cachedVersesBookID = ""
+                cachedNotesBookID = ""
+                cachedTitleMapBookID = ""
+
+                let newBook = Bible.book(bookID) ?? Bible.books[0]
+                if chapter > newBook.chapterCount || chapter == 0 {
+                    setChapter(readingState.lastChapter(edition: edition, book: newBook))
+                }
+
+                previousBookID = bookID
+                updateVersesCacheForBook(newBook, forcing: true)
+                updateNotesCacheForBook(newBook, forcing: true)
+                updateTitleMapCacheForBook(newBook, forcing: true)
+                isInitialized = true
+            }
+        }
+
+        return VStack(spacing: 0) {
             if showHeader { header }
             content
             chapterBar
         }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .id(bookID)
             .onAppear {
-                previousBookID = bookID
-                initChapterIfNeeded()
-                updateVersesCache()
-                updateNotesCache()
-                updateTitleMapCache()
-                isInitialized = true
+                if trackedBookID.isEmpty {
+                    trackedBookID = bookID
+                    previousBookID = bookID
+                    initChapterIfNeeded()
+                    updateVersesCache()
+                    updateNotesCache()
+                    updateTitleMapCache()
+                    isInitialized = true
+                }
             }
             .onChange(of: bookID) { oldBookID, newBookID in
                 // 책이 바뀌면 열려있는 장선택 창을 닫고 상태를 정리
