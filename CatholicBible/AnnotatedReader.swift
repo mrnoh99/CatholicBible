@@ -86,6 +86,7 @@ struct AnnotatedReader: View {
             chapterBar
         }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .id(bookID)
             .onAppear {
                 previousBookID = bookID
                 initChapterIfNeeded()
@@ -291,13 +292,11 @@ struct AnnotatedReader: View {
     // MARK: 본문 | 주석
 
     private var content: some View {
-        // 책 미스매치 감지: 캐시된 책이 현재 책과 다르면 강제 업데이트
+        // 책 미스매치 감지: 캐시된 책이 현재 책과 다르면 강제 업데이트 (동기 처리)
         if cachedVersesBookID != book.id || cachedNotesBookID != book.id {
-            DispatchQueue.main.async {
-                updateVersesCache(forcing: true)
-                updateNotesCache(forcing: true)
-                updateTitleMapCache(forcing: true)
-            }
+            updateVersesCache(forcing: true)
+            updateNotesCache(forcing: true)
+            updateTitleMapCache(forcing: true)
         }
 
         let verses = cachedVerses
