@@ -126,6 +126,12 @@ struct AnnotatedReader: View {
                 updateNotesCache()
                 updateTitleMapCache()
             }
+            .onChange(of: book.id) { _, _ in
+                // 책이 변경되면 강제로 모든 캐시를 업데이트
+                updateVersesCache(forcing: true)
+                updateNotesCache(forcing: true)
+                updateTitleMapCache(forcing: true)
+            }
             .onChange(of: chapter) { _, new in
                 guard new > 0 else { return }
                 if isInitialized && scrollTarget == nil {
