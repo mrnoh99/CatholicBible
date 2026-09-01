@@ -587,7 +587,7 @@ struct SelectableNoteText: UIViewRepresentable {
         context.coordinator.onOpenURL = onOpenURL
 
         // 마크다운 링크([텍스트](URL)) → NSAttributedString 링크로 변환
-        let (processedText, markdownLinks) = processMarkdownLinks(text)
+        let (processedText, markdownLinks) = Self.processMarkdownLinks(text)
 
         let para = NSMutableParagraphStyle()
         para.lineSpacing = lineSpacing
@@ -612,7 +612,7 @@ struct SelectableNoteText: UIViewRepresentable {
             if let regex = try? NSRegularExpression(pattern: pattern, options: .caseInsensitive) {
                 let s = attr.string as NSString
                 for match in regex.matches(in: attr.string, range: NSRange(location: 0, length: s.length)) {
-                    attr.addAttribute(.backgroundColor,
+                    attr.addAttribute(NSAttributedString.Key.backgroundColor,
                                     value: UIColor.yellow.withAlphaComponent(0.3),
                                     range: match.range)
                 }
