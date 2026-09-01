@@ -481,8 +481,11 @@ struct EditionCard: View {
     @Environment(BibleStore.self) private var store
     @Environment(ReaderSettings.self) private var settings
 
+    /// 가용성 계산을 캐시하여 반복 계산 방지
+    @State private var cachedAvailability: (loaded: Int, total: Int)?
+
     var body: some View {
-        let availability = store.availability(edition: edition)
+        let availability = cachedAvailability ?? store.availability(edition: edition)
         let hasAny = availability.loaded > 0
 
         Button(action: action) {
@@ -546,6 +549,11 @@ struct EditionCard: View {
         }
         .buttonStyle(.plain)
         .accessibilityLabel("\(edition.name), \(availabilityLabel(availability))")
+        .onAppear {
+            if cachedAvailability == nil {
+                cachedAvailability = store.availability(edition: edition)
+            }
+        }
     }
 
     private var languageBadge: String {
