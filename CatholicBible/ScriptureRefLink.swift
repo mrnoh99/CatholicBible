@@ -257,6 +257,17 @@ enum ScriptureRef {
 
         for m in kre.matches(in: attr.string,
                              range: NSRange(location: 0, length: s.length)) {
+            // 이미 링크가 있는 범위는 건너뛴다 (마크다운 링크로 이미 처리됨)
+            var hasExistingLink = false
+            attr.enumerateAttributes(in: m.range, options: []) { attrs, range, _ in
+                if attrs[.link] != nil {
+                    hasExistingLink = true
+                }
+            }
+            if hasExistingLink {
+                continue
+            }
+
             var bookID: String?
 
             // 그룹 1: 책 이름 (선택적)
