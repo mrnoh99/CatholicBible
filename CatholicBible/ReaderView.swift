@@ -143,12 +143,11 @@ struct ReaderView: View {
         .onChange(of: book.id) { _, newBookID in
             // 책이 바뀌면 상태를 초기화 (성능 최적화: .id() 제거로 인한 상태 관리)
             if previousBookID != newBookID {
-                // 새 책에서 마지막으로 읽은 장으로 복원
-                let lastChapter = readingState.lastChapter(edition: Editions.edition(readingState.selectedEditionID) ?? Editions.all[0], book: book)
-                primaryChapter = max(lastChapter, 1)
+                // chapter 관리는 AnnotatedReader가 담당 - 사용자 선택 무시 방지
                 compareChapter = 0
                 compareTopVerse = nil
                 previousBookID = newBookID
+                // primaryChapter은 설정하지 않음 (AnnotatedReader가 처리)
             }
         }
         .onChange(of: readingState.readerLayout) { _, newLayout in
