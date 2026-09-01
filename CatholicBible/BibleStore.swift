@@ -115,6 +115,10 @@ nonisolated struct EditionText: Sendable {
 @Observable
 final class BibleStore {
     private(set) var isLoaded = false
+    /// 로딩 진행률 (0.0 ~ 1.0)
+    var loadProgress: Double = 0.0
+    /// 로딩 중 표시할 메시지
+    var loadingMessage: String = "준비 중..."
     /// 판본 id → 본문 (파일이 없는 판본은 항목 자체가 없음)
     private(set) var editions: [String: EditionText] = [:]
 
@@ -132,7 +136,18 @@ final class BibleStore {
 
         let loaded: [String: EditionText] = await Task.detached(priority: .userInitiated) {
             var result: [String: EditionText] = [:]
-            for (editionID, url) in candidates {
+            let total = candidates.count
+
+            for (index, (editionID, url)) in candidates.enumerated() {
+                // UI 업데이트 (진행률 & 메시지)
+                let edition = Editions.edition(editionID) ?? Editions.all[0]
+                DispatchQueue.main.async {
+                    self.loadingMessage = "\(edition.name) 로드 중..."
+                    self.loadProgress = Double(index) / Double(total)
+                }
+
+                // 실제 로드 작업
+
                 guard let data = try? Data(contentsOf: url),
                       let file = try? JSONDecoder().decode(BibleTextFile.self, from: data)
                 else { continue }
@@ -330,6 +345,12 @@ final class BibleStore {
 
         editions = loaded
         isLoaded = true
+
+        // 로딩 완료
+        DispatchQueue.main.async {
+            self.loadProgress = 1.0
+            self.loadingMessage = "준비 완료"
+        }
     }
 
     private static nonisolated func annotationFileName(for editionID: String) -> String {

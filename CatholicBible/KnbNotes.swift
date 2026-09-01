@@ -1238,8 +1238,10 @@ nonisolated private struct KnbNotesFile: Decodable {
 // MARK: - 저장소
 
 @Observable
+@Observable
 final class KnbNotesStore {
     private(set) var isLoaded = false
+    var loadingMessage: String = ""
 
     /// 판본 id → 데이터. 주석성경(knbnotes)·NABRE(nabre) 등 '주석 판본'별로 보관.
     private var introsByEd: [String: [Introduction]] = [:]

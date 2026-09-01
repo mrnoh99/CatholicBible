@@ -17,24 +17,35 @@ struct CatholicBibleApp: App {
 
     var body: some Scene {
         WindowGroup {
-            ContentView()
-                .environment(store)
-                .environment(settings)
-                .environment(readingState)
-                .environment(annotations)
-                .environment(knbNotes)
-                .environment(liturgy)
-                .environment(appSettings)
-                .task {
-                    await store.load()
-                    await knbNotes.load()
-                    await liturgy.load()
-                    checkAutoBackup()
+            ZStack {
+                if store.isLoaded && knbNotes.isLoaded && liturgy.isLoaded {
+                    // 모든 데이터 로드 완료 → 실제 앱 표시
+                    ContentView()
+                        .environment(store)
+                        .environment(settings)
+                        .environment(readingState)
+                        .environment(annotations)
+                        .environment(knbNotes)
+                        .environment(liturgy)
+                        .environment(appSettings)
+                        .onOpenURL { url in
+                            // Handle custom catholicbible:// URLs at the app level
+                            // This allows the system to properly route URLs to the app
+                        }
+                } else {
+                    // 로딩 중 → 로딩 화면 표시
+                    LoadingScreen(store: store, knbNotes: knbNotes, liturgy: liturgy)
                 }
-                .onOpenURL { url in
-                    // Handle custom catholicbible:// URLs at the app level
-                    // This allows the system to properly route URLs to the app
-                }
+            }
+            .task {
+                // 모든 데이터 로드 (완료 후 ZStack이 자동으로 ContentView로 전환)
+                async let storeLoad = store.load()
+                async let notesLoad = knbNotes.load()
+                async let liturgyLoad = liturgy.load()
+
+                _ = await (storeLoad, notesLoad, liturgyLoad)
+                checkAutoBackup()
+            }
         }
     }
 

@@ -248,8 +248,10 @@ nonisolated private struct DailyReadingsFile: Decodable {
 // MARK: - 저장소
 
 @Observable
+@Observable
 final class LiturgyStore {
     private(set) var isLoaded = false
+    var loadingMessage: String = ""
     /// "yyyy-MM-dd" → 하루치 독서
     private(set) var days: [String: DailyReadings] = [:]
     /// 전례일 정체성+주기 → 독서. 파일이 없는 해(예: 2027·2028)를 다른 해 같은
