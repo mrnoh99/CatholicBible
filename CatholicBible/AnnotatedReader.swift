@@ -104,6 +104,9 @@ struct AnnotatedReader: View {
                 cachedVersesChapter = -1
                 cachedNotesChapter = -1
                 cachedTitleMapChapter = -1
+                cachedVersesBookID = ""
+                cachedNotesBookID = ""
+                cachedTitleMapBookID = ""
 
                 // 장이 새 책에서 유효하지 않으면 초기화
                 let newBook = Bible.book(newBookID) ?? Bible.books[0]
@@ -112,9 +115,10 @@ struct AnnotatedReader: View {
                 }
 
                 previousBookID = newBookID
-                updateVersesCache()
-                updateNotesCache()
-                updateTitleMapCache()
+                // 캐시 업데이트 시 새 bookID를 직접 사용하여 바인딩 지연 회피
+                updateVersesCacheForBook(newBook)
+                updateNotesCacheForBook(newBook)
+                updateTitleMapCacheForBook(newBook)
             }
             .onChange(of: editionID) { _, _ in
                 updateVersesCache()
@@ -461,6 +465,53 @@ struct AnnotatedReader: View {
     }
 
     private func updateTitleMapCache() {
+        guard chapter > 0 else {
+            cachedTitleMap = [:]
+            return
+        }
+        if cachedTitleMapChapter == chapter && cachedTitleMapEditionID == editionID && cachedTitleMapBookID == book.id {
+            return
+        }
+        cachedTitleMapChapter = chapter
+        cachedTitleMapEditionID = editionID
+        cachedTitleMapBookID = book.id
+        let titles = store.titles(edition: edition, book: book, chapter: chapter)
+        var newMap: [String: String] = [:]
+        for title in titles {
+            newMap[title.verse] = title.text
+        }
+        cachedTitleMap = newMap
+    }
+
+    private func updateVersesCacheForBook(_ book: BibleBook) {
+        if cachedVersesChapter == chapter && cachedVersesEditionID == editionID && cachedVersesBookID == book.id {
+            return
+        }
+        cachedVersesChapter = chapter
+        cachedVersesEditionID = editionID
+        cachedVersesBookID = book.id
+        if chapter > 0 {
+            cachedVerses = store.verses(edition: edition, book: book, chapter: chapter)
+        } else {
+            cachedVerses = []
+        }
+    }
+
+    private func updateNotesCacheForBook(_ book: BibleBook) {
+        if cachedNotesChapter == chapter && cachedNotesEditionID == editionID && cachedNotesBookID == book.id {
+            return
+        }
+        cachedNotesChapter = chapter
+        cachedNotesEditionID = editionID
+        cachedNotesBookID = book.id
+        if chapter > 0 {
+            cachedNotes = knb.notes(edition: editionID, bookID: book.id, chapter: chapter)
+        } else {
+            cachedNotes = []
+        }
+    }
+
+    private func updateTitleMapCacheForBook(_ book: BibleBook) {
         guard chapter > 0 else {
             cachedTitleMap = [:]
             return
