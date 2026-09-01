@@ -99,6 +99,10 @@ struct AnnotatedReader: View {
                 showChapterPicker = false
                 showBookPicker = false
                 scrollTarget = nil
+                // 책 변경 시 chapter 캐시를 강제로 초기화
+                cachedVersesChapter = -1
+                cachedNotesChapter = -1
+                cachedTitleMapChapter = -1
                 // 부모가 sharedChapter를 제공하면 부모가 장 관리를 담당
                 // sharedChapter가 없을 때만 마지막 장을 복원
                 if sharedChapter == nil {
