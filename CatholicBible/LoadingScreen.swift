@@ -13,12 +13,11 @@ struct LoadingScreen: View {
     let knbNotes: KnbNotesStore
     let liturgy: LiturgyStore
 
-    private var appVersion: String {
-        if let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String,
-           let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String {
-            return "\(version)(build\(build))"
-        }
-        return "v2.0(build01)"
+    private var appVersionText: String {
+        let info = Bundle.main.infoDictionary
+        let version = info?["CFBundleShortVersionString"] as? String ?? "1.0"
+        let build = info?["CFBundleVersion"] as? String ?? "1"
+        return "v\(version) (build \(build))"
     }
 
     private var totalProgress: Double {
@@ -94,38 +93,24 @@ struct LoadingScreen: View {
 
             Spacer()
 
-            // Credit 정보
-            VStack(spacing: 12) {
-                Divider()
-                    .padding(.horizontal, 32)
-                    .padding(.bottom, 8)
-
-                VStack(spacing: 6) {
-                    VStack(spacing: 2) {
-                        Text("Developed by JaiSung NOH MD.")
-                            .font(.system(size: 10, weight: .regular, design: .default))
-                            .foregroundStyle(.secondary)
-
-                        Text("as a birthday gift - July 30 2026 \(appVersion)")
-                            .font(.system(size: 9, weight: .regular, design: .default))
-                            .foregroundStyle(.secondary.opacity(0.8))
-                    }
-
-                    VStack(spacing: 2) {
-                        Text("「성경」 ⓒ 한국천주교주교회의")
-                        Text("「주석 성경」 ⓒ 한국천주교주교회의")
-                        Text("「공동번역 성서」 ⓒ 대한성서공회")
-                        Text("「200주년 신약성서」 ⓒ 분도출판사")
-                        Text("Nova Vulgata ⓒ Libreria Editrice Vaticana")
-                    }
-                    .font(.system(size: 9, weight: .regular, design: .default))
-                    .foregroundStyle(.secondary.opacity(0.8))
-                    .lineLimit(5)
+            // Credit 정보 (LibraryView와 동일)
+            VStack(spacing: 6) {
+                VStack(spacing: 3) {
+                    Text("Developed by JaiSung NOH MD.")
+                        .font(.system(size: 12, weight: .semibold, design: .default))
+                    Text("as a birthday gift for\nEunkyung (Teresa) Kim\n— July 30, 2026")
+                        .font(.system(size: 11, weight: .regular, design: .default))
                 }
-                .frame(maxWidth: .infinity, alignment: .center)
-                .padding(.horizontal, 16)
+                .multilineTextAlignment(.center)
+                .foregroundStyle(Color.accentColor)
+
+                Text(appVersionText)
+                    .font(.system(size: 11, weight: .regular, design: .monospaced))
+                    .foregroundStyle(.secondary)
             }
-            .padding(.bottom, 28)
+            .frame(maxWidth: .infinity, alignment: .center)
+            .padding(.vertical, 12)
+            .padding(.horizontal, 16)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color(.systemBackground))
