@@ -38,7 +38,7 @@ struct LoadingScreen: View {
     }
 
     var body: some View {
-        VStack(spacing: 24) {
+        VStack(spacing: 0) {
             Spacer()
 
             // 앱 로고 또는 제목
@@ -85,6 +85,33 @@ struct LoadingScreen: View {
             }
 
             Spacer()
+
+            // Credit 정보
+            VStack(spacing: 12) {
+                Divider()
+                    .padding(.horizontal, 32)
+                    .padding(.bottom, 8)
+
+                VStack(spacing: 4) {
+                    Text("Developed by JaiSung NOH MD., 2026")
+                        .font(.system(size: 11, weight: .regular, design: .default))
+                        .foregroundStyle(.secondary)
+
+                    VStack(spacing: 2) {
+                        Text("「성경」 ⓒ 한국천주교주교회의")
+                        Text("「주석 성경」 ⓒ 한국천주교주교회의")
+                        Text("「공동번역 성서」 ⓒ 대한성서공회")
+                        Text("「200주년 신약성서」 ⓒ 분도출판사")
+                        Text("Nova Vulgata ⓒ Libreria Editrice Vaticana")
+                    }
+                    .font(.system(size: 9, weight: .regular, design: .default))
+                    .foregroundStyle(.secondary.opacity(0.8))
+                    .lineLimit(5)
+                }
+                .frame(maxWidth: .infinity, alignment: .center)
+                .padding(.horizontal, 16)
+            }
+            .padding(.bottom, 28)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color(.systemBackground))
