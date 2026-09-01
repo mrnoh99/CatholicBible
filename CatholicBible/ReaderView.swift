@@ -1246,9 +1246,9 @@ struct SelectableVerseText: UIViewRepresentable {
 
         // 각주 마커 'N)'를 본문과 다른 색·작은 위첨자로 표시하고, 탭하면 주석이 열리게 한다.
         if let markerColor, let regex = Self.markerRegex {
-            let ns = text as NSString
+            let ns = processedText as NSString
             let markerFont = font.withSize(max(font.pointSize * 0.72, 9))
-            let matches = regex.matches(in: text, range: NSRange(location: 0, length: ns.length))
+            let matches = regex.matches(in: processedText, range: NSRange(location: 0, length: ns.length))
             print("📌 [SelectableVerseText] marker regex: found \(matches.count) matches in text")
             for m in matches {
                 let n = ns.substring(with: m.range(at: 1))
