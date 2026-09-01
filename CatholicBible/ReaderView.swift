@@ -800,7 +800,10 @@ struct ChapterNavBar: View {
             }
             .sheet(isPresented: $showPicker) {
                 ChapterPickerView(book: book, current: max(chapter, 1)) { picked in
-                    move(to: picked); showPicker = false
+                    showPicker = false
+                    DispatchQueue.main.async {
+                        move(to: picked)
+                    }
                 }
             }
         }
