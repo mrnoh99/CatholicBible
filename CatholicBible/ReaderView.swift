@@ -1236,11 +1236,16 @@ struct SelectableVerseText: UIViewRepresentable {
         // 마크다운 링크([텍스트](URL)) 처리
         for link in markdownLinks {
             if let url = URL(string: link.urlString) {
-                var linkAttrs: [NSAttributedString.Key: Any] = [.link: url]
-                // 링크 텍스트 색상 설정 (accent color)
-                linkAttrs[.foregroundColor] = UIColor(Color.accentColor)
-                attr.addAttributes(linkAttrs, range: link.range)
-                print("🔗 [SelectableVerseText] markdown link added: '\(link.text)' → \(link.urlString)")
+                // 범위 검증
+                if link.range.location >= 0 && link.range.location + link.range.length <= attr.length {
+                    var linkAttrs: [NSAttributedString.Key: Any] = [.link: url]
+                    // 링크 텍스트 색상 설정 (accent color)
+                    linkAttrs[.foregroundColor] = UIColor(Color.accentColor)
+                    attr.addAttributes(linkAttrs, range: link.range)
+                    print("🔗 [SelectableVerseText] markdown link added: '\(link.text)' → \(link.urlString)")
+                } else {
+                    print("⚠️ [SelectableVerseText] markdown link range invalid: location=\(link.range.location), length=\(link.range.length), attr.length=\(attr.length)")
+                }
             }
         }
 
@@ -1251,21 +1256,26 @@ struct SelectableVerseText: UIViewRepresentable {
             let matches = regex.matches(in: processedText, range: NSRange(location: 0, length: ns.length))
             print("📌 [SelectableVerseText] marker regex: found \(matches.count) matches in text")
             for m in matches {
-                let n = ns.substring(with: m.range(at: 1))
-                let urlString = "catholicbible://note?b=\(bookID)&c=\(chapter)&n=\(n)"
-                print("   📌 marker match: '\(n)' at range \(m.range) → url: \(urlString)")
-                var attrs: [NSAttributedString.Key: Any] = [
-                    .foregroundColor: markerColor,
-                    .font: markerFont,
-                    .baselineOffset: font.pointSize * 0.28,
-                ]
-                if let url = URL(string: urlString) {
-                    attrs[.link] = url
-                    print("   ✓ link added for marker '\(n)'")
+                // 범위 검증
+                if m.range.location >= 0 && m.range.location + m.range.length <= attr.length {
+                    let n = ns.substring(with: m.range(at: 1))
+                    let urlString = "catholicbible://note?b=\(bookID)&c=\(chapter)&n=\(n)"
+                    print("   📌 marker match: '\(n)' at range \(m.range) → url: \(urlString)")
+                    var attrs: [NSAttributedString.Key: Any] = [
+                        .foregroundColor: markerColor,
+                        .font: markerFont,
+                        .baselineOffset: font.pointSize * 0.28,
+                    ]
+                    if let url = URL(string: urlString) {
+                        attrs[.link] = url
+                        print("   ✓ link added for marker '\(n)'")
+                    } else {
+                        print("   ✗ failed to create URL for marker '\(n)'")
+                    }
+                    attr.addAttributes(attrs, range: m.range)
                 } else {
-                    print("   ✗ failed to create URL for marker '\(n)'")
+                    print("   ⚠️ marker range out of bounds: \(m.range) vs attr.length \(attr.length)")
                 }
-                attr.addAttributes(attrs, range: m.range)
             }
             tv.linkTextAttributes = [.foregroundColor: markerColor]
             print("📌 [SelectableVerseText] linkTextAttributes set")

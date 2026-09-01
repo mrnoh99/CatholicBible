@@ -245,10 +245,12 @@ enum ScriptureRef {
             let ev = d2 ?? d2_dot ?? d1 ?? v
             if let url = URL(string:
                 "catholicbible://xref?b=\(bID)&c=\(c)&v=\(v)&ec=\(ec)&ev=\(ev)") {
-                attr.addAttributes([.link: url,
-                                    .foregroundColor: color,
-                                    .underlineStyle: NSUnderlineStyle.single.rawValue],
-                                   range: m.range)
+                if m.range.location >= 0 && m.range.location + m.range.length <= attr.length {
+                    attr.addAttributes([.link: url,
+                                        .foregroundColor: color,
+                                        .underlineStyle: NSUnderlineStyle.single.rawValue],
+                                       range: m.range)
+                }
             }
         }
         addKoreanLinks(to: attr, currentBook: lastBook, color: color)
@@ -309,11 +311,13 @@ enum ScriptureRef {
             let ev = d2 ?? (d2_dot_range ?? d2_dot) ?? d1 ?? v
             if let url = URL(string:
                 "catholicbible://xref?b=\(bID)&c=\(c)&v=\(v)&ec=\(ec)&ev=\(ev)") {
-                attr.addAttributes([.link: url,
-                                    .foregroundColor: color,
-                                    .underlineStyle: NSUnderlineStyle.single.rawValue],
-                                   range: m.range)
-                processed.append(m.range)
+                if m.range.location >= 0 && m.range.location + m.range.length <= attr.length {
+                    attr.addAttributes([.link: url,
+                                        .foregroundColor: color,
+                                        .underlineStyle: NSUnderlineStyle.single.rawValue],
+                                       range: m.range)
+                    processed.append(m.range)
+                }
             }
         }
 
@@ -385,7 +389,7 @@ enum ScriptureRef {
                             // 이 부분을 텍스트에서 찾아 링크 추가
                             let searchRange = NSRange(location: searchStart, length: s.length - searchStart)
                             let partNSRange = s.range(of: part, options: [], range: searchRange)
-                            if partNSRange.location != NSNotFound {
+                            if partNSRange.location != NSNotFound && partNSRange.location >= 0 && partNSRange.location + partNSRange.length <= attr.length {
                                 attr.addAttributes([.link: url,
                                                   .foregroundColor: color,
                                                   .underlineStyle: NSUnderlineStyle.single.rawValue],
@@ -428,8 +432,10 @@ enum ScriptureRef {
                       let endChap = Int(s.substring(with: m.range(at: 3))) else { continue }
 
                 if let url = URL(string: "catholicbible://xref?b=\(refBookID)&c=\(startChap)&v=1&ec=\(endChap)&ev=1") {
-                    attr.addAttributes([.link: url, .foregroundColor: color, .underlineStyle: NSUnderlineStyle.single.rawValue], range: m.range)
-                    processed.append(m.range)
+                    if m.range.location >= 0 && m.range.location + m.range.length <= attr.length {
+                        attr.addAttributes([.link: url, .foregroundColor: color, .underlineStyle: NSUnderlineStyle.single.rawValue], range: m.range)
+                        processed.append(m.range)
+                    }
                 }
             }
         }
@@ -445,8 +451,10 @@ enum ScriptureRef {
                       let chap = Int(s.substring(with: m.range(at: 2))) else { continue }
 
                 if let url = URL(string: "catholicbible://xref?b=\(refBookID)&c=\(chap)&v=1&ec=\(chap)&ev=1") {
-                    attr.addAttributes([.link: url, .foregroundColor: color, .underlineStyle: NSUnderlineStyle.single.rawValue], range: m.range)
-                    processed.append(m.range)
+                    if m.range.location >= 0 && m.range.location + m.range.length <= attr.length {
+                        attr.addAttributes([.link: url, .foregroundColor: color, .underlineStyle: NSUnderlineStyle.single.rawValue], range: m.range)
+                        processed.append(m.range)
+                    }
                 }
             }
         }
@@ -462,8 +470,10 @@ enum ScriptureRef {
                     ? Int(s.substring(with: m.range(at: 2))) ?? v : v
 
                 if let url = URL(string: "catholicbible://xref?b=\(bookID)&c=\(currentChapter)&v=\(v)&ec=\(currentChapter)&ev=\(endVerse)") {
-                    attr.addAttributes([.link: url, .foregroundColor: color, .underlineStyle: NSUnderlineStyle.single.rawValue], range: m.range)
-                    processed.append(m.range)
+                    if m.range.location >= 0 && m.range.location + m.range.length <= attr.length {
+                        attr.addAttributes([.link: url, .foregroundColor: color, .underlineStyle: NSUnderlineStyle.single.rawValue], range: m.range)
+                        processed.append(m.range)
+                    }
                 }
             }
         }
@@ -478,8 +488,10 @@ enum ScriptureRef {
                       let endV = Int(s.substring(with: m.range(at: 2))) else { continue }
 
                 if let url = URL(string: "catholicbible://xref?b=\(bookID)&c=\(currentChapter)&v=\(v)&ec=\(currentChapter)&ev=\(endV)") {
-                    attr.addAttributes([.link: url, .foregroundColor: color, .underlineStyle: NSUnderlineStyle.single.rawValue], range: m.range)
-                    processed.append(m.range)
+                    if m.range.location >= 0 && m.range.location + m.range.length <= attr.length {
+                        attr.addAttributes([.link: url, .foregroundColor: color, .underlineStyle: NSUnderlineStyle.single.rawValue], range: m.range)
+                        processed.append(m.range)
+                    }
                 }
             }
         }
@@ -493,8 +505,10 @@ enum ScriptureRef {
                 guard let chapter = Int(s.substring(with: m.range(at: 1))) else { continue }
 
                 if let url = URL(string: "catholicbible://xref?b=\(contextBook)&c=\(chapter)&v=1&ec=\(chapter)&ev=1") {
-                    attr.addAttributes([.link: url, .foregroundColor: color, .underlineStyle: NSUnderlineStyle.single.rawValue], range: m.range)
-                    processed.append(m.range)
+                    if m.range.location >= 0 && m.range.location + m.range.length <= attr.length {
+                        attr.addAttributes([.link: url, .foregroundColor: color, .underlineStyle: NSUnderlineStyle.single.rawValue], range: m.range)
+                        processed.append(m.range)
+                    }
                 }
             }
         }
@@ -509,8 +523,10 @@ enum ScriptureRef {
                       let endChap = Int(s.substring(with: m.range(at: 2))) else { continue }
 
                 if let url = URL(string: "catholicbible://xref?b=\(contextBook)&c=\(startChap)&v=1&ec=\(endChap)&ev=1") {
-                    attr.addAttributes([.link: url, .foregroundColor: color, .underlineStyle: NSUnderlineStyle.single.rawValue], range: m.range)
-                    processed.append(m.range)
+                    if m.range.location >= 0 && m.range.location + m.range.length <= attr.length {
+                        attr.addAttributes([.link: url, .foregroundColor: color, .underlineStyle: NSUnderlineStyle.single.rawValue], range: m.range)
+                        processed.append(m.range)
+                    }
                 }
             }
         }
