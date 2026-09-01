@@ -76,6 +76,7 @@ struct ReaderView: View {
                     // 주석 성경: 왼쪽 본문 · 오른쪽 주석 (입문 접근 포함)
                     AnnotatedReader(editionID: selectedEditionIDBinding,
                                     bookID: primaryBookBinding,
+                                    currentBook: book,
                                     sharedChapter: $primaryChapter,
                                     ownerBookID: book.id,
                                     showHeader: true,

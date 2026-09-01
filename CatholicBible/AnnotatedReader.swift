@@ -13,6 +13,8 @@ import UIKit
 struct AnnotatedReader: View {
     @Binding var editionID: String
     @Binding var bookID: String
+    /// 사이드바에서 선택한 실제 book object (변경 감지용)
+    var currentBook: BibleBook
     /// 공유하는 장 바인딩(없으면 자체 장 관리).
     var sharedChapter: Binding<Int>? = nil
     /// 이 리더가 담당하는 책(대기 이동 가로채기 방지용).
@@ -82,11 +84,11 @@ struct AnnotatedReader: View {
     }
 
     var body: some View {
-        // bookID 변경 감지: binding 변경을 명시적으로 추적하고 상태 초기화
-        if trackedBookID != bookID {
-            // 책이 변경되었으므로 모든 캐시와 상태를 초기화
+        // currentBook 변경 감지: 사이드바에서 선택한 책이 바뀌면 강제 업데이트
+        if trackedBookID != currentBook.id {
             DispatchQueue.main.async {
-                trackedBookID = bookID
+                trackedBookID = currentBook.id
+                bookID = currentBook.id
                 showChapterPicker = false
                 showBookPicker = false
                 scrollTarget = nil
@@ -97,15 +99,14 @@ struct AnnotatedReader: View {
                 cachedNotesBookID = ""
                 cachedTitleMapBookID = ""
 
-                let newBook = Bible.book(bookID) ?? Bible.books[0]
-                if chapter > newBook.chapterCount || chapter == 0 {
-                    setChapter(readingState.lastChapter(edition: edition, book: newBook))
+                if chapter > currentBook.chapterCount || chapter == 0 {
+                    setChapter(readingState.lastChapter(edition: edition, book: currentBook))
                 }
 
-                previousBookID = bookID
-                updateVersesCacheForBook(newBook, forcing: true)
-                updateNotesCacheForBook(newBook, forcing: true)
-                updateTitleMapCacheForBook(newBook, forcing: true)
+                previousBookID = currentBook.id
+                updateVersesCacheForBook(currentBook, forcing: true)
+                updateNotesCacheForBook(currentBook, forcing: true)
+                updateTitleMapCacheForBook(currentBook, forcing: true)
                 isInitialized = true
             }
         }
@@ -118,8 +119,9 @@ struct AnnotatedReader: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .onAppear {
                 if trackedBookID.isEmpty {
-                    trackedBookID = bookID
-                    previousBookID = bookID
+                    trackedBookID = currentBook.id
+                    bookID = currentBook.id
+                    previousBookID = currentBook.id
                     initChapterIfNeeded()
                     updateVersesCache()
                     updateNotesCache()
