@@ -119,6 +119,7 @@ final class BibleStore {
     private(set) var editions: [String: EditionText] = [:]
 
     private let referenceRegex = try! NSRegularExpression(pattern: "^(\\d+):(\\d+)(?:-(\\d+))?$")
+    private static let annotationMarkerRegex = try! NSRegularExpression(pattern: "\\s+\\d+\\).*", options: [])
 
     func load() async {
         guard !isLoaded else { return }
@@ -496,12 +497,8 @@ final class BibleStore {
     private static nonisolated func removeAnnotationMarkers(from text: String) -> String {
         // 주석 마크 제거: "천지 창조 1)" → "천지 창조"
         // 형식: "제목 번호)" 또는 "제목 번호)..." 등
-        let pattern = "\\s+\\d+\\).*"
-        guard let regex = try? NSRegularExpression(pattern: pattern, options: []) else {
-            return text
-        }
         let range = NSRange(text.startIndex..., in: text)
-        if let match = regex.firstMatch(in: text, options: [], range: range) {
+        if let match = annotationMarkerRegex.firstMatch(in: text, options: [], range: range) {
             if let matchRange = Range(match.range, in: text) {
                 return String(text[..<matchRange.lowerBound]).trimmingCharacters(in: .whitespaces)
             }
