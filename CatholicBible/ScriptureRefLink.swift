@@ -625,9 +625,11 @@ struct SelectableNoteText: UIViewRepresentable {
         // 마크다운 링크([텍스트](URL)) 처리
         for link in markdownLinks {
             if let url = URL(string: link.urlString) {
-                var linkAttrs: [NSAttributedString.Key: Any] = [.link: url]
-                linkAttrs[.foregroundColor] = linkColor
-                attr.addAttributes(linkAttrs, range: link.range)
+                if link.range.location >= 0 && link.range.location + link.range.length <= attr.length {
+                    var linkAttrs: [NSAttributedString.Key: Any] = [.link: url]
+                    linkAttrs[.foregroundColor] = linkColor
+                    attr.addAttributes(linkAttrs, range: link.range)
+                }
             }
         }
 
@@ -639,9 +641,11 @@ struct SelectableNoteText: UIViewRepresentable {
             if let regex = try? NSRegularExpression(pattern: pattern, options: .caseInsensitive) {
                 let s = attr.string as NSString
                 for match in regex.matches(in: attr.string, range: NSRange(location: 0, length: s.length)) {
-                    attr.addAttribute(NSAttributedString.Key.backgroundColor,
-                                    value: UIColor.yellow.withAlphaComponent(0.3),
-                                    range: match.range)
+                    if match.range.location >= 0 && match.range.location + match.range.length <= attr.length {
+                        attr.addAttribute(NSAttributedString.Key.backgroundColor,
+                                        value: UIColor.yellow.withAlphaComponent(0.3),
+                                        range: match.range)
+                    }
                 }
             }
         }

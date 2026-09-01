@@ -1304,7 +1304,9 @@ struct SelectableVerseText: UIViewRepresentable {
                                  length: ns.length - (searchRange.location + searchRange.length))
                 )
                 if searchRange.location == NSNotFound { break }
-                attr.addAttribute(.backgroundColor, value: UIColor.yellow.withAlphaComponent(0.3), range: searchRange)
+                if searchRange.location >= 0 && searchRange.location + searchRange.length <= attr.length {
+                    attr.addAttribute(.backgroundColor, value: UIColor.yellow.withAlphaComponent(0.3), range: searchRange)
+                }
             }
         }
 
