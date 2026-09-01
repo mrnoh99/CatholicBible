@@ -95,6 +95,9 @@ struct AnnotatedReader: View {
                 isInitialized = true
             }
             .onChange(of: bookID) { _, newBookID in
+                // 책이 바뀌면 열려있는 장선택 창을 닫고 상태를 정리
+                showChapterPicker = false
+                showBookPicker = false
                 // 부모가 sharedChapter를 제공하면 부모가 장 관리를 담당
                 // sharedChapter가 없을 때만 마지막 장을 복원
                 if sharedChapter == nil {
