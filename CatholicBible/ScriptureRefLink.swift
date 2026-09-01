@@ -634,7 +634,6 @@ struct SelectableNoteText: UIViewRepresentable {
 
         var links: [MarkdownLink] = []
         var processedText = NSMutableString(string: text)
-        var offset = 0
 
         for match in matches.reversed() {
             let fullRange = match.range
@@ -644,12 +643,10 @@ struct SelectableNoteText: UIViewRepresentable {
             let linkText = ns.substring(with: textRange)
             let urlString = ns.substring(with: urlRange)
 
-            let beforeLength = processedText.length
             processedText.replaceCharacters(in: fullRange, with: linkText)
-            let afterLength = processedText.length
 
             let newStart = fullRange.location
-            let newLength = linkText.count
+            let newLength = textRange.length
 
             links.append(MarkdownLink(text: linkText, urlString: urlString, range: NSRange(location: newStart, length: newLength)))
         }
