@@ -46,6 +46,9 @@ struct ReaderView: View {
     /// 연동 비교에서 두 열이 맞추는 '맨 위 절'.
     @State private var compareTopVerse: String?
 
+    /// 책이 바뀔 때 상태를 초기화하기 위한 추적용 state
+    @State private var previousBookID = ""
+
     private var selectedEditionIDBinding: Binding<String> {
         Binding(get: { readingState.selectedEditionID },
                 set: { readingState.selectedEditionID = $0 })
@@ -137,6 +140,15 @@ struct ReaderView: View {
         }
         .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
+        .onChange(of: book.id) { _, newBookID in
+            // 책이 바뀌면 상태를 초기화 (성능 최적화: .id() 제거로 인한 상태 관리)
+            if previousBookID != newBookID {
+                primaryChapter = 0
+                compareChapter = 0
+                compareTopVerse = nil
+                previousBookID = newBookID
+            }
+        }
         .onChange(of: readingState.readerLayout) { _, newLayout in
             if newLayout == .compare && compareChapter == 0 {
                 compareChapter = primaryChapter

@@ -241,7 +241,8 @@ struct ContentView: View {
         } detail: {
             if let bookID = navigation.selectedBookID, let book = Bible.book(bookID) {
                 ReaderView(book: book)
-                    .id(book.id) // 책이 바뀌면 리더를 새로 만든다 (판본 전환은 열 안에서)
+                    // .id() 제거: 책이 바뀔 때 전체 뷰를 재구성하지 않도록 함 (성능 개선)
+                    // 대신 ReaderView에서 book.id onChange로 상태를 초기화
             } else {
                 VStack(spacing: 0) {
                     // iPad/Mac에서 상단 메뉴 표시
