@@ -663,26 +663,41 @@ struct SelectableNoteText: UIViewRepresentable {
         let ns = text as NSString
         let matches = regex.matches(in: text, range: NSRange(location: 0, length: ns.length))
 
-        var links: [MarkdownLink] = []
-        var processedText = NSMutableString(string: text)
+        // Collect link info in original order
+        var linkInfos: [(text: String, url: String)] = []
+        for match in matches {
+            let textRange = match.range(at: 1)
+            let urlRange = match.range(at: 2)
+            let linkText = ns.substring(with: textRange)
+            let urlString = ns.substring(with: urlRange)
+            linkInfos.append((text: linkText, url: urlString))
+        }
 
+        // Process replacements in reverse order to avoid offset shifts
+        var processedText = NSMutableString(string: text)
         for match in matches.reversed() {
             let fullRange = match.range
             let textRange = match.range(at: 1)
-            let urlRange = match.range(at: 2)
-
             let linkText = ns.substring(with: textRange)
-            let urlString = ns.substring(with: urlRange)
-
             processedText.replaceCharacters(in: fullRange, with: linkText)
-
-            let newStart = fullRange.location
-            let newLength = textRange.length
-
-            links.append(MarkdownLink(text: linkText, urlString: urlString, range: NSRange(location: newStart, length: newLength)))
         }
 
-        return (processedText as String, links.reversed())
+        // Recalculate ranges in final processedText
+        var links: [MarkdownLink] = []
+        let finalText = processedText as NSString
+        var searchStart = 0
+
+        for info in linkInfos {
+            let searchRange = NSRange(location: searchStart, length: finalText.length - searchStart)
+            let foundRange = finalText.range(of: info.text, options: [], range: searchRange)
+
+            if foundRange.location != NSNotFound {
+                links.append(MarkdownLink(text: info.text, urlString: info.url, range: foundRange))
+                searchStart = foundRange.location + foundRange.length
+            }
+        }
+
+        return (processedText as String, links)
     }
 
     private struct MarkdownLink {
