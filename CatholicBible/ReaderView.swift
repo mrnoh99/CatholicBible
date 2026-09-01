@@ -143,12 +143,15 @@ struct ReaderView: View {
         .navigationBarTitleDisplayMode(.inline)
         .onChange(of: book.id) { _, newBookID in
             // 책이 바뀌면 상태를 초기화 (성능 최적화: .id() 제거로 인한 상태 관리)
+            print("📖 ReaderView.onChange(book.id): old=\(book.id), new=\(newBookID), previousBookID=\(previousBookID)")
             if previousBookID != newBookID {
+                print("🔀 Book changed! Setting navigation.selectedBookID=\(newBookID)")
                 navigation.selectedBookID = newBookID  // AnnotatedReader에 전파
                 compareChapter = 0
                 compareTopVerse = nil
                 primaryChapter = 0  // 새 책의 1장을 표시하도록 리셋
                 previousBookID = newBookID
+                print("✅ State reset complete")
             }
         }
         .onChange(of: navigation.selectedBookID) { _, newBookID in

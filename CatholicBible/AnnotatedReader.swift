@@ -92,13 +92,17 @@ struct AnnotatedReader: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .id(currentBook.id)
             .onAppear {
+                print("🔍 AnnotatedReader.onAppear: currentBook.id=\(currentBook.id), bookID=\(bookID), chapter=\(chapter)")
                 trackedBookID = currentBook.id
                 bookID = currentBook.id
                 previousBookID = currentBook.id
+                print("🔄 Set bookID to \(currentBook.id), initChapterIfNeeded...")
                 initChapterIfNeeded()
+                print("📚 Updating caches for book \(currentBook.id)...")
                 updateVersesCache()
                 updateNotesCache()
                 updateTitleMapCache()
+                print("✅ Cache update complete. Chapter: \(chapter), CachedVerses: \(cachedVerses.count)")
                 isInitialized = true
             }
             .onChange(of: bookID) { oldBookID, newBookID in
@@ -300,14 +304,17 @@ struct AnnotatedReader: View {
     private var content: some View {
         // 책 미스매치 감지: 캐시된 책이 현재 책과 다르면 강제 업데이트 (동기 처리)
         if cachedVersesBookID != book.id || cachedNotesBookID != book.id {
+            print("⚠️ Content mismatch! cachedVersesBookID=\(cachedVersesBookID), book.id=\(book.id) - forcing update")
             updateVersesCache(forcing: true)
             updateNotesCache(forcing: true)
             updateTitleMapCache(forcing: true)
+            print("✅ Mismatch fixed. Verses: \(cachedVerses.count)")
         }
 
         let verses = cachedVerses
         let notes = cachedNotes
         let xrefs = chapter > 0 ? knb.crossrefs(edition: editionID, bookID: book.id, chapter: chapter) : []
+        print("📄 Rendering content for \(book.id) ch.\(chapter): \(verses.count) verses, \(notes.count) notes")
         return Group {
             if wide {
                 HStack(spacing: 0) {
@@ -453,15 +460,19 @@ struct AnnotatedReader: View {
 
     private func updateVersesCache(forcing: Bool = false) {
         if !forcing && cachedVersesChapter == chapter && cachedVersesEditionID == editionID && cachedVersesBookID == book.id {
+            print("📖 updateVersesCache: cache hit (skipped)")
             return
         }
+        print("📖 updateVersesCache: fetching for \(book.id) ch.\(chapter) (forcing=\(forcing))")
         cachedVersesChapter = chapter
         cachedVersesEditionID = editionID
         cachedVersesBookID = book.id
         if chapter > 0 {
             cachedVerses = store.verses(edition: edition, book: book, chapter: chapter)
+            print("   → Loaded \(cachedVerses.count) verses")
         } else {
             cachedVerses = []
+            print("   → Chapter 0, no verses")
         }
     }
 
