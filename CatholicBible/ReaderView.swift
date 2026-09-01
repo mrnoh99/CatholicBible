@@ -469,6 +469,8 @@ struct ReaderPane: View {
                 let chapter = readingState.lastChapter(edition: edition, book: book)
                 setChapter(chapter)
             }
+            // Always update cache for new edition, clearing cache to force refresh
+            cachedEditionID = ""  // Invalidate cache to force update
             updateTitleMapCache()
             updateVersesCache()
         }
