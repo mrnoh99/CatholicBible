@@ -94,7 +94,7 @@ struct AnnotatedReader: View {
                 updateTitleMapCache()
                 isInitialized = true
             }
-            .onChange(of: bookID) { _, newBookID in
+            .onChange(of: bookID) { oldBookID, newBookID in
                 // 책이 바뀌면 열려있는 장선택 창을 닫고 상태를 정리
                 showChapterPicker = false
                 showBookPicker = false
@@ -103,16 +103,15 @@ struct AnnotatedReader: View {
                 cachedVersesChapter = -1
                 cachedNotesChapter = -1
                 cachedTitleMapChapter = -1
-                // 부모가 sharedChapter를 제공하는 경우, chapter가 0이 아니면 유지
-                // 부모가 제공하지 않는 경우, 마지막 읽은 장을 복원
-                if sharedChapter == nil {
-                    setChapter(readingState.lastChapter(edition: edition, book: book))
+
+                // 장이 새 책에서 유효하지 않으면 초기화
+                let newBook = Bible.book(newBookID) ?? Bible.books[0]
+                if chapter > newBook.chapterCount {
+                    setChapter(readingState.lastChapter(edition: edition, book: newBook))
                 } else if chapter == 0 {
-                    // 초기화 상태일 때만 마지막 읽은 장으로 복원
-                    setChapter(readingState.lastChapter(edition: edition, book: book))
+                    setChapter(readingState.lastChapter(edition: edition, book: newBook))
                 }
-                // 진행 중인 이동이 있으면 적용
-                applyPending()
+
                 previousBookID = newBookID
                 updateVersesCache()
                 updateNotesCache()
