@@ -761,9 +761,55 @@ struct NotesList: View {
         if editionID == "nabre" {
             return ScriptureRef.normalizeEnglishReferences(text)
         } else {
-            let normalizedText = ScriptureRefNormalizer.normalize(text, currentBookID: bookID, chapter: chapter)
-            return ScriptureRefNormalizer.addVerseMarkers(normalizedText)
+            // 마크다운 링크를 정규화 전에 추출하여 보존
+            let (textWithoutLinks, markdownLinks) = extractMarkdownLinks(text)
+
+            // 정규화 처리
+            let normalizedText = ScriptureRefNormalizer.normalize(textWithoutLinks, currentBookID: bookID, chapter: chapter)
+            let markedText = ScriptureRefNormalizer.addVerseMarkers(normalizedText)
+
+            // 마크다운 링크 다시 삽입
+            return reinsertMarkdownLinks(markedText, links: markdownLinks)
         }
+    }
+
+    /// 마크다운 링크를 추출하고 텍스트에서 제거한다.
+    /// - Returns: (마크다운 링크가 제거된 텍스트, 추출된 마크다운 링크 정보)
+    private func extractMarkdownLinks(_ text: String) -> (String, [(text: String, url: String, placeholder: String)]) {
+        let pattern = "\\[([^\\]]+)\\]\\(([^)]+)\\)"
+        guard let regex = try? NSRegularExpression(pattern: pattern, options: []) else {
+            return (text, [])
+        }
+
+        let ns = text as NSString
+        let matches = regex.matches(in: text, range: NSRange(location: 0, length: ns.length))
+
+        var links: [(text: String, url: String, placeholder: String)] = []
+        var result = NSMutableString(string: text)
+
+        // 역순으로 처리하여 위치 변화 방지
+        for match in matches.reversed() {
+            let fullRange = match.range
+            let textRange = match.range(at: 1)
+            let urlRange = match.range(at: 2)
+            let linkText = ns.substring(with: textRange)
+            let urlString = ns.substring(with: urlRange)
+            let placeholder = "📎LINK_\(links.count)📎"
+
+            links.insert((text: linkText, url: urlString, placeholder: placeholder), at: 0)
+            result.replaceCharacters(in: fullRange, with: placeholder)
+        }
+
+        return (result as String, links)
+    }
+
+    /// 추출했던 마크다운 링크를 다시 텍스트에 삽입한다.
+    private func reinsertMarkdownLinks(_ text: String, links: [(text: String, url: String, placeholder: String)]) -> String {
+        var result = text
+        for link in links {
+            result = result.replacingOccurrences(of: link.placeholder, with: "[\(link.text)](\(link.url))")
+        }
+        return result
     }
 
     var body: some View {
