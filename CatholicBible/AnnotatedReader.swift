@@ -126,13 +126,6 @@ struct AnnotatedReader: View {
                 updateNotesCache()
                 updateTitleMapCache()
             }
-            .onChange(of: book.id) { oldBookID, newBookID in
-                print("DEBUG: AnnotatedReader.book.id changed from \(oldBookID) to \(newBookID)")
-                // 책이 변경되면 강제로 모든 캐시를 업데이트
-                updateVersesCache(forcing: true)
-                updateNotesCache(forcing: true)
-                updateTitleMapCache(forcing: true)
-            }
             .onChange(of: chapter) { _, new in
                 guard new > 0 else { return }
                 if isInitialized && scrollTarget == nil {
@@ -298,6 +291,15 @@ struct AnnotatedReader: View {
     // MARK: 본문 | 주석
 
     private var content: some View {
+        // 책 미스매치 감지: 캐시된 책이 현재 책과 다르면 강제 업데이트
+        if cachedVersesBookID != book.id || cachedNotesBookID != book.id {
+            DispatchQueue.main.async {
+                updateVersesCache(forcing: true)
+                updateNotesCache(forcing: true)
+                updateTitleMapCache(forcing: true)
+            }
+        }
+
         let verses = cachedVerses
         let notes = cachedNotes
         let xrefs = chapter > 0 ? knb.crossrefs(edition: editionID, bookID: book.id, chapter: chapter) : []
