@@ -126,7 +126,8 @@ struct AnnotatedReader: View {
                 updateNotesCache()
                 updateTitleMapCache()
             }
-            .onChange(of: book.id) { _, _ in
+            .onChange(of: book.id) { oldBookID, newBookID in
+                print("DEBUG: AnnotatedReader.book.id changed from \(oldBookID) to \(newBookID)")
                 // 책이 변경되면 강제로 모든 캐시를 업데이트
                 updateVersesCache(forcing: true)
                 updateNotesCache(forcing: true)
