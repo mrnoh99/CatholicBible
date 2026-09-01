@@ -1221,13 +1221,29 @@ struct SelectableVerseText: UIViewRepresentable {
 
     func updateUIView(_ tv: UITextView, context: Context) {
         context.coordinator.onOpenURL = onOpenURL
+
+        // 마크다운 링크([텍스트](URL)) → NSAttributedString 링크로 변환
+        let (processedText, markdownLinks) = Self.processMarkdownLinks(text)
+
         let para = NSMutableParagraphStyle()
         para.lineSpacing = lineSpacing
-        let attr = NSMutableAttributedString(string: text, attributes: [
+        let attr = NSMutableAttributedString(string: processedText, attributes: [
             .font: font,
             .foregroundColor: color,
             .paragraphStyle: para,
         ])
+
+        // 마크다운 링크([텍스트](URL)) 처리
+        for link in markdownLinks {
+            if let url = URL(string: link.urlString) {
+                var linkAttrs: [NSAttributedString.Key: Any] = [.link: url]
+                // 링크 텍스트 색상 설정 (accent color)
+                linkAttrs[.foregroundColor] = UIColor(Color.accentColor)
+                attr.addAttributes(linkAttrs, range: link.range)
+                print("🔗 [SelectableVerseText] markdown link added: '\(link.text)' → \(link.urlString)")
+            }
+        }
+
         // 각주 마커 'N)'를 본문과 다른 색·작은 위첨자로 표시하고, 탭하면 주석이 열리게 한다.
         if let markerColor, let regex = Self.markerRegex {
             let ns = text as NSString
@@ -1290,6 +1306,51 @@ struct SelectableVerseText: UIViewRepresentable {
         guard width > 0, width.isFinite else { return nil }
         let fit = uiView.sizeThatFits(CGSize(width: width, height: .greatestFiniteMagnitude))
         return CGSize(width: width, height: ceil(fit.height))
+    }
+
+    /// 마크다운 링크 [텍스트](URL)를 처리: 텍스트만 남기고 URL 범위 정보 반환
+    private static func processMarkdownLinks(_ text: String) -> (String, [MarkdownLink]) {
+        let pattern = "\\[([^\\]]+)\\]\\(([^)]+)\\)"
+        guard let regex = try? NSRegularExpression(pattern: pattern, options: []) else {
+            return (text, [])
+        }
+
+        let ns = text as NSString
+        let matches = regex.matches(in: text, range: NSRange(location: 0, length: ns.length))
+
+        var links: [MarkdownLink] = []
+        var processedText = NSMutableString(string: text)
+        var offset = 0  // 텍스트 제거로 인한 위치 변화 추적
+
+        // 뒤에서부터 처리해야 앞의 인덱스가 영향을 받지 않음
+        for match in matches.reversed() {
+            let fullRange = match.range  // [텍스트](URL) 전체
+            let textRange = match.range(at: 1)  // [텍스트] 부분
+            let urlRange = match.range(at: 2)   // (URL) 부분
+
+            let linkText = ns.substring(with: textRange)
+            let urlString = ns.substring(with: urlRange)
+
+            // [텍스트](URL)를 텍스트만 남기도록 제거
+            let beforeLength = processedText.length
+            processedText.replaceCharacters(in: fullRange, with: linkText)
+            let afterLength = processedText.length
+
+            // 새로운 위치에서의 텍스트 범위 계산
+            let newStart = fullRange.location
+            let newLength = linkText.count
+
+            links.append(MarkdownLink(text: linkText, urlString: urlString, range: NSRange(location: newStart, length: newLength)))
+        }
+
+        return (processedText as String, links.reversed())
+    }
+
+    /// 마크다운 링크 정보
+    struct MarkdownLink {
+        let text: String
+        let urlString: String
+        let range: NSRange
     }
 
     // 인용 참조의 닫는 괄호(예: "1,19-28)")를 각주 마커로 오인하지 않도록
