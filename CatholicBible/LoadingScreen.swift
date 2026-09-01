@@ -92,10 +92,11 @@ struct LoadingScreen: View {
                     .padding(.horizontal, 32)
                     .padding(.bottom, 8)
 
-                VStack(spacing: 4) {
-                    Text("Developed by JaiSung NOH MD., 2026")
-                        .font(.system(size: 11, weight: .regular, design: .default))
+                VStack(spacing: 6) {
+                    Text("Developed by JaiSung NOH MD. for Catholic Bible Reading, 2026")
+                        .font(.system(size: 10, weight: .regular, design: .default))
                         .foregroundStyle(.secondary)
+                        .lineLimit(2)
 
                     VStack(spacing: 2) {
                         Text("「성경」 ⓒ 한국천주교주교회의")
