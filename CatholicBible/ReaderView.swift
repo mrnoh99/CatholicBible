@@ -145,8 +145,8 @@ struct ReaderView: View {
             if previousBookID != newBookID {
                 compareChapter = 0
                 compareTopVerse = nil
+                primaryChapter = 0  // 새 책의 1장을 표시하도록 리셋
                 previousBookID = newBookID
-                // primaryChapter은 설정하지 않음 (AnnotatedReader가 처리)
             }
         }
         .onChange(of: readingState.readerLayout) { _, newLayout in

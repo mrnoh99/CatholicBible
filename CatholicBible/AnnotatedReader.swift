@@ -95,6 +95,7 @@ struct AnnotatedReader: View {
                 isInitialized = true
             }
             .onChange(of: bookID) { oldBookID, newBookID in
+                print("DEBUG: bookID changed from \(oldBookID) to \(newBookID)")
                 // 책이 바뀌면 열려있는 장선택 창을 닫고 상태를 정리
                 showChapterPicker = false
                 showBookPicker = false
