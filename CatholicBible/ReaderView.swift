@@ -465,7 +465,10 @@ struct ReaderPane: View {
             skipChapterRestore = false
         }
         .onChange(of: editionID) { _, _ in
-            if !isFollower { setChapter(min(max(chapter, 1), book.chapterCount)) }
+            if !isFollower {
+                let chapter = readingState.lastChapter(edition: edition, book: book)
+                setChapter(chapter)
+            }
             updateTitleMapCache()
             updateVersesCache()
         }
