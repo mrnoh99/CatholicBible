@@ -116,9 +116,10 @@ struct AnnotatedReader: View {
 
                 previousBookID = newBookID
                 // 캐시 업데이트 시 새 bookID를 직접 사용하여 바인딩 지연 회피
-                updateVersesCacheForBook(newBook)
-                updateNotesCacheForBook(newBook)
-                updateTitleMapCacheForBook(newBook)
+                // 강제 업데이트로 책 선택 시 즉시 내용 변경
+                updateVersesCacheForBook(newBook, forcing: true)
+                updateNotesCacheForBook(newBook, forcing: true)
+                updateTitleMapCacheForBook(newBook, forcing: true)
             }
             .onChange(of: editionID) { _, _ in
                 updateVersesCache()
@@ -483,8 +484,8 @@ struct AnnotatedReader: View {
         cachedTitleMap = newMap
     }
 
-    private func updateVersesCacheForBook(_ book: BibleBook) {
-        if cachedVersesChapter == chapter && cachedVersesEditionID == editionID && cachedVersesBookID == book.id {
+    private func updateVersesCacheForBook(_ book: BibleBook, forcing: Bool = false) {
+        if !forcing && cachedVersesChapter == chapter && cachedVersesEditionID == editionID && cachedVersesBookID == book.id {
             return
         }
         cachedVersesChapter = chapter
@@ -497,8 +498,8 @@ struct AnnotatedReader: View {
         }
     }
 
-    private func updateNotesCacheForBook(_ book: BibleBook) {
-        if cachedNotesChapter == chapter && cachedNotesEditionID == editionID && cachedNotesBookID == book.id {
+    private func updateNotesCacheForBook(_ book: BibleBook, forcing: Bool = false) {
+        if !forcing && cachedNotesChapter == chapter && cachedNotesEditionID == editionID && cachedNotesBookID == book.id {
             return
         }
         cachedNotesChapter = chapter
@@ -511,12 +512,12 @@ struct AnnotatedReader: View {
         }
     }
 
-    private func updateTitleMapCacheForBook(_ book: BibleBook) {
+    private func updateTitleMapCacheForBook(_ book: BibleBook, forcing: Bool = false) {
         guard chapter > 0 else {
             cachedTitleMap = [:]
             return
         }
-        if cachedTitleMapChapter == chapter && cachedTitleMapEditionID == editionID && cachedTitleMapBookID == book.id {
+        if !forcing && cachedTitleMapChapter == chapter && cachedTitleMapEditionID == editionID && cachedTitleMapBookID == book.id {
             return
         }
         cachedTitleMapChapter = chapter
