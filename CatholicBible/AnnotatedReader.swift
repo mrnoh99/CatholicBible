@@ -846,19 +846,71 @@ struct NotesList: View {
             }
         }
         .onAppear {
-            updateProcessedNotesCache()
+            updateProcessedNotesCacheAsync()
         }
         .onChange(of: notes) { _, _ in
-            updateProcessedNotesCache()
+            updateProcessedNotesCacheAsync()
         }
     }
 
-    private func updateProcessedNotesCache() {
-        var cache: [String: String] = [:]
-        for note in notes {
-            cache[note.n] = processNoteText(note.text, editionID: editionID, bookID: bookID, chapter: chapter)
+    /// 백그라운드에서 주석 텍스트를 처리하여 UI 블로킹 방지
+    private func updateProcessedNotesCacheAsync() {
+        Task.detached(priority: .userInitiated) { [notes, editionID, bookID, chapter] in
+            var cache: [String: String] = [:]
+            for note in notes {
+                cache[note.n] = Self.processNoteTextStatic(note.text, editionID: editionID, bookID: bookID, chapter: chapter)
+            }
+            await MainActor.run {
+                self.processedNotesCache = cache
+            }
         }
-        processedNotesCache = cache
+    }
+
+    /// 정적 메서드로 작성하여 Task.detached에서 사용 가능
+    private static func processNoteTextStatic(_ text: String, editionID: String, bookID: String, chapter: Int) -> String {
+        if editionID == "nabre" {
+            return ScriptureRef.normalizeEnglishReferences(text)
+        } else {
+            let (textWithoutLinks, markdownLinks) = extractMarkdownLinksStatic(text)
+            let normalizedText = ScriptureRefNormalizer.normalize(textWithoutLinks, currentBookID: bookID, chapter: chapter)
+            let markedText = ScriptureRefNormalizer.addVerseMarkers(normalizedText)
+            return reinsertMarkdownLinksStatic(markedText, links: markdownLinks)
+        }
+    }
+
+    private static func extractMarkdownLinksStatic(_ text: String) -> (String, [(text: String, url: String, placeholder: String)]) {
+        let pattern = "\\[([^\\]]+)\\]\\(([^)]+)\\)"
+        guard let regex = try? NSRegularExpression(pattern: pattern, options: []) else {
+            return (text, [])
+        }
+
+        let ns = text as NSString
+        let matches = regex.matches(in: text, range: NSRange(location: 0, length: ns.length))
+
+        var links: [(text: String, url: String, placeholder: String)] = []
+        var result = NSMutableString(string: text)
+
+        for match in matches.reversed() {
+            let fullRange = match.range
+            let textRange = match.range(at: 1)
+            let urlRange = match.range(at: 2)
+            let linkText = ns.substring(with: textRange)
+            let urlString = ns.substring(with: urlRange)
+            let placeholder = "📎LINK_\(links.count)📎"
+
+            links.insert((text: linkText, url: urlString, placeholder: placeholder), at: 0)
+            result.replaceCharacters(in: fullRange, with: placeholder)
+        }
+
+        return (result as String, links)
+    }
+
+    private static func reinsertMarkdownLinksStatic(_ text: String, links: [(text: String, url: String, placeholder: String)]) -> String {
+        var result = text
+        for link in links {
+            result = result.replacingOccurrences(of: link.placeholder, with: "[\(link.text)](\(link.url))")
+        }
+        return result
     }
 }
 

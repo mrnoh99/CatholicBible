@@ -143,7 +143,7 @@ struct ReaderView: View {
         .onChange(of: book.id) { _, newBookID in
             // 책이 바뀌면 상태를 초기화 (성능 최적화: .id() 제거로 인한 상태 관리)
             if previousBookID != newBookID {
-                primaryChapter = 0
+                primaryChapter = 1  // 0 대신 1로 설정 (ChapterNavBar 표시 조건: chapter > 0)
                 compareChapter = 0
                 compareTopVerse = nil
                 previousBookID = newBookID
