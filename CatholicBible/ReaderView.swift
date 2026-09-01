@@ -143,7 +143,6 @@ struct ReaderView: View {
         .onChange(of: book.id) { _, newBookID in
             // 책이 바뀌면 상태를 초기화 (성능 최적화: .id() 제거로 인한 상태 관리)
             if previousBookID != newBookID {
-                // chapter 관리는 AnnotatedReader가 담당 - 사용자 선택 무시 방지
                 compareChapter = 0
                 compareTopVerse = nil
                 previousBookID = newBookID
