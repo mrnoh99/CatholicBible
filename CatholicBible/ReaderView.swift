@@ -150,6 +150,15 @@ struct ReaderView: View {
                 previousBookID = newBookID
             }
         }
+        .onChange(of: navigation.selectedBookID) { _, newBookID in
+            // 사이드 패널에서 책이 선택될 때 직접 감지
+            if let newBookID, previousBookID != newBookID {
+                compareChapter = 0
+                compareTopVerse = nil
+                primaryChapter = 0  // 새 책의 1장을 표시하도록 리셋
+                previousBookID = newBookID
+            }
+        }
         .onChange(of: readingState.readerLayout) { _, newLayout in
             if newLayout == .compare && compareChapter == 0 {
                 compareChapter = primaryChapter
