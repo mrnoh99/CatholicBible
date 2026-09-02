@@ -45,6 +45,8 @@ struct ReaderView: View {
     @State private var compareChapter = 0
     /// 책 선택 시 마지막 장을 복원하지 않도록 하는 플래그 (picker에서 특정 장 선택 시 사용)
     @State private var skipChapterRestore = false
+    /// 비교 모드에서 secondary 패널의 책 선택 시 마지막 장을 복원하지 않도록 하는 플래그
+    @State private var skipSecondaryChapterRestore = false
     /// 연동 비교에서 두 열이 맞추는 '맨 위 절'.
     @State private var compareTopVerse: String?
 
@@ -125,7 +127,7 @@ struct ReaderView: View {
                                            bookID: linked ? primaryBookBinding : secondaryBookBinding,
                                            onClose: { readingState.readerLayout = .single },
                                            linkedChapter: linked ? $compareChapter : nil,
-                                           skipChapterRestore: .constant(false),
+                                           skipChapterRestore: $skipSecondaryChapterRestore,
                                            isFollower: linked,
                                            showChapterBar: !linked,
                                            syncVerse: linked ? $compareTopVerse : nil,
