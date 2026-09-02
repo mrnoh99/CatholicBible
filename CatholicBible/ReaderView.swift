@@ -1234,12 +1234,12 @@ struct SpreadReader: View {
     private func parseBookSelection(_ picked: String) {
         let components = picked.split(separator: "-", maxSplits: 1).map(String.init)
         if components.count == 2, let chapterNum = Int(components[1]) {
-            print("📖 parseBookSelection: picked=\(picked), chapterNum=\(chapterNum), book=\(components[0])")
-            print("   Before: bookID=\(bookID), chapter=\(chapter), cachedChapter=\(cachedChapter)")
+            print("📖 parseBookSelection(SpreadReader): picked=\(picked), chapterNum=\(chapterNum), book=\(components[0])")
+            print("   Before: bookID=\(bookID), chapter=\(chapter), spreadIndex=\(spreadIndex)")
             skipChapterRestore = true
             bookID = components[0]
             setChapter(chapterNum)
-            print("   After: bookID=\(bookID), chapter=\(chapter), cachedChapter=\(cachedChapter)")
+            print("   After: bookID=\(bookID), chapter=\(chapter), spreadIndex=\(spreadIndex)")
         } else {
             bookID = picked
         }
