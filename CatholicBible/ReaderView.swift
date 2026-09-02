@@ -148,9 +148,7 @@ struct ReaderView: View {
         .navigationBarTitleDisplayMode(.inline)
         .onChange(of: book.id) { _, newBookID in
             // 책이 바뀌면 상태를 초기화 (성능 최적화: .id() 제거로 인한 상태 관리)
-            print("📖 ReaderView.onChange(book.id): old=\(book.id), new=\(newBookID), previousBookID=\(previousBookID), skipChapterRestore=\(skipChapterRestore)")
             if previousBookID != newBookID {
-                print("🔀 Book changed! Setting navigation.selectedBookID=\(newBookID)")
                 navigation.selectedBookID = newBookID  // AnnotatedReader에 전파
                 compareChapter = 0
                 compareTopVerse = nil
@@ -160,7 +158,6 @@ struct ReaderView: View {
                 }
                 // skipChapterRestore는 ReaderPane.onChange(of: bookID)에서 초기화하므로 여기서 초기화하지 않음
                 previousBookID = newBookID
-                print("✅ State reset complete")
             }
         }
         .onChange(of: navigation.selectedBookID) { _, newBookID in
@@ -442,17 +439,12 @@ struct ReaderPane: View {
 
     /// 표시 중인 장. 연동 시 공유 장, 아니면 이 열의 자기 장.
     private var chapter: Int {
-        get {
-            let val = linkedChapter?.wrappedValue ?? localChapter
-            // print("   chapter getter: linked=\(linkedChapter?.wrappedValue ?? -1), local=\(localChapter), result=\(val)")
-            return val
-        }
+        get { linkedChapter?.wrappedValue ?? localChapter }
         set {
             if let linkedChapter { linkedChapter.wrappedValue = newValue } else { localChapter = newValue }
         }
     }
     private func setChapter(_ value: Int) {
-        print("🔧 ReaderPane.setChapter(\(value)): linkedChapter=\(linkedChapter != nil)")
         if let linkedChapter { linkedChapter.wrappedValue = value } else { localChapter = value }
     }
 
@@ -472,10 +464,8 @@ struct ReaderPane: View {
             isInitialized = true
         }
         .onChange(of: bookID) { _, _ in
-            print("📚 onChange(bookID): \(bookID), isFollower=\(isFollower), skipChapterRestore=\(skipChapterRestore)")
             if !isFollower && !skipChapterRestore {
                 let chapter = readingState.lastChapter(edition: edition, book: book)
-                print("   setChapter() 호출: \(chapter)")
                 setChapter(chapter)
                 // 처음 로드 이후 책 선택 변경만 히스토리에 추가
                 if isInitialized && role == .primary {
@@ -497,12 +487,7 @@ struct ReaderPane: View {
             updateVersesCache()
         }
         .onChange(of: chapter) { _, new in
-            print("📖 onChange(chapter): old=\(cachedChapter), new=\(new), book=\(bookID)")
-            guard new > 0 else {
-                print("   장이 0 이하라 리턴")
-                return
-            }
-            print("   updateVersesCache 호출: bookID=\(bookID), chapterNum=\(new)")
+            guard new > 0 else { return }
             // 캐시 업데이트 (모든 pane에서 필요)
             updateTitleMapCache()
             updateVersesCacheWithChapter(new)
@@ -518,7 +503,6 @@ struct ReaderPane: View {
         .modifier(PendingChapterModifier(active: role == .primary, apply: applyPending))
         .sheet(isPresented: $showBookPicker) {
             BookPickerView(edition: edition, current: bookID) { picked in
-                print("🎯 BookPickerView picked: '\(picked)'")
                 parseBookSelection(picked)
                 showBookPicker = false
             }
@@ -589,18 +573,14 @@ struct ReaderPane: View {
     }
 
     private func updateVersesCacheWithChapter(_ ch: Int) {
-        print("🔄 updateVersesCacheWithChapter() 호출: edition=\(editionID), book=\(book.id), chapter=\(ch)")
         if cachedChapter == ch && cachedEditionID == editionID && cachedBookID == book.id {
-            print("   캐시 재사용")
             return
         }
-        print("   캐시 업데이트 중")
         cachedChapter = ch
         cachedEditionID = editionID
         cachedBookID = book.id
         if ch > 0 {
             cachedVerses = store.verses(edition: edition, book: book, chapter: ch)
-            print("   장 > 0: \(cachedVerses.count)절 로드됨")
         } else {
             cachedVerses = []
             print("   장 <= 0: 캐시 초기화")
@@ -787,14 +767,9 @@ struct ReaderPane: View {
     private func parseBookSelection(_ picked: String) {
         let components = picked.split(separator: "-", maxSplits: 1).map(String.init)
         if components.count == 2, let chapterNum = Int(components[1]) {
-            print("📖 parseBookSelection: picked=\(picked), chapterNum=\(chapterNum), book=\(components[0])")
-            print("   Before: bookID=\(bookID), chapter=\(chapter), cachedChapter=\(cachedChapter)")
             skipChapterRestore = true
             bookID = components[0]
-            // ReaderView의 book.id onChange에서 primaryChapter=0을 설정하므로,
-            // bookID 변경 후 다시 setChapter() 호출하여 올바른 장 설정
             setChapter(chapterNum)
-            print("   After: bookID=\(bookID), chapter=\(chapter), cachedChapter=\(cachedChapter)")
         } else {
             bookID = picked
         }
