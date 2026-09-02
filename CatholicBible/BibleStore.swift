@@ -476,22 +476,7 @@ final class BibleStore {
     }
 
     func verses(edition: Edition, book: BibleBook, chapter: Int) -> [Verse] {
-        let result = editions[edition.id]?.books[book.id]?[chapter] ?? []
-        print("📖 verses() 호출: edition=\(edition.id), book=\(book.id), chapter=\(chapter) → \(result.count)절")
-        if result.isEmpty {
-            if let editionData = editions[edition.id] {
-                print("   edition 존재: \(editionData.books.count)개 책 있음")
-                if let bookData = editionData.books[book.id] {
-                    print("   book 존재: \(bookData.count)개 장 있음")
-                    print("   사용 가능한 장: \(bookData.keys.sorted())")
-                } else {
-                    print("   book 없음! 사용 가능한 책: \(editionData.books.keys.sorted())")
-                }
-            } else {
-                print("   edition 없음! 사용 가능한 판본: \(editions.keys.sorted())")
-            }
-        }
-        return result
+        editions[edition.id]?.books[book.id]?[chapter] ?? []
     }
 
     /// 판본 고유의 책 표시 이름 (없으면 기본 한국어 이름)
