@@ -447,7 +447,13 @@ struct ReaderPane: View {
         }
     }
     private func setChapter(_ value: Int) {
-        if let linkedChapter { linkedChapter.wrappedValue = value } else { localChapter = value }
+        if let linkedChapter {
+            print("      📌 setChapter(\(value)): updating linkedChapter (role=\(role))")
+            linkedChapter.wrappedValue = value
+        } else {
+            print("      📌 setChapter(\(value)): updating localChapter (role=\(role))")
+            localChapter = value
+        }
     }
 
     var body: some View {
@@ -785,11 +791,17 @@ struct ReaderPane: View {
 
     private func parseBookSelection(_ picked: String) {
         let components = picked.split(separator: "-", maxSplits: 1).map(String.init)
+        print("🎯 parseBookSelection: role=\(role), picked=\(picked), components=\(components)")
         if components.count == 2, let chapterNum = Int(components[1]) {
+            print("   1️⃣  setting skipChapterRestore=true")
             skipChapterRestore = true
+            print("   2️⃣  updating bookID: \(bookID) → \(components[0])")
             bookID = components[0]
+            print("   3️⃣  calling setChapter(\(chapterNum))")
             setChapter(chapterNum)
+            print("   ✅ chapter should now be \(chapterNum)")
         } else {
+            print("   fallback: just updating bookID to \(picked)")
             bookID = picked
         }
     }
