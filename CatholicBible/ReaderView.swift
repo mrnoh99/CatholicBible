@@ -633,6 +633,12 @@ struct ReaderPane: View {
 
             Spacer(minLength: 0)
 
+            // Refresh button - clears cache and reloads content
+            Button { refreshCache() } label: {
+                Image(systemName: "arrow.clockwise").foregroundStyle(.secondary)
+            }
+            .accessibilityLabel("새로고침")
+
             if let onClose {
                 Button { onClose() } label: {
                     Image(systemName: "xmark.circle.fill").foregroundStyle(.secondary)
@@ -836,6 +842,23 @@ struct ReaderPane: View {
             print("   fallback: just updating bookID to \(picked)")
             bookID = picked
         }
+    }
+
+    /// 캐시를 완전히 무효화하고 데이터를 다시 로드 (상태 불일치 해결용)
+    private func refreshCache() {
+        print("🔄 Refreshing cache for role=\(role), book=\(book.id), chapter=\(chapter)")
+        cachedBookID = ""
+        cachedChapter = -1
+        cachedEditionID = ""
+        cachedVerses = []
+        cachedTitleMap = [:]
+        cachedTitleChapter = -1
+        cachedTitleEditionID = ""
+        cachedTitleBookID = ""
+
+        updateTitleMapCache()
+        updateVersesCache()
+        print("✅ Cache refreshed successfully")
     }
 
     // MARK: 하단 장 이동 바
