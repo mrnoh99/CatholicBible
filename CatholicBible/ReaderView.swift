@@ -816,30 +816,27 @@ struct ReaderPane: View {
 
     private func parseBookSelection(_ picked: String) {
         let components = picked.split(separator: "-", maxSplits: 1).map(String.init)
-        print("🎯 parseBookSelection: role=\(role), picked=\(picked), components=\(components)")
+        print("🎯 parseBookSelection: role=\(role), picked=\(picked)")
         if components.count == 2, let chapterNum = Int(components[1]) {
             let newBookID = components[0]
-            print("   1️⃣  setting skipChapterRestore=true")
+            print("   → setting skipChapterRestore=true (prevent lastChapter restore)")
             skipChapterRestore = true
-            print("   2️⃣  updating bookID: \(bookID) → \(newBookID)")
-            bookID = newBookID
-            print("   3️⃣  invalidating cache, edition=\(editionID)")
-            cachedBookID = ""
-            print("   4️⃣  directly setting chapter to \(chapterNum)")
-            // Directly update chapter binding/state to ensure it works
+
+            print("   → setting chapter=\(chapterNum) first")
+            // Set chapter FIRST (before bookID) so onChange(of: chapter) triggers with correct value
             if let linked = linkedChapter {
-                print("      linked chapter detected, updating to \(chapterNum)")
                 linked.wrappedValue = chapterNum
             } else {
-                print("      local chapter, updating to \(chapterNum)")
                 localChapter = chapterNum
             }
-            print("   5️⃣  updating verses cache: edition=\(editionID), book=\(book.id), chapter=\(chapterNum)")
-            updateVersesCacheWithChapter(chapterNum)
-            print("   ✅ chapter=\(chapter), cachedChapter=\(cachedChapter), cachedBookID=\(cachedBookID), verses.count=\(cachedVerses.count)")
-            skipChapterRestore = false
+
+            print("   → setting bookID=\(newBookID)")
+            // Change bookID last - this triggers onChange(of: bookID) which handles cache
+            bookID = newBookID
+
+            print("   ✓ Done. onChange handlers will handle cache updates")
         } else {
-            print("   fallback: just updating bookID to \(picked)")
+            print("   → setting bookID=\(picked)")
             bookID = picked
         }
     }
@@ -1330,12 +1327,21 @@ struct SpreadReader: View {
         let components = picked.split(separator: "-", maxSplits: 1).map(String.init)
         if components.count == 2, let chapterNum = Int(components[1]) {
             print("📖 parseBookSelection(SpreadReader): picked=\(picked), chapterNum=\(chapterNum), book=\(components[0])")
-            print("   Before: bookID=\(bookID), chapter=\(chapter), spreadIndex=\(spreadIndex)")
+            print("   → setting skipChapterRestore=true (prevent lastChapter restore)")
             skipChapterRestore = true
-            bookID = components[0]
+
+            print("   → setting chapter=\(chapterNum) first")
+            // Set chapter FIRST (before bookID) so onChange(of: chapter) triggers with correct value
             setChapter(chapterNum)
-            print("   After: bookID=\(bookID), chapter=\(chapter), spreadIndex=\(spreadIndex)")
+            spreadIndex = 0
+
+            print("   → setting bookID=\(picked)")
+            // Change bookID last - this triggers onChange(of: bookID) which handles cache/restore
+            bookID = components[0]
+
+            print("   ✓ Done. onChange handlers will handle state updates")
         } else {
+            print("   → setting bookID=\(picked)")
             bookID = picked
         }
     }
