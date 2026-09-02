@@ -173,7 +173,7 @@ enum ScriptureRefNormalizer {
         for match in matches.reversed() {
             if match.numberOfRanges >= 2 {
                 let refContent = ns.substring(with: match.range(at: 1))
-                let fullMatch = ns.substring(with: match.range)
+                _ = ns.substring(with: match.range)
 
                 // 이미 책 이름이 있는지 확인
                 var hasBook = false
@@ -437,7 +437,7 @@ enum ScriptureRefNormalizer {
             for match in matches.reversed() {
                 if match.numberOfRanges >= 3 {
                     let book = ns.substring(with: match.range(at: 1))
-                    let intro = ns.substring(with: match.range(at: 2))
+                    _ = ns.substring(with: match.range(at: 2))
                     let replacement = "(\(book) 입문)"
                     result = (result as NSString).replacingCharacters(in: match.range, with: replacement)
                 }
@@ -471,13 +471,11 @@ enum ScriptureRefNormalizer {
 
             // 책 이름이나 약자로 시작하는지 확인 (이미 명시된 참조는 건너뛰기)
             var startsWithBook = false
-            var bookPrefix = ""
 
             // 책 이름 확인
             for book in Bible.books {
                 if innerContent.hasPrefix(book.name) {
                     startsWithBook = true
-                    bookPrefix = book.name
                     break
                 }
             }
@@ -844,14 +842,14 @@ enum ScriptureRefNormalizer {
                             let potentialBookRef = refWords[i...].joined(separator: " ")
                             let currentWord = refWords[i]
 
-                            if let foundBook = Bible.books.first(where: {
+                            if Bible.books.first(where: {
                                 $0.abbrev == currentWord || $0.searchKeywords.contains(currentWord)
-                            }) {
+                            }) != nil {
                                 finalRef = potentialBookRef
                                 shouldIncludeBook = false
                                 break
                             }
-                            if let foundBook = Bible.books.first(where: { potentialBookRef.hasPrefix($0.name) }) {
+                            if Bible.books.first(where: { potentialBookRef.hasPrefix($0.name) }) != nil {
                                 finalRef = potentialBookRef
                                 shouldIncludeBook = false
                                 break
@@ -921,7 +919,7 @@ enum ScriptureRefNormalizer {
 
             if let (book, ref) = tryParseReference(trimmed) {
                 // 책 이름
-                var bookAttr = AttributedString(book)
+                let bookAttr = AttributedString(book)
                 result += bookAttr
                 result += AttributedString(" ")
 

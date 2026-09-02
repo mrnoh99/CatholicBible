@@ -1384,7 +1384,6 @@ struct SearchView: View {
         // Extract book name (handles "코린", "1코린", "요한 3서", "사무엘기 상" formats)
         var bookName = ""
         var digitPrefix = ""
-        var suffix = "" // 전/후/상/하 등
 
         for char in bookPartRaw {
             if char.isNumber && "123".contains(char) {

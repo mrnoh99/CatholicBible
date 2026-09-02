@@ -674,7 +674,7 @@ struct SelectableNoteText: UIViewRepresentable {
         }
 
         // Process replacements in reverse order to avoid offset shifts
-        var processedText = NSMutableString(string: text)
+        let processedText = NSMutableString(string: text)
         for match in matches.reversed() {
             let fullRange = match.range
             let textRange = match.range(at: 1)

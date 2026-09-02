@@ -1366,8 +1366,7 @@ struct SelectableVerseText: UIViewRepresentable {
         let matches = regex.matches(in: text, range: NSRange(location: 0, length: ns.length))
 
         var links: [MarkdownLink] = []
-        var processedText = NSMutableString(string: text)
-        var offset = 0  // 텍스트 제거로 인한 위치 변화 추적
+        let processedText = NSMutableString(string: text)
 
         // 뒤에서부터 처리해야 앞의 인덱스가 영향을 받지 않음
         for match in matches.reversed() {
@@ -1379,9 +1378,7 @@ struct SelectableVerseText: UIViewRepresentable {
             let urlString = ns.substring(with: urlRange)
 
             // [텍스트](URL)를 텍스트만 남기도록 제거
-            let beforeLength = processedText.length
             processedText.replaceCharacters(in: fullRange, with: linkText)
-            let afterLength = processedText.length
 
             // 새로운 위치에서의 텍스트 범위 계산
             let newStart = fullRange.location

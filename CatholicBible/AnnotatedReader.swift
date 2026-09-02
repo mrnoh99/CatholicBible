@@ -189,7 +189,7 @@ struct AnnotatedReader: View {
     }
 
     private func handleURLInternal(_ url: URL) -> OpenURLAction.Result {
-        print("📱 [AnnotatedReader] handleURLInternal: \(url.scheme)://\(url.host ?? "?") - \(url)")
+        print("📱 [AnnotatedReader] handleURLInternal: \(url.scheme ?? "?")://\(url.host ?? "?") - \(url.absoluteString)")
         if url.scheme == "catholicbible", url.host == "xref" {
             print("  ✓ xref handler")
             let items = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems ?? []
@@ -883,7 +883,7 @@ struct NotesList: View {
         let matches = regex.matches(in: text, range: NSRange(location: 0, length: ns.length))
 
         var links: [(text: String, url: String, placeholder: String)] = []
-        var result = NSMutableString(string: text)
+        let result = NSMutableString(string: text)
 
         // 역순으로 처리하여 위치 변화 방지
         for match in matches.reversed() {
@@ -986,7 +986,7 @@ struct NotesList: View {
         let matches = regex.matches(in: text, range: NSRange(location: 0, length: ns.length))
 
         var links: [(text: String, url: String, placeholder: String)] = []
-        var result = NSMutableString(string: text)
+        let result = NSMutableString(string: text)
 
         for match in matches.reversed() {
             let fullRange = match.range
