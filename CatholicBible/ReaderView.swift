@@ -43,6 +43,8 @@ struct ReaderView: View {
     @State private var primaryChapter = 0
     /// 두 판본 비교에서 두 열이 공유하는 장(연동 시 양쪽이 같은 장을 본다).
     @State private var compareChapter = 0
+    /// 책 선택 시 마지막 장을 복원하지 않도록 하는 플래그 (picker에서 특정 장 선택 시 사용)
+    @State private var skipChapterRestore = false
     /// 연동 비교에서 두 열이 맞추는 '맨 위 절'.
     @State private var compareTopVerse: String?
 
@@ -90,6 +92,7 @@ struct ReaderView: View {
                                    editionID: selectedEditionIDBinding,
                                    bookID: primaryBookBinding,
                                    linkedChapter: $primaryChapter,
+                                   skipChapterRestore: $skipChapterRestore,
                                    ownerBookID: book.id,
                                    fullWidth: true,
                                    onOpenNote: openNote,
@@ -110,6 +113,7 @@ struct ReaderView: View {
                                            editionID: selectedEditionIDBinding,
                                            bookID: primaryBookBinding,
                                            linkedChapter: $compareChapter,
+                                           skipChapterRestore: $skipChapterRestore,
                                            showChapterBar: !linked,
                                            ownerBookID: book.id,
                                            syncVerse: linked ? $compareTopVerse : nil,
@@ -121,6 +125,7 @@ struct ReaderView: View {
                                            bookID: linked ? primaryBookBinding : secondaryBookBinding,
                                            onClose: { readingState.readerLayout = .single },
                                            linkedChapter: linked ? $compareChapter : nil,
+                                           skipChapterRestore: .constant(false),
                                            isFollower: linked,
                                            showChapterBar: !linked,
                                            syncVerse: linked ? $compareTopVerse : nil,
@@ -143,13 +148,17 @@ struct ReaderView: View {
         .navigationBarTitleDisplayMode(.inline)
         .onChange(of: book.id) { _, newBookID in
             // 책이 바뀌면 상태를 초기화 (성능 최적화: .id() 제거로 인한 상태 관리)
-            print("📖 ReaderView.onChange(book.id): old=\(book.id), new=\(newBookID), previousBookID=\(previousBookID)")
+            print("📖 ReaderView.onChange(book.id): old=\(book.id), new=\(newBookID), previousBookID=\(previousBookID), skipChapterRestore=\(skipChapterRestore)")
             if previousBookID != newBookID {
                 print("🔀 Book changed! Setting navigation.selectedBookID=\(newBookID)")
                 navigation.selectedBookID = newBookID  // AnnotatedReader에 전파
                 compareChapter = 0
                 compareTopVerse = nil
-                primaryChapter = 0  // initChapterIfNeeded()가 작동하려면 필요
+                // skipChapterRestore가 false인 경우에만 마지막 장을 복원하도록 리셋
+                if !skipChapterRestore {
+                    primaryChapter = 0  // initChapterIfNeeded()가 작동하려면 필요
+                }
+                skipChapterRestore = false  // 플래그 초기화
                 previousBookID = newBookID
                 print("✅ State reset complete")
             }
@@ -159,7 +168,11 @@ struct ReaderView: View {
             if let newBookID, previousBookID != newBookID {
                 compareChapter = 0
                 compareTopVerse = nil
-                primaryChapter = 0  // initChapterIfNeeded()가 작동하려면 필요
+                // skipChapterRestore가 false인 경우에만 마지막 장을 복원하도록 리셋
+                if !skipChapterRestore {
+                    primaryChapter = 0  // initChapterIfNeeded()가 작동하려면 필요
+                }
+                skipChapterRestore = false  // 플래그 초기화
                 previousBookID = newBookID
             }
         }
@@ -370,6 +383,8 @@ struct ReaderPane: View {
     var onClose: (() -> Void)? = nil
     /// 공유하는 장 바인딩(없으면 자체 장 관리). 판본 전환 시 장을 유지하는 데 사용됨.
     var linkedChapter: Binding<Int>? = nil
+    /// 책 선택 시 마지막 장을 복원하지 않도록 하는 플래그 (picker에서 특정 장 선택 시)
+    @Binding var skipChapterRestore: Bool
     /// 연동된 둘째 열: 장을 스스로 정하지 않고 첫째 열을 따라가기만 한다.
     var isFollower: Bool = false
     /// 하단 장 이동줄을 이 열 안에 표시할지 (연동 비교에서는 공용 줄 하나만 쓰므로 끈다).
@@ -400,8 +415,6 @@ struct ReaderPane: View {
     @State private var showBookPicker = false
     /// ReaderPane 초기화 완료 후 책 선택 변경만 감지하기 위한 플래그
     @State private var isInitialized = false
-    /// picker에서 책과 장을 함께 선택할 때 자동 복원을 스킵하기 위한 플래그
-    @State private var skipChapterRestore = false
     /// 캐시된 소제목 맵 (성능 최적화)
     @State private var cachedTitleMap: [String: String] = [:]
     @State private var cachedTitleChapter: Int = -1
