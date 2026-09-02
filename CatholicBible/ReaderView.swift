@@ -778,6 +778,8 @@ struct ReaderPane: View {
             print("   Before: bookID=\(bookID), chapter=\(chapter), cachedChapter=\(cachedChapter)")
             skipChapterRestore = true
             bookID = components[0]
+            // ReaderView의 book.id onChange에서 primaryChapter=0을 설정하므로,
+            // bookID 변경 후 다시 setChapter() 호출하여 올바른 장 설정
             setChapter(chapterNum)
             print("   After: bookID=\(bookID), chapter=\(chapter), cachedChapter=\(cachedChapter)")
         } else {
