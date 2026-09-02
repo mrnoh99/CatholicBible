@@ -439,6 +439,7 @@ struct ReaderPane: View {
         }
     }
     private func setChapter(_ value: Int) {
+        print("🔧 ReaderPane.setChapter(\(value)): linkedChapter=\(linkedChapter != nil)")
         if let linkedChapter { linkedChapter.wrappedValue = value } else { localChapter = value }
     }
 
@@ -483,11 +484,12 @@ struct ReaderPane: View {
             updateVersesCache()
         }
         .onChange(of: chapter) { _, new in
-            print("📖 onChange(chapter): old=\(cachedChapter), new=\(new)")
+            print("📖 onChange(chapter): old=\(cachedChapter), new=\(new), book=\(bookID)")
             guard new > 0 else {
                 print("   장이 0 이하라 리턴")
                 return
             }
+            print("   updateVersesCache 호출: bookID=\(bookID), chapterNum=\(new)")
             // 캐시 업데이트 (모든 pane에서 필요)
             updateTitleMapCache()
             updateVersesCacheWithChapter(new)
@@ -503,6 +505,7 @@ struct ReaderPane: View {
         .modifier(PendingChapterModifier(active: role == .primary, apply: applyPending))
         .sheet(isPresented: $showBookPicker) {
             BookPickerView(edition: edition, current: bookID) { picked in
+                print("🎯 BookPickerView picked: '\(picked)'")
                 parseBookSelection(picked)
                 showBookPicker = false
             }
@@ -923,6 +926,7 @@ struct SpreadReader: View {
         }
     }
     private func setChapter(_ value: Int) {
+        print("🔧 SpreadReader.setChapter(\(value)): sharedChapter=\(sharedChapter != nil)")
         if let sharedChapter { sharedChapter.wrappedValue = value } else { localChapter = value }
     }
     private var verses: [Verse] {
