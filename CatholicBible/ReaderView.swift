@@ -149,7 +149,7 @@ struct ReaderView: View {
                 navigation.selectedBookID = newBookID  // AnnotatedReader에 전파
                 compareChapter = 0
                 compareTopVerse = nil
-                primaryChapter = 0  // 새 책의 1장을 표시하도록 리셋
+                // primaryChapter 리셋 제거 - ReaderPane이 자체적으로 chapter 관리
                 previousBookID = newBookID
                 print("✅ State reset complete")
             }
@@ -159,7 +159,7 @@ struct ReaderView: View {
             if let newBookID, previousBookID != newBookID {
                 compareChapter = 0
                 compareTopVerse = nil
-                primaryChapter = 0  // 새 책의 1장을 표시하도록 리셋
+                // primaryChapter 리셋 제거 - ReaderPane이 자체적으로 chapter 관리
                 previousBookID = newBookID
             }
         }
