@@ -800,19 +800,19 @@ struct ReaderPane: View {
         let components = picked.split(separator: "-", maxSplits: 1).map(String.init)
         print("🎯 parseBookSelection: role=\(role), picked=\(picked), components=\(components)")
         if components.count == 2, let chapterNum = Int(components[1]) {
+            let newBookID = components[0]
             print("   1️⃣  setting skipChapterRestore=true")
             skipChapterRestore = true
-            print("   2️⃣  updating bookID: \(bookID) → \(components[0])")
-            bookID = components[0]
-            // Invalidate cache even if bookID didn't change (same book, different chapter)
-            print("   3️⃣  invalidating cache")
+            print("   2️⃣  updating bookID: \(bookID) → \(newBookID)")
+            bookID = newBookID
+            print("   3️⃣  invalidating cache, edition=\(editionID)")
             cachedBookID = ""
-            print("   4️⃣  calling setChapter(\(chapterNum))")
+            print("   4️⃣  calling setChapter(\(chapterNum)), current book.id=\(book.id)")
             setChapter(chapterNum)
-            print("   5️⃣  updating verses cache with chapter=\(chapterNum)")
+            print("   5️⃣  updating verses cache: edition=\(editionID), book=\(book.id), chapter=\(chapterNum)")
             // Use explicit updateVersesCacheWithChapter to ensure sync (avoid race condition with setChapter)
             updateVersesCacheWithChapter(chapterNum)
-            print("   ✅ chapter should now be \(chapterNum), verses count: \(cachedVerses.count)")
+            print("   ✅ chapter=\(chapter), cachedChapter=\(cachedChapter), cachedBookID=\(cachedBookID), verses.count=\(cachedVerses.count)")
         } else {
             print("   fallback: just updating bookID to \(picked)")
             bookID = picked
