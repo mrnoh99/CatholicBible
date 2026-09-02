@@ -819,12 +819,19 @@ struct ReaderPane: View {
             bookID = newBookID
             print("   3️⃣  invalidating cache, edition=\(editionID)")
             cachedBookID = ""
-            print("   4️⃣  calling setChapter(\(chapterNum)), current book.id=\(book.id)")
-            setChapter(chapterNum)
+            print("   4️⃣  directly setting chapter to \(chapterNum)")
+            // Directly update chapter binding/state to ensure it works
+            if let linked = linkedChapter {
+                print("      linked chapter detected, updating to \(chapterNum)")
+                linked.wrappedValue = chapterNum
+            } else {
+                print("      local chapter, updating to \(chapterNum)")
+                localChapter = chapterNum
+            }
             print("   5️⃣  updating verses cache: edition=\(editionID), book=\(book.id), chapter=\(chapterNum)")
-            // Use explicit updateVersesCacheWithChapter to ensure sync (avoid race condition with setChapter)
             updateVersesCacheWithChapter(chapterNum)
             print("   ✅ chapter=\(chapter), cachedChapter=\(cachedChapter), cachedBookID=\(cachedBookID), verses.count=\(cachedVerses.count)")
+            skipChapterRestore = false
         } else {
             print("   fallback: just updating bookID to \(picked)")
             bookID = picked
