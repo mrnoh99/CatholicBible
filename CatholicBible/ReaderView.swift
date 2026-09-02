@@ -464,6 +464,9 @@ struct ReaderPane: View {
             isInitialized = true
         }
         .onChange(of: bookID) { _, _ in
+            if role == .secondary {
+                print("📖 Secondary bookID changed: \(book.id), chapter=\(chapter), isFollower=\(isFollower)")
+            }
             // 캐시 무효화 (새 책의 장이 이전 책과 같은 번호일 수 있으므로 항상 무효화)
             cachedBookID = ""
             if !isFollower && !skipChapterRestore {
@@ -577,6 +580,9 @@ struct ReaderPane: View {
 
     private func updateVersesCacheWithChapter(_ ch: Int) {
         if cachedChapter == ch && cachedEditionID == editionID && cachedBookID == book.id {
+            if role == .secondary && ch > 0 {
+                print("   📚 Secondary cache hit: ch=\(ch), book=\(book.id), ed=\(editionID)")
+            }
             return
         }
         cachedChapter = ch
@@ -584,8 +590,14 @@ struct ReaderPane: View {
         cachedBookID = book.id
         if ch > 0 {
             cachedVerses = store.verses(edition: edition, book: book, chapter: ch)
+            if role == .secondary {
+                print("   📚 Secondary loaded: ch=\(ch), book=\(book.id), ed=\(editionID), verses=\(cachedVerses.count)")
+            }
         } else {
             cachedVerses = []
+            if role == .secondary {
+                print("   📚 Secondary cleared: ch=\(ch)")
+            }
         }
     }
 
@@ -688,6 +700,9 @@ struct ReaderPane: View {
                 VStack(alignment: .leading, spacing: 0) {
                     chapterHeader
                     if verses.isEmpty {
+                        if role == .secondary {
+                            print("🔴 Secondary panel empty: edition=\(editionID), book=\(book.id), chapter=\(chapter), cachedBookID=\(cachedBookID), cachedChapter=\(cachedChapter)")
+                        }
                         MissingTextView(edition: edition, book: book).padding(.top, 40)
                     } else {
                         LazyVStack(alignment: .leading, spacing: settings.lineSpacing * 0.9) {
