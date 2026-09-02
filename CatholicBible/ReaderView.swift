@@ -844,9 +844,11 @@ struct ReaderPane: View {
         }
     }
 
-    /// 캐시를 완전히 무효화하고 데이터를 다시 로드 (상태 불일치 해결용)
+    /// 캐시를 완전히 무효화하고 데이터를 다시 로드 (상태 불일치, 본문준비중 해결용)
     private func refreshCache() {
-        print("🔄 Refreshing cache for role=\(role), book=\(book.id), chapter=\(chapter)")
+        print("🔄 Refreshing cache for role=\(role), book=\(book.id), chapter=\(chapter), edition=\(editionID)")
+
+        // 1. Clear all caches
         cachedBookID = ""
         cachedChapter = -1
         cachedEditionID = ""
@@ -856,9 +858,22 @@ struct ReaderPane: View {
         cachedTitleEditionID = ""
         cachedTitleBookID = ""
 
+        // 2. Ensure chapter is valid (not 0)
+        let validChapter = chapter > 0 ? chapter : 1
+        if chapter <= 0 {
+            print("   ⚠️  Chapter was \(chapter), setting to 1")
+            if let linked = linkedChapter {
+                linked.wrappedValue = validChapter
+            } else {
+                localChapter = validChapter
+            }
+        }
+
+        // 3. Reload everything with valid chapter
         updateTitleMapCache()
-        updateVersesCache()
-        print("✅ Cache refreshed successfully")
+        updateVersesCacheWithChapter(validChapter)
+
+        print("✅ Cache refreshed: got \(cachedVerses.count) verses for \(book.id) ch.\(validChapter)")
     }
 
     // MARK: 하단 장 이동 바
