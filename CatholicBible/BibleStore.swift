@@ -130,8 +130,14 @@ final class BibleStore {
 
         // 각 판본 파일을 백그라운드에서 한꺼번에 디코딩한다.
         let candidates: [(String, URL)] = Editions.all.compactMap { edition in
-            Bundle.main.url(forResource: "BibleText_\(edition.id)", withExtension: "json")
-                .map { (edition.id, $0) }
+            let resourceName = "BibleText_\(edition.id)"
+            if let url = Bundle.main.url(forResource: resourceName, withExtension: "json") {
+                print("✅ 번들에서 찾음: \(resourceName)")
+                return (edition.id, url)
+            } else {
+                print("❌ 번들에서 못 찾음: \(resourceName)")
+                return nil
+            }
         }
 
         let loaded: [String: EditionText] = await Task.detached(priority: .userInitiated) {
@@ -345,6 +351,13 @@ final class BibleStore {
 
         editions = loaded
         isLoaded = true
+
+        // 로딩 결과 로깅
+        print("📊 로딩 완료: \(loaded.count)개 판본 로드됨")
+        for (editionID, editionText) in loaded {
+            let bookCount = editionText.books.count
+            print("  ✅ \(editionID): \(bookCount)권의 책")
+        }
 
         // 로딩 완료
         DispatchQueue.main.async {
