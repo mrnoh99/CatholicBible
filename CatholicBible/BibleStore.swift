@@ -477,8 +477,8 @@ final class BibleStore {
 
     func verses(edition: Edition, book: BibleBook, chapter: Int) -> [Verse] {
         let result = editions[edition.id]?.books[book.id]?[chapter] ?? []
+        print("📖 verses() 호출: edition=\(edition.id), book=\(book.id), chapter=\(chapter) → \(result.count)절")
         if result.isEmpty {
-            print("⚠️ verses() 반환 없음: edition=\(edition.id), book=\(book.id), chapter=\(chapter)")
             if let editionData = editions[edition.id] {
                 print("   edition 존재: \(editionData.books.count)개 책 있음")
                 if let bookData = editionData.books[book.id] {

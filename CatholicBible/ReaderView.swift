@@ -557,16 +557,21 @@ struct ReaderPane: View {
     }
 
     private func updateVersesCache() {
+        print("🔄 updateVersesCache() 호출: edition=\(editionID), book=\(book.id), chapter=\(chapter)")
         if cachedChapter == chapter && cachedEditionID == editionID && cachedBookID == book.id {
+            print("   캐시 재사용")
             return
         }
+        print("   캐시 업데이트 중")
         cachedChapter = chapter
         cachedEditionID = editionID
         cachedBookID = book.id
         if chapter > 0 {
             cachedVerses = store.verses(edition: edition, book: book, chapter: chapter)
+            print("   장 > 0: \(cachedVerses.count)절 로드됨")
         } else {
             cachedVerses = []
+            print("   장 <= 0: 캐시 초기화")
         }
     }
 
