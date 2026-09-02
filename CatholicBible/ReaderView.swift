@@ -1884,7 +1884,11 @@ struct BookPickerView: View {
 
     private func row(_ book: BibleBook) -> some View {
         let available = store.hasText(edition: edition, book: book)
-        return Button { selectedBook = book } label: {
+        return Button {
+            // Select book → go to chapter 1 directly
+            onPick("\(book.id)-1")
+            dismiss()
+        } label: {
             HStack {
                 Text(store.bookShortName(edition: edition, book: book))
                     .foregroundStyle(available ? .primary : .secondary)
