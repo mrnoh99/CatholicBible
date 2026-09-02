@@ -248,7 +248,6 @@ nonisolated private struct DailyReadingsFile: Decodable {
 // MARK: - 저장소
 
 @Observable
-@Observable
 final class LiturgyStore {
     private(set) var isLoaded = false
     var loadingMessage: String = ""
