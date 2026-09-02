@@ -1238,7 +1238,6 @@ nonisolated private struct KnbNotesFile: Decodable {
 // MARK: - 저장소
 
 @Observable
-@Observable
 final class KnbNotesStore {
     private(set) var isLoaded = false
     var loadingMessage: String = ""
