@@ -777,6 +777,12 @@ struct ReaderPane: View {
                     .font(.system(size: settings.fontSize * 0.85, weight: .regular, design: .default))
                     .foregroundStyle(settings.theme.secondary)
                 Spacer()
+                // DEBUG: Show actual chapter value
+                if chapter == 0 {
+                    Text("⚠️ ch:\(chapter) linked:\(linkedChapter?.wrappedValue ?? -1) local:\(localChapter)")
+                        .font(.caption2)
+                        .foregroundStyle(.red)
+                }
             }
 
             Text(book.chapterLabel(max(chapter, 1)))
