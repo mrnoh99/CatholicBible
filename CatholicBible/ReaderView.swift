@@ -463,15 +463,22 @@ struct ReaderPane: View {
             updateVersesCache()
             isInitialized = true
         }
-        .onChange(of: bookID) { _, _ in
+        .onChange(of: bookID) { _, newBookID in
+            print("📖 ReaderPane.onChange(bookID): new=\(newBookID), book=\(book.id), chapter=\(chapter), isFollower=\(isFollower), skipChapterRestore=\(skipChapterRestore)")
+            // 캐시 무효화 (새 책의 장이 이전 책과 같은 번호일 수 있으므로 항상 무효화)
+            cachedBookID = ""
             if !isFollower && !skipChapterRestore {
                 let chapter = readingState.lastChapter(edition: edition, book: book)
+                print("   setChapter to \(chapter) for \(book.id)")
                 setChapter(chapter)
                 // 처음 로드 이후 책 선택 변경만 히스토리에 추가
                 if isInitialized && role == .primary {
                     navigation.open(bookID: book.id, chapter: chapter)
                 }
             }
+            // 캐시 업데이트 (chapter가 같아서 onChange(of: chapter)가 안 될 수 있으므로 여기서도 함)
+            updateTitleMapCache()
+            updateVersesCache()
             skipChapterRestore = false
         }
         .onChange(of: editionID) { _, _ in
@@ -487,7 +494,11 @@ struct ReaderPane: View {
             updateVersesCache()
         }
         .onChange(of: chapter) { _, new in
-            guard new > 0 else { return }
+            guard new > 0 else {
+                print("   📖 onChange(chapter): 무시됨 (new=\(new))")
+                return
+            }
+            print("   📖 onChange(chapter): \(new), book=\(book.id), isFollower=\(isFollower)")
             // 캐시 업데이트 (모든 pane에서 필요)
             updateTitleMapCache()
             updateVersesCacheWithChapter(new)
@@ -573,14 +584,18 @@ struct ReaderPane: View {
     }
 
     private func updateVersesCacheWithChapter(_ ch: Int) {
-        if cachedChapter == ch && cachedEditionID == editionID && cachedBookID == book.id {
+        let cacheValid = cachedChapter == ch && cachedEditionID == editionID && cachedBookID == book.id
+        if cacheValid {
+            print("   📚 캐시 유효: 장=\(ch), 책=\(book.id), 판본=\(editionID)")
             return
         }
+        print("   📚 캐시 업데이트: 장 \(cachedChapter)→\(ch), 책 \(cachedBookID)→\(book.id), 판본 \(cachedEditionID)→\(editionID)")
         cachedChapter = ch
         cachedEditionID = editionID
         cachedBookID = book.id
         if ch > 0 {
             cachedVerses = store.verses(edition: edition, book: book, chapter: ch)
+            print("   ✅ 절 로드: \(cachedVerses.count)개")
         } else {
             cachedVerses = []
             print("   장 <= 0: 캐시 초기화")
