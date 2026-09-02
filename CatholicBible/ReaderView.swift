@@ -804,8 +804,13 @@ struct ReaderPane: View {
             skipChapterRestore = true
             print("   2️⃣  updating bookID: \(bookID) → \(components[0])")
             bookID = components[0]
-            print("   3️⃣  calling setChapter(\(chapterNum))")
+            // Invalidate cache even if bookID didn't change (same book, different chapter)
+            print("   3️⃣  invalidating cache")
+            cachedBookID = ""
+            print("   4️⃣  calling setChapter(\(chapterNum))")
             setChapter(chapterNum)
+            print("   5️⃣  updating verses cache")
+            updateVersesCache()
             print("   ✅ chapter should now be \(chapterNum)")
         } else {
             print("   fallback: just updating bookID to \(picked)")
