@@ -490,6 +490,11 @@ struct ReaderPane: View {
                 if isInitialized && role == .primary {
                     navigation.open(bookID: book.id, chapter: chapter)
                 }
+            } else if isFollower && chapter <= 0 {
+                // Linked secondary: ensure chapter is valid (shouldn't be 0)
+                let validChapter = max(1, readingState.lastChapter(edition: edition, book: book))
+                setChapter(validChapter)
+                print("   ✓ Secondary linked: set chapter to \(validChapter) for \(book.id)")
             }
             // 캐시 업데이트 (chapter가 같아서 onChange(of: chapter)가 안 될 수 있으므로 여기서도 함)
             updateTitleMapCache()
@@ -606,6 +611,9 @@ struct ReaderPane: View {
             cachedVerses = store.verses(edition: edition, book: book, chapter: ch)
             if role == .secondary {
                 print("   📚 Secondary loaded: ch=\(ch), book=\(book.id), ed=\(editionID), verses=\(cachedVerses.count)")
+                if cachedVerses.isEmpty {
+                    print("      ⚠️  EMPTY: Check if \(edition.id):\(book.id):ch\(ch) exists in store")
+                }
             }
         } else {
             cachedVerses = []
