@@ -427,8 +427,11 @@ struct ShelfView: View {
                   let book = Bible.book(lastID), edition.scope.contains(book) {
             navigation.open(bookID: book.id,
                             chapter: readingState.lastChapter(edition: edition, book: book))
+        } else if let firstBook = edition.scope.books.first {
+            navigation.open(bookID: firstBook.id,
+                            chapter: readingState.lastChapter(edition: edition, book: firstBook))
         } else {
-            navigation.selectedBookID = nil // 사이드바에서 책 선택
+            navigation.selectedBookID = nil
         }
     }
 
