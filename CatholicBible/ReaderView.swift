@@ -429,7 +429,11 @@ struct ReaderPane: View {
 
     /// 표시 중인 장. 연동 시 공유 장, 아니면 이 열의 자기 장.
     private var chapter: Int {
-        get { linkedChapter?.wrappedValue ?? localChapter }
+        get {
+            let val = linkedChapter?.wrappedValue ?? localChapter
+            // print("   chapter getter: linked=\(linkedChapter?.wrappedValue ?? -1), local=\(localChapter), result=\(val)")
+            return val
+        }
         set {
             if let linkedChapter { linkedChapter.wrappedValue = newValue } else { localChapter = newValue }
         }
@@ -767,9 +771,12 @@ struct ReaderPane: View {
     private func parseBookSelection(_ picked: String) {
         let components = picked.split(separator: "-", maxSplits: 1).map(String.init)
         if components.count == 2, let chapterNum = Int(components[1]) {
+            print("📖 parseBookSelection: picked=\(picked), chapterNum=\(chapterNum), book=\(components[0])")
+            print("   Before: bookID=\(bookID), chapter=\(chapter), cachedChapter=\(cachedChapter)")
             skipChapterRestore = true
             bookID = components[0]
             setChapter(chapterNum)
+            print("   After: bookID=\(bookID), chapter=\(chapter), cachedChapter=\(cachedChapter)")
         } else {
             bookID = picked
         }
@@ -1227,9 +1234,12 @@ struct SpreadReader: View {
     private func parseBookSelection(_ picked: String) {
         let components = picked.split(separator: "-", maxSplits: 1).map(String.init)
         if components.count == 2, let chapterNum = Int(components[1]) {
+            print("📖 parseBookSelection: picked=\(picked), chapterNum=\(chapterNum), book=\(components[0])")
+            print("   Before: bookID=\(bookID), chapter=\(chapter), cachedChapter=\(cachedChapter)")
             skipChapterRestore = true
             bookID = components[0]
             setChapter(chapterNum)
+            print("   After: bookID=\(bookID), chapter=\(chapter), cachedChapter=\(cachedChapter)")
         } else {
             bookID = picked
         }
