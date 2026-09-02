@@ -809,9 +809,10 @@ struct ReaderPane: View {
             cachedBookID = ""
             print("   4️⃣  calling setChapter(\(chapterNum))")
             setChapter(chapterNum)
-            print("   5️⃣  updating verses cache")
-            updateVersesCache()
-            print("   ✅ chapter should now be \(chapterNum)")
+            print("   5️⃣  updating verses cache with chapter=\(chapterNum)")
+            // Use explicit updateVersesCacheWithChapter to ensure sync (avoid race condition with setChapter)
+            updateVersesCacheWithChapter(chapterNum)
+            print("   ✅ chapter should now be \(chapterNum), verses count: \(cachedVerses.count)")
         } else {
             print("   fallback: just updating bookID to \(picked)")
             bookID = picked
