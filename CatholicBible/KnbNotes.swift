@@ -488,7 +488,6 @@ enum ScriptureRefNormalizer {
                         let afterAbbrev = String(innerContent.dropFirst(book.abbrev.count))
                         if afterAbbrev.isEmpty || afterAbbrev.first?.isWhitespace ?? false {
                             startsWithBook = true
-                            bookPrefix = book.abbrev
                             break
                         }
                     }
