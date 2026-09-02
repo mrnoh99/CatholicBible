@@ -706,9 +706,6 @@ struct ReaderPane: View {
         return VStack(alignment: .leading, spacing: 0) {
             chapterHeader
             if verses.isEmpty {
-                if role == .secondary {
-                    print("🔴 Secondary panel empty: edition=\(editionID), book=\(book.id), chapter=\(chapter), cachedBookID=\(cachedBookID), cachedChapter=\(cachedChapter)")
-                }
                 MissingTextView(edition: edition, book: book).padding(.top, 40)
             } else {
                 LazyVStack(alignment: .leading, spacing: settings.lineSpacing * 0.9) {
@@ -726,6 +723,11 @@ struct ReaderPane: View {
         .padding(.horizontal, fullWidth ? 16 : 28)
         .padding(.bottom, 40)
         .frame(maxWidth: .infinity)
+        .onChange(of: verses) { _, newVerses in
+            if newVerses.isEmpty && role == .secondary {
+                print("🔴 Secondary panel empty: edition=\(editionID), book=\(book.id), chapter=\(chapter), cachedBookID=\(cachedBookID), cachedChapter=\(cachedChapter)")
+            }
+        }
     }
 
     private var versesScroll: some View {
