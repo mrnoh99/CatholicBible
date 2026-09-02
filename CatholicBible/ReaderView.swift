@@ -486,7 +486,7 @@ struct ReaderPane: View {
             }
             // 캐시 업데이트 (모든 pane에서 필요)
             updateTitleMapCache()
-            updateVersesCache()
+            updateVersesCacheWithChapter(new)
 
             // Follower가 아닌 경우만 추가 처리
             guard !isFollower else { return }
@@ -565,17 +565,21 @@ struct ReaderPane: View {
     }
 
     private func updateVersesCache() {
-        print("🔄 updateVersesCache() 호출: edition=\(editionID), book=\(book.id), chapter=\(chapter)")
-        if cachedChapter == chapter && cachedEditionID == editionID && cachedBookID == book.id {
+        updateVersesCacheWithChapter(chapter)
+    }
+
+    private func updateVersesCacheWithChapter(_ ch: Int) {
+        print("🔄 updateVersesCacheWithChapter() 호출: edition=\(editionID), book=\(book.id), chapter=\(ch)")
+        if cachedChapter == ch && cachedEditionID == editionID && cachedBookID == book.id {
             print("   캐시 재사용")
             return
         }
         print("   캐시 업데이트 중")
-        cachedChapter = chapter
+        cachedChapter = ch
         cachedEditionID = editionID
         cachedBookID = book.id
-        if chapter > 0 {
-            cachedVerses = store.verses(edition: edition, book: book, chapter: chapter)
+        if ch > 0 {
+            cachedVerses = store.verses(edition: edition, book: book, chapter: ch)
             print("   장 > 0: \(cachedVerses.count)절 로드됨")
         } else {
             cachedVerses = []
