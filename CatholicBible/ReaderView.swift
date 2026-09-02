@@ -701,33 +701,38 @@ struct ReaderPane: View {
         }
     }
 
+    private var versesContent: some View {
+        let verses = cachedVerses
+        return VStack(alignment: .leading, spacing: 0) {
+            chapterHeader
+            if verses.isEmpty {
+                if role == .secondary {
+                    print("🔴 Secondary panel empty: edition=\(editionID), book=\(book.id), chapter=\(chapter), cachedBookID=\(cachedBookID), cachedChapter=\(cachedChapter)")
+                }
+                MissingTextView(edition: edition, book: book).padding(.top, 40)
+            } else {
+                LazyVStack(alignment: .leading, spacing: settings.lineSpacing * 0.9) {
+                    ForEach(verses) { verse in
+                        verseRowContent(verse: verse)
+                            .id(verse.number)
+                    }
+                }
+                .scrollTargetLayout()
+                .padding(.top, 24)
+                copyrightFooter
+            }
+        }
+        .frame(maxWidth: fullWidth ? .infinity : 720, alignment: .leading)
+        .padding(.horizontal, fullWidth ? 16 : 28)
+        .padding(.bottom, 40)
+        .frame(maxWidth: .infinity)
+    }
+
     private var versesScroll: some View {
         let verses = cachedVerses
         return ScrollViewReader { proxy in
             ScrollView {
-                VStack(alignment: .leading, spacing: 0) {
-                    chapterHeader
-                    if verses.isEmpty {
-                        if role == .secondary {
-                            print("🔴 Secondary panel empty: edition=\(editionID), book=\(book.id), chapter=\(chapter), cachedBookID=\(cachedBookID), cachedChapter=\(cachedChapter)")
-                        }
-                        MissingTextView(edition: edition, book: book).padding(.top, 40)
-                    } else {
-                        LazyVStack(alignment: .leading, spacing: settings.lineSpacing * 0.9) {
-                            ForEach(verses) { verse in
-                                verseRowContent(verse: verse)
-                                    .id(verse.number)
-                            }
-                        }
-                        .scrollTargetLayout()
-                        .padding(.top, 24)
-                        copyrightFooter
-                    }
-                }
-                .frame(maxWidth: fullWidth ? .infinity : 720, alignment: .leading)
-                .padding(.horizontal, fullWidth ? 16 : 28)
-                .padding(.bottom, 40)
-                .frame(maxWidth: .infinity)
+                versesContent
             }
             .scrollPosition(id: $topVerse, anchor: .top)
             .onChange(of: topVerse) { _, v in
