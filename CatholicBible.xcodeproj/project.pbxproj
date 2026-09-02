@@ -7,8 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-/* Begin PBXFileReference section */
-		CB0000012FB4000000000001 /* CatholicBible.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = CatholicBible.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		CB001F2FB4000000001F /* BibleText_b200.json in Resources */ = {isa = PBXBuildFile; fileRef = CB000E2FB4000000000E /* BibleText_b200.json */; };
 		CB00212FB40000000021 /* BibleText_knb.json in Resources */ = {isa = PBXBuildFile; fileRef = CB00102FB40000000010 /* BibleText_knb.json */; };
 		CB00222FB40000000022 /* BibleText_knbnotes.json in Resources */ = {isa = PBXBuildFile; fileRef = CB00112FB40000000011 /* BibleText_knbnotes.json */; };
@@ -25,6 +23,8 @@
 		CB002E2FB4000000002E /* KnbNotes.json in Resources */ = {isa = PBXBuildFile; fileRef = CB001D2FB4000000001D /* KnbNotes.json */; };
 		CB002F2FB4000000002F /* NabreNotes.json in Resources */ = {isa = PBXBuildFile; fileRef = CB001E2FB4000000001E /* NabreNotes.json */; };
 /* End PBXBuildFile section */
+/* Begin PBXFileReference section */
+		CB0000012FB4000000000001 /* CatholicBible.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = CatholicBible.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		CB000E2FB4000000000E /* BibleText_b200.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "CatholicBible/Resources/BibleText_b200.json"; sourceTree = SOURCE_ROOT; };
 		CB00102FB40000000010 /* BibleText_knb.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "CatholicBible/Resources/BibleText_knb.json"; sourceTree = SOURCE_ROOT; };
 		CB00112FB40000000011 /* BibleText_knbnotes.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "CatholicBible/Resources/BibleText_knbnotes.json"; sourceTree = SOURCE_ROOT; };
