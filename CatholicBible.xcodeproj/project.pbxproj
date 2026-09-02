@@ -22,8 +22,8 @@
 		CB002D2FB4000000002D /* DailyReadings_2026.json in Resources */ = {isa = PBXBuildFile; fileRef = CB001C2FB4000000001C /* DailyReadings_2026.json */; };
 		CB002E2FB4000000002E /* KnbNotes.json in Resources */ = {isa = PBXBuildFile; fileRef = CB001D2FB4000000001D /* KnbNotes.json */; };
 		CB002F2FB4000000002F /* NabreNotes.json in Resources */ = {isa = PBXBuildFile; fileRef = CB001E2FB4000000001E /* NabreNotes.json */; };
-		CB00302FB4000000030 /* KnbHeadings_ko.json in Resources */ = {isa = PBXBuildFile; fileRef = CB001F2FB4000000001F /* KnbHeadings_ko.json */; };
-		CB00312FB4000000031 /* NcbNotes.json in Resources */ = {isa = PBXBuildFile; fileRef = CB00202FB4000000020 /* NcbNotes.json */; };
+		CB00302FB4000000030 /* KnbHeadings_ko.json in Resources */ = {isa = PBXBuildFile; fileRef = CB00202FB4000000020 /* KnbHeadings_ko.json */; };
+		CB00312FB4000000031 /* NcbNotes.json in Resources */ = {isa = PBXBuildFile; fileRef = CB00212FB4000000021 /* NcbNotes.json */; };
 /* End PBXBuildFile section */
 /* Begin PBXFileReference section */
 		CB0000012FB4000000000001 /* CatholicBible.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = CatholicBible.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -42,8 +42,8 @@
 		CB001C2FB4000000001C /* DailyReadings_2026.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "CatholicBible/Resources/DailyReadings_2026.json"; sourceTree = SOURCE_ROOT; };
 		CB001D2FB4000000001D /* KnbNotes.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "CatholicBible/Resources/KnbNotes.json"; sourceTree = SOURCE_ROOT; };
 		CB001E2FB4000000001E /* NabreNotes.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "CatholicBible/Resources/NabreNotes.json"; sourceTree = SOURCE_ROOT; };
-		CB001F2FB4000000001F /* KnbHeadings_ko.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "CatholicBible/Resources/KnbHeadings_ko.json"; sourceTree = SOURCE_ROOT; };
-		CB00202FB4000000020 /* NcbNotes.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "CatholicBible/Resources/NcbNotes.json"; sourceTree = SOURCE_ROOT; };
+		CB00202FB4000000020 /* KnbHeadings_ko.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "CatholicBible/Resources/KnbHeadings_ko.json"; sourceTree = SOURCE_ROOT; };
+		CB00212FB4000000021 /* NcbNotes.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "CatholicBible/Resources/NcbNotes.json"; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
