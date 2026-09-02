@@ -454,8 +454,10 @@ struct ReaderPane: View {
             isInitialized = true
         }
         .onChange(of: bookID) { _, _ in
+            print("📚 onChange(bookID): \(bookID), isFollower=\(isFollower), skipChapterRestore=\(skipChapterRestore)")
             if !isFollower && !skipChapterRestore {
                 let chapter = readingState.lastChapter(edition: edition, book: book)
+                print("   setChapter() 호출: \(chapter)")
                 setChapter(chapter)
                 // 처음 로드 이후 책 선택 변경만 히스토리에 추가
                 if isInitialized && role == .primary {
@@ -465,8 +467,10 @@ struct ReaderPane: View {
             skipChapterRestore = false
         }
         .onChange(of: editionID) { _, _ in
+            print("📕 onChange(editionID): \(editionID), isFollower=\(isFollower)")
             if !isFollower {
                 let chapter = readingState.lastChapter(edition: edition, book: book)
+                print("   setChapter() 호출: \(chapter)")
                 setChapter(chapter)
             }
             // Always update cache for new edition, clearing cache to force refresh
@@ -475,7 +479,11 @@ struct ReaderPane: View {
             updateVersesCache()
         }
         .onChange(of: chapter) { _, new in
-            guard new > 0 else { return }
+            print("📖 onChange(chapter): old=\(cachedChapter), new=\(new)")
+            guard new > 0 else {
+                print("   장이 0 이하라 리턴")
+                return
+            }
             // 캐시 업데이트 (모든 pane에서 필요)
             updateTitleMapCache()
             updateVersesCache()
