@@ -449,10 +449,16 @@ struct ReaderPane: View {
     private func setChapter(_ value: Int) {
         if let linkedChapter {
             print("      📌 setChapter(\(value)): updating linkedChapter (role=\(role))")
+            let oldValue = linkedChapter.wrappedValue
             linkedChapter.wrappedValue = value
+            print("         ✓ linkedChapter updated: \(oldValue) → \(linkedChapter.wrappedValue)")
+            print("         ✓ chapter property now returns: \(chapter)")
         } else {
             print("      📌 setChapter(\(value)): updating localChapter (role=\(role))")
+            let oldValue = localChapter
             localChapter = value
+            print("         ✓ localChapter updated: \(oldValue) → \(localChapter)")
+            print("         ✓ chapter property now returns: \(chapter)")
         }
     }
 
