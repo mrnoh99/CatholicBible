@@ -158,7 +158,7 @@ struct ReaderView: View {
                 if !skipChapterRestore {
                     primaryChapter = 0  // initChapterIfNeeded()가 작동하려면 필요
                 }
-                skipChapterRestore = false  // 플래그 초기화
+                // skipChapterRestore는 ReaderPane.onChange(of: bookID)에서 초기화하므로 여기서 초기화하지 않음
                 previousBookID = newBookID
                 print("✅ State reset complete")
             }
@@ -172,7 +172,7 @@ struct ReaderView: View {
                 if !skipChapterRestore {
                     primaryChapter = 0  // initChapterIfNeeded()가 작동하려면 필요
                 }
-                skipChapterRestore = false  // 플래그 초기화
+                // skipChapterRestore는 ReaderPane.onChange(of: bookID)에서 초기화하므로 여기서 초기화하지 않음
                 previousBookID = newBookID
             }
         }
