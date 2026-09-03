@@ -43,6 +43,8 @@ struct ReaderView: View {
     @State private var primaryChapter = 0
     /// 두 판본 비교에서 두 열이 공유하는 장(연동 시 양쪽이 같은 장을 본다).
     @State private var compareChapter = 0
+    /// 주석 성경(본문·주석) 모드의 장 (다른 모드와 독립적으로 유지)
+    @State private var annotatedChapter = 0
     /// 책 선택 시 마지막 장을 복원하지 않도록 하는 플래그 (picker에서 특정 장 선택 시 사용)
     @State private var skipChapterRestore = false
     /// 비교 모드에서 secondary 패널의 책 선택 시 마지막 장을 복원하지 않도록 하는 플래그
@@ -78,10 +80,11 @@ struct ReaderView: View {
                 settings.theme.background.ignoresSafeArea()
                 if showAnnotated {
                     // 주석 성경: 왼쪽 본문 · 오른쪽 주석 (입문 접근 포함)
+                    // 독립적인 annotatedChapter 사용: 다른 모드로 전환했다가 돌아와도 같은 장 유지
                     AnnotatedReader(editionID: selectedEditionIDBinding,
                                     bookID: primaryBookBinding,
                                     currentBook: book,
-                                    sharedChapter: $primaryChapter,
+                                    sharedChapter: $annotatedChapter,
                                     ownerBookID: book.id,
                                     showHeader: true,
                                     fullWidth: true,
@@ -157,6 +160,7 @@ struct ReaderView: View {
                 // skipChapterRestore가 false인 경우에만 마지막 장을 복원하도록 리셋
                 if !skipChapterRestore {
                     primaryChapter = 0  // initChapterIfNeeded()가 작동하려면 필요
+                    annotatedChapter = 0  // 주석 성경 모드도 같이 초기화
                 }
                 // skipChapterRestore는 ReaderPane.onChange(of: bookID)에서 초기화하므로 여기서 초기화하지 않음
                 previousBookID = newBookID
@@ -170,6 +174,7 @@ struct ReaderView: View {
                 // skipChapterRestore가 false인 경우에만 마지막 장을 복원하도록 리셋
                 if !skipChapterRestore {
                     primaryChapter = 0  // initChapterIfNeeded()가 작동하려면 필요
+                    annotatedChapter = 0  // 주석 성경 모드도 같이 초기화
                 }
                 // skipChapterRestore는 ReaderPane.onChange(of: bookID)에서 초기화하므로 여기서 초기화하지 않음
                 previousBookID = newBookID
