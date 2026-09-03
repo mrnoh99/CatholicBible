@@ -185,6 +185,8 @@ struct LibraryView: View {
              available: store.hasText(edition: edition, book: book))
         }
         if bookData.count > 1 {
+            // 카테고리 라인은 전개/수축만 하고 책 선택을 변경하지 않도록
+            // tag(nil)을 사용해서 List의 선택에서 제외
             DisclosureGroup {
                 ForEach(bookData, id: \.book.id) { data in
                     bookRow(book: data.book, displayName: data.displayName,
@@ -202,6 +204,7 @@ struct LibraryView: View {
                         .foregroundStyle(.primary)
                 }
             }
+            .tag(nil as String?)  // 카테고리는 선택되지 않음
         } else {
             ForEach(bookData, id: \.book.id) { data in
                 bookRow(book: data.book, displayName: data.displayName,
