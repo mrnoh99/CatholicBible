@@ -463,6 +463,30 @@ struct ReaderPane: View {
         showsTitles ? cachedTitleMap : [:]
     }
 
+    /// 프롤로그 텍스트 (Sirach ch1 같은 특수 장에서만 표시)
+    private var prologueText: String? {
+        guard chapter == 1 && book.id == "sir" else { return nil }
+        guard let text = titleMap["1"] else { return nil }
+        return isPrologueText(text) ? text : nil
+    }
+
+    /// 프롤로그 텍스트 여부 (verse markers like (1), (5), (10)... 포함)
+    private func isPrologueText(_ text: String) -> Bool {
+        let verseMarkerPattern = try? NSRegularExpression(pattern: "\\(\\d+\\)", options: [])
+        guard let regex = verseMarkerPattern else { return false }
+        let range = NSRange(text.startIndex..., in: text)
+        return regex.firstMatch(in: text, range: range) != nil
+    }
+
+    /// verse 1의 제목이 프롤로그일 경우 제외하고 반환
+    private func filteredTitleMap() -> [String: String] {
+        var result = titleMap
+        if chapter == 1 && book.id == "sir" && prologueText != nil {
+            result.removeValue(forKey: "1")
+        }
+        return result
+    }
+
     /// 표시 중인 장. 연동 시 공유 장, 아니면 이 열의 자기 장.
     private var chapter: Int {
         get { linkedChapter?.wrappedValue ?? localChapter }
@@ -710,8 +734,9 @@ struct ReaderPane: View {
     // MARK: 본문
 
     private func verseRowContent(verse: Verse) -> some View {
-        VStack(alignment: .leading, spacing: settings.lineSpacing * 0.9) {
-            if let title = titleMap[verse.number] {
+        let filteredTitles = filteredTitleMap()
+        return VStack(alignment: .leading, spacing: settings.lineSpacing * 0.9) {
+            if let title = filteredTitles[verse.number] {
                 SectionTitleView(text: title, bookID: book.id, chapter: chapter,
                                  linkable: true)
                     .environment(\.openURL, OpenURLAction { url in
@@ -775,6 +800,10 @@ struct ReaderPane: View {
                 MissingTextView(edition: edition, book: book).padding(.top, 40)
             } else {
                 LazyVStack(alignment: .leading, spacing: settings.lineSpacing * 0.9) {
+                    if let prologue = prologueText {
+                        prologueView(text: prologue)
+                            .padding(.bottom, 16)
+                    }
                     ForEach(verses) { verse in
                         verseRowContent(verse: verse)
                             .id(verse.number)
@@ -794,6 +823,19 @@ struct ReaderPane: View {
                 print("🔴 Secondary panel empty: edition=\(editionID), book=\(book.id), chapter=\(chapter), cachedBookID=\(cachedBookID), cachedChapter=\(cachedChapter)")
             }
         }
+    }
+
+    private func prologueView(text: String) -> some View {
+        Text(text)
+            .font(.system(size: settings.fontSize, weight: .regular, design: .default))
+            .lineSpacing(settings.lineSpacing * 0.5)
+            .foregroundStyle(settings.theme.text)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.leading, 8)
+            .padding(.vertical, 12)
+            .overlay(alignment: .leading) {
+                Rectangle().fill(Color.accentColor.opacity(0.3)).frame(width: 3)
+            }
     }
 
     private var versesScroll: some View {
