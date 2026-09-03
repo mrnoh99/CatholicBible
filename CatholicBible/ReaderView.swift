@@ -663,8 +663,11 @@ struct ReaderPane: View {
         guard rawHeadings.isEmpty else { return }
         if let headingsURL = Bundle.main.url(forResource: "KnbHeadings_ko", withExtension: "json"),
            let headingsData = try? Data(contentsOf: headingsURL) {
-            if let decoded = try? JSONDecoder().decode([String: [String: [String: String]]].self, from: headingsData) {
-                rawHeadings = decoded
+            struct HeadingsFile: Decodable {
+                let headings: [String: [String: [String: String]]]
+            }
+            if let file = try? JSONDecoder().decode(HeadingsFile.self, from: headingsData) {
+                rawHeadings = file.headings
             }
         }
     }
