@@ -201,10 +201,11 @@ struct ContentView: View {
     @State private var showNotes = false
     @State private var showMass = false
     @State private var showSettings = false
+    @State private var sidebarVisibility: NavigationSplitViewVisibility = .detailOnly
 
     var body: some View {
         @Bindable var nav = navigation
-        NavigationSplitView {
+        NavigationSplitView(columnVisibility: $sidebarVisibility) {
             LibraryView()
                 .navigationTitle("서재")
                 .toolbar {
@@ -243,11 +244,36 @@ struct ContentView: View {
                 ReaderView(book: book)
                     // .id() 제거: 책이 바뀔 때 전체 뷰를 재구성하지 않도록 함 (성능 개선)
                     // 대신 ReaderView에서 book.id onChange로 상태를 초기화
+                    .toolbar {
+                        if sidebarVisibility == .detailOnly {
+                            ToolbarItemGroup(placement: .navigationBarLeading) {
+                                Button(action: {
+                                    withAnimation {
+                                        sidebarVisibility = .automatic
+                                    }
+                                }) {
+                                    Image(systemName: "sidebar.left")
+                                }
+                                .help("사이드바 보이기")
+                            }
+                        }
+                    }
             } else {
                 VStack(spacing: 0) {
                     // iPad/Mac에서 상단 메뉴 표시
                     if hSize == .regular {
                         HStack(spacing: 16) {
+                            if sidebarVisibility == .detailOnly {
+                                Button(action: {
+                                    withAnimation {
+                                        sidebarVisibility = .automatic
+                                    }
+                                }) {
+                                    Image(systemName: "sidebar.left")
+                                }
+                                .help("사이드바 보이기")
+                            }
+
                             Spacer()
 
                             Button("", systemImage: "sun.max") { showMass = true }

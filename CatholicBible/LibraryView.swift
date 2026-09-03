@@ -47,6 +47,8 @@ struct LibraryView: View {
     @Environment(ReadingState.self) private var readingState
     @Environment(ReaderNavigation.self) private var navigation
 
+    @State private var expandedCategories: Set<String> = []
+
     private var oldTestamentCategories: [BookCategory] {
         BookCategory.allCases.filter { $0.testament == .old }
     }
@@ -185,9 +187,21 @@ struct LibraryView: View {
              available: store.hasText(edition: edition, book: book))
         }
         if bookData.count > 1 {
-            // 카테고리 라인은 터치에 반응하지 않도록 처리
-            // 단순히 헤더 역할만 수행
-            VStack(alignment: .leading, spacing: 0) {
+            DisclosureGroup(isExpanded: Binding(
+                get: { expandedCategories.contains(category.id) },
+                set: { isExpanded in
+                    if isExpanded {
+                        expandedCategories.insert(category.id)
+                    } else {
+                        expandedCategories.remove(category.id)
+                    }
+                }
+            )) {
+                ForEach(bookData, id: \.book.id) { data in
+                    bookRow(book: data.book, displayName: data.displayName,
+                           fullName: data.fullName, available: data.available)
+                }
+            } label: {
                 HStack(spacing: 8) {
                     Image(systemName: category == .gospels ? "book.pages" : "book")
                         .font(.system(size: 13, weight: .semibold))
@@ -200,14 +214,8 @@ struct LibraryView: View {
 
                     Spacer()
                 }
-                .padding(.vertical, 8)
-                .tag(nil as String?)
-
-                ForEach(bookData, id: \.book.id) { data in
-                    bookRow(book: data.book, displayName: data.displayName,
-                           fullName: data.fullName, available: data.available)
-                }
             }
+            .tag(nil as String?)
         } else {
             ForEach(bookData, id: \.book.id) { data in
                 bookRow(book: data.book, displayName: data.displayName,
