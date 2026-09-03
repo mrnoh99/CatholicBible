@@ -819,7 +819,7 @@ struct ReaderPane: View {
                          verse: verse,
                          highlighted: navigation.activeHighlight?.matches(bookID: book.id, chapter: chapter, verse: verse.number) ?? false,
                          onOpenNote: onOpenNote,
-                         markerColor: UIColor(Color.accentColor))
+                         markerColor: editionID == "knbnotes" ? UIColor(Color.accentColor) : nil)
                 .environment(\.openURL, OpenURLAction { url in
                     let items = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems ?? []
                     func q(_ k: String) -> String? { items.first { $0.name == k }?.value }
@@ -917,7 +917,7 @@ struct ReaderPane: View {
                         verse: verse,
                         highlighted: navigation.activeHighlight?.matches(bookID: book.id, chapter: chapter, verse: verse.number) ?? false,
                         onOpenNote: onOpenNote,
-                        markerColor: UIColor(Color.accentColor))
+                        markerColor: editionID == "knbnotes" ? UIColor(Color.accentColor) : nil)
         }
     }
 
