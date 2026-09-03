@@ -1172,6 +1172,8 @@ struct SpreadReader: View {
     @Environment(ReadingState.self) private var readingState
     @Environment(ReaderNavigation.self) private var navigation
     @Environment(KnbNotesStore.self) private var knbNotes
+    @Environment(AnnotationStore.self) private var annotations
+    @Environment(LiturgyStore.self) private var liturgy
 
     @State private var localChapter = 0
     @State private var spreadIndex = 0
@@ -1182,6 +1184,14 @@ struct SpreadReader: View {
     @State private var showBookPicker = false
     @State private var showChapterPicker = false
     @State private var skipChapterRestore = false
+    @State private var showMass = false
+    @State private var showSearch = false
+    @State private var showBookmarks = false
+    @State private var showNotes = false
+    @State private var showAppearance = false
+    @State private var noteTarget: NoteTarget?
+    @State private var markerNote: MarkerNoteTarget?
+    @State private var xrefTarget: XrefTarget?
 
     private var edition: Edition { Editions.edition(editionID) ?? Editions.all[0] }
     private var book: BibleBook { Bible.book(bookID) ?? Bible.books[0] }
@@ -1257,6 +1267,44 @@ struct SpreadReader: View {
                 setChapter(picked); spreadIndex = 0; showChapterPicker = false
             }
         }
+        .sheet(isPresented: $showAppearance) {
+            injectShared(AppSettingsView())
+        }
+        .sheet(isPresented: $showSearch) {
+            injectShared(SearchView().environment(navigation))
+        }
+        .sheet(isPresented: $showBookmarks) {
+            injectShared(BookmarksView().environment(navigation))
+        }
+        .sheet(isPresented: $showNotes) {
+            injectShared(NotesListView().environment(navigation))
+        }
+        .fullScreenCover(isPresented: $showMass) {
+            injectShared(DailyMassView().environment(navigation))
+        }
+        .sheet(item: $noteTarget) { target in
+            injectShared(NoteEditorView(verse: target.ref,
+                                        verseText: target.text,
+                                        existing: annotations.noteOrNew(for: target.ref)))
+        }
+        .fullScreenCover(item: $markerNote) { mn in
+            injectShared(MarkerNoteSheet(n: mn.n, text: mn.text, bookID: mn.bookID, chapter: mn.chapter))
+        }
+        .fullScreenCover(item: $xrefTarget) { t in
+            injectShared(RefPreviewSheet(target: t).environment(navigation))
+        }
+    }
+
+    private func injectShared<V: View>(_ view: V) -> some View {
+        view.injectSharedStores(store, settings, readingState, annotations, knbNotes, liturgy)
+            .environment(navigation)
+    }
+
+    private func openMarkerNote(ref: VerseRef) {
+        let noteText = knbNotes.notes(edition: editionID, bookID: ref.bookID, chapter: ref.chapter)
+            .first(where: { $0.n == ref.verse })?.text ?? "이 주석을 찾지 못했습니다."
+        markerNote = MarkerNoteTarget(n: ref.verse, text: noteText,
+                                      bookID: ref.bookID, chapter: ref.chapter)
     }
 
     // MARK: 위치
@@ -1316,42 +1364,134 @@ struct SpreadReader: View {
     // MARK: 헤더
 
     private var header: some View {
-        HStack(spacing: 10) {
-            Menu {
-                Picker("판본", selection: $editionID) {
-                    ForEach(Editions.all) { ed in Text(ed.name).tag(ed.id) }
+        VStack(spacing: 0) {
+            HStack(spacing: 8) {
+                Button { navigation.selectedBookID = nil } label: {
+                    Label("첫화면으로", systemImage: "house.fill")
                 }
-            } label: { chip(edition.shortName) }
-            Button { showBookPicker = true } label: {
-                chip(store.bookShortName(edition: edition, book: book))
-            }
-            Spacer(minLength: 0)
+                .help("첫화면으로")
 
-            Button { withAnimation { prevSpread() } } label: {
-                Image(systemName: "chevron.left")
-                    .font(.system(size: 16, weight: .semibold))
-            }
-            .disabled(atFirst)
-            .opacity(atFirst ? 0.4 : 1)
+                Spacer()
 
-            Button { showChapterPicker = true } label: {
-                Text("\(book.chapterLabel(chapter))")
-                    .font(.caption.monospacedDigit())
-            }
-            .foregroundStyle(settings.theme.secondary)
+                Button { navigation.goBack() } label: {
+                    Image(systemName: "chevron.left")
+                        .font(.system(size: 16, weight: .semibold))
+                        .contentShape(Circle())
+                }
+                .disabled(!navigation.canGoBack)
+                .help("이전 페이지")
+                .opacity(navigation.canGoBack ? 1 : 0.4)
 
-            Button { withAnimation { nextSpread() } } label: {
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 16, weight: .semibold))
+                Text("성경 읽기")
+                    .font(.system(size: 16, weight: .semibold, design: .default))
+
+                Button { navigation.goForward() } label: {
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 16, weight: .semibold))
+                        .contentShape(Circle())
+                }
+                .disabled(!navigation.canGoForward)
+                .help("다음 페이지")
+                .opacity(navigation.canGoForward ? 1 : 0.4)
+
+                Spacer()
+
+                Menu {
+                    Section("보기") {
+                        Button(action: {
+                            readingState.readerLayout = .single
+                            readingState.showAnnotatedNotes = false
+                        }) { Label("한 페이지", systemImage: "rectangle.portrait") }
+
+                        Button(action: {
+                            readingState.readerLayout = .spread
+                            readingState.showAnnotatedNotes = false
+                        }) { Label("두 페이지 (펼침)", systemImage: "book.pages") }
+
+                        Button(action: {
+                            readingState.readerLayout = .single
+                            readingState.showAnnotatedNotes = true
+                        }) { Label("본문·주석", systemImage: "books.vertical") }
+
+                        Button(action: {
+                            readingState.readerLayout = .compare
+                            readingState.showAnnotatedNotes = false
+                        }) { Label("판본 비교", systemImage: "rectangle.split.2x1") }
+                    }
+                    if readingState.readerLayout == .compare {
+                        Section {
+                            Button(action: { readingState.compareLinked.toggle() }) {
+                                Label(readingState.compareLinked ? "두 열 연동됨" : "두 열 분리됨",
+                                      systemImage: readingState.compareLinked ? "link.circle.fill" : "link.circle")
+                            }
+                        }
+                    }
+                    Section("도구") {
+                        Button(action: { showMass = true }) {
+                            Label("매일미사", systemImage: "sun.max")
+                        }
+                        Button(action: { showSearch = true }) {
+                            Label("찾기", systemImage: "magnifyingglass")
+                        }
+                        Button(action: { navigation.lookUp() }) {
+                            Label("사전", systemImage: "character.book.closed")
+                        }
+                        Button(action: { showBookmarks = true }) {
+                            Label("책갈피", systemImage: "bookmark")
+                        }
+                        Button(action: { showNotes = true }) {
+                            Label("노트", systemImage: "note.text")
+                        }
+                        Button(action: { showAppearance = true }) {
+                            Label("설정", systemImage: "gear")
+                        }
+                    }
+                } label: {
+                    Image(systemName: "ellipsis.circle")
+                        .font(.system(size: 15, weight: .semibold))
+                }
             }
-            .disabled(atLast)
-            .opacity(atLast ? 0.4 : 1)
-        }
-        .font(.subheadline)
-        .padding(.horizontal, 16).padding(.vertical, 8)
-        .background(settings.theme.background)
-        .overlay(alignment: .bottom) {
-            Rectangle().fill(settings.theme.secondary.opacity(0.2)).frame(height: 0.5)
+            .font(.subheadline)
+            .padding(.horizontal, 16).padding(.vertical, 8)
+            .background(settings.theme.background)
+
+            HStack(spacing: 10) {
+                Menu {
+                    Picker("판본", selection: $editionID) {
+                        ForEach(Editions.all) { ed in Text(ed.name).tag(ed.id) }
+                    }
+                } label: { chip(edition.shortName) }
+                Button { showBookPicker = true } label: {
+                    chip(store.bookShortName(edition: edition, book: book))
+                }
+                Spacer(minLength: 0)
+
+                Button { withAnimation { prevSpread() } } label: {
+                    Image(systemName: "chevron.left")
+                        .font(.system(size: 16, weight: .semibold))
+                }
+                .disabled(atFirst)
+                .opacity(atFirst ? 0.4 : 1)
+
+                Button { showChapterPicker = true } label: {
+                    Text("\(book.chapterLabel(chapter))")
+                        .font(.caption.monospacedDigit())
+                }
+                .foregroundStyle(settings.theme.secondary)
+
+                Button { withAnimation { nextSpread() } } label: {
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 16, weight: .semibold))
+                }
+                .disabled(atLast)
+                .opacity(atLast ? 0.4 : 1)
+            }
+            .font(.subheadline)
+            .padding(.horizontal, 16).padding(.vertical, 8)
+            .background(settings.theme.background)
+            .overlay(alignment: .bottom) {
+                Rectangle().fill(settings.theme.secondary.opacity(0.2)).frame(height: 0.5)
+            }
         }
     }
 
@@ -1404,7 +1544,7 @@ struct SpreadReader: View {
                                     // 주석 마커 링크 (N))
                                     if url.host == "note" {
                                         if let b = q("b"), let cs = q("c"), let c = Int(cs), let n = q("n") {
-                                            onOpenNote(VerseRef(bookID: b, chapter: c, verse: n), "")
+                                            openMarkerNote(ref: VerseRef(bookID: b, chapter: c, verse: n))
                                         }
                                         return .handled
                                     }
@@ -1412,9 +1552,9 @@ struct SpreadReader: View {
                                     if url.host == "xref" {
                                         if let b = q("b"), let cs = q("c"), let c = Int(cs),
                                            let vs = q("v"), let v = Int(vs) {
-                                            onOpenXref(XrefTarget(bookID: b, chapter: c, verse: v,
+                                            xrefTarget = XrefTarget(bookID: b, chapter: c, verse: v,
                                                                   endChapter: q("ec").flatMap { Int($0) } ?? 0,
-                                                                  endVerse: q("ev").flatMap { Int($0) } ?? 0))
+                                                                  endVerse: q("ev").flatMap { Int($0) } ?? 0)
                                         }
                                         return .handled
                                     }
@@ -1425,7 +1565,7 @@ struct SpreadReader: View {
                     VerseRowView(edition: edition, book: book, chapter: chapter,
                                  verse: verse,
                                  highlighted: navigation.activeHighlight?.matches(bookID: book.id, chapter: chapter, verse: verse.number) ?? false,
-                                 onOpenNote: onOpenNote,
+                                 onOpenNote: { ref, _ in openMarkerNote(ref: ref) },
                                  markerColor: UIColor(Color.accentColor))
                         .environment(\.openURL, OpenURLAction { url in
                             let items = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems ?? []
@@ -1433,15 +1573,15 @@ struct SpreadReader: View {
                             if url.scheme == "catholicbible", url.host == "xref" {
                                 if let b = q("b"), let cs = q("c"), let c = Int(cs),
                                    let vs = q("v"), let v = Int(vs) {
-                                    onOpenXref(XrefTarget(bookID: b, chapter: c, verse: v,
+                                    xrefTarget = XrefTarget(bookID: b, chapter: c, verse: v,
                                                           endChapter: q("ec").flatMap { Int($0) } ?? 0,
-                                                          endVerse: q("ev").flatMap { Int($0) } ?? 0))
+                                                          endVerse: q("ev").flatMap { Int($0) } ?? 0)
                                 }
                                 return .handled
                             }
                             if url.scheme == "catholicbible", url.host == "note" {
                                 if let b = q("b"), let cs = q("c"), let c = Int(cs), let n = q("n") {
-                                    onOpenNote(VerseRef(bookID: b, chapter: c, verse: n), "")
+                                    openMarkerNote(ref: VerseRef(bookID: b, chapter: c, verse: n))
                                 }
                                 return .handled
                             }
