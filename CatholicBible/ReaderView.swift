@@ -493,11 +493,11 @@ struct ReaderPane: View {
         return result
     }
 
-    /// 프롤로그 절인지 확인 (key가 "1(1)", "1(5)" 등인지 확인)
+    /// 프롤로그 절인지 확인 (key가 "(1)", "(5)" 등인지 확인)
     private func isPrologueVerse(verseKey: String) -> Bool {
         if chapter != 1 || book.id != "sir" { return false }
         if editionID != "knb" && editionID != "knbnotes" { return false }
-        return verseKey.contains("(") && verseKey.contains(")")
+        return verseKey.hasPrefix("(") && verseKey.hasSuffix(")")
     }
 
     /// 프롤로그 절 번호 추출 (예: "1(5)" → 5)
@@ -906,7 +906,7 @@ struct ReaderPane: View {
     private func prologueVerseView(verse: Verse) -> some View {
         VStack(alignment: .leading, spacing: 0) {
             // 첫 번째 프롤로그 절에 "머리글" 헤딩만 표시
-            if verse.number == "1(1)" {
+            if verse.number == "(1)" {
                 Text("머리글")
                     .font(.system(size: settings.fontSize, weight: .regular, design: .default))
                     .foregroundStyle(settings.theme.secondary)
