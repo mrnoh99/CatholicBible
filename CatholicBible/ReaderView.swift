@@ -430,6 +430,9 @@ struct ReaderPane: View {
     @Environment(ReaderNavigation.self) private var navigation
     @Environment(KnbNotesStore.self) private var knbNotes
 
+    /// 원본 헤딩 데이터 (Sirach 프롤로그용, BibleStore의 정제 로직 우회)
+    @State private var rawHeadings: [String: [String: [String: String]]] = [:]
+
     @State private var localChapter = 0
     /// 대기 이동 직후 한 번 스크롤할 절(강조 색은 navigation.activeHighlight가 담당).
     @State private var scrollTarget: Int?
@@ -463,11 +466,13 @@ struct ReaderPane: View {
         showsTitles ? cachedTitleMap : [:]
     }
 
-    /// 프롤로그 텍스트 (Sirach ch1 같은 특수 장에서만 표시)
+    /// 원본 헤딩 데이터에서 프롤로그 추출 (BibleStore의 정제 로직 우회)
     private var prologueText: String? {
         guard chapter == 1 && book.id == "sir" else { return nil }
-        guard let text = titleMap["1"] else { return nil }
-        return isPrologueText(text) ? text : nil
+        let sirHeadings = rawHeadings["sir"] ?? [:]
+        guard let headingsForCh1 = sirHeadings["1"] else { return nil }
+        guard let rawText = headingsForCh1["1"] else { return nil }
+        return isPrologueText(rawText) ? rawText : nil
     }
 
     /// 프롤로그 텍스트 여부 (verse markers like (1), (5), (10)... 포함)
@@ -521,6 +526,7 @@ struct ReaderPane: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .onAppear {
             print("📱 ReaderPane.onAppear: role=\(role), book=\(book.id), chapter=\(chapter), linked=\(linkedChapter?.wrappedValue ?? -1), local=\(localChapter)")
+            loadRawHeadings()
             initChapterIfNeeded()
             updateTitleMapCache()
             updateVersesCache()
@@ -651,6 +657,16 @@ struct ReaderPane: View {
 
     private func updateVersesCache() {
         updateVersesCacheWithChapter(chapter)
+    }
+
+    private func loadRawHeadings() {
+        guard rawHeadings.isEmpty else { return }
+        if let headingsURL = Bundle.main.url(forResource: "KnbHeadings_ko", withExtension: "json"),
+           let headingsData = try? Data(contentsOf: headingsURL) {
+            if let decoded = try? JSONDecoder().decode([String: [String: [String: String]]].self, from: headingsData) {
+                rawHeadings = decoded
+            }
+        }
     }
 
     private func updateVersesCacheWithChapter(_ ch: Int) {
