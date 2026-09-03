@@ -653,8 +653,12 @@ struct ReaderPane: View {
 
             // Refresh button - clears cache and reloads content
             Button { refreshCache() } label: {
-                Image(systemName: "arrow.clockwise").foregroundStyle(.secondary)
+                Image(systemName: "arrow.clockwise")
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundStyle(.secondary)
             }
+            .padding(.horizontal, 10)
+            .padding(.vertical, 8)
             .accessibilityLabel("새로고침")
 
             if let onClose {
