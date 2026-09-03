@@ -1226,7 +1226,6 @@ struct SpreadReader: View {
         VStack(spacing: 0) {
             header
             spreadContent
-            bottomBar
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .onAppear { initChapterIfNeeded() }
@@ -1327,6 +1326,26 @@ struct SpreadReader: View {
                 chip(store.bookShortName(edition: edition, book: book))
             }
             Spacer(minLength: 0)
+
+            Button { withAnimation { prevSpread() } } label: {
+                Image(systemName: "chevron.left")
+                    .font(.system(size: 16, weight: .semibold))
+            }
+            .disabled(atFirst)
+            .opacity(atFirst ? 0.4 : 1)
+
+            Button { showChapterPicker = true } label: {
+                Text("\(book.chapterLabel(chapter))")
+                    .font(.caption.monospacedDigit())
+            }
+            .foregroundStyle(settings.theme.secondary)
+
+            Button { withAnimation { nextSpread() } } label: {
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 16, weight: .semibold))
+            }
+            .disabled(atLast)
+            .opacity(atLast ? 0.4 : 1)
         }
         .font(.subheadline)
         .padding(.horizontal, 16).padding(.vertical, 8)
