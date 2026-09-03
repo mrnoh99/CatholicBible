@@ -466,9 +466,10 @@ struct ReaderPane: View {
         showsTitles ? cachedTitleMap : [:]
     }
 
-    /// 원본 헤딩 데이터에서 프롤로그 추출 (BibleStore의 정제 로직 우회)
+    /// 원본 헤딩 데이터에서 프롤로그 추출 (knb 판본에만 표시)
     private var prologueText: String? {
         guard chapter == 1 && book.id == "sir" else { return nil }
+        guard editionID == "knb" else { return nil }
         let sirHeadings = rawHeadings["sir"] ?? [:]
         guard let headingsForCh1 = sirHeadings["1"] else { return nil }
         guard let rawText = headingsForCh1["1"] else { return nil }
@@ -483,10 +484,10 @@ struct ReaderPane: View {
         return regex.firstMatch(in: text, range: range) != nil
     }
 
-    /// verse 1의 제목이 프롤로그일 경우 제외하고 반환
+    /// knb 판본에서만 프롤로그로 인한 중복 제목 제외
     private func filteredTitleMap() -> [String: String] {
         var result = titleMap
-        if chapter == 1 && book.id == "sir" && prologueText != nil {
+        if editionID == "knb" && chapter == 1 && book.id == "sir" && prologueText != nil {
             result.removeValue(forKey: "1")
         }
         return result
