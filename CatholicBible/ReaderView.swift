@@ -859,6 +859,12 @@ struct ReaderPane: View {
                                 .id(verse.number)
                                 .padding(.bottom, prologue.last?.number == verse.number ? 16 : 0)
                         }
+                        // 프롤로그 후 섹션 제목 표시 (시라의 지혜 제1부)
+                        if let sectionTitle = titleMap["1_intro"] {
+                            SectionTitleView(text: sectionTitle, bookID: book.id, chapter: chapter, linkable: true)
+                                .padding(.top, 8)
+                                .padding(.bottom, 8)
+                        }
                     }
                     // 일반 절들 표시
                     ForEach(regular) { verse in
