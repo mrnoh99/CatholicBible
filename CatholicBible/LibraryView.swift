@@ -185,14 +185,9 @@ struct LibraryView: View {
              available: store.hasText(edition: edition, book: book))
         }
         if bookData.count > 1 {
-            // 카테고리 라인은 전개/수축만 하고 책 선택을 변경하지 않도록
-            // tag(nil)을 사용해서 List의 선택에서 제외
-            DisclosureGroup {
-                ForEach(bookData, id: \.book.id) { data in
-                    bookRow(book: data.book, displayName: data.displayName,
-                           fullName: data.fullName, available: data.available)
-                }
-            } label: {
+            // 카테고리 라인은 터치에 반응하지 않도록 처리
+            // 단순히 헤더 역할만 수행
+            VStack(alignment: .leading, spacing: 0) {
                 HStack(spacing: 8) {
                     Image(systemName: category == .gospels ? "book.pages" : "book")
                         .font(.system(size: 13, weight: .semibold))
@@ -202,9 +197,17 @@ struct LibraryView: View {
                     Text(category.title)
                         .font(.system(size: 14, weight: .semibold, design: .default))
                         .foregroundStyle(.primary)
+
+                    Spacer()
+                }
+                .padding(.vertical, 8)
+                .tag(nil as String?)
+
+                ForEach(bookData, id: \.book.id) { data in
+                    bookRow(book: data.book, displayName: data.displayName,
+                           fullName: data.fullName, available: data.available)
                 }
             }
-            .tag(nil as String?)  // 카테고리는 선택되지 않음
         } else {
             ForEach(bookData, id: \.book.id) { data in
                 bookRow(book: data.book, displayName: data.displayName,
