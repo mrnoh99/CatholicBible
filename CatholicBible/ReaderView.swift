@@ -901,33 +901,23 @@ struct ReaderPane: View {
             }
     }
 
-    /// 프롤로그 절 표시 (verse 객체 기반)
+    /// 프롤로그 절 표시 - 첫 절에만 "머리글" 헤딩 표시하고 나머지는 일반 절과 동일
     private func prologueVerseView(verse: Verse) -> some View {
-        if let prologueNum = prologueVerseNumber(verseKey: verse.number) {
-            return AnyView(
-                VStack(alignment: .leading, spacing: 0) {
-                    // 첫 절에 "머리글" 헤딩 표시
-                    if prologueNum == 1 {
-                        Text("머리글")
-                            .font(.system(size: settings.fontSize, weight: .regular, design: .default))
-                            .foregroundStyle(settings.theme.secondary)
-                            .padding(.bottom, 4)
-                    }
-                    // 절 번호와 텍스트 (일반 본문과 동일한 스타일)
-                    HStack(alignment: .firstTextBaseline, spacing: 3) {
-                        Text("(\(prologueNum))")
-                            .font(.system(size: settings.fontSize, weight: .regular, design: .default))
-                            .foregroundStyle(settings.theme.text)
-                        Text(verse.text)
-                            .font(.system(size: settings.fontSize, weight: .regular, design: .default))
-                            .lineSpacing(settings.lineSpacing)
-                            .foregroundStyle(settings.theme.text)
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                }
-            )
+        VStack(alignment: .leading, spacing: 0) {
+            // 첫 번째 프롤로그 절에 "머리글" 헤딩만 표시
+            if verse.number == "1(1)" {
+                Text("머리글")
+                    .font(.system(size: settings.fontSize, weight: .regular, design: .default))
+                    .foregroundStyle(settings.theme.secondary)
+                    .padding(.bottom, 4)
+            }
+            // 일반 절과 동일한 스타일로 표시
+            VerseRowView(edition: edition, book: book, chapter: chapter,
+                        verse: verse,
+                        highlighted: navigation.activeHighlight?.matches(bookID: book.id, chapter: chapter, verse: verse.number) ?? false,
+                        onOpenNote: onOpenNote,
+                        markerColor: UIColor(Color.accentColor))
         }
-        return AnyView(EmptyView())
     }
 
     private var versesScroll: some View {
