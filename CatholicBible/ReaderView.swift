@@ -709,14 +709,24 @@ struct ReaderPane: View {
                     .environment(\.openURL, OpenURLAction { url in
                         let items = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems ?? []
                         func q(_ k: String) -> String? { items.first { $0.name == k }?.value }
-                        if url.scheme == "catholicbible", url.host == "xref" {
-                            if let b = q("b"), let cs = q("c"), let c = Int(cs),
-                               let vs = q("v"), let v = Int(vs) {
-                                onOpenXref(XrefTarget(bookID: b, chapter: c, verse: v,
-                                                      endChapter: q("ec").flatMap { Int($0) } ?? 0,
-                                                      endVerse: q("ev").flatMap { Int($0) } ?? 0))
+                        if url.scheme == "catholicbible" {
+                            // 주석 마커 링크 (N))
+                            if url.host == "note" {
+                                if let b = q("b"), let cs = q("c"), let c = Int(cs), let n = q("n") {
+                                    onOpenNote(VerseRef(bookID: b, chapter: c, verse: n), "")
+                                }
+                                return .handled
                             }
-                            return .handled
+                            // 교차 참조 링크 (cross-reference)
+                            if url.host == "xref" {
+                                if let b = q("b"), let cs = q("c"), let c = Int(cs),
+                                   let vs = q("v"), let v = Int(vs) {
+                                    onOpenXref(XrefTarget(bookID: b, chapter: c, verse: v,
+                                                          endChapter: q("ec").flatMap { Int($0) } ?? 0,
+                                                          endVerse: q("ev").flatMap { Int($0) } ?? 0))
+                                }
+                                return .handled
+                            }
                         }
                         return .systemAction
                     })
@@ -1238,14 +1248,24 @@ struct SpreadReader: View {
                             .environment(\.openURL, OpenURLAction { url in
                                 let items = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems ?? []
                                 func q(_ k: String) -> String? { items.first { $0.name == k }?.value }
-                                if url.scheme == "catholicbible", url.host == "xref" {
-                                    if let b = q("b"), let cs = q("c"), let c = Int(cs),
-                                       let vs = q("v"), let v = Int(vs) {
-                                        onOpenXref(XrefTarget(bookID: b, chapter: c, verse: v,
-                                                              endChapter: q("ec").flatMap { Int($0) } ?? 0,
-                                                              endVerse: q("ev").flatMap { Int($0) } ?? 0))
+                                if url.scheme == "catholicbible" {
+                                    // 주석 마커 링크 (N))
+                                    if url.host == "note" {
+                                        if let b = q("b"), let cs = q("c"), let c = Int(cs), let n = q("n") {
+                                            onOpenNote(VerseRef(bookID: b, chapter: c, verse: n), "")
+                                        }
+                                        return .handled
                                     }
-                                    return .handled
+                                    // 교차 참조 링크 (cross-reference)
+                                    if url.host == "xref" {
+                                        if let b = q("b"), let cs = q("c"), let c = Int(cs),
+                                           let vs = q("v"), let v = Int(vs) {
+                                            onOpenXref(XrefTarget(bookID: b, chapter: c, verse: v,
+                                                                  endChapter: q("ec").flatMap { Int($0) } ?? 0,
+                                                                  endVerse: q("ev").flatMap { Int($0) } ?? 0))
+                                        }
+                                        return .handled
+                                    }
                                 }
                                 return .systemAction
                             })
