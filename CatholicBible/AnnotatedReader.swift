@@ -83,6 +83,10 @@ struct AnnotatedReader: View {
         if let sharedChapter { sharedChapter.wrappedValue = value } else { localChapter = value }
     }
 
+    private func isPrologueVerse(verseKey: String) -> Bool {
+        verseKey.hasPrefix("(") && verseKey.hasSuffix(")")
+    }
+
     var body: some View {
         VStack(spacing: 0) {
             if showHeader { header }
@@ -399,21 +403,48 @@ struct AnnotatedReader: View {
                                     return handleURLInternal(url)
                                 })
                         }
-                        VerseRowView(edition: edition, book: book, chapter: chapter,
-                                     verse: verse,
-                                     highlighted: navigation.activeHighlight?.matches(bookID: book.id, chapter: chapter, verse: verse.number) ?? false,
-                                     onOpenNote: onOpenNote,
-                                     markerColor: UIColor(Color.accentColor))
-                            .environment(\.openURL, OpenURLAction { url in
-                                print("🔗 [VerseRowView] openURL called: \(url)")
-                                return handleURLInternal(url)
-                            })
+                        if isPrologueVerse(verseKey: verse.number) {
+                            prologueVerseView(verse: verse)
+                        } else {
+                            VerseRowView(edition: edition, book: book, chapter: chapter,
+                                         verse: verse,
+                                         highlighted: navigation.activeHighlight?.matches(bookID: book.id, chapter: chapter, verse: verse.number) ?? false,
+                                         onOpenNote: onOpenNote,
+                                         markerColor: UIColor(Color.accentColor))
+                                .environment(\.openURL, OpenURLAction { url in
+                                    print("🔗 [VerseRowView] openURL called: \(url)")
+                                    return handleURLInternal(url)
+                                })
+                        }
                     }
                     .id(verse.number)
                 }
             }
             .scrollTargetLayout()
             .padding(.top, 20)
+        }
+    }
+
+    @ViewBuilder
+    private func prologueVerseView(verse: Verse) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            // 첫 번째 프롤로그 절에 "머리글" 헤딩만 표시
+            if verse.number == "(1)" {
+                Text("머리글")
+                    .font(.system(size: settings.fontSize, weight: .regular, design: .default))
+                    .foregroundStyle(settings.theme.secondary)
+                    .padding(.bottom, 4)
+            }
+            // 일반 절과 동일한 스타일로 표시
+            VerseRowView(edition: edition, book: book, chapter: chapter,
+                        verse: verse,
+                        highlighted: navigation.activeHighlight?.matches(bookID: book.id, chapter: chapter, verse: verse.number) ?? false,
+                        onOpenNote: onOpenNote,
+                        markerColor: UIColor(Color.accentColor))
+                .environment(\.openURL, OpenURLAction { url in
+                    print("🔗 [VerseRowView] openURL called: \(url)")
+                    return handleURLInternal(url)
+                })
         }
     }
 
