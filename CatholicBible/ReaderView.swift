@@ -469,7 +469,7 @@ struct ReaderPane: View {
     /// 원본 헤딩 데이터에서 프롤로그 추출 (knb 판본에만 표시)
     private var prologueText: String? {
         guard chapter == 1 && book.id == "sir" else { return nil }
-        guard editionID == "knb" else { return nil }
+        guard editionID == "knb" || editionID == "knbnotes" else { return nil }
         let sirHeadings = rawHeadings["sir"] ?? [:]
         guard let headingsForCh1 = sirHeadings["1"] else { return nil }
         guard let rawText = headingsForCh1["1"] else { return nil }
