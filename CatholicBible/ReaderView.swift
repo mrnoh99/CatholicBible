@@ -484,10 +484,10 @@ struct ReaderPane: View {
         return regex.firstMatch(in: text, range: range) != nil
     }
 
-    /// knb, knbnotes 판본에서 프롤로그로 인한 중복 제목 제외
+    /// knb 판본에서만 프롤로그로 인한 중복 제목 제외
     private func filteredTitleMap() -> [String: String] {
         var result = titleMap
-        if (editionID == "knb" || editionID == "knbnotes") && chapter == 1 && book.id == "sir" && prologueText != nil {
+        if editionID == "knb" && chapter == 1 && book.id == "sir" && prologueText != nil {
             result.removeValue(forKey: "1")
         }
         return result
@@ -495,8 +495,7 @@ struct ReaderPane: View {
 
     /// 프롤로그 절인지 확인 (key가 "1(1)", "1(5)" 등인지 확인)
     private func isPrologueVerse(verseKey: String) -> Bool {
-        if chapter != 1 || book.id != "sir" { return false }
-        if editionID != "knb" && editionID != "knbnotes" { return false }
+        if editionID != "knb" || chapter != 1 || book.id != "sir" { return false }
         return verseKey.contains("(") && verseKey.contains(")")
     }
 
