@@ -96,12 +96,23 @@ struct AnnotatedReader: View {
                 trackedBookID = currentBook.id
                 bookID = currentBook.id
                 previousBookID = currentBook.id
-                print("🔄 Set bookID to \(currentBook.id), initChapterIfNeeded...")
-                initChapterIfNeeded()
-                print("📚 Updating caches for book \(currentBook.id)...")
-                updateVersesCache()
-                updateNotesCache()
-                updateTitleMapCache()
+
+                // If chapter is already set (e.g., from sharedChapter binding), use it immediately
+                // This handles view restoration when mode switches (본문·주석 ↔ 한페이지)
+                if chapter > 0 {
+                    print("🔄 Chapter already set to \(chapter) - updating caches directly")
+                    updateVersesCache()
+                    updateNotesCache()
+                    updateTitleMapCache()
+                } else {
+                    print("🔄 Chapter is 0, initializing from history...")
+                    initChapterIfNeeded()
+                    print("📚 Updating caches for book \(currentBook.id)...")
+                    updateVersesCache()
+                    updateNotesCache()
+                    updateTitleMapCache()
+                }
+
                 print("✅ Cache update complete. Chapter: \(chapter), CachedVerses: \(cachedVerses.count)")
                 isInitialized = true
             }

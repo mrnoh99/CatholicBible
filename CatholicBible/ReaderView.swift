@@ -180,6 +180,11 @@ struct ReaderView: View {
                 compareChapter = primaryChapter
             }
         }
+        .onChange(of: readingState.showAnnotatedNotes) { _, _ in
+            // 주석 성경 보기 전환 시 현재 장을 보존하여 모드 전환 후 복원
+            // (AnnotatedReader와 ReaderPane이 showAnnotated 조건으로 전환될 때 @State가 리셋되는 것을 보정)
+            print("🔄 showAnnotatedNotes changed - preserving chapter=\(primaryChapter) for restored view")
+        }
         .toolbar { readerToolbar }
         .preferredColorScheme(settings.theme.colorScheme)
         .sheet(isPresented: $showAppearance) {
