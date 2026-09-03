@@ -1364,134 +1364,42 @@ struct SpreadReader: View {
     // MARK: 헤더
 
     private var header: some View {
-        VStack(spacing: 0) {
-            HStack(spacing: 8) {
-                Button { navigation.selectedBookID = nil } label: {
-                    Label("첫화면으로", systemImage: "house.fill")
+        HStack(spacing: 10) {
+            Menu {
+                Picker("판본", selection: $editionID) {
+                    ForEach(Editions.all) { ed in Text(ed.name).tag(ed.id) }
                 }
-                .help("첫화면으로")
-
-                Spacer()
-
-                Button { navigation.goBack() } label: {
-                    Image(systemName: "chevron.left")
-                        .font(.system(size: 16, weight: .semibold))
-                        .contentShape(Circle())
-                }
-                .disabled(!navigation.canGoBack)
-                .help("이전 페이지")
-                .opacity(navigation.canGoBack ? 1 : 0.4)
-
-                Text("성경 읽기")
-                    .font(.system(size: 16, weight: .semibold, design: .default))
-
-                Button { navigation.goForward() } label: {
-                    Image(systemName: "chevron.right")
-                        .font(.system(size: 16, weight: .semibold))
-                        .contentShape(Circle())
-                }
-                .disabled(!navigation.canGoForward)
-                .help("다음 페이지")
-                .opacity(navigation.canGoForward ? 1 : 0.4)
-
-                Spacer()
-
-                Menu {
-                    Section("보기") {
-                        Button(action: {
-                            readingState.readerLayout = .single
-                            readingState.showAnnotatedNotes = false
-                        }) { Label("한 페이지", systemImage: "rectangle.portrait") }
-
-                        Button(action: {
-                            readingState.readerLayout = .spread
-                            readingState.showAnnotatedNotes = false
-                        }) { Label("두 페이지 (펼침)", systemImage: "book.pages") }
-
-                        Button(action: {
-                            readingState.readerLayout = .single
-                            readingState.showAnnotatedNotes = true
-                        }) { Label("본문·주석", systemImage: "books.vertical") }
-
-                        Button(action: {
-                            readingState.readerLayout = .compare
-                            readingState.showAnnotatedNotes = false
-                        }) { Label("판본 비교", systemImage: "rectangle.split.2x1") }
-                    }
-                    if readingState.readerLayout == .compare {
-                        Section {
-                            Button(action: { readingState.compareLinked.toggle() }) {
-                                Label(readingState.compareLinked ? "두 열 연동됨" : "두 열 분리됨",
-                                      systemImage: readingState.compareLinked ? "link.circle.fill" : "link.circle")
-                            }
-                        }
-                    }
-                    Section("도구") {
-                        Button(action: { showMass = true }) {
-                            Label("매일미사", systemImage: "sun.max")
-                        }
-                        Button(action: { showSearch = true }) {
-                            Label("찾기", systemImage: "magnifyingglass")
-                        }
-                        Button(action: { navigation.lookUp() }) {
-                            Label("사전", systemImage: "character.book.closed")
-                        }
-                        Button(action: { showBookmarks = true }) {
-                            Label("책갈피", systemImage: "bookmark")
-                        }
-                        Button(action: { showNotes = true }) {
-                            Label("노트", systemImage: "note.text")
-                        }
-                        Button(action: { showAppearance = true }) {
-                            Label("설정", systemImage: "gear")
-                        }
-                    }
-                } label: {
-                    Image(systemName: "ellipsis.circle")
-                        .font(.system(size: 15, weight: .semibold))
-                }
+            } label: { chip(edition.shortName) }
+            Button { showBookPicker = true } label: {
+                chip(store.bookShortName(edition: edition, book: book))
             }
-            .font(.subheadline)
-            .padding(.horizontal, 16).padding(.vertical, 8)
-            .background(settings.theme.background)
+            Spacer(minLength: 0)
 
-            HStack(spacing: 10) {
-                Menu {
-                    Picker("판본", selection: $editionID) {
-                        ForEach(Editions.all) { ed in Text(ed.name).tag(ed.id) }
-                    }
-                } label: { chip(edition.shortName) }
-                Button { showBookPicker = true } label: {
-                    chip(store.bookShortName(edition: edition, book: book))
-                }
-                Spacer(minLength: 0)
-
-                Button { withAnimation { prevSpread() } } label: {
-                    Image(systemName: "chevron.left")
-                        .font(.system(size: 16, weight: .semibold))
-                }
-                .disabled(atFirst)
-                .opacity(atFirst ? 0.4 : 1)
-
-                Button { showChapterPicker = true } label: {
-                    Text("\(book.chapterLabel(chapter))")
-                        .font(.caption.monospacedDigit())
-                }
-                .foregroundStyle(settings.theme.secondary)
-
-                Button { withAnimation { nextSpread() } } label: {
-                    Image(systemName: "chevron.right")
-                        .font(.system(size: 16, weight: .semibold))
-                }
-                .disabled(atLast)
-                .opacity(atLast ? 0.4 : 1)
+            Button { withAnimation { prevSpread() } } label: {
+                Image(systemName: "chevron.left")
+                    .font(.system(size: 16, weight: .semibold))
             }
-            .font(.subheadline)
-            .padding(.horizontal, 16).padding(.vertical, 8)
-            .background(settings.theme.background)
-            .overlay(alignment: .bottom) {
-                Rectangle().fill(settings.theme.secondary.opacity(0.2)).frame(height: 0.5)
+            .disabled(atFirst)
+            .opacity(atFirst ? 0.4 : 1)
+
+            Button { showChapterPicker = true } label: {
+                Text("\(book.chapterLabel(chapter))")
+                    .font(.caption.monospacedDigit())
             }
+            .foregroundStyle(settings.theme.secondary)
+
+            Button { withAnimation { nextSpread() } } label: {
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 16, weight: .semibold))
+            }
+            .disabled(atLast)
+            .opacity(atLast ? 0.4 : 1)
+        }
+        .font(.subheadline)
+        .padding(.horizontal, 16).padding(.vertical, 8)
+        .background(settings.theme.background)
+        .overlay(alignment: .bottom) {
+            Rectangle().fill(settings.theme.secondary.opacity(0.2)).frame(height: 0.5)
         }
     }
 
