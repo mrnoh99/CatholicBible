@@ -209,37 +209,6 @@ struct ContentView: View {
                 ReaderView(book: book)
                     // .id() 제거: 책이 바뀔 때 전체 뷰를 재구성하지 않도록 함 (성능 개선)
                     // 대신 ReaderView에서 book.id onChange로 상태를 초기화
-                    .toolbar {
-                        ToolbarItemGroup(placement: .primaryAction) {
-                            Button(action: { showMass = true }) {
-                                Image(systemName: "sun.max")
-                            }
-                            .help("매일미사")
-                            Button(action: { showSearch = true }) {
-                                Image(systemName: "magnifyingglass")
-                            }
-                            .help("검색")
-                            Button(action: { navigation.lookUp() }) {
-                                Image(systemName: "character.book.closed")
-                            }
-                            .help("사전")
-                            Button {
-                                showBookmarks = true
-                            } label: {
-                                Label("책갈피", systemImage: "bookmark")
-                            }
-                            Button {
-                                showNotes = true
-                            } label: {
-                                Label("노트", systemImage: "note.text")
-                            }
-                            Button {
-                                showSettings = true
-                            } label: {
-                                Label("설정", systemImage: "gear")
-                            }
-                        }
-                    }
             } else {
                 VStack(spacing: 0) {
                     // iPad/Mac에서 상단 메뉴 표시
