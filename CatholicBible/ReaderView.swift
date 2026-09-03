@@ -185,10 +185,24 @@ struct ReaderView: View {
                 compareChapter = primaryChapter
             }
         }
-        .onChange(of: readingState.showAnnotatedNotes) { _, _ in
-            // 주석 성경 보기 전환 시 현재 장을 보존하여 모드 전환 후 복원
-            // (AnnotatedReader와 ReaderPane이 showAnnotated 조건으로 전환될 때 @State가 리셋되는 것을 보정)
-            print("🔄 showAnnotatedNotes changed - preserving chapter=\(primaryChapter) for restored view")
+        .onChange(of: readingState.showAnnotatedNotes) { _, isShowingAnnotated in
+            // 모드 전환 시 chapter 동기화
+            // 한페이지/펼침 ↔ 본문·주석 전환할 때 현재 장을 보존했다가 복원
+            if isShowingAnnotated {
+                // 한페이지/펼침 → 본문·주석으로 전환
+                // annotatedChapter가 0이면 primaryChapter 값으로 초기화 (처음 진입)
+                if annotatedChapter == 0 && primaryChapter > 0 {
+                    annotatedChapter = primaryChapter
+                    print("📖 Switching to annotated: syncing chapter \(primaryChapter)")
+                }
+            } else {
+                // 본문·주석 → 한페이지/펼침으로 전환
+                // primaryChapter가 0이면 annotatedChapter 값으로 초기화 (처음 진입)
+                if primaryChapter == 0 && annotatedChapter > 0 {
+                    primaryChapter = annotatedChapter
+                    print("📖 Switching from annotated: syncing chapter \(annotatedChapter)")
+                }
+            }
         }
         .toolbar { readerToolbar }
         .preferredColorScheme(settings.theme.colorScheme)
