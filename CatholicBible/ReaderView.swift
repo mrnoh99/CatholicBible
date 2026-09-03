@@ -493,6 +493,36 @@ struct ReaderPane: View {
         return result
     }
 
+    /// 프롤로그 절인지 확인 (key가 "1(1)", "1(5)" 등인지 확인)
+    private func isPrologueVerse(verseKey: String) -> Bool {
+        if editionID != "knb" || chapter != 1 || book.id != "sir" { return false }
+        return verseKey.contains("(") && verseKey.contains(")")
+    }
+
+    /// 프롤로그 절 번호 추출 (예: "1(5)" → 5)
+    private func prologueVerseNumber(verseKey: String) -> Int? {
+        guard let match = verseKey.range(of: "\\((\\d+)\\)", options: .regularExpression) else { return nil }
+        let numStr = String(verseKey[match]).dropFirst().dropLast()
+        return Int(numStr)
+    }
+
+    /// 프롤로그 절들을 정렬된 순서로 반환
+    private var prologueVerses: [Verse] {
+        let verses = cachedVerses
+        let prologue = verses.filter { isPrologueVerse(verseKey: $0.number) }
+        return prologue.sorted { a, b in
+            let numA = prologueVerseNumber(verseKey: a.number) ?? 0
+            let numB = prologueVerseNumber(verseKey: b.number) ?? 0
+            return numA < numB
+        }
+    }
+
+    /// 일반 절들 (프롤로그 절 제외)
+    private var regularVerses: [Verse] {
+        let verses = cachedVerses
+        return verses.filter { !isPrologueVerse(verseKey: $0.number) }
+    }
+
     /// 표시 중인 장. 연동 시 공유 장, 아니면 이 열의 자기 장.
     private var chapter: Int {
         get { linkedChapter?.wrappedValue ?? localChapter }
@@ -814,17 +844,24 @@ struct ReaderPane: View {
 
     private var versesContent: some View {
         let verses = cachedVerses
+        let prologue = prologueVerses
+        let regular = regularVerses
         return VStack(alignment: .leading, spacing: 0) {
             chapterHeader
             if verses.isEmpty {
                 MissingTextView(edition: edition, book: book).padding(.top, 40)
             } else {
                 LazyVStack(alignment: .leading, spacing: settings.lineSpacing * 0.9) {
-                    if let prologue = prologueText {
-                        prologueView(text: prologue)
-                            .padding(.bottom, 16)
+                    // 프롤로그 절들 표시
+                    if !prologue.isEmpty {
+                        ForEach(prologue) { verse in
+                            prologueVerseView(verse: verse)
+                                .id(verse.number)
+                                .padding(.bottom, prologue.last?.number == verse.number ? 16 : 0)
+                        }
                     }
-                    ForEach(verses) { verse in
+                    // 일반 절들 표시
+                    ForEach(regular) { verse in
                         verseRowContent(verse: verse)
                             .id(verse.number)
                     }
@@ -856,6 +893,30 @@ struct ReaderPane: View {
             .overlay(alignment: .leading) {
                 Rectangle().fill(Color.accentColor.opacity(0.3)).frame(width: 3)
             }
+    }
+
+    /// 프롤로그 절 표시 (verse 객체 기반)
+    private func prologueVerseView(verse: Verse) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            // 절 번호 (예: "(1)")
+            if let prologueNum = prologueVerseNumber(verseKey: verse.number) {
+                HStack(alignment: .firstTextBaseline, spacing: 4) {
+                    Text("(\(prologueNum))")
+                        .font(.system(size: settings.fontSize * 0.75, weight: .semibold, design: .default))
+                        .foregroundStyle(Color.accentColor)
+                    Text(verse.text)
+                        .font(.system(size: settings.fontSize, weight: .regular, design: .default))
+                        .lineSpacing(settings.lineSpacing)
+                        .foregroundStyle(settings.theme.text)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
+        }
+        .padding(.leading, 8)
+        .padding(.vertical, 8)
+        .overlay(alignment: .leading) {
+            Rectangle().fill(Color.accentColor.opacity(0.3)).frame(width: 3)
+        }
     }
 
     private var versesScroll: some View {
