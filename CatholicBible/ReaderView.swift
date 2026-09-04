@@ -297,32 +297,27 @@ struct ReaderView: View {
         }
 
         ToolbarItem(placement: .principal) {
-            if layout == .spread {
+            HStack(spacing: 8) {
+                Button { navigation.goBack() } label: {
+                    Image(systemName: "chevron.left")
+                        .font(.system(size: 16, weight: .semibold))
+                        .contentShape(Circle())
+                }
+                .disabled(layout == .spread || !navigation.canGoBack)
+                .help("이전 페이지")
+                .opacity((layout == .spread || !navigation.canGoBack) ? 0.4 : 1)
+
                 Text("성경 읽기")
                     .font(.system(size: 16, weight: .semibold, design: .default))
-            } else {
-                HStack(spacing: 8) {
-                    Button { navigation.goBack() } label: {
-                        Image(systemName: "chevron.left")
-                            .font(.system(size: 16, weight: .semibold))
-                            .contentShape(Circle())
-                    }
-                    .disabled(!navigation.canGoBack)
-                    .help("이전 페이지")
-                    .opacity(navigation.canGoBack ? 1 : 0.4)
 
-                    Text("성경 읽기")
-                        .font(.system(size: 16, weight: .semibold, design: .default))
-
-                    Button { navigation.goForward() } label: {
-                        Image(systemName: "chevron.right")
-                            .font(.system(size: 16, weight: .semibold))
-                            .contentShape(Circle())
-                    }
-                    .disabled(!navigation.canGoForward)
-                    .help("다음 페이지")
-                    .opacity(navigation.canGoForward ? 1 : 0.4)
+                Button { navigation.goForward() } label: {
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 16, weight: .semibold))
+                        .contentShape(Circle())
                 }
+                .disabled(layout == .spread || !navigation.canGoForward)
+                .help("다음 페이지")
+                .opacity((layout == .spread || !navigation.canGoForward) ? 0.4 : 1)
             }
         }
 
