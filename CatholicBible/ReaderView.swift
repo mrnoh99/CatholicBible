@@ -614,6 +614,16 @@ struct ReaderPane: View {
             updateVersesCache()
         }
         .onChange(of: chapter) { _, new in
+            // 장이 0인 경우 자동 새로고침 (경고 상태 "ch:0 linked:0 local:0" 감지)
+            if new == 0 && isInitialized {
+                let linkedValue = linkedChapter?.wrappedValue ?? -1
+                if linkedValue <= 0 && localChapter == 0 {
+                    print("⚠️  Chapter became 0 with linked:\(linkedValue) local:0 - auto-refreshing")
+                    refreshCache()
+                    return
+                }
+            }
+
             guard new > 0 else { return }
             // 캐시 업데이트 (모든 pane에서 필요)
             updateTitleMapCache()
