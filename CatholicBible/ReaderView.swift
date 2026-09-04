@@ -1394,25 +1394,17 @@ struct SpreadReader: View {
             }
             Spacer(minLength: 0)
 
-            Button { withAnimation { prevSpread() } } label: {
-                Image(systemName: "chevron.left")
-                    .font(.system(size: 16, weight: .semibold))
+            Button {
+                spreadIndex = 0
+                contentSize = .zero
+            } label: {
+                Image(systemName: "arrow.clockwise")
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundStyle(.secondary)
             }
-            .disabled(atFirst)
-            .opacity(atFirst ? 0.4 : 1)
-
-            Button { showChapterPicker = true } label: {
-                Text("\(book.chapterLabel(chapter))")
-                    .font(.caption.monospacedDigit())
-            }
-            .foregroundStyle(settings.theme.secondary)
-
-            Button { withAnimation { nextSpread() } } label: {
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 16, weight: .semibold))
-            }
-            .disabled(atLast)
-            .opacity(atLast ? 0.4 : 1)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 8)
+            .accessibilityLabel("새로고침")
         }
         .font(.subheadline)
         .padding(.horizontal, 16).padding(.vertical, 8)
