@@ -1236,6 +1236,7 @@ struct SpreadReader: View {
         VStack(spacing: 0) {
             header
             spreadContent
+            bottomBar
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .onAppear { initChapterIfNeeded() }
