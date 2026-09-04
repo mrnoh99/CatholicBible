@@ -354,18 +354,18 @@ final class BibleStore {
             return result
         }.value
 
-        editions = loaded
-        isLoaded = true
-
-        // 로딩 결과 로깅
-        print("📊 로딩 완료: \(loaded.count)개 판본 로드됨")
-        for (editionID, editionText) in loaded {
-            let bookCount = editionText.books.count
-            print("  ✅ \(editionID): \(bookCount)권의 책")
-        }
-
-        // 로딩 완료
+        // Main thread에서만 state 업데이트 (레이스 컨디션 방지)
         DispatchQueue.main.async {
+            self.editions = loaded
+            self.isLoaded = true
+
+            // 로딩 결과 로깅
+            print("📊 로딩 완료: \(loaded.count)개 판본 로드됨")
+            for (editionID, editionText) in loaded {
+                let bookCount = editionText.books.count
+                print("  ✅ \(editionID): \(bookCount)권의 책")
+            }
+
             self.loadProgress = 1.0
             self.loadingMessage = "준비 완료"
         }
