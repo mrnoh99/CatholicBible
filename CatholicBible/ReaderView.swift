@@ -655,24 +655,24 @@ struct ReaderPane: View {
             return
         }
         guard chapter == 0 else { return }
-        if role == .primary, navigation.hasPending(forBook: ownerBookID),
-           let pending = navigation.pendingChapter {
+        if role == .primary, let pending = navigation.pendingChapter,
+           navigation.hasPending(forBook: book.id) {
             let c = clampChapter(pending)
             setChapter(c)
             navigation.pendingChapter = nil
-            scrollTarget = navigation.consumePending(forBook: ownerBookID)
+            scrollTarget = navigation.consumePending(forBook: book.id)
         } else {
             setChapter(readingState.lastChapter(edition: edition, book: book))
         }
     }
 
     private func applyPending() {
-        guard role == .primary, navigation.hasPending(forBook: ownerBookID),
-              let pending = navigation.pendingChapter else { return }
+        guard role == .primary, let pending = navigation.pendingChapter else { return }
+        guard navigation.hasPending(forBook: book.id) else { return }
         let c = clampChapter(pending)
         setChapter(c)
         navigation.pendingChapter = nil
-        scrollTarget = navigation.consumePending(forBook: ownerBookID)
+        scrollTarget = navigation.consumePending(forBook: book.id)
     }
 
     private func clampChapter(_ c: Int) -> Int { min(max(c, 1), book.chapterCount) }
@@ -1316,9 +1316,10 @@ struct SpreadReader: View {
     }
 
     private func applyPending() {
-        guard navigation.hasPending(forBook: ownerBookID), let p = navigation.pendingChapter else { return }
+        guard let p = navigation.pendingChapter else { return }
+        guard navigation.hasPending(forBook: book.id) else { return }
         setChapter(clampChapter(p)); navigation.pendingChapter = nil
-        scrollTarget = navigation.consumePending(forBook: ownerBookID)
+        scrollTarget = navigation.consumePending(forBook: book.id)
         spreadIndex = 0
     }
 

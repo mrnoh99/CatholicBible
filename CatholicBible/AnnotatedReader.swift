@@ -262,10 +262,11 @@ struct AnnotatedReader: View {
     }
 
     private func applyPending() {
-        guard navigation.hasPending(forBook: ownerBookID), let p = navigation.pendingChapter else { return }
+        guard let p = navigation.pendingChapter else { return }
+        guard navigation.hasPending(forBook: book.id) else { return }
         setChapter(min(max(p, 1), book.chapterCount))
         navigation.pendingChapter = nil
-        scrollTarget = navigation.consumePending(forBook: ownerBookID)
+        scrollTarget = navigation.consumePending(forBook: book.id)
     }
 
     private func parseBookSelection(_ picked: String) {
@@ -304,6 +305,14 @@ struct AnnotatedReader: View {
                 }
                 .font(.subheadline)
             }
+            Button { refreshCache() } label: {
+                Image(systemName: "arrow.clockwise")
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundStyle(.secondary)
+            }
+            .padding(.horizontal, 8)
+            .padding(.vertical, 6)
+            .accessibilityLabel("새로고침")
         }
         .font(.subheadline)
         .padding(.horizontal, 16).padding(.vertical, 8)
@@ -710,6 +719,40 @@ struct AnnotatedReader: View {
             }
         }
         cachedTitleMap = newMap
+    }
+
+    private func refreshCache() {
+        print("🔄 Refreshing cache for book=\(book.id), chapter=\(chapter), edition=\(editionID)")
+
+        // 1. Clear all caches
+        cachedVersesChapter = -1
+        cachedVersesEditionID = ""
+        cachedVersesBookID = ""
+        cachedVerses = []
+
+        cachedNotesChapter = -1
+        cachedNotesEditionID = ""
+        cachedNotesBookID = ""
+        cachedNotes = []
+
+        cachedTitleMapChapter = -1
+        cachedTitleMapEditionID = ""
+        cachedTitleMapBookID = ""
+        cachedTitleMap = [:]
+
+        // 2. Ensure chapter is valid (not 0)
+        let validChapter = chapter > 0 ? chapter : 1
+        if chapter <= 0 {
+            print("   ⚠️  Chapter was \(chapter), setting to 1")
+            setChapter(validChapter)
+        }
+
+        // 3. Reload everything with valid chapter
+        updateVersesCache(forcing: true)
+        updateNotesCache(forcing: true)
+        updateTitleMapCache(forcing: true)
+
+        print("✅ Cache refreshed: got \(cachedVerses.count) verses for \(book.id) ch.\(validChapter)")
     }
 }
 
