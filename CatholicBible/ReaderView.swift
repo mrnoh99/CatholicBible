@@ -575,27 +575,29 @@ struct ReaderPane: View {
             print("📖 \(roleStr) bookID changed: \(book.id), chapter=\(chapter), isFollower=\(isFollower), skipChapterRestore=\(skipChapterRestore)")
             // 캐시 무효화 (새 책의 장이 이전 책과 같은 번호일 수 있으므로 항상 무효화)
             cachedBookID = ""
-            if !isFollower && !skipChapterRestore {
-                let restoredChapter = readingState.lastChapter(edition: edition, book: book)
-                print("   → Restoring chapter \(restoredChapter) for \(book.id)")
-                setChapter(restoredChapter)
-                // 처음 로드 이후 책 선택 변경만 히스토리에 추가
-                // (단, 대기 이동이 있으면 호출하지 않음 - applyPending()가 처리함)
-                if isInitialized && role == .primary && navigation.pendingChapter == nil {
-                    navigation.open(bookID: book.id, chapter: restoredChapter)
+            // 대기 이동이 없을 때만 장 복원 (applyPending()이 대기 장을 처리함)
+            if navigation.pendingChapter == nil {
+                if !isFollower && !skipChapterRestore {
+                    let restoredChapter = readingState.lastChapter(edition: edition, book: book)
+                    print("   → Restoring chapter \(restoredChapter) for \(book.id)")
+                    setChapter(restoredChapter)
+                    // 처음 로드 이후 책 선택 변경만 히스토리에 추가
+                    if isInitialized && role == .primary {
+                        navigation.open(bookID: book.id, chapter: restoredChapter)
+                    }
+                } else if isFollower && chapter <= 0 {
+                    // Linked secondary: ensure chapter is valid (shouldn't be 0)
+                    let validChapter = max(1, readingState.lastChapter(edition: edition, book: book))
+                    setChapter(validChapter)
+                    print("   ✓ Secondary linked: set chapter to \(validChapter) for \(book.id)")
                 }
-            } else if isFollower && chapter <= 0 {
-                // Linked secondary: ensure chapter is valid (shouldn't be 0)
-                let validChapter = max(1, readingState.lastChapter(edition: edition, book: book))
-                setChapter(validChapter)
-                print("   ✓ Secondary linked: set chapter to \(validChapter) for \(book.id)")
-            }
-            // 또는: skipChapterRestore가 true인데도 chapter가 0이면 강제로 초기화
-            // (사이드패널 선택 후 책 선택기 선택 순서 변경 등의 엣지 케이스)
-            if skipChapterRestore && chapter == 0 {
-                print("⚠️  skipChapterRestore=true but chapter=0 - force initializing for \(book.id)")
-                let validChapter = max(1, readingState.lastChapter(edition: edition, book: book))
-                setChapter(validChapter)
+                // 또는: skipChapterRestore가 true인데도 chapter가 0이면 강제로 초기화
+                // (사이드패널 선택 후 책 선택기 선택 순서 변경 등의 엣지 케이스)
+                if skipChapterRestore && chapter == 0 {
+                    print("⚠️  skipChapterRestore=true but chapter=0 - force initializing for \(book.id)")
+                    let validChapter = max(1, readingState.lastChapter(edition: edition, book: book))
+                    setChapter(validChapter)
+                }
             }
             // 캐시 업데이트 (chapter가 같아서 onChange(of: chapter)가 안 될 수 있으므로 여기서도 함)
             updateTitleMapCache()
@@ -1271,8 +1273,8 @@ struct SpreadReader: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .onAppear { initChapterIfNeeded() }
         .onChange(of: bookID) { _, _ in
-            // 대기 이동이 없으면 마지막 장을 복원 (applyPending()이 대기 장을 처리함)
-            if !skipChapterRestore && navigation.pendingChapter == nil {
+            // 대기 이동이 없을 때만 마지막 장을 복원 (applyPending()이 대기 장을 처리함)
+            if navigation.pendingChapter == nil && !skipChapterRestore {
                 setChapter(readingState.lastChapter(edition: edition, book: book))
                 spreadIndex = 0
             }
