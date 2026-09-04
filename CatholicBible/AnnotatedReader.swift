@@ -337,6 +337,9 @@ struct AnnotatedReader: View {
         let notes = cachedNotes
         let xrefs = chapter > 0 ? knb.crossrefs(edition: editionID, bookID: book.id, chapter: chapter) : []
         print("📄 Rendering content for \(book.id) ch.\(chapter): \(verses.count) verses, \(notes.count) notes")
+        if book.id == "sir" && chapter == 1 {
+            print("   📍 Sirach 1 verse order: \(verses.prefix(10).map { $0.number }.joined(separator: ", "))")
+        }
         return Group {
             if wide {
                 HStack(spacing: 0) {
