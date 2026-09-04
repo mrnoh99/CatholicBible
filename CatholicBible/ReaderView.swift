@@ -303,9 +303,9 @@ struct ReaderView: View {
                         .font(.system(size: 16, weight: .semibold))
                         .contentShape(Circle())
                 }
-                .disabled(layout == .spread || !navigation.canGoBack)
+                .disabled(!navigation.canGoBack)
                 .help("이전 페이지")
-                .opacity((layout == .spread || !navigation.canGoBack) ? 0.4 : 1)
+                .opacity(navigation.canGoBack ? 1 : 0.4)
 
                 Text("성경 읽기")
                     .font(.system(size: 16, weight: .semibold, design: .default))
@@ -315,9 +315,9 @@ struct ReaderView: View {
                         .font(.system(size: 16, weight: .semibold))
                         .contentShape(Circle())
                 }
-                .disabled(layout == .spread || !navigation.canGoForward)
+                .disabled(!navigation.canGoForward)
                 .help("다음 페이지")
-                .opacity((layout == .spread || !navigation.canGoForward) ? 0.4 : 1)
+                .opacity(navigation.canGoForward ? 1 : 0.4)
             }
         }
 
@@ -469,7 +469,7 @@ struct ReaderPane: View {
     /// 원본 헤딩 데이터에서 프롤로그 추출 (knb 판본에만 표시)
     private var prologueText: String? {
         guard chapter == 1 && book.id == "sir" else { return nil }
-        guard editionID == "knb" || editionID == "knbnotes" else { return nil }
+        guard editionID == "knb" else { return nil }
         let sirHeadings = rawHeadings["sir"] ?? [:]
         guard let headingsForCh1 = sirHeadings["1"] else { return nil }
         guard let rawText = headingsForCh1["1"] else { return nil }
@@ -484,20 +484,19 @@ struct ReaderPane: View {
         return regex.firstMatch(in: text, range: range) != nil
     }
 
-    /// knb, knbnotes 판본에서 프롤로그로 인한 중복 제목 제외
+    /// knb 판본에서만 프롤로그로 인한 중복 제목 제외
     private func filteredTitleMap() -> [String: String] {
         var result = titleMap
-        if (editionID == "knb" || editionID == "knbnotes") && chapter == 1 && book.id == "sir" && prologueText != nil {
+        if editionID == "knb" && chapter == 1 && book.id == "sir" && prologueText != nil {
             result.removeValue(forKey: "1")
         }
         return result
     }
 
-    /// 프롤로그 절인지 확인 (key가 "(1)", "(5)" 등인지 확인)
+    /// 프롤로그 절인지 확인 (key가 "1(1)", "1(5)" 등인지 확인)
     private func isPrologueVerse(verseKey: String) -> Bool {
-        if chapter != 1 || book.id != "sir" { return false }
-        if editionID != "knb" && editionID != "knbnotes" { return false }
-        return verseKey.hasPrefix("(") && verseKey.hasSuffix(")")
+        if editionID != "knb" || chapter != 1 || book.id != "sir" { return false }
+        return verseKey.contains("(") && verseKey.contains(")")
     }
 
     /// 프롤로그 절 번호 추출 (예: "1(5)" → 5)
@@ -557,20 +556,12 @@ struct ReaderPane: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .onAppear {
-            let linkedValue = linkedChapter?.wrappedValue ?? -1
-            print("📱 ReaderPane.onAppear: role=\(role), book=\(book.id), chapter=\(chapter), linked=\(linkedValue), local=\(localChapter)")
-
+            print("📱 ReaderPane.onAppear: role=\(role), book=\(book.id), chapter=\(chapter), linked=\(linkedChapter?.wrappedValue ?? -1), local=\(localChapter)")
             loadRawHeadings()
             initChapterIfNeeded()
             updateTitleMapCache()
             updateVersesCache()
             isInitialized = true
-
-            // 초기화 후 상태 불일치 재검사: chapter=0, linked≤0, local=0 시 자동 새로고침
-            if chapter == 0 && linkedValue <= 0 && localChapter == 0 {
-                print("⚠️  State mismatch detected after init (chap0 linked\(linkedValue) local0) - auto-refreshing")
-                refreshCache()
-            }
         }
         .onChange(of: bookID) { _, _ in
             let roleStr = role == .secondary ? "Secondary" : "Primary"
@@ -614,16 +605,6 @@ struct ReaderPane: View {
             updateVersesCache()
         }
         .onChange(of: chapter) { _, new in
-            // 장이 0인 경우 자동 새로고침 (경고 상태 "ch:0 linked:0 local:0" 감지)
-            if new == 0 {
-                let linkedValue = linkedChapter?.wrappedValue ?? -1
-                if linkedValue <= 0 && localChapter == 0 {
-                    print("⚠️  Chapter became 0 with linked:\(linkedValue) local:0 - auto-refreshing")
-                    refreshCache()
-                    return
-                }
-            }
-
             guard new > 0 else { return }
             // 캐시 업데이트 (모든 pane에서 필요)
             updateTitleMapCache()
@@ -837,7 +818,7 @@ struct ReaderPane: View {
                          verse: verse,
                          highlighted: navigation.activeHighlight?.matches(bookID: book.id, chapter: chapter, verse: verse.number) ?? false,
                          onOpenNote: onOpenNote,
-                         markerColor: editionID == "knbnotes" ? UIColor(Color.accentColor) : nil)
+                         markerColor: UIColor(Color.accentColor))
                 .environment(\.openURL, OpenURLAction { url in
                     let items = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems ?? []
                     func q(_ k: String) -> String? { items.first { $0.name == k }?.value }
@@ -878,12 +859,6 @@ struct ReaderPane: View {
                                 .id(verse.number)
                                 .padding(.bottom, prologue.last?.number == verse.number ? 16 : 0)
                         }
-                        // 프롤로그 후 섹션 제목 표시 (시라의 지혜 제1부)
-                        if let sectionTitle = titleMap["1_intro"] {
-                            SectionTitleView(text: sectionTitle, bookID: book.id, chapter: chapter, linkable: true)
-                                .padding(.top, 8)
-                                .padding(.bottom, 8)
-                        }
                     }
                     // 일반 절들 표시
                     ForEach(regular) { verse in
@@ -920,22 +895,27 @@ struct ReaderPane: View {
             }
     }
 
-    /// 프롤로그 절 표시 - 첫 절에만 "머리글" 헤딩 표시하고 나머지는 일반 절과 동일
+    /// 프롤로그 절 표시 (verse 객체 기반)
     private func prologueVerseView(verse: Verse) -> some View {
         VStack(alignment: .leading, spacing: 0) {
-            // 첫 번째 프롤로그 절에 "머리글" 헤딩만 표시
-            if verse.number == "(1)" {
-                Text("머리글")
-                    .font(.system(size: settings.fontSize, weight: .regular, design: .default))
-                    .foregroundStyle(settings.theme.secondary)
-                    .padding(.bottom, 4)
+            // 절 번호 (예: "(1)")
+            if let prologueNum = prologueVerseNumber(verseKey: verse.number) {
+                HStack(alignment: .firstTextBaseline, spacing: 4) {
+                    Text("(\(prologueNum))")
+                        .font(.system(size: settings.fontSize * 0.75, weight: .semibold, design: .default))
+                        .foregroundStyle(Color.accentColor)
+                    Text(verse.text)
+                        .font(.system(size: settings.fontSize, weight: .regular, design: .default))
+                        .lineSpacing(settings.lineSpacing)
+                        .foregroundStyle(settings.theme.text)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
-            // 일반 절과 동일한 스타일로 표시
-            VerseRowView(edition: edition, book: book, chapter: chapter,
-                        verse: verse,
-                        highlighted: navigation.activeHighlight?.matches(bookID: book.id, chapter: chapter, verse: verse.number) ?? false,
-                        onOpenNote: onOpenNote,
-                        markerColor: editionID == "knbnotes" ? UIColor(Color.accentColor) : nil)
+        }
+        .padding(.leading, 8)
+        .padding(.vertical, 8)
+        .overlay(alignment: .leading) {
+            Rectangle().fill(Color.accentColor.opacity(0.3)).frame(width: 3)
         }
     }
 
@@ -1190,8 +1170,6 @@ struct SpreadReader: View {
     @Environment(ReadingState.self) private var readingState
     @Environment(ReaderNavigation.self) private var navigation
     @Environment(KnbNotesStore.self) private var knbNotes
-    @Environment(AnnotationStore.self) private var annotations
-    @Environment(LiturgyStore.self) private var liturgy
 
     @State private var localChapter = 0
     @State private var spreadIndex = 0
@@ -1202,14 +1180,6 @@ struct SpreadReader: View {
     @State private var showBookPicker = false
     @State private var showChapterPicker = false
     @State private var skipChapterRestore = false
-    @State private var showMass = false
-    @State private var showSearch = false
-    @State private var showBookmarks = false
-    @State private var showNotes = false
-    @State private var showAppearance = false
-    @State private var noteTarget: NoteTarget?
-    @State private var markerNote: MarkerNoteTarget?
-    @State private var xrefTarget: XrefTarget?
 
     private var edition: Edition { Editions.edition(editionID) ?? Editions.all[0] }
     private var book: BibleBook { Bible.book(bookID) ?? Bible.books[0] }
@@ -1230,10 +1200,6 @@ struct SpreadReader: View {
     private var pages: [[Verse]] { paginate(verses, size: contentSize) }
     private var spreadCount: Int { max(1, Int(ceil(Double(pages.count) / 2.0))) }
 
-    private func isPrologueVerse(verseKey: String) -> Bool {
-        verseKey.hasPrefix("(") && verseKey.hasSuffix(")")
-    }
-
     private var showsTitles: Bool { true }
     private var titleMap: [String: String] {
         guard showsTitles, chapter > 0 else { return [:] }
@@ -1248,14 +1214,6 @@ struct SpreadReader: View {
         for title in storeTitle {
             if titlesByVerse[title.verse] == nil {
                 titlesByVerse[title.verse] = title.text
-            }
-        }
-
-        // knbnotes에서 Sirach 1장 프롤로그 제목 중복 제거
-        if (editionID == "knb" || editionID == "knbnotes") && chapter == 1 && book.id == "sir" {
-            let hasProloguePart = verses.contains { isPrologueVerse(verseKey: $0.number) }
-            if hasProloguePart {
-                titlesByVerse.removeValue(forKey: "1")
             }
         }
 
@@ -1298,44 +1256,6 @@ struct SpreadReader: View {
                 setChapter(picked); spreadIndex = 0; showChapterPicker = false
             }
         }
-        .sheet(isPresented: $showAppearance) {
-            injectShared(AppSettingsView())
-        }
-        .sheet(isPresented: $showSearch) {
-            injectShared(SearchView().environment(navigation))
-        }
-        .sheet(isPresented: $showBookmarks) {
-            injectShared(BookmarksView().environment(navigation))
-        }
-        .sheet(isPresented: $showNotes) {
-            injectShared(NotesListView().environment(navigation))
-        }
-        .fullScreenCover(isPresented: $showMass) {
-            injectShared(DailyMassView().environment(navigation))
-        }
-        .sheet(item: $noteTarget) { target in
-            injectShared(NoteEditorView(verse: target.ref,
-                                        verseText: target.text,
-                                        existing: annotations.noteOrNew(for: target.ref)))
-        }
-        .fullScreenCover(item: $markerNote) { mn in
-            injectShared(MarkerNoteSheet(n: mn.n, text: mn.text, bookID: mn.bookID, chapter: mn.chapter))
-        }
-        .fullScreenCover(item: $xrefTarget) { t in
-            injectShared(RefPreviewSheet(target: t).environment(navigation))
-        }
-    }
-
-    private func injectShared<V: View>(_ view: V) -> some View {
-        view.injectSharedStores(store, settings, readingState, annotations, knbNotes, liturgy)
-            .environment(navigation)
-    }
-
-    private func openMarkerNote(ref: VerseRef) {
-        let noteText = knbNotes.notes(edition: editionID, bookID: ref.bookID, chapter: ref.chapter)
-            .first(where: { $0.n == ref.verse })?.text ?? "이 주석을 찾지 못했습니다."
-        markerNote = MarkerNoteTarget(n: ref.verse, text: noteText,
-                                      bookID: ref.bookID, chapter: ref.chapter)
     }
 
     // MARK: 위치
@@ -1389,13 +1309,6 @@ struct SpreadReader: View {
         setChapter(n)
     }
 
-    private func refreshCache() {
-        guard chapter <= 0 else { return }
-        let validChapter = readingState.lastChapter(edition: edition, book: book)
-        setChapter(validChapter)
-        spreadIndex = 0
-    }
-
     private var atFirst: Bool { spreadIndex == 0 && chapter <= 1 }
     private var atLast: Bool { spreadIndex >= spreadCount - 1 && chapter >= book.chapterCount }
 
@@ -1412,14 +1325,6 @@ struct SpreadReader: View {
                 chip(store.bookShortName(edition: edition, book: book))
             }
             Spacer(minLength: 0)
-            Button { refreshCache() } label: {
-                Image(systemName: "arrow.clockwise")
-                    .font(.system(size: 18, weight: .semibold))
-                    .foregroundStyle(.secondary)
-            }
-            .padding(.horizontal, 10)
-            .padding(.vertical, 8)
-            .accessibilityLabel("새로고침")
         }
         .font(.subheadline)
         .padding(.horizontal, 16).padding(.vertical, 8)
@@ -1478,7 +1383,7 @@ struct SpreadReader: View {
                                     // 주석 마커 링크 (N))
                                     if url.host == "note" {
                                         if let b = q("b"), let cs = q("c"), let c = Int(cs), let n = q("n") {
-                                            openMarkerNote(ref: VerseRef(bookID: b, chapter: c, verse: n))
+                                            onOpenNote(VerseRef(bookID: b, chapter: c, verse: n), "")
                                         }
                                         return .handled
                                     }
@@ -1486,9 +1391,9 @@ struct SpreadReader: View {
                                     if url.host == "xref" {
                                         if let b = q("b"), let cs = q("c"), let c = Int(cs),
                                            let vs = q("v"), let v = Int(vs) {
-                                            xrefTarget = XrefTarget(bookID: b, chapter: c, verse: v,
+                                            onOpenXref(XrefTarget(bookID: b, chapter: c, verse: v,
                                                                   endChapter: q("ec").flatMap { Int($0) } ?? 0,
-                                                                  endVerse: q("ev").flatMap { Int($0) } ?? 0)
+                                                                  endVerse: q("ev").flatMap { Int($0) } ?? 0))
                                         }
                                         return .handled
                                     }
@@ -1499,7 +1404,7 @@ struct SpreadReader: View {
                     VerseRowView(edition: edition, book: book, chapter: chapter,
                                  verse: verse,
                                  highlighted: navigation.activeHighlight?.matches(bookID: book.id, chapter: chapter, verse: verse.number) ?? false,
-                                 onOpenNote: { ref, _ in openMarkerNote(ref: ref) },
+                                 onOpenNote: onOpenNote,
                                  markerColor: UIColor(Color.accentColor))
                         .environment(\.openURL, OpenURLAction { url in
                             let items = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems ?? []
@@ -1507,15 +1412,15 @@ struct SpreadReader: View {
                             if url.scheme == "catholicbible", url.host == "xref" {
                                 if let b = q("b"), let cs = q("c"), let c = Int(cs),
                                    let vs = q("v"), let v = Int(vs) {
-                                    xrefTarget = XrefTarget(bookID: b, chapter: c, verse: v,
+                                    onOpenXref(XrefTarget(bookID: b, chapter: c, verse: v,
                                                           endChapter: q("ec").flatMap { Int($0) } ?? 0,
-                                                          endVerse: q("ev").flatMap { Int($0) } ?? 0)
+                                                          endVerse: q("ev").flatMap { Int($0) } ?? 0))
                                 }
                                 return .handled
                             }
                             if url.scheme == "catholicbible", url.host == "note" {
                                 if let b = q("b"), let cs = q("c"), let c = Int(cs), let n = q("n") {
-                                    openMarkerNote(ref: VerseRef(bookID: b, chapter: c, verse: n))
+                                    onOpenNote(VerseRef(bookID: b, chapter: c, verse: n), "")
                                 }
                                 return .handled
                             }
