@@ -557,7 +557,15 @@ struct ReaderPane: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .onAppear {
-            print("📱 ReaderPane.onAppear: role=\(role), book=\(book.id), chapter=\(chapter), linked=\(linkedChapter?.wrappedValue ?? -1), local=\(localChapter)")
+            let linkedValue = linkedChapter?.wrappedValue ?? -1
+            print("📱 ReaderPane.onAppear: role=\(role), book=\(book.id), chapter=\(chapter), linked=\(linkedValue), local=\(localChapter)")
+
+            // 상태 불일치 감지: chapter=0, linked≤0, local=0 시 자동 새로고침
+            if chapter == 0 && linkedValue <= 0 && localChapter == 0 {
+                print("⚠️  State mismatch detected (chap0 linked\(linkedValue) local0) - auto-refreshing")
+                refreshCache()
+            }
+
             loadRawHeadings()
             initChapterIfNeeded()
             updateTitleMapCache()
