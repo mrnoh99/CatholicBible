@@ -1212,6 +1212,10 @@ struct SpreadReader: View {
     private var pages: [[Verse]] { paginate(verses, size: contentSize) }
     private var spreadCount: Int { max(1, Int(ceil(Double(pages.count) / 2.0))) }
 
+    private func isPrologueVerse(verseKey: String) -> Bool {
+        verseKey.hasPrefix("(") && verseKey.hasSuffix(")")
+    }
+
     private var showsTitles: Bool { true }
     private var titleMap: [String: String] {
         guard showsTitles, chapter > 0 else { return [:] }
@@ -1226,6 +1230,14 @@ struct SpreadReader: View {
         for title in storeTitle {
             if titlesByVerse[title.verse] == nil {
                 titlesByVerse[title.verse] = title.text
+            }
+        }
+
+        // knbnotes에서 Sirach 1장 프롤로그 제목 중복 제거
+        if (editionID == "knb" || editionID == "knbnotes") && chapter == 1 && book.id == "sir" {
+            let hasProloguePart = verses.contains { isPrologueVerse(verseKey: $0.number) }
+            if hasProloguePart {
+                titlesByVerse.removeValue(forKey: "1")
             }
         }
 
