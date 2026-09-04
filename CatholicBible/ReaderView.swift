@@ -612,6 +612,16 @@ struct ReaderPane: View {
             updateVersesCache()
         }
         .onChange(of: chapter) { _, new in
+            // 장이 0인 경우 자동 새로고침 (경고 상태 "ch:0 linked:0 local:0" 감지)
+            if new == 0 {
+                let linkedValue = linkedChapter?.wrappedValue ?? -1
+                if linkedValue <= 0 && localChapter == 0 {
+                    print("⚠️  Chapter became 0 with linked:\(linkedValue) local:0 - auto-refreshing")
+                    refreshCache()
+                    return
+                }
+            }
+
             guard new > 0 else { return }
             // 캐시 업데이트 (모든 pane에서 필요)
             updateTitleMapCache()
@@ -1291,6 +1301,13 @@ struct SpreadReader: View {
         spreadIndex = 0
     }
 
+    private func refreshCache() {
+        guard chapter <= 0 else { return }
+        let validChapter = readingState.lastChapter(edition: edition, book: book)
+        setChapter(validChapter)
+        spreadIndex = 0
+    }
+
     private func clampChapter(_ c: Int) -> Int { min(max(c, 1), book.chapterCount) }
 
     /// 페이지 수가 바뀌면 목표 스프레드(마지막/강조 절)로 맞춘다.
@@ -1339,6 +1356,14 @@ struct SpreadReader: View {
                 chip(store.bookShortName(edition: edition, book: book))
             }
             Spacer(minLength: 0)
+            Button { refreshCache() } label: {
+                Image(systemName: "arrow.clockwise")
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundStyle(.secondary)
+            }
+            .padding(.horizontal, 10)
+            .padding(.vertical, 8)
+            .accessibilityLabel("새로고침")
         }
         .font(.subheadline)
         .padding(.horizontal, 16).padding(.vertical, 8)
