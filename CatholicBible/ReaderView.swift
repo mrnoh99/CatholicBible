@@ -1264,6 +1264,10 @@ struct SpreadReader: View {
         }
         .onChange(of: chapter) { _, new in
             guard new > 0 else { return }
+            // Reset spreadIndex when chapter changes (unless scrollTarget is set for pending navigation)
+            if scrollTarget == nil {
+                spreadIndex = 0
+            }
             readingState.savePosition(edition: edition, book: book, chapter: new)
         }
         .onChange(of: navigation.pendingChapter) { _, _ in applyPending() }
