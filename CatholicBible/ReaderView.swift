@@ -854,6 +854,14 @@ struct ReaderPane: View {
                 LazyVStack(alignment: .leading, spacing: settings.lineSpacing * 0.9) {
                     // 프롤로그 절들 표시
                     if !prologue.isEmpty {
+                        // 프롤로그 헤더
+                        if editionID == "knb" && chapter == 1 && book.id == "sir" {
+                            Text("머리글")
+                                .font(.system(size: settings.fontSize * 1.1, weight: .semibold, design: .default))
+                                .foregroundStyle(settings.theme.secondary)
+                                .padding(.bottom, 8)
+                                .padding(.top, 4)
+                        }
                         ForEach(prologue) { verse in
                             prologueVerseView(verse: verse)
                                 .id(verse.number)
