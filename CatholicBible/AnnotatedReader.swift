@@ -417,7 +417,7 @@ struct AnnotatedReader: View {
         } else {
             LazyVStack(alignment: .leading, spacing: settings.lineSpacing * 0.9) {
                 // Sirach 1장: "시라의 지혜" (1_intro)
-                if editionID == "knb" && chapter == 1 && book.id == "sir" {
+                if ["knb", "knbnotes"].contains(editionID) && chapter == 1 && book.id == "sir" {
                     if let title = cachedTitleMap["1_intro"] {
                         SectionTitleView(text: title, bookID: book.id, chapter: chapter, linkable: true,
                                          searchQuery: navigation.searchQuery)
@@ -431,7 +431,7 @@ struct AnnotatedReader: View {
                 ForEach(verses) { verse in
                     VStack(alignment: .leading, spacing: settings.lineSpacing * 0.9) {
                         // Sirach 1장: 첫 번째 일반 절 앞에 "제 1 부 지혜와 금언들" (0)
-                        if editionID == "knb" && chapter == 1 && book.id == "sir"
+                        if ["knb", "knbnotes"].contains(editionID) && chapter == 1 && book.id == "sir"
                             && !isPrologueVerse(verseKey: verse.number)
                             && verse.number == firstRegularVerseNumber {
                             if let title = cachedTitleMap["0"] {
@@ -456,7 +456,7 @@ struct AnnotatedReader: View {
                             prologueVerseView(verse: verse)
                         } else {
                             // Sirach 1장: 절 11 앞에 "지혜의 신비" (1h)
-                            if editionID == "knb" && chapter == 1 && book.id == "sir" && verse.number == "11" {
+                            if ["knb", "knbnotes"].contains(editionID) && chapter == 1 && book.id == "sir" && verse.number == "11" {
                                 if let title = cachedTitleMap["1h"] {
                                     SectionTitleView(text: title, bookID: book.id, chapter: chapter, linkable: true,
                                                      searchQuery: navigation.searchQuery)
