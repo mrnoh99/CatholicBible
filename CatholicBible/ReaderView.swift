@@ -297,27 +297,45 @@ struct ReaderView: View {
         }
 
         ToolbarItem(placement: .principal) {
-            HStack(spacing: 8) {
-                Button { navigation.goBack() } label: {
-                    Image(systemName: "chevron.left")
-                        .font(.system(size: 16, weight: .semibold))
-                        .contentShape(Circle())
-                }
-                .disabled(!navigation.canGoBack)
-                .help("이전 페이지")
-                .opacity(navigation.canGoBack ? 1 : 0.4)
+            if layout == .spread {
+                HStack(spacing: 8) {
+                    Button {
+                        primaryChapter = max(1, primaryChapter)
+                    } label: {
+                        Image(systemName: "arrow.clockwise")
+                            .font(.system(size: 16, weight: .semibold))
+                            .contentShape(Circle())
+                    }
+                    .help("새로고침")
 
-                Text("성경 읽기")
-                    .font(.system(size: 16, weight: .semibold, design: .default))
+                    Text("성경 읽기")
+                        .font(.system(size: 16, weight: .semibold, design: .default))
 
-                Button { navigation.goForward() } label: {
-                    Image(systemName: "chevron.right")
-                        .font(.system(size: 16, weight: .semibold))
-                        .contentShape(Circle())
+                    Spacer().frame(width: 32)
                 }
-                .disabled(!navigation.canGoForward)
-                .help("다음 페이지")
-                .opacity(navigation.canGoForward ? 1 : 0.4)
+            } else {
+                HStack(spacing: 8) {
+                    Button { navigation.goBack() } label: {
+                        Image(systemName: "chevron.left")
+                            .font(.system(size: 16, weight: .semibold))
+                            .contentShape(Circle())
+                    }
+                    .disabled(!navigation.canGoBack)
+                    .help("이전 페이지")
+                    .opacity(navigation.canGoBack ? 1 : 0.4)
+
+                    Text("성경 읽기")
+                        .font(.system(size: 16, weight: .semibold, design: .default))
+
+                    Button { navigation.goForward() } label: {
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 16, weight: .semibold))
+                            .contentShape(Circle())
+                    }
+                    .disabled(!navigation.canGoForward)
+                    .help("다음 페이지")
+                    .opacity(navigation.canGoForward ? 1 : 0.4)
+                }
             }
         }
 
