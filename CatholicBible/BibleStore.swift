@@ -153,10 +153,15 @@ final class BibleStore {
                 }
 
                 // 실제 로드 작업
+                guard let data = try? Data(contentsOf: url) else {
+                    print("❌ 데이터 읽기 실패: \(editionID)")
+                    continue
+                }
 
-                guard let data = try? Data(contentsOf: url),
-                      let file = try? JSONDecoder().decode(BibleTextFile.self, from: data)
-                else { continue }
+                guard let file = try? JSONDecoder().decode(BibleTextFile.self, from: data) else {
+                    print("❌ JSON 디코딩 실패: \(editionID)")
+                    continue
+                }
 
                 var indexed: [String: [Int: [Verse]]] = [:]
                 var headingsFromFile: [String: [String: [String: String]]] = [:]
