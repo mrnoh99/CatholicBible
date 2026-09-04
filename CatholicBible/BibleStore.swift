@@ -295,6 +295,10 @@ final class BibleStore {
                                     // 이미 있는 제목이 없을 때만 파일의 제목 사용
                                     if titles[bookID]![chapterKey]![verseKey] == nil {
                                         titles[bookID]![chapterKey]![verseKey] = cleanHeading
+                                        // Sirach 1장 특수 제목 디버그
+                                        if bookID == "sir" && chapterKey == "1" && ["0", "1_intro", "1h"].contains(verseKey) {
+                                            print("📌 Sirach 1 special heading added: '\(verseKey)' → '\(cleanHeading)'")
+                                        }
                                     }
                                 }
                             }

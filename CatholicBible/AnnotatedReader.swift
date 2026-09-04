@@ -407,13 +407,44 @@ struct AnnotatedReader: View {
 
     @ViewBuilder
     private func versesBlock(_ verses: [Verse]) -> some View {
+        let prologueVerses = verses.filter { isPrologueVerse(verseKey: $0.number) }
+        let regularVerses = verses.filter { !isPrologueVerse(verseKey: $0.number) }
+        let firstRegularVerseNumber = regularVerses.first?.number
+
         chapterHeader
         if verses.isEmpty {
             MissingTextView(edition: edition, book: book).padding(.top, 32)
         } else {
             LazyVStack(alignment: .leading, spacing: settings.lineSpacing * 0.9) {
+                // Sirach 1장: "시라의 지혜" (1_intro)
+                if editionID == "knb" && chapter == 1 && book.id == "sir" {
+                    if let title = cachedTitleMap["1_intro"] {
+                        SectionTitleView(text: title, bookID: book.id, chapter: chapter, linkable: true,
+                                         searchQuery: navigation.searchQuery)
+                            .environment(\.openURL, OpenURLAction { url in
+                                return handleURLInternal(url)
+                            })
+                            .padding(.bottom, 12)
+                    }
+                }
+
                 ForEach(verses) { verse in
                     VStack(alignment: .leading, spacing: settings.lineSpacing * 0.9) {
+                        // Sirach 1장: 첫 번째 일반 절 앞에 "제 1 부 지혜와 금언들" (0)
+                        if editionID == "knb" && chapter == 1 && book.id == "sir"
+                            && !isPrologueVerse(verseKey: verse.number)
+                            && verse.number == firstRegularVerseNumber {
+                            if let title = cachedTitleMap["0"] {
+                                SectionTitleView(text: title, bookID: book.id, chapter: chapter, linkable: true,
+                                                 searchQuery: navigation.searchQuery)
+                                    .environment(\.openURL, OpenURLAction { url in
+                                        return handleURLInternal(url)
+                                    })
+                                    .padding(.top, 8)
+                                    .padding(.bottom, 12)
+                            }
+                        }
+
                         if let title = cachedTitleMap[String(verse.number)] {
                             SectionTitleView(text: title, bookID: book.id, chapter: chapter,
                                              linkable: true, searchQuery: navigation.searchQuery)
@@ -424,6 +455,19 @@ struct AnnotatedReader: View {
                         if isPrologueVerse(verseKey: verse.number) {
                             prologueVerseView(verse: verse)
                         } else {
+                            // Sirach 1장: 절 11 앞에 "지혜의 신비" (1h)
+                            if editionID == "knb" && chapter == 1 && book.id == "sir" && verse.number == "11" {
+                                if let title = cachedTitleMap["1h"] {
+                                    SectionTitleView(text: title, bookID: book.id, chapter: chapter, linkable: true,
+                                                     searchQuery: navigation.searchQuery)
+                                        .environment(\.openURL, OpenURLAction { url in
+                                            return handleURLInternal(url)
+                                        })
+                                        .padding(.top, 12)
+                                        .padding(.bottom, 12)
+                                }
+                            }
+
                             VerseRowView(edition: edition, book: book, chapter: chapter,
                                          verse: verse,
                                          highlighted: navigation.activeHighlight?.matches(bookID: book.id, chapter: chapter, verse: verse.number) ?? false,

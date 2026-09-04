@@ -869,6 +869,15 @@ struct ReaderPane: View {
                 MissingTextView(edition: edition, book: book).padding(.top, 40)
             } else {
                 LazyVStack(alignment: .leading, spacing: settings.lineSpacing * 0.9) {
+                    // Sirach 1장 특수 제목 처리
+                    if editionID == "knb" && chapter == 1 && book.id == "sir" {
+                        // "시라의 지혜" (1_intro)
+                        if let title = titleMap["1_intro"] {
+                            SectionTitleView(text: title, bookID: book.id, chapter: chapter, linkable: true)
+                                .padding(.bottom, 12)
+                        }
+                    }
+
                     // 프롤로그 절들 표시
                     if !prologue.isEmpty {
                         // 프롤로그 헤더
@@ -885,8 +894,25 @@ struct ReaderPane: View {
                                 .padding(.bottom, prologue.last?.number == verse.number ? 16 : 0)
                         }
                     }
+
+                    // Sirach 1장: "제 1 부 지혜와 금언들" (0)
+                    if editionID == "knb" && chapter == 1 && book.id == "sir" {
+                        if let title = titleMap["0"] {
+                            SectionTitleView(text: title, bookID: book.id, chapter: chapter, linkable: true)
+                                .padding(.top, prologue.isEmpty ? 0 : 12)
+                                .padding(.bottom, 12)
+                        }
+                    }
+
                     // 일반 절들 표시
                     ForEach(regular) { verse in
+                        // Sirach 1장: 절 11 앞에 "지혜의 신비" (1h)
+                        if editionID == "knb" && chapter == 1 && book.id == "sir" && verse.number == "11" {
+                            if let title = titleMap["1h"] {
+                                SectionTitleView(text: title, bookID: book.id, chapter: chapter, linkable: true)
+                                    .padding(.bottom, 12)
+                            }
+                        }
                         verseRowContent(verse: verse)
                             .id(verse.number)
                     }
@@ -1414,6 +1440,15 @@ struct SpreadReader: View {
     private func page(_ verses: [Verse]?, isFirst: Bool) -> some View {
         VStack(alignment: .leading, spacing: settings.lineSpacing * 0.9) {
             if isFirst { chapterHeader }
+
+            // Sirach 1장 특수 제목들 (첫 페이지에만 표시)
+            if isFirst && editionID == "knb" && chapter == 1 && book.id == "sir" {
+                if let title = titleMap["1_intro"] {
+                    SectionTitleView(text: title, bookID: book.id, chapter: chapter, linkable: true)
+                        .padding(.bottom, 12)
+                }
+            }
+
             if let verses {
                 ForEach(verses) { verse in
                     if let title = titleMap[verse.number] {
@@ -1444,6 +1479,16 @@ struct SpreadReader: View {
                                 return .systemAction
                             })
                     }
+
+                    // Sirach 1장: 절 11 앞에 "지혜의 신비" (1h)
+                    if isFirst && editionID == "knb" && chapter == 1 && book.id == "sir" && verse.number == "11" {
+                        if let title = titleMap["1h"] {
+                            SectionTitleView(text: title, bookID: book.id, chapter: chapter, linkable: true)
+                                .padding(.top, 12)
+                                .padding(.bottom, 12)
+                        }
+                    }
+
                     VerseRowView(edition: edition, book: book, chapter: chapter,
                                  verse: verse,
                                  highlighted: navigation.activeHighlight?.matches(bookID: book.id, chapter: chapter, verse: verse.number) ?? false,
