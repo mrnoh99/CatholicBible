@@ -382,7 +382,15 @@ struct AnnotatedReader: View {
                 .frame(maxWidth: .infinity)
             }
             .onChange(of: scrollTarget) { _, _ in performScroll(proxy, verses: verses) }
-            .onChange(of: chapter) { _, _ in performScroll(proxy, verses: verses) }
+            .onChange(of: chapter) { _, _ in
+                performScroll(proxy, verses: verses)
+                // 장 변경 시 맨 위로 스크롤 (프롤로그를 위에서 보도록)
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                    if let firstVerse = verses.first {
+                        proxy.scrollTo(firstVerse.number, anchor: .top)
+                    }
+                }
+            }
             .onAppear { performScroll(proxy, verses: verses) }
         }
         .frame(maxWidth: .infinity)
