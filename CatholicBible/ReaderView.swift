@@ -1188,7 +1188,21 @@ struct SpreadReader: View {
         if let sharedChapter { sharedChapter.wrappedValue = value } else { localChapter = value }
     }
     private var verses: [Verse] {
-        chapter > 0 ? store.verses(edition: edition, book: book, chapter: chapter) : []
+        guard chapter > 0 else { return [] }
+        let rawVerses = store.verses(edition: edition, book: book, chapter: chapter)
+        // Sirach 1장: 프롤로그 절들을 먼저, 일반 절들을 나중에 표시
+        if book.id == "sir" && chapter == 1 {
+            let prologue = rawVerses.filter { $0.number.contains("(") && $0.number.contains(")") }
+            let regular = rawVerses.filter { !($0.number.contains("(") && $0.number.contains(")")) }
+            // 프롤로그 절들을 번호 순서대로 정렬
+            let sortedPrologue = prologue.sorted { a, b in
+                let numA = Int(a.number.dropFirst().dropLast()) ?? 0
+                let numB = Int(b.number.dropFirst().dropLast()) ?? 0
+                return numA < numB
+            }
+            return sortedPrologue + regular
+        }
+        return rawVerses
     }
     private var pages: [[Verse]] { paginate(verses, size: contentSize) }
     private var spreadCount: Int { max(1, Int(ceil(Double(pages.count) / 2.0))) }

@@ -527,7 +527,21 @@ struct AnnotatedReader: View {
         cachedVersesEditionID = editionID
         cachedVersesBookID = book.id
         if chapter > 0 {
-            cachedVerses = store.verses(edition: edition, book: book, chapter: chapter)
+            let rawVerses = store.verses(edition: edition, book: book, chapter: chapter)
+            // Sirach 1장: 프롤로그 절들을 먼저, 일반 절들을 나중에 표시
+            if book.id == "sir" && chapter == 1 {
+                let prologue = rawVerses.filter { $0.number.contains("(") && $0.number.contains(")") }
+                let regular = rawVerses.filter { !($0.number.contains("(") && $0.number.contains(")")) }
+                // 프롤로그 절들을 번호 순서대로 정렬
+                let sortedPrologue = prologue.sorted { a, b in
+                    let numA = Int(a.number.dropFirst().dropLast()) ?? 0
+                    let numB = Int(b.number.dropFirst().dropLast()) ?? 0
+                    return numA < numB
+                }
+                cachedVerses = sortedPrologue + regular
+            } else {
+                cachedVerses = rawVerses
+            }
             print("   → Loaded \(cachedVerses.count) verses")
         } else {
             cachedVerses = []
@@ -583,7 +597,21 @@ struct AnnotatedReader: View {
         cachedVersesEditionID = editionID
         cachedVersesBookID = book.id
         if chapter > 0 {
-            cachedVerses = store.verses(edition: edition, book: book, chapter: chapter)
+            let rawVerses = store.verses(edition: edition, book: book, chapter: chapter)
+            // Sirach 1장: 프롤로그 절들을 먼저, 일반 절들을 나중에 표시
+            if book.id == "sir" && chapter == 1 {
+                let prologue = rawVerses.filter { $0.number.contains("(") && $0.number.contains(")") }
+                let regular = rawVerses.filter { !($0.number.contains("(") && $0.number.contains(")")) }
+                // 프롤로그 절들을 번호 순서대로 정렬
+                let sortedPrologue = prologue.sorted { a, b in
+                    let numA = Int(a.number.dropFirst().dropLast()) ?? 0
+                    let numB = Int(b.number.dropFirst().dropLast()) ?? 0
+                    return numA < numB
+                }
+                cachedVerses = sortedPrologue + regular
+            } else {
+                cachedVerses = rawVerses
+            }
         } else {
             cachedVerses = []
         }
