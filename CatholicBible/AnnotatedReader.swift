@@ -87,6 +87,13 @@ struct AnnotatedReader: View {
         verseKey.hasPrefix("(") && verseKey.hasSuffix(")")
     }
 
+    private func isPrologueText(_ text: String) -> Bool {
+        let verseMarkerPattern = try? NSRegularExpression(pattern: "\\(\\d+\\)", options: [])
+        guard let regex = verseMarkerPattern else { return false }
+        let range = NSRange(text.startIndex..., in: text)
+        return regex.firstMatch(in: text, range: range) != nil
+    }
+
     var body: some View {
         VStack(spacing: 0) {
             if showHeader { header }
@@ -459,6 +466,16 @@ struct AnnotatedReader: View {
             titleMap[title.verse] = title.text
         }
 
+        // knbnotes에서 Sirach 1장 프롤로그 제목 중복 제거
+        if (editionID == "knb" || editionID == "knbnotes") && chapter == 1 && book.id == "sir" {
+            // 프롤로그 절이 있는지 확인 (verse marker like "(1)", "(5)" 등이 있으면 프롤로그 있음)
+            let hasProloguePart = cachedVerses.contains { isPrologueVerse(verseKey: $0.number) }
+            if hasProloguePart {
+                // 프롤로그가 있으면 verse "1"의 제목을 제거하여 "머리글" 헤더와 중복되지 않도록 함
+                titleMap.removeValue(forKey: "1")
+            }
+        }
+
         return titleMap
     }
 
@@ -548,6 +565,13 @@ struct AnnotatedReader: View {
         for title in titles {
             newMap[title.verse] = title.text
         }
+        // knbnotes에서 Sirach 1장 프롤로그 제목 중복 제거
+        if (editionID == "knb" || editionID == "knbnotes") && chapter == 1 && book.id == "sir" {
+            let hasProloguePart = cachedVerses.contains { isPrologueVerse(verseKey: $0.number) }
+            if hasProloguePart {
+                newMap.removeValue(forKey: "1")
+            }
+        }
         cachedTitleMap = newMap
     }
 
@@ -594,6 +618,13 @@ struct AnnotatedReader: View {
         var newMap: [String: String] = [:]
         for title in titles {
             newMap[title.verse] = title.text
+        }
+        // knbnotes에서 Sirach 1장 프롤로그 제목 중복 제거
+        if (editionID == "knb" || editionID == "knbnotes") && chapter == 1 && book.id == "sir" {
+            let hasProloguePart = cachedVerses.contains { isPrologueVerse(verseKey: $0.number) }
+            if hasProloguePart {
+                newMap.removeValue(forKey: "1")
+            }
         }
         cachedTitleMap = newMap
     }
