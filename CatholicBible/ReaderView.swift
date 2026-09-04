@@ -880,18 +880,9 @@ struct ReaderPane: View {
 
                     // 프롤로그 절들 표시
                     if !prologue.isEmpty {
-                        // 프롤로그 헤더
-                        if editionID == "knb" && chapter == 1 && book.id == "sir" {
-                            Text("머리글")
-                                .font(.system(size: settings.fontSize * 1.1, weight: .semibold, design: .default))
-                                .foregroundStyle(settings.theme.secondary)
-                                .padding(.bottom, 8)
-                                .padding(.top, 4)
-                        }
                         ForEach(prologue) { verse in
                             prologueVerseView(verse: verse)
                                 .id(verse.number)
-                                .padding(.bottom, prologue.last?.number == verse.number ? 16 : 0)
                         }
                     }
 
@@ -1438,6 +1429,8 @@ struct SpreadReader: View {
 
     @ViewBuilder
     private func page(_ verses: [Verse]?, isFirst: Bool) -> some View {
+        let firstRegularVerseNumber = verses?.first(where: { !$0.number.contains("(") && !$0.number.contains(")") })?.number
+
         VStack(alignment: .leading, spacing: settings.lineSpacing * 0.9) {
             if isFirst { chapterHeader }
 
@@ -1451,6 +1444,14 @@ struct SpreadReader: View {
 
             if let verses {
                 ForEach(verses) { verse in
+                    // Sirach 1장: 첫 번째 일반 절 앞에 "제 1 부 지혜와 금언들" (0)
+                    if isFirst && editionID == "knb" && chapter == 1 && book.id == "sir"
+                        && verse.number == firstRegularVerseNumber {
+                        if let title = titleMap["0"] {
+                            SectionTitleView(text: title, bookID: book.id, chapter: chapter, linkable: true)
+                                .padding(.bottom, 12)
+                        }
+                    }
                     if let title = titleMap[verse.number] {
                         SectionTitleView(text: title, bookID: book.id, chapter: chapter,
                                                          linkable: true)
