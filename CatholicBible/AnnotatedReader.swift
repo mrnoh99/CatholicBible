@@ -142,8 +142,9 @@ struct AnnotatedReader: View {
                 cachedTitleMapBookID = ""
 
                 // 장이 새 책에서 유효하지 않으면 초기화
+                // (단, 대기 이동이 있으면 applyPending()이 처리하므로 스킵)
                 let newBook = Bible.book(newBookID) ?? Bible.books[0]
-                if chapter > newBook.chapterCount || chapter == 0 {
+                if (chapter > newBook.chapterCount || chapter == 0) && navigation.pendingChapter == nil {
                     setChapter(readingState.lastChapter(edition: edition, book: newBook))
                 }
 

@@ -580,7 +580,8 @@ struct ReaderPane: View {
                 print("   → Restoring chapter \(restoredChapter) for \(book.id)")
                 setChapter(restoredChapter)
                 // 처음 로드 이후 책 선택 변경만 히스토리에 추가
-                if isInitialized && role == .primary {
+                // (단, 대기 이동이 있으면 호출하지 않음 - applyPending()가 처리함)
+                if isInitialized && role == .primary && navigation.pendingChapter == nil {
                     navigation.open(bookID: book.id, chapter: restoredChapter)
                 }
             } else if isFollower && chapter <= 0 {
@@ -1270,7 +1271,8 @@ struct SpreadReader: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .onAppear { initChapterIfNeeded() }
         .onChange(of: bookID) { _, _ in
-            if !skipChapterRestore {
+            // 대기 이동이 없으면 마지막 장을 복원 (applyPending()이 대기 장을 처리함)
+            if !skipChapterRestore && navigation.pendingChapter == nil {
                 setChapter(readingState.lastChapter(edition: edition, book: book))
                 spreadIndex = 0
             }
