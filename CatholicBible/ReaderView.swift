@@ -298,21 +298,8 @@ struct ReaderView: View {
 
         ToolbarItem(placement: .principal) {
             if layout == .spread {
-                HStack(spacing: 8) {
-                    Button {
-                        primaryChapter = max(1, primaryChapter)
-                    } label: {
-                        Image(systemName: "arrow.clockwise")
-                            .font(.system(size: 16, weight: .semibold))
-                            .contentShape(Circle())
-                    }
-                    .help("새로고침")
-
-                    Text("성경 읽기")
-                        .font(.system(size: 16, weight: .semibold, design: .default))
-
-                    Spacer().frame(width: 32)
-                }
+                Text("성경 읽기")
+                    .font(.system(size: 16, weight: .semibold, design: .default))
             } else {
                 HStack(spacing: 8) {
                     Button { navigation.goBack() } label: {
@@ -1393,18 +1380,6 @@ struct SpreadReader: View {
                 chip(store.bookShortName(edition: edition, book: book))
             }
             Spacer(minLength: 0)
-
-            Button {
-                spreadIndex = 0
-                contentSize = .zero
-            } label: {
-                Image(systemName: "arrow.clockwise")
-                    .font(.system(size: 18, weight: .semibold))
-                    .foregroundStyle(.secondary)
-            }
-            .padding(.horizontal, 10)
-            .padding(.vertical, 8)
-            .accessibilityLabel("새로고침")
         }
         .font(.subheadline)
         .padding(.horizontal, 16).padding(.vertical, 8)
