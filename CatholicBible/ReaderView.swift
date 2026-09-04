@@ -606,8 +606,8 @@ struct ReaderPane: View {
         }
         .onChange(of: editionID) { _, _ in
             if !isFollower {
-                let chapter = readingState.lastChapter(edition: edition, book: book)
-                setChapter(chapter)
+                // 판본 전환 시 현재 장을 유지하되, 해당 장이 없으면 첫 장으로 이동
+                setChapter(clampChapter(chapter))
             }
             // Always update cache for new edition, clearing cache to force refresh
             cachedEditionID = ""  // Invalidate cache to force update
