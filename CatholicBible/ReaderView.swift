@@ -556,12 +556,19 @@ struct ReaderPane: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .onAppear {
-            print("📱 ReaderPane.onAppear: role=\(role), book=\(book.id), chapter=\(chapter), linked=\(linkedChapter?.wrappedValue ?? -1), local=\(localChapter)")
+            let linkedValue = linkedChapter?.wrappedValue ?? -1
+            print("📱 ReaderPane.onAppear: role=\(role), book=\(book.id), chapter=\(chapter), linked=\(linkedValue), local=\(localChapter)")
             loadRawHeadings()
             initChapterIfNeeded()
             updateTitleMapCache()
             updateVersesCache()
             isInitialized = true
+
+            // 초기화 후 상태 불일치 재검사: chapter=0, linked≤0, local=0 시 자동 새로고침
+            if chapter == 0 && linkedValue <= 0 && localChapter == 0 {
+                print("⚠️  State mismatch detected after init (chap0 linked\(linkedValue) local0) - auto-refreshing")
+                refreshCache()
+            }
         }
         .onChange(of: bookID) { _, _ in
             let roleStr = role == .secondary ? "Secondary" : "Primary"
@@ -619,14 +626,6 @@ struct ReaderPane: View {
             readingState.savePosition(edition: edition, book: book, chapter: new)
         }
         .modifier(PendingChapterModifier(active: role == .primary, apply: applyPending))
-        .task(id: "\(chapter)-\(editionID)-\(bookID)") {
-            // 절들이 로드되지 않으면 자동으로 refresh 시도
-            try? await Task.sleep(nanoseconds: 500_000_000)  // 0.5초 대기
-            if cachedVerses.isEmpty && chapter > 0 && role == .primary {
-                print("🔄 Auto-refresh: ch:\(chapter) linked:\(linkedChapter?.wrappedValue ?? -1) local:\(localChapter) - verses empty, refreshing...")
-                refreshCache()
-            }
-        }
         .sheet(isPresented: $showBookPicker) {
             BookPickerView(edition: edition, current: bookID) { picked in
                 parseBookSelection(picked)
