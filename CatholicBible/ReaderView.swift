@@ -1389,6 +1389,13 @@ struct SpreadReader: View {
         setChapter(n)
     }
 
+    private func refreshCache() {
+        guard chapter <= 0 else { return }
+        let validChapter = readingState.lastChapter(edition: edition, book: book)
+        setChapter(validChapter)
+        spreadIndex = 0
+    }
+
     private var atFirst: Bool { spreadIndex == 0 && chapter <= 1 }
     private var atLast: Bool { spreadIndex >= spreadCount - 1 && chapter >= book.chapterCount }
 
