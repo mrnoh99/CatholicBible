@@ -265,10 +265,12 @@ struct AnnotatedReader: View {
 
     private func applyPending() {
         guard let p = navigation.pendingChapter else { return }
-        guard navigation.hasPending(forBook: book.id) else { return }
+        // 대기 이동이 이 리더용인지 확인: pendingBookID가 nil이거나 현재 책과 같음
+        // (bookID 바인딩이 아직 업데이트되지 않았을 수 있으므로 book.id 대신 bookID 사용)
+        guard navigation.pendingBookID == nil || navigation.pendingBookID == bookID else { return }
         setChapter(min(max(p, 1), book.chapterCount))
         navigation.pendingChapter = nil
-        scrollTarget = navigation.consumePending(forBook: book.id)
+        scrollTarget = navigation.consumePending(forBook: bookID)
     }
 
     private func parseBookSelection(_ picked: String) {

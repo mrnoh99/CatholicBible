@@ -675,13 +675,15 @@ struct ReaderPane: View {
 
     private func applyPending() {
         guard role == .primary, let pending = navigation.pendingChapter else { return }
-        guard navigation.hasPending(forBook: book.id) else { return }
+        // 대기 이동이 이 리더용인지 확인: pendingBookID가 nil이거나 현재 책과 같음
+        // (bookID 바인딩이 아직 업데이트되지 않았을 수 있으므로 book.id 대신 bookID 사용)
+        guard navigation.pendingBookID == nil || navigation.pendingBookID == bookID else { return }
         let c = clampChapter(pending)
-        print("🔍 ReaderPane.applyPending: pending=\(pending), book=\(book.id), clamped=\(c), chapter before=\(chapter)")
+        print("🔍 ReaderPane.applyPending: pending=\(pending), bookID=\(bookID), clamped=\(c), chapter before=\(chapter)")
         setChapter(c)
         print("🔍 ReaderPane.applyPending: chapter after=\(chapter)")
         navigation.pendingChapter = nil
-        scrollTarget = navigation.consumePending(forBook: book.id)
+        scrollTarget = navigation.consumePending(forBook: bookID)
     }
 
     private func clampChapter(_ c: Int) -> Int { min(max(c, 1), book.chapterCount) }
@@ -1327,9 +1329,11 @@ struct SpreadReader: View {
 
     private func applyPending() {
         guard let p = navigation.pendingChapter else { return }
-        guard navigation.hasPending(forBook: book.id) else { return }
+        // 대기 이동이 이 리더용인지 확인: pendingBookID가 nil이거나 현재 책과 같음
+        // (bookID 바인딩이 아직 업데이트되지 않았을 수 있으므로 book.id 대신 bookID 사용)
+        guard navigation.pendingBookID == nil || navigation.pendingBookID == bookID else { return }
         setChapter(clampChapter(p)); navigation.pendingChapter = nil
-        scrollTarget = navigation.consumePending(forBook: book.id)
+        scrollTarget = navigation.consumePending(forBook: bookID)
         spreadIndex = 0
     }
 
