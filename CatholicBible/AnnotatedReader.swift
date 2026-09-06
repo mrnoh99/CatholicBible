@@ -337,13 +337,16 @@ struct AnnotatedReader: View {
     // MARK: 본문 | 주석
 
     private var content: some View {
-        // 책 미스매치 감지: 캐시된 책이 현재 책과 다르면 강제 업데이트 (동기 처리)
+        // 책 미스매치 감지: 캐시된 책이 현재 책과 다르면 강제 업데이트
         if cachedVersesBookID != book.id || cachedNotesBookID != book.id {
-            print("⚠️ Content mismatch! cachedVersesBookID=\(cachedVersesBookID), book.id=\(book.id) - forcing update")
-            updateVersesCache(forcing: true)
-            updateNotesCache(forcing: true)
-            updateTitleMapCache(forcing: true)
-            print("✅ Mismatch fixed. Verses: \(cachedVerses.count)")
+            print("⚠️ Content mismatch! cachedVersesBookID=\(cachedVersesBookID), book.id=\(book.id) - scheduling update")
+            DispatchQueue.main.async {
+                print("   → Forcing cache update for book mismatch")
+                self.updateVersesCache(forcing: true)
+                self.updateNotesCache(forcing: true)
+                self.updateTitleMapCache(forcing: true)
+                print("✅ Mismatch fixed. Verses: \(self.cachedVerses.count)")
+            }
         }
 
         let verses = cachedVerses
