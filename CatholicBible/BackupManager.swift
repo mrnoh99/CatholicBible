@@ -6,7 +6,11 @@
 //
 
 import Foundation
+#if os(iOS)
 import UIKit
+#else
+import AppKit
+#endif
 
 enum BackupFrequency: String, CaseIterable {
     case daily = "매일"
@@ -86,7 +90,12 @@ final class BackupManager {
         if let saved = Self.defaults.string(forKey: Self.deviceIdKey) {
             self.deviceId = saved
         } else {
-            let newId = UIDevice.current.identifierForVendor?.uuidString ?? UUID().uuidString
+            let newId: String
+            #if os(iOS)
+            newId = UIDevice.current.identifierForVendor?.uuidString ?? UUID().uuidString
+            #else
+            newId = UUID().uuidString
+            #endif
             Self.defaults.set(newId, forKey: Self.deviceIdKey)
             self.deviceId = newId
         }
@@ -153,7 +162,11 @@ final class BackupManager {
     }
 
     func getDeviceName() -> String {
-        UIDevice.current.name
+        #if os(iOS)
+        return UIDevice.current.name
+        #else
+        return Host.current().localizedName ?? NSLocalizedString("macOS Device", comment: "Default macOS device name")
+        #endif
     }
 
     // MARK: - Private Helpers
@@ -227,11 +240,21 @@ final class BackupManager {
             }
 
             // 메타데이터 저장
+            let osVersion: String
+            let deviceName: String
+            #if os(iOS)
+            osVersion = UIDevice.current.systemVersion
+            deviceName = UIDevice.current.name
+            #else
+            osVersion = ProcessInfo.processInfo.operatingSystemVersionString
+            deviceName = Host.current().localizedName ?? "macOS Device"
+            #endif
+
             let metadata: [String: Any] = [
                 "date": ISO8601DateFormatter().string(from: Date()),
                 "appVersion": Bundle.main.appVersion,
-                "osVersion": UIDevice.current.systemVersion,
-                "deviceName": UIDevice.current.name,
+                "osVersion": osVersion,
+                "deviceName": deviceName,
                 "deviceId": deviceId,
                 "bookmarksCount": annotationStore.sortedBookmarks.count,
                 "notesCount": annotationStore.notes.count
