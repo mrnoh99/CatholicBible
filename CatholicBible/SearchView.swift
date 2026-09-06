@@ -146,7 +146,6 @@ struct SearchView: View {
                 ScrollView {
                     VStack(spacing: 16) {
                         searchInputSection
-                        searchButtonsSection
                         searchTypeSection
                         searchConditionsSection
                         searchHistorySection
@@ -154,6 +153,12 @@ struct SearchView: View {
                     .padding(.bottom, 20)
                 }
                 .background(Color(.systemBackground))
+
+                Divider()
+                searchButtonsSection
+                    .padding(.top, 12)
+                    .padding(.bottom, 16)
+                    .background(Color(.systemBackground))
             }
             .navigationTitle("검색")
             .navigationBarTitleDisplayMode(.inline)
