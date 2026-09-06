@@ -572,12 +572,16 @@ struct ReaderPane: View {
         }
         .onChange(of: bookID) { _, _ in
             let roleStr = role == .secondary ? "Secondary" : "Primary"
-            print("📖 \(roleStr) bookID changed: \(book.id), chapter=\(chapter), isFollower=\(isFollower), skipChapterRestore=\(skipChapterRestore)")
+            print("📖 \(roleStr) bookID changed: \(book.id), chapter=\(chapter), isFollower=\(isFollower), skipChapterRestore=\(skipChapterRestore), pendingChapter=\(navigation.pendingChapter ?? -1)")
             // 캐시 무효화 (새 책의 장이 이전 책과 같은 번호일 수 있으므로 항상 무효화)
             cachedBookID = ""
             // 대기 이동이 없을 때만 장 복원 (applyPending()이 대기 장을 처리함)
             if navigation.pendingChapter == nil {
+                print("   ✓ No pending chapter, restoring from history")
+            } else {
+                print("   ⏳ Pending chapter \(navigation.pendingChapter ?? -1), skipping restoration")
                 if !isFollower && !skipChapterRestore {
+                    print("   → Restoring chapter")
                     let restoredChapter = readingState.lastChapter(edition: edition, book: book)
                     print("   → Restoring chapter \(restoredChapter) for \(book.id)")
                     setChapter(restoredChapter)
@@ -673,7 +677,9 @@ struct ReaderPane: View {
         guard role == .primary, let pending = navigation.pendingChapter else { return }
         guard navigation.hasPending(forBook: book.id) else { return }
         let c = clampChapter(pending)
+        print("🔍 ReaderPane.applyPending: pending=\(pending), book=\(book.id), clamped=\(c), chapter before=\(chapter)")
         setChapter(c)
+        print("🔍 ReaderPane.applyPending: chapter after=\(chapter)")
         navigation.pendingChapter = nil
         scrollTarget = navigation.consumePending(forBook: book.id)
     }
