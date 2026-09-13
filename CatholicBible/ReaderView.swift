@@ -159,8 +159,7 @@ struct ReaderView: View {
                 compareTopVerse = nil
                 // skipChapterRestore가 false인 경우에만 마지막 장을 복원하도록 리셋
                 if !skipChapterRestore {
-                    primaryChapter = 0  // initChapterIfNeeded()가 작동하려면 필요
-                    annotatedChapter = 0  // 주석 성경 모드도 같이 초기화
+                    resetPrimaryChapters(forBook: newBookID)
                 }
                 // skipChapterRestore는 ReaderPane.onChange(of: bookID)에서 초기화하므로 여기서 초기화하지 않음
                 previousBookID = newBookID
@@ -174,9 +173,7 @@ struct ReaderView: View {
                 // skipChapterRestore는 책 선택기에서만 사용되므로, 사이드패널 선택 시 무조건 해제
                 // (이전 선택기 동작의 영향을 받지 않도록)
                 skipChapterRestore = false
-                // skipChapterRestore가 false인 경우에만 마지막 장을 복원하도록 리셋
-                primaryChapter = 0  // initChapterIfNeeded()가 작동하려면 필요
-                annotatedChapter = 0  // 주석 성경 모드도 같이 초기화
+                resetPrimaryChapters(forBook: newBookID)
                 previousBookID = newBookID
             }
         }
@@ -285,6 +282,18 @@ struct ReaderView: View {
             .first(where: { $0.n == ref.verse })?.text ?? "이 주석을 찾지 못했습니다."
         markerNote = MarkerNoteTarget(n: ref.verse, text: noteText,
                                       bookID: ref.bookID, chapter: ref.chapter)
+    }
+
+    /// 첫째 열(한 페이지·펼침·주석 모드 공용) 장 상태를 새 책에 맞춰 초기화한다.
+    /// 이 책으로 향하는 대기 이동(pendingChapter, 검색·책갈피·매일미사 '본문 열기')이
+    /// 있으면 0이 아니라 그 장으로 바로 맞춰서, 책이 바뀌며 리더가 다시 생성될 때
+    /// (예: 주석 모드의 .id(currentBook.id)) 한 프레임 동안 엉뚱한 장이 잠깐 보였다가
+    /// 나중에야 대기 장으로 넘어가는 대신, 처음부터 올바른 장으로 그려지게 한다.
+    /// pendingChapter 자체는 지우지 않는다 — 절 스크롤·강조 소비는 각 리더가 맡는다.
+    private func resetPrimaryChapters(forBook bookID: String) {
+        let target = navigation.hasPending(forBook: bookID) ? (navigation.pendingChapter ?? 0) : 0
+        primaryChapter = target
+        annotatedChapter = target
     }
 
     @ToolbarContentBuilder
@@ -661,16 +670,19 @@ struct ReaderPane: View {
             if let h = navigation.activeHighlight, h.bookID == book.id { scrollTarget = h.startVerse }
             return
         }
-        guard chapter == 0 else { return }
-        if role == .primary, let pending = navigation.pendingChapter,
-           navigation.hasPending(forBook: book.id) {
-            let c = clampChapter(pending)
-            setChapter(c)
-            navigation.pendingChapter = nil
-            scrollTarget = navigation.consumePending(forBook: book.id)
-        } else {
-            setChapter(readingState.lastChapter(edition: edition, book: book))
+        guard role == .primary, let pending = navigation.pendingChapter,
+              navigation.hasPending(forBook: book.id) else {
+            if chapter == 0 {
+                setChapter(readingState.lastChapter(edition: edition, book: book))
+            }
+            return
         }
+        // 상위 ReaderView가 책 전환 시 대기 장으로 이미 맞춰 놨을 수 있다(chapter != 0).
+        // 그 경우도 절 스크롤·강조 소비는 여기서 마저 처리한다.
+        let c = clampChapter(pending)
+        if chapter != c { setChapter(c) }
+        navigation.pendingChapter = nil
+        scrollTarget = navigation.consumePending(forBook: book.id)
     }
 
     private func applyPending() {
@@ -1318,13 +1330,18 @@ struct SpreadReader: View {
     // MARK: 위치
 
     private func initChapterIfNeeded() {
-        guard chapter == 0 else { return }
-        if navigation.hasPending(forBook: ownerBookID), let p = navigation.pendingChapter {
-            setChapter(clampChapter(p)); navigation.pendingChapter = nil
-            scrollTarget = navigation.consumePending(forBook: ownerBookID)
-        } else {
-            setChapter(readingState.lastChapter(edition: edition, book: book))
+        guard navigation.hasPending(forBook: ownerBookID), let p = navigation.pendingChapter else {
+            if chapter == 0 {
+                setChapter(readingState.lastChapter(edition: edition, book: book))
+            }
+            return
         }
+        // 상위 ReaderView가 책 전환 시 대기 장으로 이미 맞춰 놨을 수 있다(chapter != 0).
+        // 그 경우도 절 스크롤·강조 소비는 여기서 마저 처리한다.
+        let c = clampChapter(p)
+        if chapter != c { setChapter(c) }
+        navigation.pendingChapter = nil
+        scrollTarget = navigation.consumePending(forBook: ownerBookID)
     }
 
     private func applyPending() {
