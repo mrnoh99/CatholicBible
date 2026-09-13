@@ -578,8 +578,6 @@ struct ReaderPane: View {
             // 대기 이동이 없을 때만 장 복원 (applyPending()이 대기 장을 처리함)
             if navigation.pendingChapter == nil {
                 print("   ✓ No pending chapter, restoring from history")
-            } else {
-                print("   ⏳ Pending chapter \(navigation.pendingChapter ?? -1), skipping restoration")
                 if !isFollower && !skipChapterRestore {
                     print("   → Restoring chapter")
                     let restoredChapter = readingState.lastChapter(edition: edition, book: book)
@@ -602,6 +600,8 @@ struct ReaderPane: View {
                     let validChapter = max(1, readingState.lastChapter(edition: edition, book: book))
                     setChapter(validChapter)
                 }
+            } else {
+                print("   ⏳ Pending chapter \(navigation.pendingChapter ?? -1), skipping restoration")
             }
             // 캐시 업데이트 (chapter가 같아서 onChange(of: chapter)가 안 될 수 있으므로 여기서도 함)
             updateTitleMapCache()
