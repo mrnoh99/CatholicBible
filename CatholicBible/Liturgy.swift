@@ -47,7 +47,7 @@ struct ScriptureCitation: Codable, Hashable, Sendable {
 /// 한국어 성구 약칭 → 책 id 파서 (예: "1코린 12,31-13,13").
 enum ScriptureReference {
     private static let parentRegex = try? NSRegularExpression(pattern: "\\([^)]*\\)")
-    private static let chapterVerseRegex = try? NSRegularExpression(pattern: "^(\\d+)(?:\\s*,\\s*(\\d+))?(?:\\s*[-–]\\s*(\\d+)(?:\\s*,\\s*(\\d+))?)?")
+    private static let chapterVerseRegex = try? NSRegularExpression(pattern: "^(\\d+)(?:\\s*,\\s*(\\d+))?(?:\\s*[-–―─]\\s*(\\d+)(?:\\s*,\\s*(\\d+))?)?")
 
     /// 약칭/이름 → 책 id (긴 것부터 매칭). Bible 목차에서 자동 생성 + 소수 별칭.
     private static let aliasToID: [(alias: String, id: String)] = {
@@ -116,6 +116,8 @@ enum ScriptureReference {
 
     /// 참조 문자열을 절 구간 목록으로 푼다.
     /// ';'(여러 인용) · '.'·'·'·'과'·'와'(불연속) · '-'(범위) · 장 넘김("12,31-13,13")을 모두 처리.
+    /// 범위 기호는 하이픈(-)·en dash(–) 외에도 수집 데이터에 섞여 들어오는
+    /// horizontal bar(―)·box drawing(─) 문자도 같은 것으로 인식한다.
     /// 예) "예레 26,11-16.24" → [26:11-16, 26:24]
     ///     "나훔 2,1.3; 3,1-3.6-7" → [2:1, 2:3, 3:1-3, 3:6-7]
     static func segmentList(_ reference: String) -> (bookID: String, segments: [RefSegment])? {
@@ -149,7 +151,7 @@ enum ScriptureReference {
             }
             guard var chap = cur else { continue }
             for g in vspec.split(separator: ".", omittingEmptySubsequences: true) {
-                if let dash = g.firstIndex(where: { $0 == "-" || $0 == "–" }) {
+                if let dash = g.firstIndex(where: { $0 == "-" || $0 == "–" || $0 == "―" || $0 == "─" }) {
                     let left = g[g.startIndex..<dash]; let right = g[g.index(after: dash)...]
                     guard let lo = leadInt(left) else { continue }
                     if let comma = right.firstIndex(of: ",") {
