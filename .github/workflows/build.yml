@@ -1,0 +1,35 @@
+name: Build
+
+on:
+  push:
+    branches:
+      - claude/bible-ebook-ipad-app-7406yk
+      - 'claude/**'
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build (iOS Simulator)
+    runs-on: macos-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Show available Xcode versions
+        run: ls /Applications | grep Xcode
+
+      - name: Select latest Xcode
+        run: sudo xcode-select -switch $(ls -d /Applications/Xcode_*.app | sort -V | tail -n1)
+
+      - name: Show Xcode version
+        run: xcodebuild -version
+
+      - name: Build CatholicBible for iOS Simulator
+        run: |
+          xcodebuild build \
+            -project CatholicBible.xcodeproj \
+            -target CatholicBible \
+            -sdk iphonesimulator \
+            -destination 'generic/platform=iOS Simulator' \
+            CODE_SIGNING_ALLOWED=NO
