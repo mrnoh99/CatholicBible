@@ -45,6 +45,14 @@ struct ReaderView: View {
     @State private var compareChapter = 0
     /// 주석 성경(본문·주석) 모드의 장 (다른 모드와 독립적으로 유지)
     @State private var annotatedChapter = 0
+    /// primaryChapter/annotatedChapter가 지금 어느 책 것인지. book.id와 다르면
+    /// "이 책 것이 아님"으로 보고 즉시(지연 없이) 대기 장 또는 0으로 다시 계산한다.
+    /// 예전에는 책이 바뀔 때 .onChange에서 두 값을 0으로 리셋했는데, 그 리셋은
+    /// SwiftUI가 책이 바뀐 자식 화면을 먼저 그리고 리셋을 그 다음 프레임에야 반영해서,
+    /// 자식이 아직 이전 책의 장을 그대로 읽어버려 '본문 열기'를 처음 열면 엉뚱한
+    /// 장(대개 1장)으로 갔다가 재시도해야 정상으로 열리는 문제가 있었다. 이 플래그로
+    /// "지금 값이 이 책 것인지"를 읽는 시점에 바로 판단하면 그런 지연이 없어진다.
+    @State private var chaptersOwnerBookID = ""
     /// 책 선택 시 마지막 장을 복원하지 않도록 하는 플래그 (picker에서 특정 장 선택 시 사용)
     @State private var skipChapterRestore = false
     /// 비교 모드에서 secondary 패널의 책 선택 시 마지막 장을 복원하지 않도록 하는 플래그
@@ -84,7 +92,7 @@ struct ReaderView: View {
                     AnnotatedReader(editionID: selectedEditionIDBinding,
                                     bookID: primaryBookBinding,
                                     currentBook: book,
-                                    sharedChapter: $annotatedChapter,
+                                    sharedChapter: annotatedChapterBinding,
                                     ownerBookID: book.id,
                                     showHeader: true,
                                     fullWidth: true,
@@ -96,7 +104,7 @@ struct ReaderView: View {
                         ReaderPane(role: .primary,
                                    editionID: selectedEditionIDBinding,
                                    bookID: primaryBookBinding,
-                                   linkedChapter: $primaryChapter,
+                                   linkedChapter: primaryChapterBinding,
                                    skipChapterRestore: $skipChapterRestore,
                                    ownerBookID: book.id,
                                    fullWidth: true,
@@ -105,7 +113,7 @@ struct ReaderView: View {
                     case .spread:
                         SpreadReader(editionID: selectedEditionIDBinding,
                                      bookID: primaryBookBinding,
-                                     sharedChapter: $primaryChapter,
+                                     sharedChapter: primaryChapterBinding,
                                      ownerBookID: book.id,
                                      onOpenNote: openNote,
                                      onOpenXref: { xrefTarget = $0 })
@@ -153,15 +161,14 @@ struct ReaderView: View {
         .navigationBarTitleDisplayMode(.inline)
         .onChange(of: book.id) { _, newBookID in
             // 책이 바뀌면 상태를 초기화 (성능 최적화: .id() 제거로 인한 상태 관리)
+            // primaryChapter/annotatedChapter 자체는 여기서 건드리지 않는다 — 두 값 모두
+            // primaryChapterBinding/annotatedChapterBinding(resolvedChapter)을 통해서만
+            // 노출되므로, chaptersOwnerBookID 불일치를 읽는 시점에 바로 감지해 대기 장 또는
+            // 0으로 계산한다(지연되는 리셋에 기대지 않는다).
             if previousBookID != newBookID {
                 navigation.selectedBookID = newBookID  // AnnotatedReader에 전파
                 compareChapter = 0
                 compareTopVerse = nil
-                // skipChapterRestore가 false인 경우에만 마지막 장을 복원하도록 리셋
-                if !skipChapterRestore {
-                    resetPrimaryChapters(forBook: newBookID)
-                }
-                // skipChapterRestore는 ReaderPane.onChange(of: bookID)에서 초기화하므로 여기서 초기화하지 않음
                 previousBookID = newBookID
             }
         }
@@ -173,7 +180,6 @@ struct ReaderView: View {
                 // skipChapterRestore는 책 선택기에서만 사용되므로, 사이드패널 선택 시 무조건 해제
                 // (이전 선택기 동작의 영향을 받지 않도록)
                 skipChapterRestore = false
-                resetPrimaryChapters(forBook: newBookID)
                 previousBookID = newBookID
             }
         }
@@ -284,16 +290,37 @@ struct ReaderView: View {
                                       bookID: ref.bookID, chapter: ref.chapter)
     }
 
-    /// 첫째 열(한 페이지·펼침·주석 모드 공용) 장 상태를 새 책에 맞춰 초기화한다.
-    /// 이 책으로 향하는 대기 이동(pendingChapter, 검색·책갈피·매일미사 '본문 열기')이
-    /// 있으면 0이 아니라 그 장으로 바로 맞춰서, 책이 바뀌며 리더가 다시 생성될 때
-    /// (예: 주석 모드의 .id(currentBook.id)) 한 프레임 동안 엉뚱한 장이 잠깐 보였다가
-    /// 나중에야 대기 장으로 넘어가는 대신, 처음부터 올바른 장으로 그려지게 한다.
-    /// pendingChapter 자체는 지우지 않는다 — 절 스크롤·강조 소비는 각 리더가 맡는다.
-    private func resetPrimaryChapters(forBook bookID: String) {
-        let target = navigation.hasPending(forBook: bookID) ? (navigation.pendingChapter ?? 0) : 0
-        primaryChapter = target
-        annotatedChapter = target
+    /// 지금 첫째 열이 봐야 할 책. navigation.selectedBookID를 직접 읽는다 — ReaderView 자신의
+    /// `book`(let 파라미터)은 상위(ContentView)가 다시 그려줘야 갱신되는 한 프레임 지연된 값이라,
+    /// 이 지연 자체가 기존 버그의 원인이었다(자식이 새 책으로 다시 그려지는 그 프레임에 아직
+    /// 이전 값을 보고 있었음). selectedBookID는 @Observable 프로퍼티라 대입 즉시(다시 그려지길
+    /// 기다릴 필요 없이) 어디서 읽어도 최신값이라 이 지연이 없다.
+    private var currentPrimaryBookID: String { navigation.selectedBookID ?? book.id }
+
+    /// primaryChapter/annotatedChapter의 원값이 지금 책(currentPrimaryBookID) 것이 아니면
+    /// (chaptersOwnerBookID 불일치) 대기 중인 이동이 있는 그 장으로, 없으면 0으로 즉석에서
+    /// 다시 계산한다. .onChange 부작용이 아니라 값을 읽는 바로 그 순간 계산하므로 지연이 없다.
+    private func resolvedChapter(_ raw: Int) -> Int {
+        if skipChapterRestore { return raw }  // 책 선택기가 이미 정확한 장을 넣어 둔 경우 그대로 신뢰
+        let targetBookID = currentPrimaryBookID
+        guard chaptersOwnerBookID == targetBookID else {
+            guard navigation.hasPending(forBook: targetBookID), let p = navigation.pendingChapter else { return 0 }
+            let chapterCount = Bible.book(targetBookID)?.chapterCount ?? book.chapterCount
+            return min(max(p, 1), chapterCount)
+        }
+        return raw
+    }
+
+    /// 한 페이지·펼침 모드가 공유하는 장 바인딩(위 resolvedChapter로 책 전환 시 즉시 재계산).
+    private var primaryChapterBinding: Binding<Int> {
+        Binding(get: { resolvedChapter(primaryChapter) },
+                set: { primaryChapter = $0; chaptersOwnerBookID = currentPrimaryBookID })
+    }
+
+    /// 주석(본문·주석) 모드 전용 장 바인딩(위 resolvedChapter로 책 전환 시 즉시 재계산).
+    private var annotatedChapterBinding: Binding<Int> {
+        Binding(get: { resolvedChapter(annotatedChapter) },
+                set: { annotatedChapter = $0; chaptersOwnerBookID = currentPrimaryBookID })
     }
 
     @ToolbarContentBuilder
@@ -677,10 +704,12 @@ struct ReaderPane: View {
             }
             return
         }
-        // 상위 ReaderView가 책 전환 시 대기 장으로 이미 맞춰 놨을 수 있다(chapter != 0).
-        // 그 경우도 절 스크롤·강조 소비는 여기서 마저 처리한다.
+        // 상위 ReaderView의 장 바인딩이 책 전환 시 대기 장을 이미 계산해 보여주고 있을 수
+        // 있다(chapter != 0). 그래도 setChapter는 항상 호출해야 한다 — 그 값을 실제로
+        // 저장하고 "이 책 것"으로 표시해야, 다음 렌더에서 대기 이동이 사라진 뒤에도
+        // (아래에서 pendingChapter를 지운다) 장이 0으로 되돌아가지 않는다.
         let c = clampChapter(pending)
-        if chapter != c { setChapter(c) }
+        setChapter(c)
         navigation.pendingChapter = nil
         scrollTarget = navigation.consumePending(forBook: book.id)
     }
@@ -1336,10 +1365,12 @@ struct SpreadReader: View {
             }
             return
         }
-        // 상위 ReaderView가 책 전환 시 대기 장으로 이미 맞춰 놨을 수 있다(chapter != 0).
-        // 그 경우도 절 스크롤·강조 소비는 여기서 마저 처리한다.
+        // 상위 ReaderView의 장 바인딩이 책 전환 시 대기 장을 이미 계산해 보여주고 있을 수
+        // 있다(chapter != 0). 그래도 setChapter는 항상 호출해야 한다 — 그 값을 실제로
+        // 저장하고 "이 책 것"으로 표시해야, 다음 렌더에서 대기 이동이 사라진 뒤에도
+        // (아래에서 pendingChapter를 지운다) 장이 0으로 되돌아가지 않는다.
         let c = clampChapter(p)
-        if chapter != c { setChapter(c) }
+        setChapter(c)
         navigation.pendingChapter = nil
         scrollTarget = navigation.consumePending(forBook: ownerBookID)
     }

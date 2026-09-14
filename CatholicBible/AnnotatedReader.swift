@@ -112,11 +112,13 @@ struct AnnotatedReader: View {
                 // This handles view restoration when mode switches (본문·주석 ↔ 한페이지)
                 if chapter > 0 {
                     print("🔄 Chapter already set to \(chapter) - updating caches directly")
-                    // 상위 ReaderView가 대기 이동을 이미 이 장으로 맞춰 놨을 수 있다(책이 바뀌며
-                    // 이 화면이 새로 생성된 경우). 그 경우 절 스크롤·강조 소비가 여전히 필요하므로
-                    // 대기 장이 지금 장과 일치하면 정상 소비 경로와 동일하게 처리한다.
-                    if navigation.hasPending(forBook: ownerBookID), let p = navigation.pendingChapter,
-                       min(max(p, 1), book.chapterCount) == chapter {
+                    // 상위 ReaderView의 장 바인딩이 대기 이동을 이미 이 장으로 계산해 보여주고
+                    // 있을 수 있다(책이 바뀌며 이 화면이 새로 생성된 경우). 그래도 setChapter는
+                    // 항상 호출해 그 값을 "이 책 것"으로 실제 저장해야 한다 — 그래야 아래에서
+                    // pendingChapter를 지운 뒤에도 다음 렌더에서 장이 0으로 되돌아가지 않는다.
+                    // 절 스크롤·강조 소비도 여기서 마저 처리한다.
+                    if navigation.hasPending(forBook: ownerBookID), let p = navigation.pendingChapter {
+                        setChapter(min(max(p, 1), book.chapterCount))
                         navigation.pendingChapter = nil
                         scrollTarget = navigation.consumePending(forBook: ownerBookID)
                     }
