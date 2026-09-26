@@ -270,7 +270,7 @@ final class LiturgyStore {
         let merged: [String: DailyReadings] = await Task.detached(priority: .userInitiated) {
             var out: [String: DailyReadings] = [:]
             for url in urls {
-                guard let data = try? Data(contentsOf: url),
+                guard let data = try? Data(contentsOf: url, options: .mappedIfSafe),
                       let file = try? JSONDecoder().decode(DailyReadingsFile.self, from: data),
                       let days = file.days else { continue }
                 for (k, v) in days { out[k] = v }

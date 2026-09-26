@@ -1288,7 +1288,7 @@ final class KnbNotesStore {
             var titlesByEd: [String: [String: [Int: [TitleItem]]]] = [:]
             for (edition, file) in resourceMap {
                 guard let url = Bundle.main.url(forResource: file, withExtension: "json"),
-                      let data = try? Data(contentsOf: url),
+                      let data = try? Data(contentsOf: url, options: .mappedIfSafe),
                       let f = try? JSONDecoder().decode(KnbNotesFile.self, from: data)
                 else { continue }
                 introsByEd[edition] = f.intros ?? []
