@@ -36,8 +36,41 @@ final class AnnotationStore {
     }
 
     private func rebuildCache() {
-        notesByVerse = Dictionary(uniqueKeysWithValues: notes.map { ($0.verse, $0) })
+        // 같은 절에 노트가 둘 이상 있어도 크래시하지 않도록(uniqueKeysWithValues 는
+        // 중복 키에서 트랩) 최근 수정본을 남긴다. 중복 자체는 loadNotes 에서 병합한다.
+        notesByVerse = Dictionary(notes.map { ($0.verse, $0) },
+                                  uniquingKeysWith: { a, b in a.modified >= b.modified ? a : b })
         sortedNotesByRecency = notes.sorted { $0.modified > $1.modified }
+    }
+
+    /// 같은 절에 대한 노트가 여럿이면 하나로 합친다(내용·첨부를 잃지 않게).
+    /// 가장 최근에 고친 노트를 바탕으로, 다른 노트의 글과 첨부를 덧붙인다.
+    /// 백업 복원 등으로 생긴 중복이 앱 시작 크래시를 일으키던 문제 대비.
+    private static func mergingDuplicates(_ notes: [Note]) -> (notes: [Note], changed: Bool) {
+        var order: [VerseRef] = []
+        var groups: [VerseRef: [Note]] = [:]
+        for note in notes {
+            if groups[note.verse] == nil { order.append(note.verse) }
+            groups[note.verse, default: []].append(note)
+        }
+        guard order.count != notes.count else { return (notes, false) }
+
+        let merged: [Note] = order.map { verse in
+            let group = groups[verse]!.sorted { $0.modified > $1.modified }
+            var base = group[0]
+            for other in group.dropFirst() {
+                let text = other.text.trimmingCharacters(in: .whitespacesAndNewlines)
+                if !text.isEmpty && !base.text.contains(text) {
+                    base.text = base.text.isEmpty ? other.text : base.text + "\n\n" + other.text
+                }
+                for att in other.attachments where !base.attachments.contains(where: { $0.filename == att.filename }) {
+                    base.attachments.append(att)
+                }
+                base.created = min(base.created, other.created)
+            }
+            return base
+        }
+        return (merged, true)
     }
 
     // MARK: - 책갈피 (판본 공통)
@@ -105,6 +138,15 @@ final class AnnotationStore {
                 notes[idx] = updated
                 notesByVerse[updated.verse] = updated
             }
+        } else if let idx = notes.firstIndex(where: { $0.verse == updated.verse }) {
+            // 다른 id 로 같은 절의 노트가 이미 있다(백업 복원 등). 새 항목을 끼워 넣으면
+            // 같은 절 노트가 둘이 되어 다음 실행 때 크래시하므로 기존 노트에 합친다.
+            if !updated.isEmpty {
+                var merged = Self.mergingDuplicates([notes[idx], updated]).notes[0]
+                merged.modified = updated.modified
+                notes[idx] = merged
+                notesByVerse[updated.verse] = merged
+            }
         } else if !updated.isEmpty {
             notes.insert(updated, at: 0)
             notesByVerse[updated.verse] = updated
@@ -132,8 +174,10 @@ final class AnnotationStore {
     private func loadNotes() {
         guard let data = try? Data(contentsOf: notesURL),
               let saved = try? JSONDecoder().decode([Note].self, from: data) else { return }
-        notes = saved
+        let deduped = Self.mergingDuplicates(saved)
+        notes = deduped.notes
         rebuildCache()
+        if deduped.changed { persistNotes() }
     }
 
     private func persistNotes() {
@@ -254,6 +298,7 @@ final class AnnotationStore {
         bookmarks.formUnion(backup.bookmarks)
         let addedBookmarks = bookmarks.count - before
 
+        rebuildCache()
         persistNotes()
         saveBookmarks()
         return (addedNotes, addedBookmarks)

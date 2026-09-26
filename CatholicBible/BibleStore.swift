@@ -153,7 +153,7 @@ final class BibleStore {
                 }
 
                 // 실제 로드 작업
-                guard let data = try? Data(contentsOf: url) else {
+                guard let data = try? Data(contentsOf: url, options: .mappedIfSafe) else {
                     print("❌ 데이터 읽기 실패: \(editionID)")
                     continue
                 }
@@ -198,7 +198,7 @@ final class BibleStore {
                 let shouldLoadCommonHeadings = ["knb", "knbnotes", "ncb"].contains(editionID)
                 if shouldLoadCommonHeadings && headingsFromFile.isEmpty {
                     if let headingsURL = Bundle.main.url(forResource: "KnbHeadings_ko", withExtension: "json"),
-                       let headingsData = try? Data(contentsOf: headingsURL),
+                       let headingsData = try? Data(contentsOf: headingsURL, options: .mappedIfSafe),
                        let headingsFile = try? JSONDecoder().decode(HeadingsFile.self, from: headingsData) {
                         headingsFromFile = headingsFile.headings
                         print("📖 \(editionID) headings 로드: KnbHeadings_ko.json")
@@ -212,7 +212,7 @@ final class BibleStore {
                 print("📝 주석 로드 시도: \(editionID) → \(annotationFileName).json")
 
                 if let annotationURL = Bundle.main.url(forResource: annotationFileName, withExtension: "json"),
-                   let annotationData = try? Data(contentsOf: annotationURL) {
+                   let annotationData = try? Data(contentsOf: annotationURL, options: .mappedIfSafe) {
                     do {
                         let annotationFile = try JSONDecoder().decode(AnnotationFile.self, from: annotationData)
                         print("✅ \(editionID) 주석 로드 성공")
